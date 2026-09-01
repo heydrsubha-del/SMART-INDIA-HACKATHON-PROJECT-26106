@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Generated artefacts - rebuilt on first run, so not worth versioning
+data/model.joblib
+data/model.joblib.metrics
+data/emails.csv
+
+# Optional MaxMind database (large, licence-restricted - never commit)
+data/GeoLite2-City.mmdb
+
+# Scratch / probe files from testing
+_*_probe.py
+apptest*.py
+
+# Editor + OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
