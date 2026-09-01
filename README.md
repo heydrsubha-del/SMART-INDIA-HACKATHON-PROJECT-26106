@@ -130,7 +130,13 @@ Ensure your virtual environment is active, then install the required Python pack
 
 pip install --upgrade pip
 
+```
+```bash
+
 pip install -r requirements.txt
+
+```
+```bash
 
 pip install folium streamlit-folium
 
