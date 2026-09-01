@@ -54,11 +54,14 @@ ____
 
 ##  Create a virtual environment:
 
-* **Windows**
+* **Windows powershell**
   
+```bash
  python -m venv .venv
 
 .venv\Scripts\Activate.ps1
+
+```
 
 ----
 
