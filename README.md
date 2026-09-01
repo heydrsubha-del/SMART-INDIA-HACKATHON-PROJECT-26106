@@ -231,7 +231,7 @@ SQLite threat memory bank for repeat offenders
 
 ---
 
-flowchart LR
+# Flowchart LR
 
     %% =========================
     %% 1. EMAIL ACQUISITION
@@ -378,3 +378,12 @@ flowchart LR
     S2 -.-> C1
     S3 -.-> D1
     S4 -.-> C1
+
+______
+
+# Architecture Overview:
+
+The system follows a multi-stage email forensics pipeline. Emails are acquired either through evidence-file upload or a live IMAP mailbox interceptor. The ingestion layer parses headers, body content, attachments, and received-chain information into structured email data.
+Multiple independent analysis engines then examine the email, including machine-learning phishing classification, SPF/DKIM/DMARC authentication analysis, header and BEC analysis, IOC extraction, IP geolocation and reputation analysis, and BEC pattern detection.
+The resulting indicators are combined by the configurable risk-scoring engine to produce a 0–100 final threat score, risk classification, and explainable contributing factors. Results are presented through the SOC dashboard, global routing/geolocation visualization, IOC correlation graph, CSV export, and forensic report.
+Analyst feedback through Confirm Threat and False Positive is stored as verified feedback and can contribute to controlled adaptive learning.
