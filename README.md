@@ -67,11 +67,18 @@ ____
 
 * **If PowerShell blocks activation, run:**
 
+```bash
+
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
+```
+
 then:
+```bash
 
 .venv\Scripts\Activate.ps1
+
+```
 
 ----
 
@@ -80,8 +87,11 @@ then:
 
 * **Ensure venv is active**
 
+```bash
+
 .\venv\Scripts\Activate
 
+```
 
 ---
 
@@ -91,14 +101,21 @@ then:
 
 * **Ensure venv is active**
 
+```bash
+
 source venv/bin/activate
 
+```
 
 ---
 
 ## 3. Upgrade pip:
 
+```bash
+
 python -m pip install --upgrade pip
+
+```
 
 ------
 
@@ -109,6 +126,7 @@ Ensure your virtual environment is active, then install the required Python pack
 
 * **On windows**
 
+```bash
 
 pip install --upgrade pip
 
@@ -116,7 +134,7 @@ pip install -r requirements.txt
 
 pip install folium streamlit-folium
 
-
+```
 
 ---
 
@@ -129,17 +147,22 @@ pip install folium streamlit-folium
 
 * **Launch the application**
 
+```bash
+
 streamlit run app.py
 
-
+```
 
 ## on mac/linux
 
 
 * **Launch the application**
 
+```bash
+
 streamlit run app.py
 
+```
 
 ---
 
