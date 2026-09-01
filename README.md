@@ -30,7 +30,7 @@ A comprehensive, offline-first email forensics and threat intelligence platform 
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/heydrsubha-del/SMART-INDIA-HACKATHON-PROJECT-26106.git]
+git clone []
 ```
 ---
 
