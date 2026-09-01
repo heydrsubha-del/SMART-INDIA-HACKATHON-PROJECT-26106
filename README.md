@@ -231,120 +231,150 @@ SQLite threat memory bank for repeat offenders
 
 ---
 
-## 🏗️ Architecture Diagram
-
-The following diagram shows how an email moves through the system, from ingestion to final threat scoring and forensic outputs.
-
-```mermaid
 flowchart LR
 
-    A["📧 Email Input"]
+    %% =========================
+    %% 1. EMAIL ACQUISITION
+    %% =========================
+    A["📥 EMAIL ACQUISITION"]
 
-    A1["📁 Evidence File<br/>.eml / .txt / .csv"]
-
-    A2["📡 Live IMAP<br/>Mailbox"]
-
-    B["📥 Ingestion & Validation"]
-
-    C["✉️ Email Parser"]
-
-    D["🔍 Feature Extraction"]
-
-    D1["📨 Header Analysis<br/>SPF / DKIM / DMARC"]
-    D2["🔗 URL & Link Analysis"]
-    D3["🌐 Sender / IP Intelligence"]
-    D4["📝 Content & Phishing Indicators"]
-
-    E["🧠 Threat Analysis Engine"]
-
-    E1["🤖 ML Phishing Classifier"]
-    E2["⚙️ Rule-Based Detection"]
-    E3["🌐 Threat Intelligence"]
-
-    F["⚖️ Risk Aggregation"]
-
-    G["🎯 Final Threat Score"]
-
-    G1["🟢 LOW"]
-    G2["🟡 MEDIUM"]
-    G3["🟠 HIGH"]
-    G4["🔴 CRITICAL"]
-
-    H["📊 Forensic & SOC Outputs"]
-
-    H1["📋 Detailed Email Analysis"]
-    H2["🌍 Global IP Tracking"]
-    H3["🛰️ Geolocation & Route Map"]
-    H4["📄 Forensic Report"]
-    H5["📥 CSV Export"]
-
-    I["👨‍💻 Analyst Feedback"]
-
-    J["✅ Verified Learning Samples"]
-
-    K["🧠 Controlled Model Adaptation"]
-
-    L["🗄️ Local Threat Intelligence Store"]
+    A1["Evidence File Upload<br/>.eml / .txt / .csv"]
+    A2["Live IMAP Mailbox<br/>Interceptor"]
 
     A --> A1
     A --> A2
 
-    A1 --> B
-    A2 --> B
+    %% =========================
+    %% 2. INGESTION & PARSING
+    %% =========================
+    B["⚙️ INGEST & PARSE"]
 
-    B --> C
-    C --> D
+    B1["Email Parser"]
+    B2["Header Extraction"]
+    B3["Body & Attachment Extraction"]
+    B4["Received-Chain / Hop Extraction"]
+    B5["Structured Email Data"]
 
-    D --> D1
-    D --> D2
-    D --> D3
-    D --> D4
+    A1 --> B1
+    A2 --> B1
+    B1 --> B2
+    B1 --> B3
+    B1 --> B4
+    B2 --> B5
+    B3 --> B5
+    B4 --> B5
 
-    D1 --> E
-    D2 --> E
-    D3 --> E
-    D4 --> E
+    %% =========================
+    %% 3. ANALYSIS ENGINES
+    %% =========================
+    C["🔍 ANALYSIS ENGINES"]
 
-    L --> E3
+    C1["🤖 ML Phishing Classifier<br/>TF-IDF + Logistic Regression"]
+    C2["🛡️ Authentication Analysis<br/>SPF / DKIM / DMARC"]
+    C3["📋 Header & BEC Analysis<br/>Identity / Reply-To / Display Name"]
+    C4["🔗 IOC Extraction<br/>URLs / Domains / IPs / Emails"]
+    C5["🌍 Geolocation & Reputation<br/>IP / ASN / ISP / Infrastructure"]
+    C6["💼 BEC Pattern Detector<br/>Urgency / Payment / Impersonation"]
 
-    E --> E1
-    E --> E2
-    E --> E3
+    B5 --> C1
+    B5 --> C2
+    B5 --> C3
+    B5 --> C4
+    B5 --> C5
+    B5 --> C6
 
-    E1 --> F
-    E2 --> F
-    E3 --> F
+    %% =========================
+    %% 4. THREAT INTELLIGENCE
+    %% =========================
+    TI["🌐 THREAT INTELLIGENCE"]
 
-    F --> G
+    TI1["URLhaus Malware URLs"]
+    TI2["Local Threat Intelligence"]
+    TI3["IOC / Reputation Data"]
 
-    G --> G1
-    G --> G2
-    G --> G3
-    G --> G4
+    TI --> TI1
+    TI --> TI2
+    TI --> TI3
 
-    G --> H
+    TI1 --> C4
+    TI2 --> C4
+    TI3 --> C5
 
-    H --> H1
-    H --> H2
-    H --> H3
-    H --> H4
-    H --> H5
+    %% =========================
+    %% 5. RISK SCORING
+    %% =========================
+    D["⚖️ RISK SCORING ENGINE"]
 
-    H1 --> I
-    I --> J
-    J --> K
-    K --> E1
+    D1["Weighted Risk Calculation<br/>Configurable Weights"]
+    D2["Final Threat Score<br/>0 – 100"]
+    D3["Risk Classification<br/>LOW / MEDIUM / HIGH / CRITICAL"]
+    D4["Explainability<br/>Top Contributing Factors"]
 
-    classDef input fill:#172033,stroke:#00d2ff,color:#ffffff;
-    classDef process fill:#111827,stroke:#3b82f6,color:#ffffff;
-    classDef analysis fill:#172033,stroke:#a855f7,color:#ffffff;
-    classDef score fill:#1f2937,stroke:#f59e0b,color:#ffffff;
-    classDef output fill:#172033,stroke:#22c55e,color:#ffffff;
-    classDef feedback fill:#172033,stroke:#ec4899,color:#ffffff;
+    C1 --> D1
+    C2 --> D1
+    C3 --> D1
+    C4 --> D1
+    C5 --> D1
+    C6 --> D1
 
-    class A,A1,A2 input;
-    class B,C,D,D1,D2,D3,D4 process;
-    class E,E1,E2,E3,L analysis;
-    class F,G,G1,G2,G3,G4 score;
-    class H,H1,H2,H3,H4,H5 output;
-    class I,J,K feedback;
+    D1 --> D2
+    D2 --> D3
+    D2 --> D4
+
+    %% =========================
+    %% 6. OUTPUTS
+    %% =========================
+    E["📊 OUTPUT & FORENSICS"]
+
+    E1["SOC Dashboard<br/>Threat Score & Findings"]
+    E2["🌍 Global IP / Routing Map"]
+    E3["🔗 Correlation Graph<br/>Cross-Email IOC Correlation"]
+    E4["📄 Forensic Report<br/>Evidence Hash + Analysis"]
+    E5["📥 CSV Export"]
+
+    D3 --> E1
+    D4 --> E1
+    C5 --> E2
+    C4 --> E3
+    D2 --> E4
+    D4 --> E4
+    D2 --> E5
+
+    %% =========================
+    %% 7. ANALYST FEEDBACK
+    %% =========================
+    F["🧠 ANALYST FEEDBACK"]
+
+    F1["Confirm Threat"]
+    F2["False Positive"]
+    F3["Verified Feedback"]
+    F4["Adaptive Learning"]
+
+    E1 --> F1
+    E1 --> F2
+    F1 --> F3
+    F2 --> F3
+    F3 --> F4
+
+    F4 -.-> C1
+
+    %% =========================
+    %% 8. PERSISTENT / SUPPORTING
+    %% =========================
+    S["💾 SUPPORTING COMPONENTS"]
+
+    S1["SQLite Threat Memory"]
+    S2["ML Model<br/>model.joblib"]
+    S3["Configuration<br/>config.py"]
+    S4["Dataset<br/>emails.csv"]
+
+    S --> S1
+    S --> S2
+    S --> S3
+    S --> S4
+
+    S1 -.-> C4
+    S1 -.-> C5
+    S2 -.-> C1
+    S3 -.-> D1
+    S4 -.-> C1
