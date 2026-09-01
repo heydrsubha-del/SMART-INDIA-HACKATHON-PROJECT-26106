@@ -231,3 +231,119 @@ SQLite threat memory bank for repeat offenders
 
 ---
 
+## 🏗️ Architecture Diagram
+
+The following diagram shows how an email moves through the system, from ingestion to final threat scoring and forensic outputs.
+
+```mermaid
+flowchart LR
+
+    A["📧 Email Input"]
+
+    A1["📁 Evidence File<br/>.eml / .txt / .csv"]
+    A2["📡 Live IMAP<br/>Mailbox"]
+
+    B["📥 Ingestion & Validation"]
+
+    C["✉️ Email Parser"]
+
+    D["🔍 Feature Extraction"]
+
+    D1["📨 Header Analysis<br/>SPF / DKIM / DMARC"]
+    D2["🔗 URL & Link Analysis"]
+    D3["🌐 Sender / IP Intelligence"]
+    D4["📝 Content & Phishing Indicators"]
+
+    E["🧠 Threat Analysis Engine"]
+
+    E1["🤖 ML Phishing Classifier"]
+    E2["⚙️ Rule-Based Detection"]
+    E3["🌐 Threat Intelligence"]
+
+    F["⚖️ Risk Aggregation"]
+
+    G["🎯 Final Threat Score"]
+
+    G1["🟢 LOW"]
+    G2["🟡 MEDIUM"]
+    G3["🟠 HIGH"]
+    G4["🔴 CRITICAL"]
+
+    H["📊 Forensic & SOC Outputs"]
+
+    H1["📋 Detailed Email Analysis"]
+    H2["🌍 Global IP Tracking"]
+    H3["🛰️ Geolocation & Route Map"]
+    H4["📄 Forensic Report"]
+    H5["📥 CSV Export"]
+
+    I["👨‍💻 Analyst Feedback"]
+
+    J["✅ Verified Learning Samples"]
+
+    K["🧠 Controlled Model Adaptation"]
+
+    L["🗄️ Local Threat Intelligence Store"]
+
+    A --> A1
+    A --> A2
+
+    A1 --> B
+    A2 --> B
+
+    B --> C
+    C --> D
+
+    D --> D1
+    D --> D2
+    D --> D3
+    D --> D4
+
+    D1 --> E
+    D2 --> E
+    D3 --> E
+    D4 --> E
+
+    L --> E3
+
+    E --> E1
+    E --> E2
+    E --> E3
+
+    E1 --> F
+    E2 --> F
+    E3 --> F
+
+    F --> G
+
+    G --> G1
+    G --> G2
+    G --> G3
+    G --> G4
+
+    G --> H
+
+    H --> H1
+    H --> H2
+    H --> H3
+    H --> H4
+    H --> H5
+
+    H1 --> I
+    I --> J
+    J --> K
+    K --> E1
+
+    classDef input fill:#172033,stroke:#00d2ff,color:#ffffff;
+    classDef process fill:#111827,stroke:#3b82f6,color:#ffffff;
+    classDef analysis fill:#172033,stroke:#a855f7,color:#ffffff;
+    classDef score fill:#1f2937,stroke:#f59e0b,color:#ffffff;
+    classDef output fill:#172033,stroke:#22c55e,color:#ffffff;
+    classDef feedback fill:#172033,stroke:#ec4899,color:#ffffff;
+
+    class A,A1,A2 input;
+    class B,C,D,D1,D2,D3,D4 process;
+    class E,E1,E2,E3,L analysis;
+    class F,G,G1,G2,G3,G4 score;
+    class H,H1,H2,H3,H4,H5 output;
+    class I,J,K feedback;
