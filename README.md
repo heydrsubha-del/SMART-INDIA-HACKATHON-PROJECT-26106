@@ -60,6 +60,8 @@ ____
 
 .venv\Scripts\Activate.ps1
 
+----
+
 * **If PowerShell blocks activation, run:**
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -68,6 +70,7 @@ then:
 
 .venv\Scripts\Activate.ps1
 
+----
 
 ## On Windows (PowerShell):
 
