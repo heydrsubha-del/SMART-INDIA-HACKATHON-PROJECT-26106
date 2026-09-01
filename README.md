@@ -241,6 +241,7 @@ flowchart LR
     A["📧 Email Input"]
 
     A1["📁 Evidence File<br/>.eml / .txt / .csv"]
+
     A2["📡 Live IMAP<br/>Mailbox"]
 
     B["📥 Ingestion & Validation"]
