@@ -59,6 +59,9 @@ ____
 ```bash
  python -m venv .venv
 
+```
+```bash
+
 .venv\Scripts\Activate.ps1
 
 ```
