@@ -1,0 +1,98 @@
+{
+  "185.220.101.45": {
+    "city": "Frankfurt",
+    "region": "Hesse",
+    "country": "Germany",
+    "country_code": "DE",
+    "lat": 50.1109,
+    "lon": 8.6821,
+    "asn": "AS205100",
+    "isp": "F3 Netze e.V. (Tor exit relay)",
+    "infra": "tor",
+    "note": "Known Tor exit node - the true sender is deliberately concealed."
+  },
+  "45.137.21.9": {
+    "city": "Amsterdam",
+    "region": "North Holland",
+    "country": "Netherlands",
+    "country_code": "NL",
+    "lat": 52.3676,
+    "lon": 4.9041,
+    "asn": "AS49581",
+    "isp": "Ferdinand Zink / bulletproof hosting",
+    "infra": "hosting",
+    "note": "Commercial VPS range frequently used for bulk phishing relays."
+  },
+  "103.21.58.14": {
+    "city": "Mumbai",
+    "region": "Maharashtra",
+    "country": "India",
+    "country_code": "IN",
+    "lat": 19.076,
+    "lon": 72.8777,
+    "asn": "AS0",
+    "isp": "Corporate mail gateway (synthetic sample data)",
+    "infra": "corporate",
+    "note": "Recipient-side gateway in the fictional victim organisation used by the shipped samples; this is the defender's own hop, not the attacker's."
+  },
+  "45.9.148.99": {
+    "city": "Paris",
+    "region": "Ile-de-France",
+    "country": "France",
+    "country_code": "FR",
+    "lat": 48.8566,
+    "lon": 2.3522,
+    "asn": "AS204957",
+    "isp": "Cloud VPS provider",
+    "infra": "vpn",
+    "note": "Range associated with consumer VPN exit traffic."
+  },
+  "140.82.112.21": {
+    "city": "San Francisco",
+    "region": "California",
+    "country": "United States",
+    "country_code": "US",
+    "lat": 37.7749,
+    "lon": -122.4194,
+    "asn": "AS36459",
+    "isp": "GitHub, Inc.",
+    "infra": "corporate",
+    "note": "Legitimate GitHub outbound mail infrastructure."
+  },
+  "209.85.220.41": {
+    "city": "Mountain View",
+    "region": "California",
+    "country": "United States",
+    "country_code": "US",
+    "lat": 37.3861,
+    "lon": -122.0839,
+    "asn": "AS15169",
+    "isp": "Google LLC",
+    "infra": "corporate",
+    "note": "Google outbound relay - authenticated, but says nothing about intent."
+  },
+  "103.86.49.12": {
+    "city": "Singapore",
+    "region": "Singapore",
+    "country": "Singapore",
+    "country_code": "SG",
+    "lat": 1.3521,
+    "lon": 103.8198,
+    "asn": "AS136787",
+    "isp": "NordVPN exit node",
+    "infra": "vpn",
+    "note": "Commercial VPN exit - geolocation reflects the VPN, not the sender."
+  },
+  "104.244.72.115": {
+    "city": "Luxembourg",
+    "region": "Luxembourg",
+    "country": "Luxembourg",
+    "country_code": "LU",
+    "lat": 49.6116,
+    "lon": 6.1319,
+    "asn": "AS53667",
+    "isp": "FranTech / PONYNET",
+    "infra": "proxy",
+    "note": "Anonymising proxy infrastructure."
+  }
+}

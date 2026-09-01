@@ -1,0 +1,1501 @@
+text,label,template_id
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://micros0ft-securelogin.ru/auth. Thank you, Expenses Team.",phish,phish_soft_4
+"Hello Nisha,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Cheers,
+Priya",legit,legit_hard_3
+"Good morning Meera,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Kind regards,
+Tom",legit,legit_plain_5
+"Netflix: your mailbox storage is full and messages are being rejected. Dear Customer, re-enter your card details to reactivate your account. http://bit.ly/2xKp9Lq Your account will be locked within 24 hours. Customer Support, Netflix",phish,phish_loud_6
+"Dear Meera,
+Reminder: your subscription renews on January 27 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Thanks,
+Ravi",legit,legit_hard_5
+"Google Account: your account has been temporarily suspended. Dear Customer, download the attached form and return it urgently. http://192.168.44.9/login.php Your account will be locked within 24 hours. Security Team, Google Account",phish,phish_loud_1
+"Amazon: your payment could not be processed. Dear Customer, update your billing information right away. http://secure-verify-login.tk/account Access will be revoked immediately if unverified. Account Services, Amazon",phish,phish_loud_2
+"Hi Ravi,
+Reminder: your subscription renews on November 27 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Thanks,
+Tom",legit,legit_hard_5
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Anita Sharma,phish,bec_3
+"Hi Alex,
+Your parcel #27299 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Kind regards,
+Sam",legit,legit_hard_8
+"Hi Nisha,
+Thank you for attending the workshop on April 6. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Best regards,
+Alex",legit,legit_plain_6
+"Hi Alex,
+Your account statement for September is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Regards,
+Sam",legit,legit_hard_2
+"HDFC Bank: we could not verify your recent transaction. Dear Customer, update your billing information right away. http://micros0ft-securelogin.ru/auth Failure to act will result in permanent account closure. IT Helpdesk, HDFC Bank",phish,phish_loud_8
+"Hi Nisha,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Kind regards,
+Ravi",legit,legit_hard_3
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Anita Sharma,phish,bec_3
+"Good morning Alex,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Kind regards,
+Ravi",legit,legit_plain_2
+"Hi Ravi,
+Your subscription renews on April 15. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Meera",legit,legit_plain_11
+"Instagram: we detected unusual sign-in activity on your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://192.168.44.9/login.php Access will be revoked immediately if unverified. Customer Support, Instagram",phish,phish_loud_0
+"Hi Nisha,
+Hi Nisha, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Kind regards,
+Tom",legit,legit_plain_8
+"Good morning Tom,
+Your support ticket #96363 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Cheers,
+Priya",legit,legit_plain_7
+"Hello Priya,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Regards,
+Alex",legit,legit_hard_1
+"Netflix: we detected unusual sign-in activity on your account. Dear Customer, download the attached form and return it urgently. http://192.168.44.9/login.php Billing Department, Netflix",phish,phish_loud_0
+"SBI NetBanking: your password will expire in 24 hours. Dear Customer, re-enter your card details to reactivate your account. http://paypa1-support.com/verify Customer Support, SBI NetBanking",phish,phish_loud_3
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://bit.ly/2xKp9Lq and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Dear Ravi,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Thanks,
+Priya",legit,legit_hard_3
+"Dear Priya,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Sam",legit,legit_hard_1
+"PayPal: your parcel is being held pending a customs fee. Dear Customer, update your billing information right away. http://tinyurl.com/y8xk2mz Failure to act will result in permanent account closure. Account Services, PayPal",phish,phish_loud_5
+"Apple: your account has been temporarily suspended. Dear Customer, validate your account using the link below. http://secure-verify-login.tk/account Access will be revoked immediately if unverified. Billing Department, Apple",phish,phish_loud_1
+"Good morning Tom,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Regards,
+Ravi",legit,legit_plain_14
+"Hello Alex,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by June 22. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Thanks,
+Nisha",legit,legit_hard_6
+"Hello Alex,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Regards,
+Nisha",legit,legit_plain_13
+"Hello Priya,
+Urgent but internal: the staging database is locked and the release is blocked. Meera, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Kind regards,
+Arjun",legit,legit_hard_9
+"Hello Meera,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Regards,
+Ravi",legit,legit_plain_2
+"Hello Sam,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Alex",legit,legit_hard_1
+Priya Nair here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://192.168.44.9/login.php and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://secure-verify-login.tk/account and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Karen Fisher,phish,bec_3
+"Hi Arjun,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Cheers,
+Arjun",legit,legit_plain_2
+"Hello Nisha,
+Your parcel #84302 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Thanks,
+Tom",legit,legit_hard_8
+"HDFC Bank: your password will expire in 24 hours. Dear Customer, confirm your details within 24 hours to avoid suspension. http://hdfc-netbanking.online/signin Failure to act will result in permanent account closure. Security Team, HDFC Bank",phish,phish_loud_3
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://tinyurl.com/y8xk2mz. Regards, IT Services.",phish,phish_soft_1
+Priya Nair here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Google Account: your mailbox storage is full and messages are being rejected. Dear Customer, log in now using the secure link below to restore access. http://bit.ly/2xKp9Lq Legal action may follow if this is ignored. Customer Support, Google Account",phish,phish_loud_6
+"Dear Tom,
+Reminder: your subscription renews on March 14 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Kind regards,
+Tom",legit,legit_hard_5
+"Good morning Arjun,
+Thank you for attending the workshop on April 7. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Cheers,
+Nisha",legit,legit_plain_6
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://appleid-verify.support/login and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+Karen Fisher here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Microsoft 365: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Billing Department, Microsoft 365",phish,phish_loud_8
+"Hello Alex,
+Hi Ravi, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Regards,
+Meera",legit,legit_plain_0
+"Good morning Nisha,
+Hello Sam, your order #85718 has shipped and should arrive by November 11. You can track it from the orders page in your account.
+Thanks,
+Sam",legit,legit_plain_3
+"Hello Arjun,
+Your support ticket #75191 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Cheers,
+Ravi",legit,legit_plain_7
+"Instagram: your password will expire in 24 hours. Dear Customer, validate your account using the link below. http://secure-verify-login.tk/account Your account will be locked within 24 hours. IT Helpdesk, Instagram",phish,phish_loud_3
+"Hi Nisha,
+Reminder: your subscription renews on January 13 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Kind regards,
+Ravi",legit,legit_hard_5
+"Good morning Ravi,
+Hi Sam, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Best regards,
+Nisha",legit,legit_plain_8
+"PayPal: your password will expire in 24 hours. Dear Customer, update your billing information right away. http://secure-verify-login.tk/account Legal action may follow if this is ignored. Billing Department, PayPal",phish,phish_loud_3
+"Dear Sam,
+Urgent but internal: the staging database is locked and the release is blocked. Sam, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Cheers,
+Ravi",legit,legit_hard_9
+"Hello Sam,
+Hi Ravi, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Kind regards,
+Priya",legit,legit_hard_4
+"Instagram: your mailbox storage is full and messages are being rejected. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Legal action may follow if this is ignored. Account Services, Instagram",phish,phish_loud_6
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Rajesh Kumar,phish,bec_3
+"Hello Tom,
+Hello Sam, your order #62205 has shipped and should arrive by November 27. You can track it from the orders page in your account.
+Thanks,
+Meera",legit,legit_plain_3
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://hdfc-netbanking.online/signin and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hello Meera,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Nisha",legit,legit_hard_3
+"DHL Express: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://paypa1-support.com/verify This is your final notice. Billing Department, DHL Express",phish,phish_loud_0
+"Amazon: your account will be permanently closed. Dear Customer, confirm your details within 24 hours to avoid suspension. http://bit.ly/2xKp9Lq Failure to act will result in permanent account closure. Fraud Prevention Unit, Amazon",phish,phish_loud_9
+"Good morning Priya,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Cheers,
+Ravi",legit,legit_plain_2
+"Hi Tom,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Kind regards,
+Priya",legit,legit_plain_14
+"Hello Nisha,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Kind regards,
+Arjun",legit,legit_plain_2
+"Hello Sam,
+Your parcel #68856 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Thanks,
+Meera",legit,legit_hard_8
+Sanjay Mehta here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Instagram: your account has been temporarily suspended. Dear Customer, re-enter your card details to reactivate your account. http://192.168.44.9/login.php Access will be revoked immediately if unverified. Fraud Prevention Unit, Instagram",phish,phish_loud_1
+"Hello Meera,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Best regards,
+Sam",legit,legit_plain_14
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Anita Sharma,phish,bec_3
+"Hello Priya,
+Your subscription renews on April 12. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Ravi",legit,legit_plain_11
+"Instagram: your subscription payment was declined. Dear Customer, update your billing information right away. http://bit.ly/2xKp9Lq Failure to act will result in permanent account closure. Customer Support, Instagram",phish,phish_loud_7
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Anita Sharma (Managing Director)",phish,bec_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Karen Fisher (CEO)",phish,bec_0
+Anita Sharma here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Hello Sam,
+Reminder: your subscription renews on April 5 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Best regards,
+Priya",legit,legit_hard_5
+"Good morning Priya,
+Hi Priya, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Best regards,
+Alex",legit,legit_plain_8
+"Dear Sam,
+Reminder: your subscription renews on September 23 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Regards,
+Meera",legit,legit_hard_5
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://micros0ft-securelogin.ru/auth. Regards, People Operations.",phish,phish_soft_3
+"Hi Alex,
+Your support ticket #18617 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Cheers,
+Alex",legit,legit_plain_7
+"Hi Tom,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Cheers,
+Arjun",legit,legit_plain_10
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (Managing Director)",phish,bec_0
+"Hello Meera,
+Reminder: your subscription renews on March 9 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Regards,
+Tom",legit,legit_hard_5
+"Hello Priya,
+Your subscription renews on November 19. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Nisha",legit,legit_plain_11
+"Netflix: your parcel is being held pending a customs fee. Dear Customer, validate your account using the link below. http://appleid-verify.support/login IT Helpdesk, Netflix",phish,phish_loud_5
+"Hello Arjun,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Regards,
+Meera",legit,legit_plain_13
+"Apple: we could not verify your recent transaction. Dear Customer, click here to verify your identity immediately. http://192.168.44.9/login.php Failure to act will result in permanent account closure. Billing Department, Apple",phish,phish_loud_8
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://paypa1-support.com/verify and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"PayPal: your parcel is being held pending a customs fee. Dear Customer, confirm your details within 24 hours to avoid suspension. http://secure-verify-login.tk/account Security Team, PayPal",phish,phish_loud_5
+"Hi Tom,
+Hello Meera, your order #84289 has shipped and should arrive by November 23. You can track it from the orders page in your account.
+Best regards,
+Arjun",legit,legit_plain_3
+"Hello Meera,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Thanks,
+Nisha",legit,legit_hard_1
+"Hello Sam,
+Hi Arjun, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Kind regards,
+Tom",legit,legit_hard_7
+"Hello Sam,
+Your monthly account statement for April is now available. You can view it any time by signing in to our website directly. No action is needed.
+Kind regards,
+Nisha",legit,legit_plain_1
+"Hi Priya,
+Your account statement for September is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Thanks,
+Nisha",legit,legit_hard_2
+"LinkedIn: your subscription payment was declined. Dear Customer, log in now using the secure link below to restore access. http://tinyurl.com/y8xk2mz Failure to act will result in permanent account closure. Account Services, LinkedIn",phish,phish_loud_7
+"Amazon: an unauthorized device accessed your account. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Failure to act will result in permanent account closure. IT Helpdesk, Amazon",phish,phish_loud_4
+"Hi Alex,
+Hi Priya, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Cheers,
+Ravi",legit,legit_plain_12
+"Hello Alex,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Cheers,
+Alex",legit,legit_plain_5
+"Hi Priya,
+Hi Nisha, invoice #13840 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Cheers,
+Nisha",legit,legit_hard_0
+"Netflix: your password will expire in 24 hours. Dear Customer, log in now using the secure link below to restore access. http://192.168.44.9/login.php Your account will be locked within 24 hours. Security Team, Netflix",phish,phish_loud_3
+"Hi Ravi,
+Invitation: the annual all-hands is scheduled for September 15 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Best regards,
+Sam",legit,legit_plain_9
+"DHL Express: your parcel is being held pending a customs fee. Dear Customer, log in now using the secure link below to restore access. http://hdfc-netbanking.online/signin Your account will be locked within 24 hours. Customer Support, DHL Express",phish,phish_loud_5
+"Hello Ravi,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Kind regards,
+Sam",legit,legit_plain_10
+"Hi Nisha,
+Hi Tom, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Regards,
+Ravi",legit,legit_hard_4
+"Hi Priya,
+Your monthly account statement for November is now available. You can view it any time by signing in to our website directly. No action is needed.
+Kind regards,
+Nisha",legit,legit_plain_1
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Rajesh Kumar,phish,bec_3
+"SBI NetBanking: your account will be permanently closed. Dear Customer, re-enter your card details to reactivate your account. http://micros0ft-securelogin.ru/auth Your account will be locked within 24 hours. Account Services, SBI NetBanking",phish,phish_loud_9
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://192.168.44.9/login.php. Regards, IT Services.",phish,phish_soft_1
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Priya Nair, CEO",phish,bec_2
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://paypa1-support.com/verify. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"DHL Express: your account has been temporarily suspended. Dear Customer, confirm your details within 24 hours to avoid suspension. http://192.168.44.9/login.php This is your final notice. Billing Department, DHL Express",phish,phish_loud_1
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://micros0ft-securelogin.ru/auth. Regards, IT Services.",phish,phish_soft_1
+"ICICI Bank: your subscription payment was declined. Dear Customer, confirm your details within 24 hours to avoid suspension. http://appleid-verify.support/login Failure to act will result in permanent account closure. Account Services, ICICI Bank",phish,phish_loud_7
+"HDFC Bank: your mailbox storage is full and messages are being rejected. Dear Customer, re-enter your card details to reactivate your account. http://secure-verify-login.tk/account Legal action may follow if this is ignored. IT Helpdesk, HDFC Bank",phish,phish_loud_6
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://bit.ly/2xKp9Lq. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Good morning Sam,
+Hi Tom, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Kind regards,
+Meera",legit,legit_plain_8
+"LinkedIn: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Your account will be locked within 24 hours. IT Helpdesk, LinkedIn",phish,phish_loud_8
+"HDFC Bank: an unauthorized device accessed your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://paypa1-support.com/verify Your account will be locked within 24 hours. Security Team, HDFC Bank",phish,phish_loud_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Rajesh Kumar,phish,bec_3
+"SBI NetBanking: your payment could not be processed. Dear Customer, validate your account using the link below. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. IT Helpdesk, SBI NetBanking",phish,phish_loud_2
+"ICICI Bank: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://micros0ft-securelogin.ru/auth Your account will be locked within 24 hours. Account Services, ICICI Bank",phish,phish_loud_0
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://secure-verify-login.tk/account. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"LinkedIn: an unauthorized device accessed your account. Dear Customer, re-enter your card details to reactivate your account. http://bit.ly/2xKp9Lq IT Helpdesk, LinkedIn",phish,phish_loud_4
+"Hello Nisha,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Regards,
+Alex",legit,legit_plain_10
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Anita Sharma (Finance Director)",phish,bec_0
+David Miller here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Good morning Arjun,
+Your support ticket #53420 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Regards,
+Priya",legit,legit_plain_7
+"ICICI Bank: an unauthorized device accessed your account. Dear Customer, download the attached form and return it urgently. http://micros0ft-securelogin.ru/auth This is your final notice. IT Helpdesk, ICICI Bank",phish,phish_loud_4
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://bit.ly/2xKp9Lq. Thank you, Expenses Team.",phish,phish_soft_4
+"Hi Sam,
+Your subscription renews on June 14. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Tom",legit,legit_plain_11
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Rajesh Kumar, Finance Director",phish,bec_2
+"Hello Priya,
+Thank you for attending the workshop on June 18. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Thanks,
+Arjun",legit,legit_plain_6
+"Hello Sam,
+Hi Meera, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Cheers,
+Alex",legit,legit_hard_7
+"Good morning Sam,
+Thank you for attending the workshop on September 16. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Best regards,
+Sam",legit,legit_plain_6
+"Instagram: your mailbox storage is full and messages are being rejected. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Access will be revoked immediately if unverified. IT Helpdesk, Instagram",phish,phish_loud_6
+"Amazon: an unauthorized device accessed your account. Dear Customer, download the attached form and return it urgently. http://paypa1-support.com/verify Legal action may follow if this is ignored. Security Team, Amazon",phish,phish_loud_4
+"Hello Ravi,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by September 4. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Best regards,
+Sam",legit,legit_hard_6
+"Netflix: your mailbox storage is full and messages are being rejected. Dear Customer, update your billing information right away. http://bit.ly/2xKp9Lq Legal action may follow if this is ignored. Customer Support, Netflix",phish,phish_loud_6
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Karen Fisher,phish,bec_3
+"Dear Sam,
+Hi Tom, invoice #26631 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Thanks,
+Sam",legit,legit_hard_0
+"Hi Nisha,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Regards,
+Meera",legit,legit_plain_10
+"Hi Sam,
+Thank you for attending the workshop on November 11. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Thanks,
+Alex",legit,legit_plain_6
+"Hello Alex,
+Hi Alex, invoice #65004 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Cheers,
+Alex",legit,legit_hard_0
+"Hello Alex,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by June 3. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Regards,
+Tom",legit,legit_hard_6
+"ICICI Bank: your parcel is being held pending a customs fee. Dear Customer, confirm your details within 24 hours to avoid suspension. http://bit.ly/2xKp9Lq Your account will be locked within 24 hours. Billing Department, ICICI Bank",phish,phish_loud_5
+"Hello Priya,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Best regards,
+Meera",legit,legit_hard_1
+"Hi Ravi,
+Your monthly account statement for June is now available. You can view it any time by signing in to our website directly. No action is needed.
+Best regards,
+Nisha",legit,legit_plain_1
+"Hello Nisha,
+Hi Alex, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Best regards,
+Ravi",legit,legit_plain_12
+"Dear Arjun,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Best regards,
+Nisha",legit,legit_hard_3
+"LinkedIn: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://micros0ft-securelogin.ru/auth Failure to act will result in permanent account closure. Account Services, LinkedIn",phish,phish_loud_8
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Sanjay Mehta (Finance Director)",phish,bec_0
+"Hello Tom,
+Hi Arjun, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Thanks,
+Priya",legit,legit_hard_7
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://paypa1-support.com/verify. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Hi Nisha,
+Reminder: your subscription renews on January 24 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Best regards,
+Nisha",legit,legit_hard_5
+"Netflix: your account will be permanently closed. Dear Customer, download the attached form and return it urgently. http://secure-verify-login.tk/account Access will be revoked immediately if unverified. Security Team, Netflix",phish,phish_loud_9
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (Managing Director)",phish,bec_0
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. David Miller, Managing Director",phish,bec_2
+"Hello Tom,
+Hi Meera, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Best regards,
+Ravi",legit,legit_hard_7
+"Hello Arjun,
+Reminder: your subscription renews on June 11 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Cheers,
+Nisha",legit,legit_hard_5
+"Hi Meera,
+Hi Nisha, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Cheers,
+Arjun",legit,legit_plain_12
+"Hello Ravi,
+Hi Tom, invoice #47836 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Regards,
+Ravi",legit,legit_hard_0
+"Hi Alex,
+Your monthly account statement for November is now available. You can view it any time by signing in to our website directly. No action is needed.
+Regards,
+Priya",legit,legit_plain_1
+"Hello Alex,
+Hi Priya, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Thanks,
+Sam",legit,legit_plain_8
+"Hi Meera,
+Hi Alex, invoice #32650 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Thanks,
+Tom",legit,legit_hard_0
+"DHL Express: an unauthorized device accessed your account. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Billing Department, DHL Express",phish,phish_loud_4
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://secure-verify-login.tk/account. Regards, People Operations.",phish,phish_soft_3
+"Hello Sam,
+Hi Alex, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Thanks,
+Meera",legit,legit_plain_0
+"SBI NetBanking: your parcel is being held pending a customs fee. Dear Customer, re-enter your card details to reactivate your account. http://hdfc-netbanking.online/signin Legal action may follow if this is ignored. Security Team, SBI NetBanking",phish,phish_loud_5
+"Microsoft 365: an unauthorized device accessed your account. Dear Customer, update your billing information right away. http://192.168.44.9/login.php Legal action may follow if this is ignored. Security Team, Microsoft 365",phish,phish_loud_4
+"Amazon: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://hdfc-netbanking.online/signin This is your final notice. Billing Department, Amazon",phish,phish_loud_8
+"Amazon: your payment could not be processed. Dear Customer, update your billing information right away. http://appleid-verify.support/login Your account will be locked within 24 hours. Fraud Prevention Unit, Amazon",phish,phish_loud_2
+"Hi Alex,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Kind regards,
+Arjun",legit,legit_plain_13
+"Hello Priya,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Regards,
+Arjun",legit,legit_plain_2
+"HDFC Bank: your mailbox storage is full and messages are being rejected. Dear Customer, update your billing information right away. http://hdfc-netbanking.online/signin Security Team, HDFC Bank",phish,phish_loud_6
+"Dear Sam,
+Hi Nisha, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Kind regards,
+Priya",legit,legit_hard_7
+"Hi Tom,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Best regards,
+Meera",legit,legit_plain_14
+"Google Account: we detected unusual sign-in activity on your account. Dear Customer, log in now using the secure link below to restore access. http://appleid-verify.support/login Legal action may follow if this is ignored. Fraud Prevention Unit, Google Account",phish,phish_loud_0
+"Hello Nisha,
+Your account statement for June is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Thanks,
+Ravi",legit,legit_hard_2
+"Amazon: your account has been temporarily suspended. Dear Customer, update your billing information right away. http://192.168.44.9/login.php Legal action may follow if this is ignored. Fraud Prevention Unit, Amazon",phish,phish_loud_1
+"Microsoft 365: your account has been temporarily suspended. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Access will be revoked immediately if unverified. Security Team, Microsoft 365",phish,phish_loud_1
+Priya Nair here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Hello Ravi,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Tom",legit,legit_hard_1
+"Hello Alex,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Regards,
+Priya",legit,legit_plain_4
+Karen Fisher here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Microsoft 365: your subscription payment was declined. Dear Customer, download the attached form and return it urgently. http://secure-verify-login.tk/account Failure to act will result in permanent account closure. Fraud Prevention Unit, Microsoft 365",phish,phish_loud_7
+"Hello Alex,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Meera",legit,legit_hard_1
+"Instagram: your account will be permanently closed. Dear Customer, confirm your details within 24 hours to avoid suspension. http://appleid-verify.support/login Legal action may follow if this is ignored. Billing Department, Instagram",phish,phish_loud_9
+"Hi Nisha,
+Hi Nisha, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Thanks,
+Ravi",legit,legit_plain_12
+"Hello Priya,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Best regards,
+Meera",legit,legit_hard_1
+"Hello Meera,
+Hi Arjun, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Kind regards,
+Arjun",legit,legit_hard_4
+"Hello Priya,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Kind regards,
+Tom",legit,legit_plain_5
+"Google Account: we could not verify your recent transaction. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Access will be revoked immediately if unverified. IT Helpdesk, Google Account",phish,phish_loud_8
+"Hello Ravi,
+Hi Meera, invoice #48248 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Best regards,
+Tom",legit,legit_hard_0
+"Hello Alex,
+Hi Sam, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Best regards,
+Meera",legit,legit_plain_12
+"Instagram: your account has been temporarily suspended. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Customer Support, Instagram",phish,phish_loud_1
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Anita Sharma (Finance Director)",phish,bec_0
+"Hello Tom,
+Hello Meera, your order #49124 has shipped and should arrive by April 18. You can track it from the orders page in your account.
+Kind regards,
+Meera",legit,legit_plain_3
+"SBI NetBanking: your parcel is being held pending a customs fee. Dear Customer, update your billing information right away. http://hdfc-netbanking.online/signin Failure to act will result in permanent account closure. Account Services, SBI NetBanking",phish,phish_loud_5
+"Good morning Priya,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Kind regards,
+Arjun",legit,legit_plain_14
+"Good morning Sam,
+Hi Ravi, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Regards,
+Meera",legit,legit_plain_8
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://paypa1-support.com/verify. Thank you, Expenses Team.",phish,phish_soft_4
+"Dear Alex,
+Hi Alex, invoice #92388 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Cheers,
+Alex",legit,legit_hard_0
+"Hello Arjun,
+Thank you for attending the workshop on July 10. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Kind regards,
+Tom",legit,legit_plain_6
+Priya Nair here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"DHL Express: we could not verify your recent transaction. Dear Customer, download the attached form and return it urgently. http://paypa1-support.com/verify Legal action may follow if this is ignored. Account Services, DHL Express",phish,phish_loud_8
+"HDFC Bank: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://tinyurl.com/y8xk2mz This is your final notice. IT Helpdesk, HDFC Bank",phish,phish_loud_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (CEO)",phish,bec_0
+"Hello Meera,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Nisha",legit,legit_hard_3
+"Hi Tom,
+Your subscription renews on January 22. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Alex",legit,legit_plain_11
+"Apple: your mailbox storage is full and messages are being rejected. Dear Customer, click here to verify your identity immediately. http://192.168.44.9/login.php Customer Support, Apple",phish,phish_loud_6
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://appleid-verify.support/login. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Microsoft 365: your password will expire in 24 hours. Dear Customer, confirm your details within 24 hours to avoid suspension. http://paypa1-support.com/verify Access will be revoked immediately if unverified. Billing Department, Microsoft 365",phish,phish_loud_3
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Karen Fisher, Finance Director",phish,bec_2
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Karen Fisher, Finance Director",phish,bec_2
+"Netflix: your subscription payment was declined. Dear Customer, validate your account using the link below. http://micros0ft-securelogin.ru/auth This is your final notice. Customer Support, Netflix",phish,phish_loud_7
+"PayPal: your password will expire in 24 hours. Dear Customer, confirm your details within 24 hours to avoid suspension. http://bit.ly/2xKp9Lq Access will be revoked immediately if unverified. Account Services, PayPal",phish,phish_loud_3
+"Hello Nisha,
+Hi Arjun, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Kind regards,
+Meera",legit,legit_hard_4
+"Good morning Nisha,
+Invitation: the annual all-hands is scheduled for April 18 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Thanks,
+Arjun",legit,legit_plain_9
+"Hi Arjun,
+Thank you for attending the workshop on June 17. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Best regards,
+Meera",legit,legit_plain_6
+"Hello Arjun,
+Hi Alex, invoice #29613 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Best regards,
+Arjun",legit,legit_hard_0
+"Hi Sam,
+Invitation: the annual all-hands is scheduled for September 18 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Best regards,
+Nisha",legit,legit_plain_9
+"Good morning Arjun,
+Hi Meera, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Regards,
+Ravi",legit,legit_plain_12
+"Microsoft 365: we could not verify your recent transaction. Dear Customer, download the attached form and return it urgently. http://tinyurl.com/y8xk2mz Customer Support, Microsoft 365",phish,phish_loud_8
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://paypa1-support.com/verify and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (CEO)",phish,bec_0
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://bit.ly/2xKp9Lq. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Hi Meera,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Kind regards,
+Nisha",legit,legit_plain_5
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Priya Nair,phish,bec_3
+"Hi Nisha,
+Urgent but internal: the staging database is locked and the release is blocked. Meera, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Best regards,
+Meera",legit,legit_hard_9
+"Instagram: we detected unusual sign-in activity on your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://secure-verify-login.tk/account Failure to act will result in permanent account closure. Customer Support, Instagram",phish,phish_loud_0
+"Hi Alex,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Priya",legit,legit_hard_3
+"Hello Alex,
+Your support ticket #98317 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Regards,
+Tom",legit,legit_plain_7
+"Microsoft 365: we detected unusual sign-in activity on your account. Dear Customer, re-enter your card details to reactivate your account. http://tinyurl.com/y8xk2mz Legal action may follow if this is ignored. Billing Department, Microsoft 365",phish,phish_loud_0
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://paypa1-support.com/verify. Thank you, Expenses Team.",phish,phish_soft_4
+"Hello Priya,
+Hi Ravi, invoice #29671 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Regards,
+Alex",legit,legit_hard_0
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"Microsoft 365: your payment could not be processed. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Billing Department, Microsoft 365",phish,phish_loud_2
+"Hi Tom,
+Hi Tom, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Cheers,
+Ravi",legit,legit_plain_0
+"Dear Alex,
+Urgent but internal: the staging database is locked and the release is blocked. Nisha, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Thanks,
+Sam",legit,legit_hard_9
+"Instagram: your account has been temporarily suspended. Dear Customer, click here to verify your identity immediately. http://tinyurl.com/y8xk2mz This is your final notice. Account Services, Instagram",phish,phish_loud_1
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://appleid-verify.support/login. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Good morning Nisha,
+Your monthly account statement for January is now available. You can view it any time by signing in to our website directly. No action is needed.
+Thanks,
+Priya",legit,legit_plain_1
+"Dear Arjun,
+Your account statement for November is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Regards,
+Tom",legit,legit_hard_2
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, David Miller (Managing Director)",phish,bec_0
+"Hi Ravi,
+Your monthly account statement for July is now available. You can view it any time by signing in to our website directly. No action is needed.
+Regards,
+Priya",legit,legit_plain_1
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://secure-verify-login.tk/account. Regards, People Operations.",phish,phish_soft_3
+"Hi Arjun,
+Your monthly account statement for July is now available. You can view it any time by signing in to our website directly. No action is needed.
+Thanks,
+Arjun",legit,legit_plain_1
+"Good morning Sam,
+Your monthly account statement for September is now available. You can view it any time by signing in to our website directly. No action is needed.
+Best regards,
+Meera",legit,legit_plain_1
+"Good morning Nisha,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Kind regards,
+Arjun",legit,legit_plain_4
+"Hi Priya,
+Hi Tom, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Kind regards,
+Priya",legit,legit_hard_7
+"Good morning Arjun,
+Your subscription renews on June 17. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Tom",legit,legit_plain_11
+"SBI NetBanking: your password will expire in 24 hours. Dear Customer, log in now using the secure link below to restore access. http://192.168.44.9/login.php Security Team, SBI NetBanking",phish,phish_loud_3
+"Dear Priya,
+Your parcel #39820 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Cheers,
+Alex",legit,legit_hard_8
+"Good morning Meera,
+Invitation: the annual all-hands is scheduled for April 4 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Thanks,
+Ravi",legit,legit_plain_9
+"Microsoft 365: an unauthorized device accessed your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Your account will be locked within 24 hours. Customer Support, Microsoft 365",phish,phish_loud_4
+"DHL Express: your password will expire in 24 hours. Dear Customer, click here to verify your identity immediately. http://paypa1-support.com/verify Billing Department, DHL Express",phish,phish_loud_3
+"Hi Nisha,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Thanks,
+Ravi",legit,legit_plain_2
+"ICICI Bank: your subscription payment was declined. Dear Customer, log in now using the secure link below to restore access. http://paypa1-support.com/verify Customer Support, ICICI Bank",phish,phish_loud_7
+"Hi Arjun,
+Invitation: the annual all-hands is scheduled for November 12 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Kind regards,
+Alex",legit,legit_plain_9
+"Google Account: your account has been temporarily suspended. Dear Customer, validate your account using the link below. http://paypa1-support.com/verify Legal action may follow if this is ignored. Security Team, Google Account",phish,phish_loud_1
+"Instagram: an unauthorized device accessed your account. Dear Customer, update your billing information right away. http://micros0ft-securelogin.ru/auth Failure to act will result in permanent account closure. Security Team, Instagram",phish,phish_loud_4
+"Hi Ravi,
+Urgent but internal: the staging database is locked and the release is blocked. Alex, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Regards,
+Sam",legit,legit_hard_9
+"Good morning Meera,
+Hi Priya, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Best regards,
+Ravi",legit,legit_plain_12
+"Hi Arjun,
+Hi Nisha, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Thanks,
+Meera",legit,legit_hard_4
+"Apple: we detected unusual sign-in activity on your account. Dear Customer, re-enter your card details to reactivate your account. http://secure-verify-login.tk/account This is your final notice. Security Team, Apple",phish,phish_loud_0
+"Hello Ravi,
+Urgent but internal: the staging database is locked and the release is blocked. Sam, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Thanks,
+Ravi",legit,legit_hard_9
+"Good morning Sam,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Regards,
+Sam",legit,legit_plain_2
+"Dear Arjun,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Tom",legit,legit_hard_1
+"Hello Nisha,
+Thank you for attending the workshop on March 25. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Cheers,
+Arjun",legit,legit_plain_6
+"Hi Sam,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by January 3. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Cheers,
+Meera",legit,legit_hard_6
+"Hello Tom,
+Invitation: the annual all-hands is scheduled for June 27 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Best regards,
+Tom",legit,legit_plain_9
+"Amazon: an unauthorized device accessed your account. Dear Customer, validate your account using the link below. http://secure-verify-login.tk/account This is your final notice. Account Services, Amazon",phish,phish_loud_4
+"LinkedIn: we could not verify your recent transaction. Dear Customer, update your billing information right away. http://paypa1-support.com/verify Legal action may follow if this is ignored. IT Helpdesk, LinkedIn",phish,phish_loud_8
+"LinkedIn: your payment could not be processed. Dear Customer, validate your account using the link below. http://paypa1-support.com/verify Failure to act will result in permanent account closure. Billing Department, LinkedIn",phish,phish_loud_2
+"Instagram: your password will expire in 24 hours. Dear Customer, update your billing information right away. http://micros0ft-securelogin.ru/auth Your account will be locked within 24 hours. Security Team, Instagram",phish,phish_loud_3
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://tinyurl.com/y8xk2mz. Regards, IT Services.",phish,phish_soft_1
+"ICICI Bank: your subscription payment was declined. Dear Customer, update your billing information right away. http://tinyurl.com/y8xk2mz Your account will be locked within 24 hours. Account Services, ICICI Bank",phish,phish_loud_7
+"Dear Alex,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Cheers,
+Ravi",legit,legit_hard_1
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://secure-verify-login.tk/account. Thank you, Expenses Team.",phish,phish_soft_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+Priya Nair here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Anita Sharma,phish,bec_3
+"Dear Meera,
+Urgent but internal: the staging database is locked and the release is blocked. Meera, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Kind regards,
+Priya",legit,legit_hard_9
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://secure-verify-login.tk/account. Regards, IT Services.",phish,phish_soft_1
+"HDFC Bank: your account will be permanently closed. Dear Customer, confirm your details within 24 hours to avoid suspension. http://secure-verify-login.tk/account Failure to act will result in permanent account closure. Fraud Prevention Unit, HDFC Bank",phish,phish_loud_9
+"Dear Nisha,
+Your parcel #45112 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Regards,
+Priya",legit,legit_hard_8
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://192.168.44.9/login.php and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"DHL Express: an unauthorized device accessed your account. Dear Customer, re-enter your card details to reactivate your account. http://bit.ly/2xKp9Lq Fraud Prevention Unit, DHL Express",phish,phish_loud_4
+"Hello Meera,
+Invitation: the annual all-hands is scheduled for November 24 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Kind regards,
+Ravi",legit,legit_plain_9
+"Microsoft 365: an unauthorized device accessed your account. Dear Customer, update your billing information right away. http://paypa1-support.com/verify Legal action may follow if this is ignored. IT Helpdesk, Microsoft 365",phish,phish_loud_4
+"Dear Ravi,
+Reminder: your subscription renews on June 3 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Thanks,
+Arjun",legit,legit_hard_5
+"Good morning Meera,
+Hello Priya, your order #40715 has shipped and should arrive by June 15. You can track it from the orders page in your account.
+Best regards,
+Sam",legit,legit_plain_3
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Priya Nair, Finance Director",phish,bec_2
+"Netflix: your account has been temporarily suspended. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Failure to act will result in permanent account closure. Security Team, Netflix",phish,phish_loud_1
+"Hi Tom,
+Hi Nisha, invoice #96154 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Best regards,
+Meera",legit,legit_hard_0
+"Hi Tom,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Kind regards,
+Tom",legit,legit_hard_1
+"Amazon: an unauthorized device accessed your account. Dear Customer, click here to verify your identity immediately. http://paypa1-support.com/verify Failure to act will result in permanent account closure. Billing Department, Amazon",phish,phish_loud_4
+"ICICI Bank: we detected unusual sign-in activity on your account. Dear Customer, log in now using the secure link below to restore access. http://tinyurl.com/y8xk2mz Legal action may follow if this is ignored. Billing Department, ICICI Bank",phish,phish_loud_0
+"Hi Sam,
+Urgent but internal: the staging database is locked and the release is blocked. Meera, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Kind regards,
+Arjun",legit,legit_hard_9
+"Hi Priya,
+Reminder: your subscription renews on July 28 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Best regards,
+Arjun",legit,legit_hard_5
+"Netflix: your account has been temporarily suspended. Dear Customer, update your billing information right away. http://bit.ly/2xKp9Lq IT Helpdesk, Netflix",phish,phish_loud_1
+"Hi Arjun,
+Thank you for attending the workshop on September 19. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Regards,
+Tom",legit,legit_plain_6
+"Hello Tom,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Cheers,
+Alex",legit,legit_plain_4
+"DHL Express: your password will expire in 24 hours. Dear Customer, log in now using the secure link below to restore access. http://appleid-verify.support/login Failure to act will result in permanent account closure. Fraud Prevention Unit, DHL Express",phish,phish_loud_3
+"Good morning Sam,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Kind regards,
+Nisha",legit,legit_plain_5
+"Hello Ravi,
+Hello Meera, your order #87849 has shipped and should arrive by January 4. You can track it from the orders page in your account.
+Regards,
+Priya",legit,legit_plain_3
+"Hi Arjun,
+Hi Alex, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Kind regards,
+Meera",legit,legit_plain_0
+"Hello Tom,
+Hi Priya, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Thanks,
+Sam",legit,legit_plain_8
+"Apple: your subscription payment was declined. Dear Customer, re-enter your card details to reactivate your account. http://appleid-verify.support/login Access will be revoked immediately if unverified. Security Team, Apple",phish,phish_loud_7
+"Hi Meera,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Thanks,
+Tom",legit,legit_plain_4
+"Hello Arjun,
+Hi Ravi, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Best regards,
+Nisha",legit,legit_hard_7
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://appleid-verify.support/login. Regards, People Operations.",phish,phish_soft_3
+"Hi Sam,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Cheers,
+Arjun",legit,legit_plain_5
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://192.168.44.9/login.php. Thank you, Expenses Team.",phish,phish_soft_4
+"Hi Meera,
+Your account statement for June is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Thanks,
+Tom",legit,legit_hard_2
+"Microsoft 365: your account has been temporarily suspended. Dear Customer, update your billing information right away. http://hdfc-netbanking.online/signin Failure to act will result in permanent account closure. IT Helpdesk, Microsoft 365",phish,phish_loud_1
+"Hi Ravi,
+Your subscription renews on March 15. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Nisha",legit,legit_plain_11
+"Google Account: your account has been temporarily suspended. Dear Customer, update your billing information right away. http://appleid-verify.support/login Access will be revoked immediately if unverified. Billing Department, Google Account",phish,phish_loud_1
+"Hi Alex,
+Your parcel #75849 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Kind regards,
+Sam",legit,legit_hard_8
+"HDFC Bank: your account will be permanently closed. Dear Customer, log in now using the secure link below to restore access. http://secure-verify-login.tk/account Customer Support, HDFC Bank",phish,phish_loud_9
+"ICICI Bank: your account will be permanently closed. Dear Customer, update your billing information right away. http://tinyurl.com/y8xk2mz Failure to act will result in permanent account closure. Account Services, ICICI Bank",phish,phish_loud_9
+"Good morning Arjun,
+Hi Ravi, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Cheers,
+Ravi",legit,legit_plain_0
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://hdfc-netbanking.online/signin and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hello Arjun,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Kind regards,
+Arjun",legit,legit_plain_10
+"Hi Tom,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Sam",legit,legit_hard_3
+"Good morning Nisha,
+Your subscription renews on April 14. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Alex",legit,legit_plain_11
+"DHL Express: your password will expire in 24 hours. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php Your account will be locked within 24 hours. Account Services, DHL Express",phish,phish_loud_3
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Priya Nair,phish,bec_3
+"ICICI Bank: your parcel is being held pending a customs fee. Dear Customer, log in now using the secure link below to restore access. http://appleid-verify.support/login Your account will be locked within 24 hours. Billing Department, ICICI Bank",phish,phish_loud_5
+"SBI NetBanking: your parcel is being held pending a customs fee. Dear Customer, validate your account using the link below. http://hdfc-netbanking.online/signin Account Services, SBI NetBanking",phish,phish_loud_5
+"Hi Priya,
+Hi Nisha, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Cheers,
+Arjun",legit,legit_plain_8
+"Good morning Sam,
+Hi Alex, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Kind regards,
+Priya",legit,legit_plain_8
+"Hi Arjun,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Best regards,
+Nisha",legit,legit_hard_1
+"Hello Meera,
+Your subscription renews on September 25. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Cheers,
+Meera",legit,legit_plain_11
+"Hello Alex,
+Your parcel #87194 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Kind regards,
+Tom",legit,legit_hard_8
+"PayPal: your account has been temporarily suspended. Dear Customer, confirm your details within 24 hours to avoid suspension. http://bit.ly/2xKp9Lq Customer Support, PayPal",phish,phish_loud_1
+"Microsoft 365: your mailbox storage is full and messages are being rejected. Dear Customer, click here to verify your identity immediately. http://micros0ft-securelogin.ru/auth Your account will be locked within 24 hours. IT Helpdesk, Microsoft 365",phish,phish_loud_6
+"Dear Ravi,
+Hi Sam, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Cheers,
+Ravi",legit,legit_hard_7
+"Good morning Nisha,
+Hello Sam, your order #69634 has shipped and should arrive by June 5. You can track it from the orders page in your account.
+Cheers,
+Ravi",legit,legit_plain_3
+"Hi Meera,
+Reminder: your subscription renews on January 1 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Regards,
+Meera",legit,legit_hard_5
+"ICICI Bank: your payment could not be processed. Dear Customer, log in now using the secure link below to restore access. http://192.168.44.9/login.php This is your final notice. Fraud Prevention Unit, ICICI Bank",phish,phish_loud_2
+"Good morning Sam,
+Thank you for attending the workshop on July 28. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Best regards,
+Tom",legit,legit_plain_6
+Karen Fisher here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://secure-verify-login.tk/account. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Hi Sam,
+Hi Sam, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Cheers,
+Ravi",legit,legit_plain_12
+"Hello Alex,
+Your parcel #81258 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Kind regards,
+Ravi",legit,legit_hard_8
+"Dear Sam,
+Reminder: your subscription renews on January 5 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Best regards,
+Nisha",legit,legit_hard_5
+"Dear Ravi,
+Hi Arjun, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Thanks,
+Tom",legit,legit_hard_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"Hello Priya,
+Your subscription renews on November 19. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Sam",legit,legit_plain_11
+"Netflix: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Your account will be locked within 24 hours. Security Team, Netflix",phish,phish_loud_0
+"Good morning Priya,
+Your support ticket #86344 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Kind regards,
+Nisha",legit,legit_plain_7
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://secure-verify-login.tk/account. Thank you, Expenses Team.",phish,phish_soft_4
+"Netflix: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Your account will be locked within 24 hours. Fraud Prevention Unit, Netflix",phish,phish_loud_0
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://appleid-verify.support/login. Regards, IT Services.",phish,phish_soft_1
+"DHL Express: an unauthorized device accessed your account. Dear Customer, validate your account using the link below. http://appleid-verify.support/login Your account will be locked within 24 hours. Billing Department, DHL Express",phish,phish_loud_4
+"Amazon: your mailbox storage is full and messages are being rejected. Dear Customer, update your billing information right away. http://bit.ly/2xKp9Lq Access will be revoked immediately if unverified. Billing Department, Amazon",phish,phish_loud_6
+"Netflix: your password will expire in 24 hours. Dear Customer, click here to verify your identity immediately. http://paypa1-support.com/verify Your account will be locked within 24 hours. Security Team, Netflix",phish,phish_loud_3
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Rajesh Kumar, CEO",phish,bec_2
+"PayPal: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://paypa1-support.com/verify This is your final notice. IT Helpdesk, PayPal",phish,phish_loud_0
+"Hello Nisha,
+Your monthly account statement for January is now available. You can view it any time by signing in to our website directly. No action is needed.
+Cheers,
+Priya",legit,legit_plain_1
+"Hello Alex,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Regards,
+Tom",legit,legit_plain_2
+"Microsoft 365: we detected unusual sign-in activity on your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. Fraud Prevention Unit, Microsoft 365",phish,phish_loud_0
+"Amazon: your mailbox storage is full and messages are being rejected. Dear Customer, download the attached form and return it urgently. http://micros0ft-securelogin.ru/auth Legal action may follow if this is ignored. Billing Department, Amazon",phish,phish_loud_6
+"Hi Arjun,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Cheers,
+Tom",legit,legit_plain_13
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Anita Sharma (Managing Director)",phish,bec_0
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://tinyurl.com/y8xk2mz and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"SBI NetBanking: your password will expire in 24 hours. Dear Customer, click here to verify your identity immediately. http://secure-verify-login.tk/account Billing Department, SBI NetBanking",phish,phish_loud_3
+"Good morning Priya,
+Hi Ravi, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Cheers,
+Tom",legit,legit_plain_8
+"Good morning Ravi,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Best regards,
+Sam",legit,legit_plain_5
+"Google Account: an unauthorized device accessed your account. Dear Customer, update your billing information right away. http://secure-verify-login.tk/account Legal action may follow if this is ignored. Fraud Prevention Unit, Google Account",phish,phish_loud_4
+"SBI NetBanking: your account will be permanently closed. Dear Customer, validate your account using the link below. http://192.168.44.9/login.php This is your final notice. Account Services, SBI NetBanking",phish,phish_loud_9
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Karen Fisher, CFO",phish,bec_2
+"Hi Arjun,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Nisha",legit,legit_hard_3
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Sanjay Mehta (CEO)",phish,bec_0
+"Hi Priya,
+Hi Meera, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Thanks,
+Meera",legit,legit_plain_12
+"DHL Express: your subscription payment was declined. Dear Customer, validate your account using the link below. http://paypa1-support.com/verify Your account will be locked within 24 hours. Billing Department, DHL Express",phish,phish_loud_7
+"HDFC Bank: your account will be permanently closed. Dear Customer, re-enter your card details to reactivate your account. http://192.168.44.9/login.php Legal action may follow if this is ignored. Account Services, HDFC Bank",phish,phish_loud_9
+"ICICI Bank: your parcel is being held pending a customs fee. Dear Customer, log in now using the secure link below to restore access. http://paypa1-support.com/verify This is your final notice. Security Team, ICICI Bank",phish,phish_loud_5
+"Good morning Ravi,
+Invitation: the annual all-hands is scheduled for July 27 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Regards,
+Tom",legit,legit_plain_9
+"Dear Meera,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by April 23. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Best regards,
+Meera",legit,legit_hard_6
+"Hi Nisha,
+Urgent but internal: the staging database is locked and the release is blocked. Meera, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Kind regards,
+Ravi",legit,legit_hard_9
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://hdfc-netbanking.online/signin. Regards, People Operations.",phish,phish_soft_3
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Priya Nair,phish,bec_3
+"Hi Sam,
+Hi Alex, invoice #89602 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Best regards,
+Arjun",legit,legit_hard_0
+"Amazon: your parcel is being held pending a customs fee. Dear Customer, log in now using the secure link below to restore access. http://192.168.44.9/login.php Legal action may follow if this is ignored. IT Helpdesk, Amazon",phish,phish_loud_5
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://paypa1-support.com/verify. Thank you, Expenses Team.",phish,phish_soft_4
+"DHL Express: we could not verify your recent transaction. Dear Customer, re-enter your card details to reactivate your account. http://micros0ft-securelogin.ru/auth Legal action may follow if this is ignored. IT Helpdesk, DHL Express",phish,phish_loud_8
+"Hello Meera,
+Hi Nisha, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Regards,
+Sam",legit,legit_plain_8
+"Amazon: your account has been temporarily suspended. Dear Customer, log in now using the secure link below to restore access. http://bit.ly/2xKp9Lq Access will be revoked immediately if unverified. IT Helpdesk, Amazon",phish,phish_loud_1
+"Hello Meera,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Cheers,
+Priya",legit,legit_plain_4
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://hdfc-netbanking.online/signin and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hi Meera,
+Hi Alex, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Cheers,
+Meera",legit,legit_plain_8
+"Hello Arjun,
+Your subscription renews on March 11. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Regards,
+Meera",legit,legit_plain_11
+"LinkedIn: an unauthorized device accessed your account. Dear Customer, re-enter your card details to reactivate your account. http://192.168.44.9/login.php Access will be revoked immediately if unverified. Security Team, LinkedIn",phish,phish_loud_4
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://micros0ft-securelogin.ru/auth. Regards, IT Services.",phish,phish_soft_1
+"Amazon: we could not verify your recent transaction. Dear Customer, log in now using the secure link below to restore access. http://192.168.44.9/login.php Your account will be locked within 24 hours. Security Team, Amazon",phish,phish_loud_8
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Karen Fisher, CFO",phish,bec_2
+"Hello Alex,
+Your monthly account statement for November is now available. You can view it any time by signing in to our website directly. No action is needed.
+Cheers,
+Priya",legit,legit_plain_1
+"Dear Arjun,
+Reminder: your subscription renews on April 19 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Thanks,
+Alex",legit,legit_hard_5
+"Hi Tom,
+Hi Meera, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Best regards,
+Priya",legit,legit_hard_4
+Rajesh Kumar here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"Hi Nisha,
+Hi Nisha, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Thanks,
+Ravi",legit,legit_plain_8
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, David Miller (Managing Director)",phish,bec_0
+"Netflix: an unauthorized device accessed your account. Dear Customer, validate your account using the link below. http://hdfc-netbanking.online/signin Failure to act will result in permanent account closure. Fraud Prevention Unit, Netflix",phish,phish_loud_4
+"Dear Arjun,
+Hi Meera, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Thanks,
+Arjun",legit,legit_hard_4
+"Apple: we detected unusual sign-in activity on your account. Dear Customer, log in now using the secure link below to restore access. http://appleid-verify.support/login Your account will be locked within 24 hours. Account Services, Apple",phish,phish_loud_0
+"Dear Arjun,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Regards,
+Arjun",legit,legit_hard_3
+"Good morning Alex,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Cheers,
+Sam",legit,legit_plain_13
+"Apple: your mailbox storage is full and messages are being rejected. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Legal action may follow if this is ignored. Account Services, Apple",phish,phish_loud_6
+"Good morning Meera,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Regards,
+Sam",legit,legit_plain_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Karen Fisher,phish,bec_3
+"Hello Sam,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Kind regards,
+Priya",legit,legit_plain_10
+"Instagram: an unauthorized device accessed your account. Dear Customer, confirm your details within 24 hours to avoid suspension. http://paypa1-support.com/verify This is your final notice. Security Team, Instagram",phish,phish_loud_4
+"Hello Tom,
+Hello Meera, your order #16377 has shipped and should arrive by July 12. You can track it from the orders page in your account.
+Cheers,
+Ravi",legit,legit_plain_3
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://bit.ly/2xKp9Lq. Regards, IT Services.",phish,phish_soft_1
+"Dear Ravi,
+Reminder: your subscription renews on March 24 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Kind regards,
+Sam",legit,legit_hard_5
+"Good morning Priya,
+Your monthly account statement for January is now available. You can view it any time by signing in to our website directly. No action is needed.
+Best regards,
+Meera",legit,legit_plain_1
+"Good morning Tom,
+Hi Alex, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Regards,
+Tom",legit,legit_plain_0
+"Hello Tom,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Thanks,
+Tom",legit,legit_plain_5
+"Amazon: your parcel is being held pending a customs fee. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. Billing Department, Amazon",phish,phish_loud_5
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://tinyurl.com/y8xk2mz. Thank you, Expenses Team.",phish,phish_soft_4
+"SBI NetBanking: we detected unusual sign-in activity on your account. Dear Customer, update your billing information right away. http://tinyurl.com/y8xk2mz Legal action may follow if this is ignored. Customer Support, SBI NetBanking",phish,phish_loud_0
+"Microsoft 365: your password will expire in 24 hours. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Access will be revoked immediately if unverified. IT Helpdesk, Microsoft 365",phish,phish_loud_3
+"Hello Alex,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Best regards,
+Ravi",legit,legit_hard_1
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://micros0ft-securelogin.ru/auth. Regards, IT Services.",phish,phish_soft_1
+"Hi Tom,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Cheers,
+Sam",legit,legit_plain_5
+"Hi Priya,
+Your subscription renews on July 2. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Alex",legit,legit_plain_11
+"LinkedIn: an unauthorized device accessed your account. Dear Customer, re-enter your card details to reactivate your account. http://192.168.44.9/login.php This is your final notice. Billing Department, LinkedIn",phish,phish_loud_4
+"Good morning Sam,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Kind regards,
+Arjun",legit,legit_plain_13
+"PayPal: your account will be permanently closed. Dear Customer, validate your account using the link below. http://secure-verify-login.tk/account This is your final notice. Fraud Prevention Unit, PayPal",phish,phish_loud_9
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://192.168.44.9/login.php and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Sanjay Mehta, CEO",phish,bec_2
+"Hi Ravi,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Kind regards,
+Alex",legit,legit_plain_14
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://tinyurl.com/y8xk2mz. Regards, People Operations.",phish,phish_soft_3
+"Hello Alex,
+Hello Priya, your order #64890 has shipped and should arrive by June 11. You can track it from the orders page in your account.
+Thanks,
+Alex",legit,legit_plain_3
+"Good morning Arjun,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Thanks,
+Ravi",legit,legit_plain_4
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://micros0ft-securelogin.ru/auth and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hello Meera,
+Your monthly account statement for March is now available. You can view it any time by signing in to our website directly. No action is needed.
+Cheers,
+Ravi",legit,legit_plain_1
+"Instagram: we detected unusual sign-in activity on your account. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login This is your final notice. Billing Department, Instagram",phish,phish_loud_0
+"Good morning Priya,
+Hi Nisha, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Best regards,
+Alex",legit,legit_plain_0
+"Good morning Ravi,
+Your subscription renews on March 20. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Thanks,
+Arjun",legit,legit_plain_11
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (CEO)",phish,bec_0
+"Amazon: your payment could not be processed. Dear Customer, download the attached form and return it urgently. http://hdfc-netbanking.online/signin Failure to act will result in permanent account closure. IT Helpdesk, Amazon",phish,phish_loud_2
+"Hello Nisha,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Kind regards,
+Meera",legit,legit_plain_2
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://micros0ft-securelogin.ru/auth. Regards, IT Services.",phish,phish_soft_1
+"Hi Arjun,
+Your subscription renews on April 26. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Cheers,
+Arjun",legit,legit_plain_11
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://micros0ft-securelogin.ru/auth. Regards, People Operations.",phish,phish_soft_3
+"Google Account: your parcel is being held pending a customs fee. Dear Customer, confirm your details within 24 hours to avoid suspension. http://hdfc-netbanking.online/signin Legal action may follow if this is ignored. Fraud Prevention Unit, Google Account",phish,phish_loud_5
+"Hi Sam,
+Scheduled notice from IT: your network password will expire in 14 days. Please change it using Ctrl+Alt+Del on your work machine, or in person at the service desk. We will never email you a link to reset it, and we will never ask for your current password.
+Best regards,
+Nisha",legit,legit_hard_1
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, David Miller (Finance Director)",phish,bec_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, David Miller (Finance Director)",phish,bec_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Rajesh Kumar (Managing Director)",phish,bec_0
+"Apple: your subscription payment was declined. Dear Customer, confirm your details within 24 hours to avoid suspension. http://micros0ft-securelogin.ru/auth Your account will be locked within 24 hours. Customer Support, Apple",phish,phish_loud_7
+"Google Account: your password will expire in 24 hours. Dear Customer, download the attached form and return it urgently. http://appleid-verify.support/login Legal action may follow if this is ignored. Billing Department, Google Account",phish,phish_loud_3
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://hdfc-netbanking.online/signin. Regards, IT Services.",phish,phish_soft_1
+"Hi Arjun,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Cheers,
+Ravi",legit,legit_hard_3
+"HDFC Bank: your password will expire in 24 hours. Dear Customer, validate your account using the link below. http://tinyurl.com/y8xk2mz Fraud Prevention Unit, HDFC Bank",phish,phish_loud_3
+"Dear Meera,
+Hi Ravi, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Kind regards,
+Ravi",legit,legit_hard_4
+"PayPal: an unauthorized device accessed your account. Dear Customer, log in now using the secure link below to restore access. http://bit.ly/2xKp9Lq Your account will be locked within 24 hours. Account Services, PayPal",phish,phish_loud_4
+"Hello Nisha,
+Hello Alex, your order #39430 has shipped and should arrive by January 12. You can track it from the orders page in your account.
+Best regards,
+Nisha",legit,legit_plain_3
+"Google Account: we detected unusual sign-in activity on your account. Dear Customer, update your billing information right away. http://micros0ft-securelogin.ru/auth Access will be revoked immediately if unverified. Customer Support, Google Account",phish,phish_loud_0
+"Hi Tom,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Thanks,
+Meera",legit,legit_plain_10
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Sanjay Mehta, Finance Director",phish,bec_2
+"Hi Arjun,
+Your parcel #72424 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Cheers,
+Priya",legit,legit_hard_8
+"Hi Sam,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Kind regards,
+Priya",legit,legit_plain_14
+"Good morning Meera,
+Hello Priya, your order #39579 has shipped and should arrive by September 17. You can track it from the orders page in your account.
+Best regards,
+Arjun",legit,legit_plain_3
+"Hi Nisha,
+Hi Tom, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Thanks,
+Tom",legit,legit_plain_8
+"Hi Nisha,
+Thank you for attending the workshop on June 21. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Kind regards,
+Priya",legit,legit_plain_6
+"Hello Sam,
+Hi Ravi, invoice #90495 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Kind regards,
+Sam",legit,legit_hard_0
+"Good morning Arjun,
+Your support ticket #49318 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Best regards,
+Arjun",legit,legit_plain_7
+"Amazon: your account has been temporarily suspended. Dear Customer, re-enter your card details to reactivate your account. http://paypa1-support.com/verify Failure to act will result in permanent account closure. Fraud Prevention Unit, Amazon",phish,phish_loud_1
+"Hello Tom,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Kind regards,
+Alex",legit,legit_plain_4
+"Hi Priya,
+Hi Tom, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Kind regards,
+Meera",legit,legit_hard_4
+"SBI NetBanking: we detected unusual sign-in activity on your account. Dear Customer, download the attached form and return it urgently. http://hdfc-netbanking.online/signin This is your final notice. Account Services, SBI NetBanking",phish,phish_loud_0
+"Amazon: your payment could not be processed. Dear Customer, validate your account using the link below. http://bit.ly/2xKp9Lq Failure to act will result in permanent account closure. Billing Department, Amazon",phish,phish_loud_2
+"Dear Arjun,
+Your account statement for March is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Kind regards,
+Ravi",legit,legit_hard_2
+"Good morning Sam,
+Your subscription renews on June 17. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Nisha",legit,legit_plain_11
+"Hello Priya,
+Your parcel #61688 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Cheers,
+Sam",legit,legit_hard_8
+"Hello Ravi,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Kind regards,
+Ravi",legit,legit_plain_4
+"Hi Tom,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Regards,
+Sam",legit,legit_plain_5
+"Netflix: your account will be permanently closed. Dear Customer, validate your account using the link below. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. Security Team, Netflix",phish,phish_loud_9
+"Hi Nisha,
+Reminder: your subscription renews on November 7 and the card on file will be charged. If you want to cancel, you can do that in account settings. This is a routine notice and requires no confirmation.
+Cheers,
+Arjun",legit,legit_hard_5
+"Good morning Alex,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Cheers,
+Sam",legit,legit_plain_10
+"Dear Arjun,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by July 3. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Cheers,
+Ravi",legit,legit_hard_6
+"Good morning Nisha,
+Your support ticket #94278 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Kind regards,
+Sam",legit,legit_plain_7
+"LinkedIn: we could not verify your recent transaction. Dear Customer, download the attached form and return it urgently. http://192.168.44.9/login.php This is your final notice. Account Services, LinkedIn",phish,phish_loud_8
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Karen Fisher, Finance Director",phish,bec_2
+"ICICI Bank: your account has been temporarily suspended. Dear Customer, download the attached form and return it urgently. http://192.168.44.9/login.php This is your final notice. Fraud Prevention Unit, ICICI Bank",phish,phish_loud_1
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://paypa1-support.com/verify. Regards, IT Services.",phish,phish_soft_1
+"Google Account: your password will expire in 24 hours. Dear Customer, re-enter your card details to reactivate your account. http://bit.ly/2xKp9Lq Access will be revoked immediately if unverified. Security Team, Google Account",phish,phish_loud_3
+"Hello Sam,
+Invitation: the annual all-hands is scheduled for January 1 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Regards,
+Alex",legit,legit_plain_9
+"Netflix: your account will be permanently closed. Dear Customer, update your billing information right away. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. IT Helpdesk, Netflix",phish,phish_loud_9
+"LinkedIn: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Failure to act will result in permanent account closure. Security Team, LinkedIn",phish,phish_loud_8
+"Hi Nisha,
+Hi Sam, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Best regards,
+Sam",legit,legit_plain_0
+"Hi Alex,
+Thank you for attending the workshop on March 14. Slides and the recording are linked in the shared drive folder we set up for the cohort.
+Cheers,
+Arjun",legit,legit_plain_6
+"Good morning Sam,
+Your support ticket #72341 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Best regards,
+Ravi",legit,legit_plain_7
+"Dear Ravi,
+Hi Nisha, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Regards,
+Ravi",legit,legit_hard_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"Hello Priya,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Cheers,
+Nisha",legit,legit_plain_13
+"Hi Nisha,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Cheers,
+Ravi",legit,legit_plain_2
+"Hi Priya,
+Hi Meera, invoice #66302 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Thanks,
+Meera",legit,legit_hard_0
+"Hello Arjun,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Kind regards,
+Arjun",legit,legit_plain_5
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://hdfc-netbanking.online/signin. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Google Account: we detected unusual sign-in activity on your account. Dear Customer, re-enter your card details to reactivate your account. http://paypa1-support.com/verify Fraud Prevention Unit, Google Account",phish,phish_loud_0
+"PayPal: we detected unusual sign-in activity on your account. Dear Customer, re-enter your card details to reactivate your account. http://hdfc-netbanking.online/signin Access will be revoked immediately if unverified. IT Helpdesk, PayPal",phish,phish_loud_0
+"Hello, your recent expense claim needs one more approval step before it can be reimbursed. You can complete it at http://secure-verify-login.tk/account. Thank you, Expenses Team.",phish,phish_soft_4
+"Hi Ravi,
+Hi Tom, following up on the supplier payment we discussed in person yesterday. I have raised the purchase order through the finance portal as normal. Please verify the amount matches the signed quotation before approving it in the system.
+Regards,
+Meera",legit,legit_hard_4
+"Hi Arjun,
+Hello Arjun, your order #82910 has shipped and should arrive by April 28. You can track it from the orders page in your account.
+Kind regards,
+Meera",legit,legit_plain_3
+"Good morning Meera,
+The quarterly engineering newsletter is out. This issue covers the database migration, our new CI pipeline, and three open positions on the platform team.
+Cheers,
+Arjun",legit,legit_plain_4
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"Hi Arjun,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by June 3. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Best regards,
+Arjun",legit,legit_hard_6
+"Hi Sam,
+Hi Meera, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Cheers,
+Sam",legit,legit_plain_12
+"Hi Ravi,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Thanks,
+Sam",legit,legit_plain_13
+"Good morning Nisha,
+Invitation: the annual all-hands is scheduled for April 28 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Cheers,
+Sam",legit,legit_plain_9
+"Hello Priya,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Kind regards,
+Ravi",legit,legit_plain_2
+"Good morning, following our note last week regarding your mailbox quota, the storage upgrade is now available for your account. You can apply it here: http://192.168.44.9/login.php. Regards, IT Services.",phish,phish_soft_1
+"Hello Sam,
+Following up on our conversation - I have booked the meeting room for Tuesday afternoon and invited the vendor's technical contact.
+Best regards,
+Arjun",legit,legit_plain_13
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://appleid-verify.support/login. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Sanjay Mehta, Managing Director",phish,bec_2
+"Netflix: we detected unusual sign-in activity on your account. Dear Customer, validate your account using the link below. http://hdfc-netbanking.online/signin Access will be revoked immediately if unverified. Security Team, Netflix",phish,phish_loud_0
+"Hello Priya,
+Hi Tom, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Thanks,
+Meera",legit,legit_hard_7
+"ICICI Bank: we could not verify your recent transaction. Dear Customer, download the attached form and return it urgently. http://paypa1-support.com/verify Billing Department, ICICI Bank",phish,phish_loud_8
+"Hello Tom,
+Your parcel #17850 is out for delivery today. The courier will not ask for any fee on the doorstep, and we will not email you a customs payment link. You can track progress from the orders page after signing in normally.
+Best regards,
+Priya",legit,legit_hard_8
+"SBI NetBanking: your account has been temporarily suspended. Dear Customer, re-enter your card details to reactivate your account. http://tinyurl.com/y8xk2mz IT Helpdesk, SBI NetBanking",phish,phish_loud_1
+"DHL Express: we could not verify your recent transaction. Dear Customer, log in now using the secure link below to restore access. http://appleid-verify.support/login Access will be revoked immediately if unverified. Billing Department, DHL Express",phish,phish_loud_8
+"Dear Alex,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Kind regards,
+Alex",legit,legit_hard_3
+"Hello Tom,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Cheers,
+Meera",legit,legit_plain_2
+"Hi Ravi,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by March 15. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Cheers,
+Tom",legit,legit_hard_6
+Karen Fisher here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Rajesh Kumar, Finance Director",phish,bec_2
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Priya Nair, Managing Director",phish,bec_2
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Sanjay Mehta (Finance Director)",phish,bec_0
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. David Miller,phish,bec_3
+"SBI NetBanking: we could not verify your recent transaction. Dear Customer, validate your account using the link below. http://hdfc-netbanking.online/signin This is your final notice. Account Services, SBI NetBanking",phish,phish_loud_8
+"Good morning Nisha,
+Hi Priya, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Cheers,
+Ravi",legit,legit_plain_8
+"Instagram: an unauthorized device accessed your account. Dear Customer, download the attached form and return it urgently. http://paypa1-support.com/verify This is your final notice. Customer Support, Instagram",phish,phish_loud_4
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://micros0ft-securelogin.ru/auth and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Instagram: your account has been temporarily suspended. Dear Customer, log in now using the secure link below to restore access. http://micros0ft-securelogin.ru/auth Failure to act will result in permanent account closure. Account Services, Instagram",phish,phish_loud_1
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://hdfc-netbanking.online/signin. Regards, People Operations.",phish,phish_soft_3
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Karen Fisher,phish,bec_3
+"Good morning Priya,
+Your monthly account statement for November is now available. You can view it any time by signing in to our website directly. No action is needed.
+Regards,
+Meera",legit,legit_plain_1
+"Hello Meera,
+Your monthly account statement for January is now available. You can view it any time by signing in to our website directly. No action is needed.
+Best regards,
+Nisha",legit,legit_plain_1
+"Dear Priya,
+Urgent but internal: the staging database is locked and the release is blocked. Alex, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Kind regards,
+Arjun",legit,legit_hard_9
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Rajesh Kumar,phish,bec_3
+"Good morning Ravi,
+Hi team, please review the attached draft of the design document and add comments by Friday. I would especially like feedback on the caching section.
+Cheers,
+Priya",legit,legit_plain_5
+"Dear Sam,
+Urgent but internal: the staging database is locked and the release is blocked. Alex, could you look at the migration job when you get a moment? Nothing customer-facing is affected.
+Regards,
+Sam",legit,legit_hard_9
+"Hello Arjun,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Best regards,
+Tom",legit,legit_plain_2
+"Dear colleague, HR has published the revised leave policy for this year. Acknowledge that you have read it by signing in at http://micros0ft-securelogin.ru/auth. Regards, People Operations.",phish,phish_soft_3
+"PayPal: your password will expire in 24 hours. Dear Customer, re-enter your card details to reactivate your account. http://secure-verify-login.tk/account Failure to act will result in permanent account closure. Fraud Prevention Unit, PayPal",phish,phish_loud_3
+"Instagram: your parcel is being held pending a customs fee. Dear Customer, click here to verify your identity immediately. http://appleid-verify.support/login Legal action may follow if this is ignored. Security Team, Instagram",phish,phish_loud_5
+"Good morning Tom,
+Your subscription renews on April 16. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Kind regards,
+Arjun",legit,legit_plain_11
+"Hi Ravi,
+Hi Priya, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Best regards,
+Alex",legit,legit_hard_7
+"Hi Tom,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Cheers,
+Sam",legit,legit_plain_10
+"Good morning Sam,
+Your support ticket #82260 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Thanks,
+Alex",legit,legit_plain_7
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://micros0ft-securelogin.ru/auth and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Karen Fisher (CFO)",phish,bec_0
+"Hi Meera,
+Hi Nisha, I reviewed the pull request and left a few minor comments. Nothing blocking - happy to approve once the tests pass.
+Best regards,
+Priya",legit,legit_plain_8
+"Netflix: your password will expire in 24 hours. Dear Customer, click here to verify your identity immediately. http://bit.ly/2xKp9Lq Customer Support, Netflix",phish,phish_loud_3
+"Hi Alex,
+Hi Arjun, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Kind regards,
+Priya",legit,legit_plain_0
+"ICICI Bank: we could not verify your recent transaction. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Access will be revoked immediately if unverified. IT Helpdesk, ICICI Bank",phish,phish_loud_8
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://micros0ft-securelogin.ru/auth and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"ICICI Bank: your account will be permanently closed. Dear Customer, re-enter your card details to reactivate your account. http://secure-verify-login.tk/account Failure to act will result in permanent account closure. IT Helpdesk, ICICI Bank",phish,phish_loud_9
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, Priya Nair (Managing Director)",phish,bec_0
+Please update the beneficiary bank details for our vendor payment run. The new IBAN is below. Process the remittance immediately and confirm. Treat as confidential. Anita Sharma,phish,bec_3
+Sanjay Mehta here. I am in a meeting and cannot talk. Please arrange payment of the attached invoice to the updated bank details below before end of day. Do not discuss this with anyone else.,phish,bec_1
+"Apple: we could not verify your recent transaction. Dear Customer, download the attached form and return it urgently. http://bit.ly/2xKp9Lq Access will be revoked immediately if unverified. Customer Support, Apple",phish,phish_loud_8
+"Dear Arjun,
+Your account statement for March is ready. To view it, open your banking app or type our address into your browser yourself. We do not include sign-in links in statements. No action is needed if the balance looks right.
+Best regards,
+Nisha",legit,legit_hard_2
+"Google Account: your parcel is being held pending a customs fee. Dear Customer, update your billing information right away. http://micros0ft-securelogin.ru/auth Legal action may follow if this is ignored. Fraud Prevention Unit, Google Account",phish,phish_loud_5
+"Good morning Priya,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Thanks,
+Alex",legit,legit_plain_14
+"Hi Arjun,
+Security alert from our own IT team: we detected a sign-in to your account from a new device in the Bengaluru office. If that was you, you can ignore this message. If not, call the internal helpdesk on extension 4412 - do not reply to this email with any details.
+Kind regards,
+Tom",legit,legit_hard_3
+"Dear Alex,
+Hi Sam, invoice #28855 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Best regards,
+Alex",legit,legit_hard_0
+"PayPal: your parcel is being held pending a customs fee. Dear Customer, download the attached form and return it urgently. http://192.168.44.9/login.php Customer Support, PayPal",phish,phish_loud_5
+"Netflix: your mailbox storage is full and messages are being rejected. Dear Customer, log in now using the secure link below to restore access. http://hdfc-netbanking.online/signin Legal action may follow if this is ignored. Security Team, Netflix",phish,phish_loud_6
+"Dear Meera,
+Hi Tom, invoice #89551 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Cheers,
+Tom",legit,legit_hard_0
+"Instagram: your parcel is being held pending a customs fee. Dear Customer, confirm your details within 24 hours to avoid suspension. http://tinyurl.com/y8xk2mz Legal action may follow if this is ignored. Account Services, Instagram",phish,phish_loud_5
+"Good morning Priya,
+Here is the agenda for next week's sprint planning: carry-over items, capacity for the release, and a short retrospective on the last cycle.
+Cheers,
+Tom",legit,legit_plain_10
+"Hello Ravi,
+Hi Meera, invoice #24777 for the Q3 licence renewal is attached. Payment terms are net 30, so nothing is urgent - our accounts team will process it through the usual purchase order. Do not send funds to any details other than those already on file with procurement.
+Regards,
+Arjun",legit,legit_hard_0
+"Dear Nisha,
+Hi Arjun, the auditors have asked us to verify the vendor list before the year-end close. Could you confirm the contacts for your three suppliers in the shared sheet? No payment details are needed, just names.
+Regards,
+Alex",legit,legit_hard_7
+"Hi Meera,
+Notice: scheduled maintenance this Saturday from 02:00 to 04:00. Some services may be briefly unavailable. No customer action is required.
+Best regards,
+Nisha",legit,legit_plain_14
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Priya Nair, CFO",phish,bec_2
+"Good morning Ravi,
+Your support ticket #74044 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Cheers,
+Sam",legit,legit_plain_7
+"Hi, are you at your desk? I need you to process an urgent wire transfer to a new supplier today. Keep this confidential until it clears. Send me the confirmation once done. Regards, David Miller (Managing Director)",phish,bec_0
+"ICICI Bank: your password will expire in 24 hours. Dear Customer, re-enter your card details to reactivate your account. http://hdfc-netbanking.online/signin Account Services, ICICI Bank",phish,phish_loud_3
+"Hello Meera,
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of the maintenance window. Calendar invites have been updated.
+Regards,
+Ravi",legit,legit_plain_2
+"Hello, I hope you are well. Our records show a small discrepancy in your billing profile from last month. When you have a moment, could you review the details at http://appleid-verify.support/login and confirm they are correct? Thank you, Accounts.",phish,phish_soft_0
+"Hi Tom,
+Your support ticket #92756 has been resolved. If the issue reappears, reply to this email and it will reopen the same ticket for our team.
+Regards,
+Priya",legit,legit_plain_7
+"Hi Sam,
+Your subscription renews on March 5. The receipt will be emailed to you. You can manage or cancel the plan from your account settings page.
+Regards,
+Priya",legit,legit_plain_11
+"Hi Alex,
+Invitation: the annual all-hands is scheduled for September 4 at 15:00 in the main auditorium. Remote attendees can join via the usual link.
+Best regards,
+Tom",legit,legit_plain_9
+"Amazon: your mailbox storage is full and messages are being rejected. Dear Customer, validate your account using the link below. http://paypa1-support.com/verify Your account will be locked within 24 hours. Fraud Prevention Unit, Amazon",phish,phish_loud_6
+"Quick favour - I need you to purchase gift cards for a client appreciation programme. Buy them now and send me the codes. I will reimburse you. This is time-sensitive. Anita Sharma, CFO",phish,bec_2
+"LinkedIn: we could not verify your recent transaction. Dear Customer, update your billing information right away. http://hdfc-netbanking.online/signin This is your final notice. Fraud Prevention Unit, LinkedIn",phish,phish_loud_8
+"Dear Priya,
+Payroll notice: bank detail changes for this month's run must be submitted through the HR self-service portal by June 6. Requests sent over email cannot be actioned - this is deliberate, to prevent payment fraud.
+Thanks,
+Tom",legit,legit_hard_6
+"Hi, the document you requested from the finance review is ready for you to look over. It is available at http://192.168.44.9/login.php. Please sign in with your work email to open it. Thanks, Document Services.",phish,phish_soft_2
+"Hi Tom,
+Hi Meera, thanks for your message. I have attached the notes from yesterday's review meeting. Let me know if anything needs correcting before I circulate them to the wider team.
+Kind regards,
+Arjun",legit,legit_plain_0
+"Good morning Priya,
+Hi Alex, the library upgrade is merged and deployed to staging. Could you run through the regression checklist when you get a chance?
+Regards,
+Tom",legit,legit_plain_12
