@@ -220,6 +220,12 @@ def load_vpn_ranges(csv_path: str) -> list[VpnRange]:
     Free sources: X4BNet VPN/proxy IP lists, IP2Location LITE (ASN edition),
     or published cloud-provider IP ranges (AWS/GCP/Azure/DigitalOcean/OVH)."""
     ranges: list[VpnRange] = []
+    import os as _os
+    _sp_root = _os.path.dirname(_os.path.abspath(__file__))
+    _sp_data = _os.path.realpath(_os.path.join(_sp_root, "data"))
+    csv_path = _os.path.realpath(_os.path.join(_sp_root, csv_path))
+    if not csv_path.startswith(_sp_data + _os.sep):
+        raise ValueError("VPN ranges file must be inside the data/ folder")
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             try:
