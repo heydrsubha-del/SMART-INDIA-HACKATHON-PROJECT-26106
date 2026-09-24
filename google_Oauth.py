@@ -21,6 +21,10 @@ clients also accept it automatically for any http://localhost/127.0.0.1
 address).
 
 The user's Google password is never collected by the application.
+
+Public hosting: set SIH26106_MULTIUSER=1 so tokens live only in each visitor's
+own session, and supply the OAuth client through SIH26106_GOOGLE_CLIENT_CONFIG
+instead of a file.
 """
 from __future__ import annotations
 
@@ -48,6 +52,20 @@ DEFAULT_TOKEN_FILE = ".sih26106_google_token.json"
 # (e.g. to your deployed https://... URL) when the app isn't served here.
 DEFAULT_REDIRECT_URI = "http://localhost:8501"
 
+# Public-hosting mode (set SIH26106_MULTIUSER=1). In this mode a visitor's
+# Google token is kept ONLY in that visitor's own session (server memory) --
+# never written to a file, so it can never be picked up by another visitor,
+# and it disappears when the session ends. Locally (the default) the token is
+# still cached in a file so you don't have to sign in every restart.
+MULTIUSER = os.environ.get("SIH26106_MULTIUSER", "").strip().lower() in (
+    "1", "true", "yes", "on"
+)
+SESSION_TOKEN_KEY = "_google_creds_json"
+
+# On a host where you can't upload a client_secret.json file (e.g. Streamlit
+# Community Cloud), put the whole JSON in this environment variable / secret.
+CLIENT_CONFIG_ENV = "SIH26106_GOOGLE_CLIENT_CONFIG"
+
 
 def _client_secret_path() -> Path:
     return Path(os.getenv("SIH26106_GOOGLE_CLIENT_SECRETS", DEFAULT_CLIENT_SECRETS))
@@ -67,34 +85,72 @@ def redirect_uri() -> str:
     return os.getenv("SIH26106_GOOGLE_REDIRECT_URI", DEFAULT_REDIRECT_URI).strip().rstrip("/")
 
 
+def _client_config_source() -> tuple[str | None, str]:
+    """Return (raw_json_text, where_it_came_from). raw_json_text is None when
+    no client configuration exists at all."""
+    raw = os.getenv(CLIENT_CONFIG_ENV, "").strip()
+    if raw:
+        return raw, f"the {CLIENT_CONFIG_ENV} setting"
+    path = _client_secret_path()
+    if path.is_file():
+        try:
+            return path.read_text(encoding="utf-8"), str(path)
+        except Exception:
+            return None, str(path)
+    return None, str(path)
+
+
+def _client_config() -> dict | None:
+    raw, _where = _client_config_source()
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
 def oauth_available() -> bool:
-    """Return True when the Google OAuth dependency and client JSON exist."""
+    """Return True when the Google OAuth dependency and client config exist."""
     try:
         import google_auth_oauthlib  # noqa: F401
     except Exception:
         return False
-    return _client_secret_path().is_file()
+    return _client_config() is not None
 
 
 def client_secret_issue() -> str | None:
-    """Return a human-readable problem with client_secret.json, or None if it looks fine."""
-    path = _client_secret_path()
-    if not path.is_file():
-        return f"Client secrets file not found: {path}"
+    """Return a human-readable problem with the Google client config, or None if it looks fine."""
+    raw, where = _client_config_source()
+    if not raw:
+        return (
+            f"Google client settings not found. Add a client_secret.json ({where}) "
+            f"or set {CLIENT_CONFIG_ENV}."
+        )
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(raw)
     except Exception as e:
-        return f"Client secrets file isn't valid JSON: {e}"
+        return f"Google client settings from {where} aren't valid JSON: {e}"
     key = "web" if "web" in data else ("installed" if "installed" in data else None)
     if key is None:
-        return "Client secrets file doesn't look like a Google OAuth client (missing 'web'/'installed' key)."
+        return "Google client settings don't look like an OAuth client (missing 'web'/'installed' key)."
     cfg = data[key]
     if not cfg.get("client_id") or not cfg.get("client_secret"):
-        return "Client secrets file is missing client_id / client_secret."
+        return "Google client settings are missing client_id / client_secret."
+    if "YOUR_CLIENT" in str(cfg.get("client_id")) or "YOUR_CLIENT" in str(cfg.get("client_secret")):
+        return "Google client settings still contain the placeholder values from client_secret.example.json."
     return None
 
 
+def _session_state():
+    import streamlit as st
+    return st.session_state
+
+
 def _save_credentials(creds) -> None:
+    if MULTIUSER:
+        _session_state()[SESSION_TOKEN_KEY] = creds.to_json()
+        return
     path = _token_path()
     path.write_text(creds.to_json(), encoding="utf-8")
     try:
@@ -109,11 +165,17 @@ def _load_credentials():
     except Exception:
         return None
 
-    path = _token_path()
-    if not path.is_file():
-        return None
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        if MULTIUSER:
+            raw = _session_state().get(SESSION_TOKEN_KEY)
+            if not raw:
+                return None
+            data = json.loads(raw)
+        else:
+            path = _token_path()
+            if not path.is_file():
+                return None
+            data = json.loads(path.read_text(encoding="utf-8"))
         return Credentials.from_authorized_user_info(data, OAUTH_SCOPES)
     except Exception:
         return None
@@ -200,19 +262,12 @@ def _build_flow(state: str | None = None, code_verifier: str | None = None):
     """
     from google_auth_oauthlib.flow import Flow
 
-    client_file = _client_secret_path()
-    if not client_file.is_file():
-        raise FileNotFoundError(
-            f"Google OAuth client file not found: {client_file}. "
-            "Download an OAuth client JSON from Google Cloud Console and save it as client_secret.json."
-        )
-
     issue = client_secret_issue()
     if issue:
         raise ValueError(issue)
 
-    flow = Flow.from_client_secrets_file(
-        str(client_file),
+    flow = Flow.from_client_config(
+        _client_config(),
         scopes=OAUTH_SCOPES,
         state=state,
         code_verifier=code_verifier,
@@ -276,6 +331,12 @@ def exchange_code_for_token(code: str, state: str | None = None) -> tuple[str, s
 
 
 def clear_saved_token() -> None:
+    if MULTIUSER:
+        try:
+            _session_state().pop(SESSION_TOKEN_KEY, None)
+        except Exception:
+            pass
+        return
     try:
         _token_path().unlink(missing_ok=True)
     except Exception:

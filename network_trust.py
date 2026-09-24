@@ -187,6 +187,11 @@ def assess_network_trust(
         )
         conn.commit()
 
+    try:
+        conn.close()
+    except Exception:
+        pass
+
     return {
         "badge": badge,
         "level": level,

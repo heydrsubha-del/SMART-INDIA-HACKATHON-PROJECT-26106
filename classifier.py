@@ -31,6 +31,16 @@ from sklearn.pipeline import Pipeline
 import config as C
 import gen_data
 
+# Public-hosting mode (SIH26106_MULTIUSER=1): the phishing model is shared by
+# every visitor, so it must NEVER be retrained from visitor-submitted feedback
+# -- that would let one visitor change results for everyone else, and would
+# copy their email text into a model file. Feedback is still stored, privately,
+# for that visitor's own session (see tracker.py); it just doesn't retrain.
+try:
+    from tracker import MULTIUSER as _MULTIUSER
+except ImportError:  # pragma: no cover
+    _MULTIUSER = False
+
 FEEDBACK_DB = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "threat_memory.db"
@@ -57,7 +67,7 @@ Load analyst-verified samples collected by the application.
         label
     """
 
-    if not os.path.exists(FEEDBACK_DB):
+    if _MULTIUSER or not os.path.exists(FEEDBACK_DB):
         return pd.DataFrame(columns=["text", "label"])
 
     try:
@@ -487,6 +497,9 @@ def get_adaptive_status():
 
 def get_feedback_count():
     """Return the number of unique verified feedback samples."""
+    if _MULTIUSER:
+        from tracker import get_feedback_count as _session_feedback_count
+        return _session_feedback_count()
 
     feedback_df = _load_feedback_samples()
 
@@ -499,6 +512,13 @@ def maybe_retrain_from_feedback():
     at least 10 new samples have been collected since the last
     adaptive training run.
     """
+
+    if _MULTIUSER:
+        return {
+            "status": "disabled",
+            "feedback_samples": 0,
+            "message": "Retraining from visitor feedback is disabled on the public service."
+        }
 
     feedback_df = _load_feedback_samples()
     feedback_count = len(feedback_df)
