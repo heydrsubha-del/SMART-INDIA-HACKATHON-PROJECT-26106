@@ -1,0 +1,42 @@
+Return-Path: <noreply@github.com>
+Received: from mx.corp-victim.in (mx.corp-victim.in [103.21.58.14])
+	by inbound.corp-victim.in (Postfix) with ESMTPS id 2Ab9Cd4e6f
+	for <dev@corp-victim.in>; Wed, 26 Aug 2026 18:31:05 +0530 (IST)
+Received: from out-24.smtp.github.com (out-24.smtp.github.com [140.82.112.21])
+	by mx.corp-victim.in (Postfix) with ESMTPS id 1Za8Bc3d5e
+	for <dev@corp-victim.in>; Wed, 26 Aug 2026 18:31:02 +0530 (IST)
+Authentication-Results: mx.corp-victim.in;
+	spf=pass (sender IP is 140.82.112.21) smtp.mailfrom=github.com;
+	dkim=pass header.i=@github.com header.s=pf2023;
+	dmarc=pass (p=REJECT) header.from=github.com
+From: "GitHub" <noreply@github.com>
+To: <dev@corp-victim.in>
+Subject: [GitHub] Your weekly digest for corp-victim/platform
+Date: Wed, 26 Aug 2026 13:01:00 +0000
+Message-ID: <corp-victim/platform/digest/20260826@github.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hello dev,
+
+Here is your weekly activity digest for corp-victim/platform.
+
+The quarterly engineering newsletter is out. This issue covers the database
+migration, our new CI pipeline, and three open positions on the platform team.
+
+  - 14 pull requests merged
+  - 6 issues closed
+  - 2 new releases published
+
+Reminder: the project stand-up moves to 10:30 on Thursday this week because of
+the scheduled maintenance window. Calendar invites have been updated already,
+so no action is needed from you.
+
+You can review the full activity report on your dashboard:
+https://github.com/corp-victim/platform/pulse
+
+To change how often you receive these summaries, update your notification
+preferences at https://github.com/settings/notifications
+
+Thanks,
+The GitHub Team

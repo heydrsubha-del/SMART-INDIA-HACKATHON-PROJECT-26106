@@ -1,0 +1,41 @@
+Return-Path: <rajesh.kumar.director@gmail.com>
+Received: from mx.corp-victim.in (mx.corp-victim.in [103.21.58.14])
+	by inbound.corp-victim.in (Postfix) with ESMTPS id 7Zt2Nm8k4q
+	for <accounts@corp-victim.in>; Tue, 25 Aug 2026 11:02:18 +0530 (IST)
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com [209.85.220.41])
+	by mx.corp-victim.in (Postfix) with ESMTPS id 6Yr1Ml7j3p
+	for <accounts@corp-victim.in>; Tue, 25 Aug 2026 11:02:15 +0530 (IST)
+Authentication-Results: mx.corp-victim.in;
+	spf=pass (sender IP is 209.85.220.41) smtp.mailfrom=gmail.com;
+	dkim=pass header.i=@gmail.com header.s=20230601;
+	dmarc=pass (p=NONE) header.from=gmail.com
+From: "Rajesh Kumar (CEO)" <rajesh.kumar.director@gmail.com>
+To: <accounts@corp-victim.in>
+Subject: Confidential - urgent wire transfer needed today
+Date: Tue, 25 Aug 2026 11:02:11 +0530
+Message-ID: <CAF8k2mQ9x7Yz@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hi,
+
+Are you at your desk? I am travelling and cannot take calls today.
+
+I need you to process an urgent wire transfer to a new supplier before end of
+day. The beneficiary bank details have been updated - please use the account
+below and not the one on file:
+
+    Beneficiary: Orion Supplies FZE
+    IBAN: AE070331234567890123456
+    SWIFT: EBILAEAD
+    Amount: INR 18,45,000
+
+Please treat this as strictly confidential until the payment clears - we are
+still under NDA on this acquisition, so do not discuss it with anyone else on
+the team, including finance.
+
+Send me the remittance confirmation as soon as it is done.
+
+Regards,
+Rajesh Kumar
+CEO

@@ -1,0 +1,19 @@
+# --- Secrets / credentials -- never commit real copies of these ----------
+client_secret.json
+.sih26106_google_token.json
+.google_email_cache.json
+.env
+
+# --- Generated / local data ------------------------------------------------
+.venv/
+__pycache__/
+*.pyc
+data/
+threat_memory.db
+network_trust_standalone.sqlite3
+network_trust_demo.sqlite3
+
+venv/
+.vscode/
+desktop.ini
+.streamlit/secrets.toml

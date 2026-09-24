@@ -1,0 +1,8 @@
+# Evidence files must round-trip byte-for-byte. report.py publishes a SHA-256 of
+# the raw .eml bytes as the evidence hash, so if git normalised CRLF->LF on
+# checkout the hash would differ between machines and the integrity claim would
+# be false. -text disables all line-ending conversion for these files.
+*.eml -text
+
+# Everything else: normalise to LF in the repo, native in the working copy.
+* text=auto
