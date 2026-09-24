@@ -36,7 +36,7 @@ instance for AI-written threat narratives and semantic origin correlation.
 - [Training / retraining the classifier](#training--retraining-the-classifier)
 - [Data, storage & privacy](#data-storage--privacy)
 - [Known limitations](#known-limitations)
-- [⚠️ Before you push this to a public repo](#️-before-you-push-this-to-a-public-repo)
+- [Security & secrets](#security--secrets)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -128,9 +128,11 @@ path, so nothing about the engine depends on Streamlit.
 | `gen_data.py` | Synthetic, seeded, labelled training-corpus generator |
 | `config.py` | Central config — paths, brand lists, scoring weights, verdict thresholds |
 | `requirements.txt` | Python dependencies |
+| `client_secret.example.json` | Template for your own Google OAuth client file (copy to `client_secret.json`) |
+| `.streamlit/config.toml` | Streamlit theme/server settings |
 | `data/` | Created at runtime — `emails.csv`, `model.joblib`, `geo_cache.json`, `vpn_ranges.csv` (optional), `urlhaus_last_update.txt` |
-| `samples/` | Demo `.eml` files for offline testing (optional) |
-| `threat_memory.db` | SQLite database created on first run |
+| `samples/` | Demo `.eml` files and sample threat CSVs for offline testing (fictional addresses only) |
+| `threat_memory.db` | SQLite database created on first run (local only, gitignored) |
 
 ---
 
@@ -192,6 +194,21 @@ pip install -r requirements.txt
 That's it for the core app — `folium`, `streamlit-folium`, the Google
 OAuth libraries and everything else are already pinned in
 `requirements.txt`.
+
+### 4. (Optional) Add your own credentials
+
+The repository ships **no keys, tokens or personal data** — every user
+brings their own. The core app runs without any of this; only add what you
+need:
+
+| Feature | What you provide | How |
+| --- | --- | --- |
+| Sign in with Google | Your own OAuth client | Copy `client_secret.example.json` to `client_secret.json` and fill in your values (see [Google OAuth](#optional-integrations)) |
+| Real-time URLhaus sync | Your own free Auth-Key | Set the `URLHAUS_AUTH_KEY` environment variable |
+| Gmail via app password | Your own app password | Typed into the dashboard at runtime — never stored in the code |
+
+`client_secret.json`, your OAuth token files and `.env` are all listed in
+`.gitignore`, so they stay on your machine.
 
 ## Running the app
 
@@ -268,11 +285,16 @@ risky-extension heuristic.
 <details>
 <summary><b>Google OAuth — one-click Gmail sign-in</b></summary>
 
-1. In [Google Cloud Console](https://console.cloud.google.com/), create an
-   OAuth 2.0 Client ID (Desktop or Web application type both work).
+Every user creates their **own** Google OAuth client — no shared or
+project-owned credentials are included in this repository.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a
+   project, enable the **Gmail API**, and create an OAuth 2.0 Client ID
+   (Desktop or Web application type both work).
 2. Download the client JSON and save it as `client_secret.json` in the
-   project root (or point `SIH26106_GOOGLE_CLIENT_SECRETS` at another
-   path).
+   project root (use `client_secret.example.json` as a reference for the
+   expected shape), or point `SIH26106_GOOGLE_CLIENT_SECRETS` at another
+   path.
 3. If the app isn't running at `http://localhost:8501`, register your
    actual URL as an authorized redirect URI and set
    `SIH26106_GOOGLE_REDIRECT_URI` to match.
@@ -280,7 +302,12 @@ risky-extension heuristic.
    `requirements.txt`).
 
 The user's Google password is never collected by the app — only a scoped
-OAuth token is stored locally in `.sih26106_google_token.json`.
+OAuth token is stored locally in `.sih26106_google_token.json` (with the
+signed-in address cached in `.google_email_cache.json`). Both files are
+gitignored: they grant access to your mailbox, so **never commit, share or
+upload them**. To revoke access at any time, remove the app at
+[myaccount.google.com/permissions](https://myaccount.google.com/permissions)
+and delete the token file.
 </details>
 
 <details>
@@ -290,7 +317,13 @@ Get a free Auth-Key from [auth.abuse.ch](https://auth.abuse.ch/) and set it
 as an environment variable:
 
 ```bash
+# macOS / Linux
 export URLHAUS_AUTH_KEY=your-own-key-here
+```
+
+```powershell
+# Windows (PowerShell)
+$env:URLHAUS_AUTH_KEY = "your-own-key-here"
 ```
 
 Without a key, the app automatically falls back to URLhaus's public bulk
@@ -392,29 +425,52 @@ front:
 - **The Tor exit-node check is a point-in-time snapshot** of the published
   exit list at analysis time, not necessarily at send time.
 
-## ⚠️ Before you push this to a public repo
+## Security & secrets
 
-`threat_feed.py` ships with a **hardcoded fallback URLhaus Auth-Key** for
-zero-setup convenience during development. Its own docstring already says
-it plainly: **treat that key as compromised the moment this repo goes
-public**, and generate a fresh one at
-[auth.abuse.ch](https://auth.abuse.ch/). Set your real key via the
-`URLHAUS_AUTH_KEY` environment variable (see
-[Optional integrations](#optional-integrations)) rather than editing the
-hardcoded value in the source.
+**No credentials are stored in this repository.** The URLhaus key is read
+from the `URLHAUS_AUTH_KEY` environment variable, Google sign-in uses
+*your own* `client_secret.json`, and app passwords are typed into the
+dashboard at runtime. Without any of them the app still runs, falling back
+to the keyless URLhaus CSV feed and manual IMAP credentials.
 
-It's also worth adding a `.gitignore` before your first push, so local
-secrets and generated artifacts never get committed:
+The included `.gitignore` keeps local secrets and generated data out of
+Git:
 
 ```gitignore
+# Secrets / credentials
+client_secret.json
+.sih26106_google_token.json
+.google_email_cache.json
+.env
+.streamlit/secrets.toml
+
+# Local data and environments
 .venv/
+venv/
 __pycache__/
 *.pyc
 data/
 threat_memory.db
-client_secret.json
-.sih26106_google_token.json
+network_trust_standalone.sqlite3
+network_trust_demo.sqlite3
+.vscode/
+desktop.ini
 ```
+
+If you fork or contribute:
+
+- **Never commit** a real `client_secret.json`, token file, `.env`, or
+  `threat_memory.db`. Before pushing, run `git status` and check the list.
+- **`threat_memory.db` can contain real email content** if you have scanned
+  a live mailbox (sender addresses, message text fragments). Treat it as
+  private data.
+- **If a key or token is ever exposed**, revoke it immediately (Google:
+  [myaccount.google.com/permissions](https://myaccount.google.com/permissions),
+  then reset the OAuth client secret in Cloud Console; URLhaus: generate a
+  new key at [auth.abuse.ch](https://auth.abuse.ch/)). Deleting the file in
+  a later commit is **not** enough, because Git history keeps it.
+- Consider enabling GitHub secret scanning and push protection in your
+  repository settings.
 
 ## Contributing
 
