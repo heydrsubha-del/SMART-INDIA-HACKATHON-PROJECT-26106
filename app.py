@@ -4519,6 +4519,12 @@ if active_panel == "Origin & Route":
                             if not _fetched_rows:
                                 st.warning("Fetch completed but returned no ranges — nothing written.")
                             else:
+                                _sp_root = os.path.dirname(os.path.abspath(__file__))
+                                _sp_data = os.path.realpath(os.path.join(_sp_root, "data"))
+                                _vpn_csv_path = os.path.realpath(os.path.join(_sp_root, _vpn_csv_path))
+                                if not _vpn_csv_path.startswith(_sp_data + os.sep):
+                                    st.error("For safety, the ranges file must be inside the data/ folder.")
+                                    st.stop()
                                 _out_dir = os.path.dirname(_vpn_csv_path)
                                 if _out_dir:
                                     os.makedirs(_out_dir, exist_ok=True)
