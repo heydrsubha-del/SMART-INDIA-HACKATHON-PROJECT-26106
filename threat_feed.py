@@ -61,7 +61,7 @@ def _record_sync_timestamp():
     completed sync and should update the timestamp).
     """
     try:
-        conn = get_connection()
+        conn = get_connection(shared=True)
         c = conn.cursor()
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         c.execute("UPDATE intel_sync SET last_sync = ? WHERE source = 'urlhaus'", (now,))

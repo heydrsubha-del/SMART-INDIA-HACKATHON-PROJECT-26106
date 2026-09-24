@@ -79,7 +79,10 @@ _GOOGLE_EMAIL_CACHE_PATH = ".google_email_cache.json"
 
 def _load_cached_google_email():
     """Best-effort read of the last-known signed-in Google email. Returns
-    None (never raises) if no cache file exists yet or it's unreadable."""
+    None (never raises) if no cache file exists yet or it's unreadable.
+    On a public host (MULTIUSER) it lives only in this visitor's session."""
+    if MULTIUSER:
+        return st.session_state.get("_google_email_cache") or None
     try:
         with open(_GOOGLE_EMAIL_CACHE_PATH, "r", encoding="utf-8") as f:
             return (json.load(f) or {}).get("email") or None
@@ -90,6 +93,9 @@ def _load_cached_google_email():
 def _save_cached_google_email(email: str):
     """Best-effort write; failing to persist just means we'll re-resolve
     the email next time instead of breaking anything."""
+    if MULTIUSER:
+        st.session_state["_google_email_cache"] = email
+        return
     try:
         with open(_GOOGLE_EMAIL_CACHE_PATH, "w", encoding="utf-8") as f:
             json.dump({"email": email}, f)
@@ -121,6 +127,8 @@ from tracker import (
     add_feedback,
     get_feedback_history_count,
     get_connection,
+    MULTIUSER,
+    delete_my_data,
 )
 
 import folium
@@ -1930,6 +1938,15 @@ with st.sidebar:
     _nav_button("Settings", "Settings", key="nav_settings_side")
     _nav_button("ℹ About", "About", key="nav_about_side")
 
+    if MULTIUSER:
+        st.caption("Your emails, results and Google sign-in are private to this browser session.")
+        if st.button("Delete my data & sign out", key="delete_my_data_btn"):
+            delete_my_data()
+            st.cache_data.clear()
+            for _k in list(st.session_state.keys()):
+                del st.session_state[_k]
+            st.rerun()
+
     try:
         _sb_conn = get_connection()
         _sb_c = _sb_conn.cursor()
@@ -2962,10 +2979,12 @@ if active_panel == "Dashboard":
                             st.session_state.pop("google_oauth_token", None)
                             st.session_state.pop("imap_user", None)
                             st.session_state.pop("_google_email_autofill_tried", None)
-                            try:
-                                os.remove(_GOOGLE_EMAIL_CACHE_PATH)
-                            except OSError:
-                                pass
+                            st.session_state.pop("_google_email_cache", None)
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_GOOGLE_EMAIL_CACHE_PATH)
+                                except OSError:
+                                    pass
                             st.rerun()
                     else:
                         # The ?code=/?error= redirect from Google is handled
@@ -2983,19 +3002,23 @@ if active_panel == "Dashboard":
                         if issue:
                             st.warning(f"Google Sign-In isn't configured correctly: {issue}")
                         else:
-                            with st.expander("Redirect URL setup (only needed once per environment)"):
-                                st.caption(
-                                    "Must exactly match a redirect URI registered on the Google OAuth client, "
-                                    "and be the URL this app is actually reachable at right now (e.g. "
-                                    "`http://localhost:8501` when testing locally, or your deployed https:// URL)."
-                                )
-                                redirect_override = st.text_input(
-                                    "App URL (redirect URI)",
-                                    value=google_redirect_uri(),
-                                    key="google_redirect_uri_input",
-                                )
-                                if redirect_override.strip():
-                                    os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = redirect_override.strip().rstrip("/")
+                            # On a public host this box is hidden: it edits a process-wide
+                            # setting, so one visitor could otherwise change the redirect
+                            # URL for everybody. Set SIH26106_GOOGLE_REDIRECT_URI instead.
+                            if not MULTIUSER:
+                                with st.expander("Redirect URL setup (only needed once per environment)"):
+                                    st.caption(
+                                        "Must exactly match a redirect URI registered on the Google OAuth client, "
+                                        "and be the URL this app is actually reachable at right now (e.g. "
+                                        "`http://localhost:8501` when testing locally, or your deployed https:// URL)."
+                                    )
+                                    redirect_override = st.text_input(
+                                        "App URL (redirect URI)",
+                                        value=google_redirect_uri(),
+                                        key="google_redirect_uri_input",
+                                    )
+                                    if redirect_override.strip():
+                                        os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = redirect_override.strip().rstrip("/")
 
                             try:
                                 auth_url, _state = get_authorization_url(email_hint=imap_user)
@@ -5146,7 +5169,7 @@ if active_panel == "URLHaus Feed":
             st.caption(f"Last auto-sync attempt failed: {getattr(threat_feed, 'LAST_URLHAUS_ERROR', None)}")
 
         try:
-            conn = get_connection()
+            conn = get_connection(shared=True)
             c = conn.cursor()
             c.execute("SELECT last_sync FROM intel_sync WHERE source = 'urlhaus'")
             row = c.fetchone()
