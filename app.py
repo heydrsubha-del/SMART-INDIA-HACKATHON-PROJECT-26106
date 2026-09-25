@@ -577,11 +577,11 @@ st.markdown(
         --line-strong: #2a3444;
         --text: #eef2f8;
         --muted: #93a0b3;
-        --cyan: #5470ff;
+        --cyan: #12e0ab;
         /* Secondary accent family -- gives AI/assistant surfaces (the Qwen
            dossiers, the AI console, the copilot panel) their own color
            identity instead of reusing the primary action blue everywhere. */
-        --violet: #8c7bf0;
+        --violet: #b25bf0;
         /* Tertiary accent family -- reserved for brand/navigation chrome
            (sidebar, masthead) so the app reads as deliberately multi-toned
            rather than one blue skin repeated on every surface. */
@@ -603,11 +603,11 @@ st.markdown(
         /* Calm, single-tone focus shadow for primary actions -- a soft
            blue lift instead of a saturated violet halo, so it reads as a
            clean product accent rather than a neon glow. */
-        --glow-violet: 0 0 0 1px rgba(84,112,255,.30), 0 6px 16px rgba(0,0,0,.24);
+        --glow-violet: 0 0 0 1px rgba(18,224,171,.30), 0 6px 16px rgba(0,0,0,.24);
         /* Signature brand accent: one flat, professional blue for every
            primary action / active state, instead of a two-hue gradient --
            gives the app a single deliberate identity color. */
-        --brand-gradient: linear-gradient(90deg,#5470ff,#5470ff);
+        --brand-gradient: linear-gradient(90deg,#12e0ab,#b25bf0);
         /* Action-button tokens -- the whole button family (primary = teal
            action key, secondary = graphite key) is tinted from here, so the
            look can be re-colored in one place without touching any rule. */
@@ -642,7 +642,7 @@ st.markdown(
     .stApp [role="combobox"]:focus,
     .stApp [role="combobox"][aria-expanded="true"] > div {
         border-color: var(--cyan) !important;
-        box-shadow: 0 0 0 3px rgba(84,112,255,.14) !important;
+        box-shadow: 0 0 0 3px rgba(18,224,171,.14) !important;
         outline: none !important;
     }
     .stApp input:invalid, .stApp select:invalid, .stApp textarea:invalid,
@@ -713,12 +713,12 @@ st.markdown(
         position:fixed !important; top:14px !important; left:14px !important; z-index:999999 !important;
         background:#0c1929 !important; border:1px solid var(--cyan) !important; border-radius:8px !important;
         padding:9px 14px 9px 11px !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.25), 0 8px 22px rgba(0,0,0,.4) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.25), 0 8px 22px rgba(0,0,0,.4) !important;
         transition:transform .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
     [data-testid="collapsedControl"]:hover {
         transform:scale(1.04) !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.4), 0 10px 26px rgba(0,0,0,.45) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 10px 26px rgba(0,0,0,.45) !important;
     }
     /* The native arrow only ever means "open the nav" -- spell that out so
        it isn't mistaken for decoration and missed on a dark, busy header. */
@@ -737,9 +737,9 @@ st.markdown(
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {
         background:
-            radial-gradient(circle at 12% -8%, rgba(84,112,255,.05), transparent 28%),
+            radial-gradient(circle at 12% -8%, rgba(18,224,171,.05), transparent 28%),
             radial-gradient(circle at 92% 0%, rgba(19,139,181,.045), transparent 26%),
-            radial-gradient(circle at 55% 105%, rgba(84,112,255,.025), transparent 32%),
+            radial-gradient(circle at 55% 105%, rgba(18,224,171,.025), transparent 32%),
             var(--bg) !important;
         color: var(--text) !important;
     }
@@ -797,7 +797,7 @@ st.markdown(
         display:inline-flex !important; align-items:center !important;
         color:var(--cyan) !important; font-size:10px !important; font-weight:800 !important;
         letter-spacing:1.5px !important; text-transform:uppercase !important;
-        background:rgba(84,112,255,.08) !important; border:1px solid rgba(84,112,255,.22) !important;
+        background:rgba(18,224,171,.08) !important; border:1px solid rgba(18,224,171,.22) !important;
         border-radius:20px !important; padding:3px 10px !important;
     }
     .stage-card-success .stage-label {color:var(--green) !important; background:rgba(47,206,135,.10) !important; border-color:rgba(47,206,135,.28) !important;}
@@ -884,15 +884,15 @@ st.markdown(
     .stTextInput input, .stNumberInput input, textarea {
         background:linear-gradient(180deg,#0d2035,#091729) !important;
         color:#eaf2fa !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:inset 0 1px 3px rgba(0,0,0,.35) !important;
         transition:border-color .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
-    .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d6790 !important;}
+    .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d8a6f !important;}
     .stTextInput input:focus, .stNumberInput input:focus, textarea:focus {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     /* Number input stepper (+/-) buttons -- previously unstyled and left on
        Streamlit's stock grey/red-focus default, which read as a jarring,
@@ -903,7 +903,7 @@ st.markdown(
     .stNumberInput [data-testid="stNumberInputStepUp"],
     .stNumberInput button {
         background:linear-gradient(180deg,#14293e,#0d1c2c) !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         color:#9fc3e6 !important;
         box-shadow:none !important;
         transition:background .15s var(--ease), border-color .15s var(--ease), color .15s var(--ease) !important;
@@ -926,7 +926,7 @@ st.markdown(
     .stMultiSelect [data-baseweb="select"] > div {
         background:linear-gradient(180deg,#0d2035,#091729) !important;
         color:#eaf2fa !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:inset 0 1px 3px rgba(0,0,0,.35) !important;
         transition:border-color .15s var(--ease) !important;
@@ -941,23 +941,23 @@ st.markdown(
         color:#eaf2fa !important;
     }
     .stSelectbox [data-baseweb="select"]:hover > div,
-    .stMultiSelect [data-baseweb="select"]:hover > div {border-color:#3d6790 !important;}
+    .stMultiSelect [data-baseweb="select"]:hover > div {border-color:#3d8a6f !important;}
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     .stSelectbox svg, .stMultiSelect svg {color:var(--cyan) !important;}
     div[data-baseweb="popover"] ul[role="listbox"] {
         background:#0d1a2b !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:0 14px 30px rgba(0,0,0,.4) !important;
         padding:4px !important;
     }
     div[data-baseweb="popover"] li[role="option"] {color:#dfeaf4 !important; border-radius:7px !important;}
     div[data-baseweb="popover"] li[role="option"]:hover,
-    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(84,112,255,.14) !important; color:#ffffff !important;}
+    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(18,224,171,.14) !important; color:#ffffff !important;}
     /* Widget labels ("Mail provider", "IMAP server", "Port"...) previously
        rode on Streamlit's plain default text -- a touch brighter, a firm
        weight and tighter line-height reads as deliberate field labelling
@@ -984,8 +984,8 @@ st.markdown(
                    box-shadow .22s var(--ease), transform .16s var(--ease), color .18s var(--ease) !important;
     }
     .stRadio label:hover {
-        background:rgba(84,112,255,.08) !important;
-        border-color:#20415e !important;
+        background:rgba(18,224,171,.08) !important;
+        border-color:#20402f !important;
         transform:translateY(-1px) !important;
     }
     .stRadio label:active {
@@ -1008,12 +1008,12 @@ st.markdown(
     .stRadio label:has(input:checked):active {transform:translateY(-1px) scale(.97) !important;}
     .stRadio label:has(input:checked) div:first-child {border-color:#eaf8ff !important;}
     .stRadio label:has(input:checked) p {color:#ffffff !important; font-weight:800 !important;}
-    .stFileUploader {background:#091625 !important; border:1px dashed #315878 !important; border-radius:12px !important;}
+    .stFileUploader {background:#091625 !important; border:1px dashed #31584f !important; border-radius:12px !important;}
     .stFileUploader section {background:transparent !important;}
 
     div[data-testid="stMetric"] {
         background:linear-gradient(180deg,#102238,#0c1b2d) !important;
-        border:1px solid #213c59 !important;
+        border:1px solid #213c37 !important;
         border-radius:var(--r-md) !important;
         padding:13px 15px !important;
         box-shadow:var(--shadow-sm) !important;
@@ -1044,7 +1044,7 @@ st.markdown(
     div[data-testid="stAlertContainer"],
     div[data-testid="stAlert"] {
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%) !important;
-        border:1px solid #1d3651 !important;
+        border:1px solid #1d3630 !important;
         border-left:3px solid var(--line-strong) !important;
         border-radius:var(--r-md) !important;
         box-shadow:0 8px 20px rgba(0,0,0,.18) !important;
@@ -1113,7 +1113,7 @@ st.markdown(
         font-weight:750;
         letter-spacing:.55px;
         text-transform:uppercase;
-        border-bottom:2px solid rgba(84,112,255,.35);
+        border-bottom:2px solid rgba(18,224,171,.35);
         white-space:nowrap;
     }
     table.polished-table tbody td {
@@ -1125,7 +1125,7 @@ st.markdown(
     table.polished-table tbody tr:last-child td {border-bottom:none;}
     table.polished-table tbody tr:nth-child(even) {background:rgba(255,255,255,.014);}
     table.polished-table tbody tr {transition:background .12s var(--ease);}
-    table.polished-table tbody tr:hover {background:rgba(84,112,255,.10);}
+    table.polished-table tbody tr:hover {background:rgba(18,224,171,.10);}
     table.polished-table tbody td:first-child {color:#cfe3f5; font-weight:600;}
     .polished-table-empty {
         padding:16px; text-align:center; color:var(--muted); font-size:13px;
@@ -1139,8 +1139,8 @@ st.markdown(
        polished SaaS console rather than an industrial SCADA panel. */
     .stApp {
         background:
-            radial-gradient(circle at 15% 0%, rgba(84,112,255,.035), transparent 26%),
-            radial-gradient(circle at 100% 15%, rgba(84,112,255,.03), transparent 30%),
+            radial-gradient(circle at 15% 0%, rgba(18,224,171,.035), transparent 26%),
+            radial-gradient(circle at 100% 15%, rgba(18,224,171,.03), transparent 30%),
             var(--bg) !important;
         background-size: auto !important;
     }
@@ -1412,7 +1412,7 @@ st.markdown(
     .st-key-input_mode_radio label:has(input:checked) {
         border-color:var(--cyan) !important;
         background:linear-gradient(180deg,#122b46,#0e1f34) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14) !important;
     }
     .st-key-input_mode_radio label:has(input:checked) p {color:#eef5ff !important;}
 
@@ -1439,7 +1439,7 @@ st.markdown(
         display:flex; align-items:center; justify-content:center; font-size:19px;
     }
     .mode-card-icon-blue {
-        background:rgba(84,112,255,.14); border:1px solid rgba(84,112,255,.34); color:#93a7ff;
+        background:rgba(18,224,171,.14); border:1px solid rgba(18,224,171,.34); color:#93a7ff;
     }
     .mode-card-icon-neutral {
         background:rgba(34,199,172,.14); border:1px solid rgba(34,199,172,.34); color:#7fd8c4;
@@ -1448,9 +1448,9 @@ st.markdown(
     .mode-card-sub {color:#8299b2; font-size:12px; margin-top:2px; line-height:1.4;}
     .mode-card:hover {border-color:var(--line-strong); background:var(--panel-2); transform:translateY(-1px);}
     @keyframes modeCardSelect {
-        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(84,112,255,.0);}
+        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(18,224,171,.0);}
         55%  {transform:scale(1.012);}
-        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(84,112,255,.34);}
+        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(18,224,171,.34);}
     }
     @keyframes modeCardIconPop {
         0%   {transform:scale(.75) rotate(-6deg);}
@@ -1459,7 +1459,7 @@ st.markdown(
     }
     .mode-card-active {
         border-color:var(--cyan) !important; background:var(--panel-2) !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.34) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.34) !important;
         animation:modeCardSelect .4s var(--ease);
     }
     .mode-card-active .mode-card-icon {animation:modeCardIconPop .45s var(--ease);}
@@ -1505,7 +1505,7 @@ st.markdown(
         font-family:"Consolas","Cascadia Code",monospace !important;
         font-size:13px !important;
         letter-spacing:.15px !important;
-        box-shadow:inset 0 0 18px rgba(84,112,255,.03) !important;
+        box-shadow:inset 0 0 18px rgba(18,224,171,.03) !important;
     }
     .feedback-icon { font-weight:900 !important; margin-right:9px !important; }
     .feedback-cursor { animation:feedbackBlink .8s steps(1) infinite; }
@@ -1515,7 +1515,7 @@ st.markdown(
         position:relative; overflow:hidden; margin:6px 0 14px 0; padding:18px 20px 16px;
         border:1px solid #3d3168; border-left:3px solid var(--violet); border-radius:var(--r-lg);
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
-        box-shadow:inset 0 0 26px rgba(84,112,255,.05),0 14px 34px rgba(0,0,0,.20);
+        box-shadow:inset 0 0 26px rgba(18,224,171,.05),0 14px 34px rgba(0,0,0,.20);
     }
     .ai-console-status {font:800 9px/1.3 monospace; letter-spacing:1.4px; color:#9584b8; text-transform:uppercase;}
     .ai-pulse {display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(47,206,135,.8);margin-right:7px;}
@@ -1524,7 +1524,7 @@ st.markdown(
     .ai-console-track {margin-top:13px;height:2px;background:#241c3c;position:relative;overflow:hidden;}
     .ai-console-track span {display:block;width:36%;height:100%;background:linear-gradient(90deg,transparent,var(--violet),transparent);animation:aiSweep 2.8s linear infinite;}
     @keyframes aiSweep {0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
-    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(84,112,255,.05),0 12px 28px rgba(0,0,0,.2);}
+    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(18,224,171,.05),0 12px 28px rgba(0,0,0,.2);}
     .ai-report-bar {display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-bottom:1px solid #2a2140;background:#150f24;color:#c9a8ff;font:900 10px/1.2 monospace;letter-spacing:1px;}
     .ai-report-chip {padding:4px 9px;border:1px solid #4a3a7a;background:#1c1530;color:#c9a8ff;border-radius:999px;}
     .ai-report-body {padding:18px 20px;color:#e2dcf0;font-size:14px;line-height:1.78;white-space:normal;}
@@ -1560,7 +1560,7 @@ st.markdown(
     .st-key-topnav, .st-key-topnav [data-testid="stRadio"] {min-width:0 !important;}
     .st-key-topnav::after {
         content:""; position:absolute; left:12px; right:12px; bottom:0; height:2px;
-        background:linear-gradient(90deg,#5470ff 0%,rgba(84,112,255,.12) 60%,transparent 100%);
+        background:linear-gradient(90deg,#12e0ab 0%,rgba(18,224,171,.12) 60%,transparent 100%);
         border-radius:2px; pointer-events:none;
     }
     .st-key-topnav .stRadio > div {
@@ -1583,7 +1583,7 @@ st.markdown(
         scroll-padding-inline:12px !important;
         -webkit-overflow-scrolling:touch !important;
         scrollbar-width:thin !important;
-        scrollbar-color:rgba(84,112,255,.4) transparent !important;
+        scrollbar-color:rgba(18,224,171,.4) transparent !important;
         /* Scroll-shadow trick: the two "cover" gradients scroll with the
            content (background-attachment:local) and cancel themselves
            out at the true start/end, while the two dark gradients stay
@@ -1602,10 +1602,10 @@ st.markdown(
     .st-key-topnav .stRadio > div::-webkit-scrollbar {height:5px !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-track {background:transparent !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb {
-        background:rgba(84,112,255,.4) !important; border-radius:6px !important;
+        background:rgba(18,224,171,.4) !important; border-radius:6px !important;
         transition:background .25s ease !important;
     }
-    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(84,112,255,.7) !important;}
+    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(18,224,171,.7) !important;}
 
     /* Roomier pills with no leading radio dot -- this bar behaves like a
        tab strip, not a checklist, so each item is one clean text chip. */
@@ -1629,9 +1629,9 @@ st.markdown(
     .st-key-topnav .stRadio label:has(input:checked),
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
     .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
-        background:#5470ff !important;
-        border-color:#5470ff !important;
-        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
+        background:#12e0ab !important;
+        border-color:#12e0ab !important;
+        box-shadow:0 2px 8px rgba(18,224,171,.35) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
@@ -1721,13 +1721,13 @@ st.markdown(
        consistent "this is live" language rather than a static icon. */
     @keyframes sbPulse {0%,100%{opacity:1; box-shadow:0 0 6px rgba(47,206,135,.6);} 50%{opacity:.55; box-shadow:0 0 14px rgba(47,206,135,.9);}}
 
-    .sidebar-brand-v2 {padding:10px 6px 16px; border-bottom:1px solid #1c3a53; margin-bottom:10px;}
+    .sidebar-brand-v2 {padding:10px 6px 16px; border-bottom:1px solid #452760; margin-bottom:10px;}
     .brand-row {display:flex; align-items:center; gap:10px;}
     .brand-mark {
         width:34px; height:34px; flex:0 0 34px; border-radius:var(--r-md);
         display:flex; align-items:center; justify-content:center; font-size:17px;
-        background:linear-gradient(180deg,#12233a,#0d1c2c); border:1px solid #24445f;
-        box-shadow:0 0 0 1px rgba(91,157,249,.18), 0 6px 14px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+        background:linear-gradient(180deg,#12233a,#0d1c2c); border:1px solid #4a2a63;
+        box-shadow:0 0 0 1px rgba(178,91,240,.20), 0 6px 14px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
     }
     .brand-text .name {color:var(--teal); font-weight:900; font-size:16.5px; letter-spacing:1.2px; line-height:1.15;}
     .brand-text .role {color:#6f8aa5; font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-top:2px;}
@@ -1744,9 +1744,9 @@ st.markdown(
     }
     .sidebar-group-label .grp-index {
         color:var(--teal); font:900 9px/1 "Consolas","Cascadia Code",monospace; letter-spacing:0;
-        border:1px solid #1a3a5c; border-radius:6px; padding:1.5px 4px; background:#0a1826;
+        border:1px solid #4a2a63; border-radius:6px; padding:1.5px 4px; background:#0a1826;
     }
-    .sidebar-group-label:after {content:""; flex:1; height:1px; background:linear-gradient(90deg,#1c3a52,transparent);}
+    .sidebar-group-label:after {content:""; flex:1; height:1px; background:linear-gradient(90deg,#4a2a63,transparent);}
 
     [data-testid="stSidebar"] .stButton > button {
         position:relative !important;
@@ -1777,19 +1777,19 @@ st.markdown(
         transition:opacity .2s var(--ease), transform .2s var(--ease);
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background:rgba(91,157,249,.12) !important; border-color:#1e3a5c !important; color:#eaf6ff !important;
+        background:rgba(178,91,240,.14) !important; border-color:#4a2a63 !important; color:#eaf6ff !important;
         padding-left:18px !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover::before {opacity:.5; transform:scaleY(.7);}
     [data-testid="stSidebar"] .stButton > button:active {transform:scale(.985) !important; transition-duration:.08s !important;}
     [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-        background:linear-gradient(90deg,rgba(91,157,249,.20),rgba(91,157,249,.02)) !important;
-        border:1px solid #1e3a5c !important;
-        color:#eefaff !important; box-shadow:inset 0 0 0 1px rgba(91,157,249,.10) !important;
+        background:linear-gradient(90deg,rgba(178,91,240,.22),rgba(178,91,240,.02)) !important;
+        border:1px solid #4a2a63 !important;
+        color:#eefaff !important; box-shadow:inset 0 0 0 1px rgba(178,91,240,.12) !important;
         padding-left:18px !important;
     }
     [data-testid="stSidebar"] .stButton > button[kind="primary"]::before {
-        opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(91,157,249,.65);
+        opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(178,91,240,.7);
     }
     /* System-status widget: a small two-tile "health" card instead of a
        plain list of rows, with its own pulse dot and hover lift so it
@@ -1797,10 +1797,10 @@ st.markdown(
     .sidebar-status-card-v2 {
         margin-top:16px; padding:13px 13px 11px; border:1px solid #1b465a; position:relative; overflow:hidden;
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%); border-radius:var(--r-lg);
-        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(84,112,255,.02);
+        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(18,224,171,.02);
         transition:border-color .2s var(--ease), box-shadow .2s var(--ease);
     }
-    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(84,112,255,.04);}
+    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(18,224,171,.04);}
     .sidebar-status-card-v2:before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--green),transparent 80%);}
     .ssc-head {display:flex; align-items:center; gap:7px; margin-bottom:10px;}
     .ssc-pulse {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px rgba(47,206,135,.8); animation:sbPulse 2.2s ease-in-out infinite; flex:0 0 7px;}
@@ -1935,21 +1935,21 @@ st.markdown(
        copy-paste twin of the other view's. */
     .st-key-run_vpn_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#123a5c,#0c283f) !important;
-        border:1px solid rgba(84,112,255,.55) !important;
+        border:1px solid rgba(18,224,171,.55) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(84,112,255,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(18,224,171,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_vpn_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(84,112,255,.35), 0 10px 26px rgba(84,112,255,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.35), 0 10px 26px rgba(18,224,171,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#291c47,#190f2b) !important;
-        border:1px solid rgba(140,123,240,.55) !important;
+        border:1px solid rgba(178,91,240,.55) !important;
         color:#f1ecff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(140,123,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(178,91,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(178,91,240,.35), 0 10px 26px rgba(178,91,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     /* Live-status chip shown above each Scan button (freshness + source
        count) -- filled in with real fetch results after each scan run. */
@@ -2004,7 +2004,7 @@ st.markdown(
     .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
     .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
     .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(84,112,255,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(18,224,171,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
     .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
     </style>
     """,
@@ -2813,7 +2813,7 @@ def _render_email_results_table(df, height=300):
                     score = float(v)
                 except (TypeError, ValueError):
                     score = 0.0
-                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#5470ff")
+                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#12e0ab")
                 pct = max(0.0, min(100.0, score))
                 tds.append(
                     '<td><div class="email-score-cell">'
