@@ -704,13 +704,7 @@ st.markdown(
             var(--bg) !important;
         color: var(--text) !important;
     }
-    /* Streamlit renamed this container's class from .block-container to
-       .stMainBlockContainer (data-testid="stMainBlockContainer") at some
-       point after this stylesheet was first written -- targeting both
-       keeps this working whether the deployed Streamlit version is old or
-       new, instead of this whole rule silently matching nothing the
-       moment the class name moves on again. */
-    .block-container, .stMainBlockContainer, [data-testid="stMainBlockContainer"] {
+    .block-container {
         max-width: 100% !important;
         padding-top: 1.5rem !important;
         padding-bottom: 3rem !important;
@@ -1125,7 +1119,7 @@ st.markdown(
             var(--bg) !important;
         background-size: auto !important;
     }
-    .block-container, .stMainBlockContainer, [data-testid="stMainBlockContainer"] {padding-left:1.35rem !important; padding-right:1.35rem !important;}
+    .block-container {padding-left:1.35rem !important; padding-right:1.35rem !important;}
     [data-testid="stSidebar"] {
         background:linear-gradient(180deg,#060b13 0%,#05090f 100%) !important;
         border-right:1px solid #131f2c !important;
