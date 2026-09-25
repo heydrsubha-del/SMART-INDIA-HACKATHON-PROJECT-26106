@@ -650,6 +650,45 @@ st.markdown(
         box-shadow: none !important;
     }
 
+    /* App-wide radio-dot leak fix. Three earlier attempts at this (hiding
+       `label > div:first-child`, hiding `[data-baseweb="radio"]`, then
+       `label > *:not(:has(p))`) still didn't clear it in the user's
+       browser -- at this point, stop guessing at a single selector and
+       stack every independent way of suppressing an element, so this
+       survives even if one technique is neutralized by something else in
+       the stylesheet or the browser's own defaults: `display:none` alone,
+       zero size + clipped overflow, moved off-screen, and made fully
+       transparent, all at once, on every plausible target (the circle
+       wrapper, the raw input, any svg, and the accent-color a browser
+       uses to paint a native checked radio red by default). */
+    .stRadio label > *:not(:has(p)),
+    .stRadio label input[type="radio"],
+    .stRadio label svg,
+    .stRadio label [data-baseweb="radio"] {
+        display:none !important;
+        width:0 !important; height:0 !important;
+        margin:0 !important; padding:0 !important;
+        border:0 !important; opacity:0 !important;
+        overflow:hidden !important;
+        position:absolute !important; left:-9999px !important;
+        pointer-events:none !important;
+    }
+    .stRadio input[type="radio"] {accent-color:var(--cyan) !important;}
+
+    /* The real element (confirmed from the actual rendered DOM, via
+       inspector): each radio option's marker is a plain, contentless
+       `<div>` -- not a Material icon span, which is what every earlier
+       attempt here wrongly assumed. An empty div is reliably selectable
+       with `:empty` regardless of Streamlit's internal (unstable,
+       hash-named) emotion classes, so this targets it directly instead
+       of guessing at an attribute again. Unselected stays a plain quiet
+       outline; selected gets a soft white halo so it reads as a real
+       "active" indicator instead of a flat dot. */
+    .stRadio label:has(input:checked) div:empty {
+        box-shadow:0 0 0 4px rgba(255,255,255,.20), 0 0 12px 3px rgba(255,255,255,.6) !important;
+        transition:box-shadow .2s var(--ease) !important;
+    }
+
     /* Quality-floor: a visible, on-brand focus ring everywhere, so keyboard
        navigation is never invisible -- this replaces the browser default
        rather than removing it. */
@@ -1029,46 +1068,17 @@ st.markdown(
     [data-testid="stAlertContentError"] {color:#ffb4bc !important;}
     [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
     [data-testid="stExpander"]:hover {border-color:#2c5877 !important;}
-    .stTabs [data-baseweb="tab-list"] {gap:5px !important; background:#071321 !important; border:1px solid #18324b !important; padding:5px !important; border-radius:var(--r-md) !important;}
-    .stTabs [data-baseweb="tab"] {
-        color:#8197af !important; border-radius:8px !important; padding:9px 15px !important;
-        cursor:pointer !important;
-        transition:background .2s var(--ease), color .18s var(--ease),
-                   box-shadow .2s var(--ease), transform .16s var(--ease) !important;
-    }
-    .stTabs [data-baseweb="tab"]:hover {color:#c9e4f4 !important; background:rgba(84,112,255,.08) !important; transform:translateY(-1px) !important;}
-    .stTabs [data-baseweb="tab"]:active {transform:translateY(0) scale(.97) !important; transition-duration:.08s !important;}
-    .stTabs [aria-selected="true"] {
-        color:#eff9ff !important;
-        background:linear-gradient(90deg, #14304a, #102b43) !important;
-        box-shadow:inset 0 0 0 1px rgba(84,112,255,.28), 0 6px 14px rgba(0,0,0,.22) !important;
-        transform:translateY(-1px) !important;
-    }
-    /* A thin accent underline that fades/slides in on the selected tab
-       instead of just appearing -- present (invisible) on every tab so
-       switching never shifts row height, only the active one lights up. */
-    .stTabs [data-baseweb="tab"]::after {
-        content:""; display:block; height:2px; margin-top:7px; border-radius:2px;
-        background:linear-gradient(90deg, transparent, var(--cyan), var(--violet), transparent);
-        opacity:0; transform:scaleX(.4);
-        transition:opacity .25s var(--ease), transform .25s var(--ease);
-    }
-    .stTabs [aria-selected="true"]::after {opacity:1; transform:scaleX(1);}
-    /* The stray red line under the active tab in every st.tabs() in the
-       app (Email Results/Antivirus Scan, VPN/Datacenter/Tor Exit Nodes,
-       CSV/AV, everywhere) isn't coming from any rule above -- it's
-       baseweb's own native sliding tab-highlight indicator, painted with
-       Streamlit's theme primaryColor (default red) via inline style at
-       render time. No amount of styling the tab background/text touches
-       it, which is exactly why every tab redesign attempt still had a
-       flat red underline left over from the unstyled default. This
-       repaints that specific native element directly, everywhere, with
-       the app's own accent gradient instead of the leftover default red. */
-    .stTabs [data-baseweb="tab-highlight"],
-    .stTabs [data-baseweb="tab-border"] {
-        background:linear-gradient(90deg, var(--cyan), var(--violet)) !important;
-        height:2.5px !important;
-    }
+    /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
+       tab-highlight internals kept rendering as plain unstyled default
+       tabs (with the theme's raw red underline) no matter how this was
+       styled, because they're painted by BaseWeb via inline styles at
+       render time that these selectors evidently weren't matching in the
+       installed Streamlit version. Every former st.tabs() spot (Email
+       Results/Antivirus Scan, VPN/Datacenter/Tor Exit Nodes) is now the
+       same st.radio "pill" segmented control the top nav already uses
+       (see .st-key-topnav) -- styled below via the proven, version-proof
+       label:has(input:checked) pattern instead of guessing at BaseWeb's
+       DOM. */
     .stDataFrame {border:1px solid #203b57 !important; border-radius:var(--r-md) !important; overflow:hidden !important; box-shadow:var(--shadow-sm) !important;}
 
     /* Polished static table -- used in place of st.dataframe wherever the
@@ -1300,11 +1310,11 @@ st.markdown(
        flat SCADA panel. */
     [data-testid="stExpander"], div[data-testid="stMetric"] {border-radius:var(--r-lg) !important;}
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button {border-radius:var(--r-md) !important; text-transform:uppercase; letter-spacing:.6px;}
-    /* (Tab radius/case/size is fully owned by the .stTabs rules above and
-       the per-panel .st-key-* overrides further down -- this used to
-       re-declare a conflicting tiny-uppercase variant here, fighting the
-       readable design set everywhere else. Removed rather than left to
-       silently compete. ) */
+    /* (Tab radius/case/size is fully owned by the .stRadio segmented-control
+       rules and the per-panel .st-key-* overrides further down -- this
+       used to re-declare a conflicting tiny-uppercase variant here,
+       fighting the readable design set everywhere else. Removed rather
+       than left to silently compete. ) */
 
     /* Native Streamlit uploader only — no synthetic Browse Evidence labels.
        Richer layered background (soft cyan/green glows over the industrial
@@ -1610,15 +1620,22 @@ st.markdown(
     .st-key-topnav .stRadio label p {white-space:nowrap !important;}
     .st-key-topnav .stRadio label > div:first-child {display:none !important;}
 
-    /* Active tab: one flat, confident blue fill -- no gradient, no lift,
-       no glow ring -- so the current section reads as a solid selected
-       pill (clean product tab-bar) rather than a lit-up SCADA control. */
-    .st-key-topnav .stRadio label:has(input:checked) {
+    /* Active tab, all three tab-strip radios (top nav, bulk infra scan,
+       technical logs) share one flat, confident blue fill -- no gradient,
+       no lift, no glow ring -- so "what's currently selected" reads the
+       same way everywhere in the app instead of three slightly different
+       looks. Consolidated into one rule instead of three near-duplicates
+       so future edits can't quietly drift out of sync again. */
+    .st-key-topnav .stRadio label:has(input:checked),
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
         background:#5470ff !important;
         border-color:#5470ff !important;
         box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
     }
-    .st-key-topnav .stRadio label:has(input:checked) p {
+    .st-key-topnav .stRadio label:has(input:checked) p,
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) p {
         color:#ffffff !important; font-weight:700 !important; letter-spacing:.15px !important;
     }
 
@@ -1883,69 +1900,55 @@ st.markdown(
     .infra-scan-title {margin-top:8px; color:#f2f8ff; font-size:21px; font-weight:800; letter-spacing:.2px;}
     .infra-scan-sub {margin-top:5px; color:var(--muted); font-size:13px; line-height:1.55;}
 
-    /* Bulk Infrastructure Scan tabs -- previously just inherited the
-       app-wide uppercase/10px tab style, which read as an afterthought
-       next to the panel's own header treatment above it. Scoped (not
-       global) so these two tabs get a bespoke, larger "channel selector"
-       look -- full-width equal-weight segments, a coloured status dot per
-       category (cyan = VPN/datacenter, violet = Tor) instead of an icon
-       font, and a softer glass-panel active state -- while every other
-       st.tabs() in the app keeps its existing compact style untouched. */
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] {
+    /* Bulk Infrastructure Scan segmented control -- built on st.radio, the
+       same "pill" pattern the top nav uses (see .st-key-topnav): full-width
+       equal segments, plain text (no per-option colour dot -- those were
+       adding visual noise and were also colliding with a native radio
+       circle that CSS wasn't fully suppressing), flat single-accent active
+       state. Minimal and consistent with every other tab strip in the app. */
+    .st-key-bulk_infra_scan [data-testid="stRadio"] > div {
+        display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
         background:linear-gradient(180deg,#081726,#060f1a) !important;
         border:1px solid #1c3a55 !important;
         padding:6px !important;
-        gap:8px !important;
         border-radius:var(--r-md) !important;
     }
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"] {
-        flex:1 1 0 !important;
-        justify-content:center !important;
-        text-transform:none !important;
-        font-size:13px !important;
-        font-weight:700 !important;
-        letter-spacing:.2px !important;
-        padding:12px 16px !important;
-        border-radius:9px !important;
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label {
+        flex:1 1 0 !important; justify-content:center !important;
+        display:flex !important; align-items:center !important;
+        text-align:center !important; white-space:nowrap !important;
+        min-height:24px !important;
+        font-size:13px !important; font-weight:700 !important; letter-spacing:.2px !important;
+        padding:12px 16px !important; border-radius:9px !important;
+        border:1px solid transparent !important;
+        transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
     }
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"] p {font-size:13px !important; font-weight:700 !important;}
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"]::before {
-        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
-        margin-right:9px; vertical-align:middle; transition:box-shadow .2s var(--ease);
-        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label p {
+        font-size:13px !important; font-weight:700 !important; white-space:nowrap !important;
     }
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] > button:nth-of-type(1)::before {background:var(--cyan);}
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] > button:nth-of-type(2)::before {background:var(--violet);}
-    .st-key-bulk_infra_scan .stTabs [aria-selected="true"]::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
-    .st-key-bulk_infra_scan .stTabs [aria-selected="true"] {
-        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(140,123,240,.09)) !important;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
-        color:#f4f9ff !important;
-    }
-    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"]::after {display:none !important;}
     /* The Scan buttons themselves used to be identical generic teal
        primary buttons in both tabs -- functionally fine but visually
        interchangeable, giving no sense that one drives a VPN/datacenter
-       check and the other a Tor check. Recolored per tab-panel to match
-       that panel's own dot colour (cyan for VPN/Datacenter, violet for
+       check and the other a Tor check. Recolored per button key to match
+       that view's own dot colour (cyan for VPN/Datacenter, violet for
        Tor), still clearly a "primary action" button, just no longer a
-       copy-paste twin of the other tab's. */
-    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(1) .stButton > button[kind^="primary"] {
+       copy-paste twin of the other view's. */
+    .st-key-run_vpn_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#123a5c,#0c283f) !important;
         border:1px solid rgba(84,112,255,.55) !important;
         color:#eaf6ff !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(84,112,255,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
-    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(1) .stButton > button[kind^="primary"]:hover {
+    .st-key-run_vpn_bulk_scan button[kind^="primary"]:hover {
         box-shadow:0 0 0 1px rgba(84,112,255,.35), 0 10px 26px rgba(84,112,255,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
-    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(2) .stButton > button[kind^="primary"] {
+    .st-key-run_tor_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#291c47,#190f2b) !important;
         border:1px solid rgba(140,123,240,.55) !important;
         color:#f1ecff !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(140,123,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
-    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(2) .stButton > button[kind^="primary"]:hover {
+    .st-key-run_tor_bulk_scan button[kind^="primary"]:hover {
         box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     /* Live-status chip shown above each Scan button (freshness + source
@@ -1961,42 +1964,34 @@ st.markdown(
     }
     .infra-scan-livebar.stale .dot {background:var(--amber); box-shadow:0 0 6px 1px rgba(242,169,60,.7);}
 
-    /* Technical Logs & Antivirus tabs -- same "flat default grid" problem
-       as the table below it: nothing here overrode the base uppercase/
-       10px tab style with any presence, so next to the rest of the app it
-       read as an afterthought. Scoped bespoke treatment: a cyan dot for
-       Email Results, a red/amber dot for Antivirus Scan (it's the
-       threat-scanning tab), larger comfortable type, a soft glass active
-       state. */
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] {
+    /* Technical Logs & Antivirus segmented control -- same st.radio "pill"
+       pattern as the top nav and the bulk infra scan above. Plain text
+       pills, no per-option colour dot (dropped along with bulk infra
+       scan's, for the same reason: minimal, one consistent look, and one
+       less thing colliding with the native radio circle). */
+    .st-key-tech_logs_tabs [data-testid="stRadio"] > div {
+        display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
         background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
         border:1px solid #1e3350 !important;
-        padding:6px !important; gap:8px !important;
+        padding:6px !important;
         border-radius:var(--r-md) !important;
     }
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"] {
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label {
+        text-align:center !important;
         text-transform:none !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        white-space:nowrap !important; min-height:20px !important;
         font-size:13.5px !important;
         font-weight:700 !important;
         letter-spacing:.2px !important;
         padding:11px 20px !important;
         border-radius:9px !important;
+        border:1px solid transparent !important;
+        transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
     }
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"] p {font-size:13.5px !important; font-weight:700 !important;}
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"]::before {
-        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
-        margin-right:9px; vertical-align:middle;
-        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label p {
+        font-size:13.5px !important; font-weight:700 !important; white-space:nowrap !important;
     }
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] > button:nth-of-type(1)::before {background:var(--cyan);}
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] > button:nth-of-type(2)::before {background:var(--red);}
-    .st-key-tech_logs_tabs .stTabs [aria-selected="true"]::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
-    .st-key-tech_logs_tabs .stTabs [aria-selected="true"] {
-        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(84,112,255,.06)) !important;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
-        color:#f4f9ff !important;
-    }
-    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"]::after {display:none !important;}
 
     /* Rich email-results grid -- replaces st.dataframe's canvas-rendered
        ProgressColumn/plain verdict text (which, like every st.dataframe
@@ -3493,11 +3488,14 @@ if active_panel == "Dashboard":
         st.markdown("#### Technical Logs & Antivirus")
         _tech_logs_container = st.container(key="tech_logs_tabs")
         with _tech_logs_container:
-            tab_logs, tab_av = st.tabs(["Email Results", "Antivirus Scan"])
+            _tech_logs_view = st.radio(
+                "Technical Logs & Antivirus view", ["Email Results", "Antivirus Scan"],
+                horizontal=True, label_visibility="collapsed", key="tech_logs_tabs_radio",
+            )
 
-        with tab_logs:
+        if _tech_logs_view == "Email Results":
             st.caption(
-                "Want a full multi-email report? Ask the ** Synapse Copilot** in the sidebar to "
+                "Want a full multi-email report? Ask the **Synapse Copilot** in the sidebar to "
                 "*\"track my last 10 emails\"* — machine + AI + semantic analysis across your recent "
                 "mail, ending on a downloadable Forensic Report."
             )
@@ -3519,7 +3517,7 @@ if active_panel == "Dashboard":
                 } for i, r in enumerate(cases)]
                 _render_email_results_table(pd.DataFrame(log_rows), height=280)
 
-        with tab_av:
+        if _tech_logs_view == "Antivirus Scan":
             av_up = _clamd_up_cached()
             if av_up:
                 st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
@@ -4097,9 +4095,9 @@ if active_panel == "Dashboard":
                     G = _build_correlation_graph(cases, max_cases=20, seed=42)
                     st.plotly_chart(correlate.graph_figure(G, height=430), width="stretch")
                     if G.graph.get("sampled"):
-                        st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: ** Correlation Graph** in the sidebar.")
+                        st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
                     else:
-                        st.caption("Shared-indicator detail and case table: ** Correlation Graph** in the sidebar.")
+                        st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
 
         # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
         # In CSV mode this section already rendered earlier (between the Deep
@@ -4721,9 +4719,12 @@ if active_panel == "Origin & Route":
                 '</div>',
                 unsafe_allow_html=True,
             )
-            _bulk_vpn_tab, _bulk_tor_tab = st.tabs(["VPN / Datacenter", "Tor Exit Nodes"])
+            _bulk_infra_view = st.radio(
+                "Bulk infrastructure scan view", ["VPN / Datacenter", "Tor Exit Nodes"],
+                horizontal=True, label_visibility="collapsed", key="bulk_infra_scan_radio",
+            )
 
-            with _bulk_vpn_tab:
+            if _bulk_infra_view == "VPN / Datacenter":
                 st.caption(
                     "Checks every origin + hop IP across every email currently loaded "
                     "(this session's cases) against VPN / datacenter CIDR ranges. One "
@@ -4837,7 +4838,7 @@ if active_panel == "Origin & Route":
                     "unless 'Skip the live fetch' is checked above."
                 )
 
-            with _bulk_tor_tab:
+            if _bulk_infra_view == "Tor Exit Nodes":
                 st.caption(
                     "Checks every origin + hop IP across every email currently loaded "
                     "(this session's cases) against three lists -- the Tor Project's "
