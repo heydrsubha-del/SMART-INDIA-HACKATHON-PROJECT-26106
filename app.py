@@ -1189,20 +1189,32 @@ st.markdown(
        flows below the center pane -- and move the reopen tab to a bottom
        corner so it doesn't sit awkwardly mid-page over stacked content. */
     @media (max-width: 900px) {
-        .st-key-right_summary_pane, .st-key-bulk_command_dock {
-            position:static !important;
-            top:auto !important;
-            max-height:none !important;
-            border-left:none !important;
-            border-top:1px solid #1c3a52 !important;
-            box-shadow:0 -10px 24px rgba(0,0,0,.25) !important;
-            margin-top:14px !important;
-        }
-        .st-key-right_dock_reopen {
-            top:auto !important;
-            bottom:14px !important;
-        }
+    .st-key-right_summary_pane, .st-key-bulk_command_dock {
+        position:static !important;
+        top:auto !important;
+        max-height:none !important;
+        border-left:none !important;
+        border-top:1px solid #1c3a52 !important;
+        box-shadow:0 -10px 24px rgba(0,0,0,.25) !important;
+        margin-top:14px !important;
     }
+    /* Force the actual st.columns row to stack -- don't assume Streamlit
+       already did it, since its own breakpoint is narrower than 900px. */
+    [data-testid="stHorizontalBlock"]:has(.st-key-right_summary_pane),
+    [data-testid="stHorizontalBlock"]:has(.st-key-bulk_command_dock) {
+        flex-direction:column !important;
+    }
+    [data-testid="stHorizontalBlock"]:has(.st-key-right_summary_pane) > div,
+    [data-testid="stHorizontalBlock"]:has(.st-key-bulk_command_dock) > div {
+        width:100% !important;
+        flex:1 1 100% !important;
+        min-width:0 !important;
+    }
+    .st-key-right_dock_reopen {
+        top:auto !important;
+        bottom:14px !important;
+    }
+}
     .right-dock-title {
         font:800 11px/1.3 monospace; letter-spacing:1.2px; color:#5fdfff;
         padding:8px 0 4px 2px;
