@@ -1847,21 +1847,49 @@ st.markdown(
        runs ~2-3x taller than these, and stacking Threat + Investigation
        Summary + Top Threat Signal Breakdown on top of Synapse Copilot in
        a max-height sticky dock needs every one of those rows back, or the
-       dock scrolls internally before you ever reach the Copilot panel. */
+       dock scrolls internally before you ever reach the Copilot panel.
+
+       v2: given a left accent spine (same device as .acq-panel/.stage-card
+       elsewhere in the app) and a visible gap before/after so each
+       section (KEY METRICS, INVESTIGATION SUMMARY, TOP THREAT SIGNAL
+       BREAKDOWN) reads as its own distinct card instead of a flat strip
+       glued to the one above it. */
     .panel-card-head {
         display:flex; justify-content:space-between; align-items:center;
-        padding:9px 13px; border:1px solid #193a50; border-bottom:none;
-        background:#0a1d2b; border-radius:var(--r-lg) var(--r-lg) 0 0;
-        color:#5fdfff; font:800 10.5px/1.2 monospace; letter-spacing:1px;
+        padding:12px 16px; border:1px solid #193a50; border-left:3px solid var(--cyan);
+        border-bottom:none;
+        background:linear-gradient(180deg,#0e2233,#0a1d2b); border-radius:var(--r-lg) var(--r-lg) 0 0;
+        color:#5fdfff; font:800 11px/1.2 monospace; letter-spacing:1.2px;
+        margin-top:26px !important;
     }
-    .panel-card-body {border:1px solid #193a50; border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg); padding:12px; background:#081522;}
+    .panel-card-head:first-child { margin-top:0 !important; }
+    .panel-card-body {
+        border:1px solid #193a50; border-left:3px solid var(--cyan); border-top:none;
+        border-radius:0 0 var(--r-lg) var(--r-lg); padding:16px 16px 17px; background:#081522;
+        box-shadow:var(--shadow-sm);
+        line-height:2;
+    }
+    .panel-card-body b { color:#dbe6f2; font-weight:700; }
 
-    .threattype-row {display:flex; align-items:center; gap:10px; margin:9px 0; font-size:12px; color:#c9d8e7;}
+    /* The right dock (border=True container) previously relied on
+       Streamlit's own default inner padding, which reads tight next to
+       the generous spacing everywhere else in the app -- give it real
+       breathing room on every side, and soften the dock's square outer
+       edge into the same rounded-card language the rest of the UI uses. */
+    .st-key-right_summary_pane, .st-key-bulk_command_dock {
+        padding:22px 18px 26px !important;
+        border-radius:var(--r-lg) 0 0 var(--r-lg) !important;
+    }
+    @media (max-width: 900px) {
+        .st-key-right_summary_pane, .st-key-bulk_command_dock { border-radius:var(--r-lg) var(--r-lg) 0 0 !important; }
+    }
+    
+    .threattype-row {display:flex; align-items:center; gap:10px; margin:12px 0; font-size:12px; color:#c9d8e7;}
     .threattype-row .bar-track {flex:1; height:7px; border-radius:5px; background:#0d1f30; overflow:hidden;}
     .threattype-row .bar-fill {height:100%; border-radius:5px;}
     .threattype-row .pct {width:38px; text-align:right; color:#8fa5bd; font-size:11px;}
 
-    .copilot-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+    .copilot-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
     .copilot-title {font-weight:800; color:#eaf6ff; font-size:13px;}
     .copilot-active {font-size:9px; color:var(--green); font-weight:800; letter-spacing:1px; display:inline-flex; align-items:center;}
     .copilot-msg {background:#0a1826; border:1px solid #1c3a52; border-radius:var(--r-md); padding:10px 12px; font-size:12.5px; color:#c9d8e7; line-height:1.5; margin-bottom:9px;}
@@ -1883,8 +1911,15 @@ st.markdown(
         border:1px solid #223c58 !important; border-top:none !important;
         border-radius:0 0 var(--r-lg) var(--r-lg) !important;
         background:linear-gradient(180deg,#0d1c2c,#091623) !important;
-        padding:12px 14px 14px 14px !important;
+        padding:16px 16px 18px 16px !important;
     }
+    /* The quick-action row and the command input were sitting flush
+       against the message bubble above them with no gap at all -- give
+       each of the copilot's three stacked blocks (message, quick
+       actions, command input) real separation instead of reading as one
+       dense paragraph-and-buttons blob. */
+    .st-key-copilot_quick_actions { margin-top:14px !important; }
+    .st-key-copilot_command_row { margin-top:12px !important; }
     .st-key-copilot_quick_actions .stButton > button {
         font-size:10.5px !important; padding:6px 6px !important; min-height:34px !important;
         white-space:normal !important; line-height:1.2 !important;
@@ -2018,6 +2053,105 @@ st.markdown(
     .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
     .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(18,224,171,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
     .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
+
+    /* ------------------------------------------------------------------
+       DASHBOARD SECTION HEADER -- replaces the bare st.caption("MIDDLE
+       PREVIEW PANE") label, which rendered as a small gray debug-style
+       line with no visual weight, out of step with every other titled
+       section in the app. Same family as .panel-card-head/.right-dock-title
+       (cyan monospace eyebrow) but sized for a top-level section rather
+       than a nested card, plus a bottom rule so it reads as a real
+       divider between the page header/controls above and the map +
+       correlation graph content below. */
+    .dash-section-title {
+        display:flex; align-items:center; gap:9px;
+        margin:18px 0 10px !important;
+        padding-bottom:9px;
+        border-bottom:1px solid var(--line);
+        color:#5fdfff; font:800 12px/1.3 monospace; letter-spacing:1.4px; text-transform:uppercase;
+    }
+    .dash-section-title .dash-section-dot {
+        width:7px; height:7px; border-radius:50%; background:var(--cyan);
+        box-shadow:0 0 10px rgba(18,224,171,.75); flex:0 0 7px;
+    }
+    .dash-section-title .dash-section-sub {
+        color:#6f8aa3; font-weight:600; letter-spacing:.3px; text-transform:none; font-size:11px;
+    }
+
+    /* Breathing room between the map-view radio toggle (All senders / By
+       email) and the GLOBE-SCAN card header sitting right underneath it --
+       previously flush against each other and read as one crowded block. */
+    .st-key-dash_map_mode [role="radiogroup"] { gap:8px !important; }
+
+    /* Right-hand THREAT SUMMARY dock header: vertically center the title
+       against the close (X) button instead of relying on default column
+       baseline alignment, and give the row a touch more breathing room so
+       the two don't read as jammed against the card's top edge. */
+    .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type {
+        align-items:center !important;
+        margin-bottom:12px !important;
+    }
+    .right-dock-title { padding:2px 0 !important; }
+
+    /* Synapse Copilot quick-action row (FULL REPORT / LAST WEEK / NOMIC
+       MATCH): force an even 3-up grid instead of letting buttons wrap
+       into a ragged 2+1 layout at narrower sidebar widths. */
+    .st-key-copilot_quick_actions [data-testid="stHorizontalBlock"] {
+        flex-wrap:nowrap !important; gap:6px !important;
+    }
+    .st-key-copilot_quick_actions [data-testid="column"] { min-width:0 !important; }
+
+    /* KEY METRICS 2x2 grid inside the right dock: tighten the gap between
+       metric cards so all four (Threat Score / ML Phishing / Auth Pass /
+       Anomalies) read as one compact cluster under their header instead
+       of floating with uneven whitespace. */
+    .st-key-right_summary_pane div[data-testid="stMetric"] { padding:11px 12px !important; }
+    .st-key-right_summary_pane [data-testid="stHorizontalBlock"] { gap:8px !important; }
+
+    /* Group the four KEY METRICS tiles (Threat Score / ML Phishing /
+       Auth Pass / Anomalies) inside the same bordered-card shell the
+       Investigation Summary and Top Threat Signal Breakdown sections
+       use, so all three sit as clearly separated cards of equal weight
+       instead of one loose grid floating free next to two boxed ones --
+       that inconsistency was a big part of the "congested" feel: some
+       content had a visible boundary, some didn't. Also gives the two
+       metric rows real breathing room between them instead of sitting
+       flush against each other. */
+    .st-key-right_dock_metrics_body, .st-key-dd_dock_metrics_body {
+        border:1px solid #193a50; border-left:3px solid var(--cyan); border-top:none;
+        border-radius:0 0 var(--r-lg) var(--r-lg); padding:16px 14px 4px !important; background:#081522;
+        box-shadow:var(--shadow-sm);
+    }
+    .st-key-right_dock_metrics_body [data-testid="stHorizontalBlock"],
+    .st-key-dd_dock_metrics_body [data-testid="stHorizontalBlock"] {
+        gap:12px !important; margin-bottom:12px !important;
+    }
+
+    /* Origin & Correlation card (map + graph, side by side): give the
+       generic bordered container real presence -- rounded corners, a
+       touch of depth, and a hover-quiet static look consistent with
+       .stage-card/.acq-panel -- instead of Streamlit's flat thin-gray
+       default border every other unstyled st.container(border=True)
+       still uses. */
+    .st-key-dash_map_graph_card {
+        border:1px solid var(--line-strong) !important;
+        border-radius:var(--r-lg) !important;
+        background:linear-gradient(180deg,var(--panel) 0%,var(--panel-3) 100%) !important;
+        box-shadow:var(--shadow-md) !important;
+        padding:24px !important;
+    }
+    /* The GLOBE-SCAN / NETWORK INFRASTRUCTURE card headers inside it get
+       the same left-accent treatment as the right-dock cards, so the two
+       halves of the dashboard read as one consistent card system. */
+    .st-key-dash_map_graph_card .panel-card-head { margin-top:0 !important; }
+    .st-key-dash_map_graph_card .panel-card-head span:last-child {
+        font:700 10px/1.2 'Inter',sans-serif; letter-spacing:.3px; color:#8fa5bd; text-transform:none;
+    }
+    /* The map-view radio toggle sits directly above the GLOBE-SCAN card
+       on the left side only -- give it real clearance so it doesn't read
+       as glued to the card header underneath it, matching the breathing
+       room the right dock now has between its own sections. */
+    .st-key-dash_map_mode { margin-bottom:16px !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -3776,12 +3910,13 @@ if active_panel == "Dashboard":
                         dd_anomaly_count = len(dd_h.get("anomalies", []) or [])
 
                         st.markdown('<div class="panel-card-head"><span>THREAT</span></div>', unsafe_allow_html=True)
-                        kc1, kc2 = st.columns(2)
-                        kc1.metric("Threat Score", f"{float(dd_result.get('score', 0)):.1f}", str(dd_result.get('level', '?')).upper())
-                        kc2.metric("ML Phishing", f"{float(dd_m.get('prob', 0)):.1%}")
-                        kc3, kc4 = st.columns(2)
-                        kc3.metric("Auth Pass", f"{dd_auth_pass}/3")
-                        kc4.metric("Anomalies", dd_anomaly_count)
+                        with st.container(key="dd_dock_metrics_body"):
+                            kc1, kc2 = st.columns(2, gap="small")
+                            kc1.metric("Threat Score", f"{float(dd_result.get('score', 0)):.1f}", str(dd_result.get('level', '?')).upper())
+                            kc2.metric("ML Phishing", f"{float(dd_m.get('prob', 0)):.1%}")
+                            kc3, kc4 = st.columns(2, gap="small")
+                            kc3.metric("Auth Pass", f"{dd_auth_pass}/3")
+                            kc4.metric("Anomalies", dd_anomaly_count)
 
                         st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                         st.markdown(
@@ -4021,13 +4156,14 @@ if active_panel == "Dashboard":
                     # three other sections to reach.
                     _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash)
 
-                    st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>KEY METRICS</span></div>', unsafe_allow_html=True)
-                    rc1, rc2 = st.columns(2)
-                    rc1.metric("Threat Score", f"{float(result.get('score',0)):.1f}", str(result.get('level','?')).upper())
-                    rc2.metric("ML Phishing", f"{float(sel_m.get('prob',0)):.1%}")
-                    rc3, rc4 = st.columns(2)
-                    rc3.metric("Auth Pass", f"{auth_pass}/3")
-                    rc4.metric("Anomalies", anomaly_count)
+                    st.markdown('<div class="panel-card-head"><span>KEY METRICS</span></div>', unsafe_allow_html=True)
+                    with st.container(key="right_dock_metrics_body"):
+                        rc1, rc2 = st.columns(2, gap="small")
+                        rc1.metric("Threat Score", f"{float(result.get('score',0)):.1f}", str(result.get('level','?')).upper())
+                        rc2.metric("ML Phishing", f"{float(sel_m.get('prob',0)):.1%}")
+                        rc3, rc4 = st.columns(2, gap="small")
+                        rc3.metric("Auth Pass", f"{auth_pass}/3")
+                        rc4.metric("Anomalies", anomaly_count)
 
                     st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                     st.markdown(
@@ -4063,12 +4199,19 @@ if active_panel == "Dashboard":
                     # second instance of the one in that dock.
 
         with col_center:
-            st.caption("MIDDLE PREVIEW PANE")
+            st.markdown(
+                """<div class="dash-section-title">
+                    <span class="dash-section-dot"></span>
+                    <span>Origin &amp; Correlation</span>
+                    <span class="dash-section-sub">— geolocation map and infrastructure graph for this case set</span>
+                </div>""",
+                unsafe_allow_html=True,
+            )
             # Map and correlation graph render side by side in one row
             # instead of stacked or behind a tab switch -- both are visible
             # at once, no extra click needed either way.
-            with st.container(border=True):
-                map_col, graph_col = st.columns(2, gap="medium")
+            with st.container(border=True, key="dash_map_graph_card"):
+                map_col, graph_col = st.columns(2, gap="large")
                 with map_col:
                     _dash_map_mode = st.radio(
                         "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True,
@@ -4108,17 +4251,91 @@ if active_panel == "Dashboard":
                     # reruns; the full, shuffleable, interactive version lives
                     # on the dedicated Correlation panel.
                     G = _build_correlation_graph(cases, max_cases=20, seed=42)
-                    st.plotly_chart(correlate.graph_figure(G, height=430), width="stretch")
+                    _corr_fig = correlate.graph_figure(G, height=430)
+                    # Truncating margins alone didn't fix this (confirmed
+                    # against a live screenshot) -- the real cause is much
+                    # simpler: several node/edge labels here are full
+                    # sentences ("Live IMAP: You shared some Google
+                    # Account data with Claude") or full email addresses,
+                    # and no amount of margin makes a fixed-width plot area
+                    # wide enough to fit a sentence next to a node without
+                    # running off the canvas edge. Truncate what's actually
+                    # drawn ON the chart (not hover text, which can stay
+                    # full length since it isn't space-constrained) to a
+                    # length that fits the preview's half-width column.
+                    _CORR_LABEL_MAX = 22
+
+                    def _corr_truncate(s):
+                        s = "" if s is None else str(s)
+                        return s if len(s) <= _CORR_LABEL_MAX else s[: _CORR_LABEL_MAX - 1].rstrip() + "…"
+
+                    def _corr_shrink_trace(tr):
+                        if "text" in (tr.mode or "") and tr.text is not None:
+                            if isinstance(tr.text, (list, tuple)):
+                                tr.text = [_corr_truncate(t) for t in tr.text]
+                            else:
+                                tr.text = _corr_truncate(tr.text)
+                            tr.update(cliponaxis=False, textfont=dict(size=10))
+
+                    _corr_fig.for_each_trace(_corr_shrink_trace)
+                    _corr_fig.for_each_annotation(lambda a: a.update(text=_corr_truncate(a.text)) if a.text else None)
+
+                    # The two "Case" star nodes (and their translucent
+                    # severity halos) were landing close enough together
+                    # that the halos overlapped and both "Live IMAP: You
+                    # shared…" labels crowded into the same patch of
+                    # canvas -- this preview graph fixes seed=42 for a
+                    # stable layout but doesn't otherwise space nodes for
+                    # a compact half-width column. Rather than reach into
+                    # correlate.py's layout internals, spread every
+                    # trace's coordinates outward from the plot's own
+                    # centroid -- preserves the graph's shape (who's
+                    # connected to whom still reads the same way) while
+                    # giving every node and its label more room from its
+                    # neighbours.
+                    def _corr_spread(fig, factor=1.55):
+                        _xs = [v for tr in fig.data for v in (tr.x or []) if v is not None]
+                        _ys = [v for tr in fig.data for v in (tr.y or []) if v is not None]
+                        if not _xs or not _ys:
+                            return
+                        _cx, _cy = sum(_xs) / len(_xs), sum(_ys) / len(_ys)
+                        for tr in fig.data:
+                            if tr.x is not None:
+                                tr.x = [(_cx + (v - _cx) * factor) if v is not None else v for v in tr.x]
+                            if tr.y is not None:
+                                tr.y = [(_cy + (v - _cy) * factor) if v is not None else v for v in tr.y]
+                        if fig.layout.annotations:
+                            for _ann in fig.layout.annotations:
+                                _upd = {}
+                                if _ann.x is not None:
+                                    _upd["x"] = _cx + (_ann.x - _cx) * factor
+                                if _ann.y is not None:
+                                    _upd["y"] = _cy + (_ann.y - _cy) * factor
+                                if _upd:
+                                    _ann.update(**_upd)
+
+                    _corr_spread(_corr_fig)
+                    _corr_fig.update_layout(margin=dict(l=34, r=34, t=10, b=10))
+                    st.plotly_chart(_corr_fig, width="stretch")
                     if G.graph.get("sampled"):
                         st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
                     else:
                         st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
 
-        # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
-        # In CSV mode this section already rendered earlier (between the Deep
-        # Dive selector and the message content box) — don't show it twice.
-        if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
-            _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
+            # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
+            # In CSV mode this section already rendered earlier (between the Deep
+            # Dive selector and the message content box) — don't show it twice.
+            #
+            # Deliberately still inside col_center (not full-width below both
+            # columns) -- the right-hand THREAT SUMMARY dock is sticky and
+            # runs taller than the map/graph card next to it, so anything
+            # rendered full-width below used to leave a large blank gap in
+            # the center column while the dock kept going. Keeping this here
+            # fills that space instead, and only the Analyst Feedback section
+            # (added after the panel() call below) stays full-width beneath
+            # both columns.
+            if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
+                _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
 
     if _csv_awaiting_scan:
         st.info("The threat summary, origin map, and correlation graph will appear here once you run a scan above.")
