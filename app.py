@@ -1864,6 +1864,59 @@ st.markdown(
     .infra-scan-eyebrow {font:800 10px/1 monospace; letter-spacing:1.4px; color:var(--teal); text-transform:uppercase;}
     .infra-scan-title {margin-top:8px; color:#f2f8ff; font-size:21px; font-weight:800; letter-spacing:.2px;}
     .infra-scan-sub {margin-top:5px; color:var(--muted); font-size:13px; line-height:1.55;}
+
+    /* Bulk Infrastructure Scan tabs -- previously just inherited the
+       app-wide uppercase/10px tab style, which read as an afterthought
+       next to the panel's own header treatment above it. Scoped (not
+       global) so these two tabs get a bespoke, larger "channel selector"
+       look -- full-width equal-weight segments, a coloured status dot per
+       category (cyan = VPN/datacenter, violet = Tor) instead of an icon
+       font, and a softer glass-panel active state -- while every other
+       st.tabs() in the app keeps its existing compact style untouched. */
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] {
+        background:linear-gradient(180deg,#081726,#060f1a) !important;
+        border:1px solid #1c3a55 !important;
+        padding:6px !important;
+        gap:8px !important;
+        border-radius:var(--r-md) !important;
+    }
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"] {
+        flex:1 1 0 !important;
+        justify-content:center !important;
+        text-transform:none !important;
+        font-size:13px !important;
+        font-weight:700 !important;
+        letter-spacing:.2px !important;
+        padding:12px 16px !important;
+        border-radius:9px !important;
+    }
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"] p {font-size:13px !important; font-weight:700 !important;}
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"]::before {
+        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
+        margin-right:9px; vertical-align:middle; transition:box-shadow .2s var(--ease);
+        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    }
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] > button:nth-of-type(1)::before {background:var(--cyan);}
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab-list"] > button:nth-of-type(2)::before {background:var(--violet);}
+    .st-key-bulk_infra_scan .stTabs [aria-selected="true"]::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
+    .st-key-bulk_infra_scan .stTabs [aria-selected="true"] {
+        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(140,123,240,.09)) !important;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
+        color:#f4f9ff !important;
+    }
+    .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"]::after {display:none !important;}
+    /* Live-status chip shown above each Scan button (freshness + source
+       count) -- filled in with real fetch results after each scan run. */
+    .infra-scan-livebar {
+        display:flex; align-items:center; gap:8px; margin:2px 0 12px 0;
+        font:600 11.5px/1 "Inter", monospace; color:var(--muted);
+        letter-spacing:.2px;
+    }
+    .infra-scan-livebar .dot {
+        width:6px; height:6px; border-radius:50%; background:var(--green);
+        box-shadow:0 0 6px 1px rgba(47,206,135,.7); flex:none;
+    }
+    .infra-scan-livebar.stale .dot {background:var(--amber); box-shadow:0 0 6px 1px rgba(242,169,60,.7);}
     </style>
     """,
     unsafe_allow_html=True,
@@ -4550,64 +4603,75 @@ if active_panel == "Origin & Route":
             with _bulk_vpn_tab:
                 st.caption(
                     "Checks every origin + hop IP across every email currently loaded "
-                    "(this session's cases) against a local CIDR list, in one pass -- "
-                    "no live API, no per-email calls."
-                )
-                _vpn_csv_path = st.text_input(
-                    "Path to CIDR-range CSV (columns: cidr,provider,category)",
-                    value="data/vpn_ranges.csv",
-                    key="vpn_csv_path",
+                    "(this session's cases) against VPN / datacenter CIDR ranges. One "
+                    "click fetches the latest ranges from X4BNet, then scans -- no "
+                    "separate 'refresh first' step."
                 )
 
-                # This CSV doesn't ship with the project and nothing builds it
-                # automatically -- the panel used to just error until someone
-                # ran fetch_vpn_ranges.py by hand from a terminal. This button
-                # does the same fetch in-app instead, so there's no separate
-                # script to remember to run first.
-                _fetch_col, _scan_col = st.columns(2)
-                with _fetch_col:
-                    if st.button(
-                        "Fetch ranges now (X4BNet, needs internet)",
-                        key="fetch_vpn_ranges_btn",
-                        use_container_width=True,
+                _run_scan = st.button(
+                    "Scan All Loaded Emails", key="run_vpn_bulk_scan",
+                    type="primary", use_container_width=True,
+                )
+
+                # Advanced/manual controls are tucked away by default -- the
+                # button above is the whole workflow for everyone who doesn't
+                # need to override it. Defaults match the old hidden default
+                # exactly, so behaviour for anyone who never opens this is
+                # unchanged.
+                with st.expander("Advanced: manual CSV / offline mode"):
+                    _vpn_csv_path = st.text_input(
+                        "Path to CIDR-range CSV (columns: cidr,provider,category)",
+                        value="data/vpn_ranges.csv",
+                        key="vpn_csv_path",
+                    )
+                    _vpn_skip_live = st.checkbox(
+                        "Skip the live X4BNet fetch -- scan against this file as-is",
+                        key="vpn_skip_live_fetch",
                         disabled=not FETCH_VPN_RANGES_AVAILABLE,
-                        help=None if FETCH_VPN_RANGES_AVAILABLE
-                             else "fetch_vpn_ranges.py wasn't found next to app.py.",
-                    ):
+                        help="Use this on an offline/air-gapped machine, or to pin the "
+                             "scan to a ranges file you built or edited yourself." if FETCH_VPN_RANGES_AVAILABLE
+                             else "fetch_vpn_ranges.py wasn't found next to app.py -- the live fetch is "
+                                  "unavailable, so scans already use this file as-is.",
+                    )
+
+                if _run_scan:
+                    _vpn_fetch_ok = False
+                    _vpn_fetched_n = 0
+                    _do_live_fetch = FETCH_VPN_RANGES_AVAILABLE and not st.session_state.get("vpn_skip_live_fetch")
+
+                    if _do_live_fetch:
                         try:
-                            with st.spinner("Fetching VPN + datacenter CIDR lists from X4BNet..."):
+                            with st.spinner("Fetching live VPN + datacenter ranges from X4BNet..."):
                                 _fetched_rows = []
                                 for _cat in ("vpn", "datacenter"):
                                     _fetched_rows.extend(_fetch_vpn_category(_cat, include_ipv6=False))
                         except Exception as e:
-                            st.error(
-                                f"Fetch failed ({e}). Check your internet connection, or build the "
-                                "CSV yourself from one of the sources noted below."
+                            st.warning(
+                                f"Live fetch failed ({e}) -- falling back to the last-saved ranges "
+                                f"file at `{_vpn_csv_path}` (never wiped by a fetch that didn't happen)."
                             )
                         else:
                             if not _fetched_rows:
-                                st.warning("Fetch completed but returned no ranges — nothing written.")
+                                st.warning("Live fetch returned no ranges -- falling back to the last-saved file.")
                             else:
                                 _sp_root = os.path.dirname(os.path.abspath(__file__))
                                 _sp_data = os.path.realpath(os.path.join(_sp_root, "data"))
-                                _vpn_csv_path = os.path.realpath(os.path.join(_sp_root, _vpn_csv_path))
-                                if not _vpn_csv_path.startswith(_sp_data + os.sep):
+                                _resolved_csv_path = os.path.realpath(os.path.join(_sp_root, _vpn_csv_path))
+                                if not _resolved_csv_path.startswith(_sp_data + os.sep):
                                     st.error("For safety, the ranges file must be inside the data/ folder.")
                                     st.stop()
-                                _out_dir = os.path.dirname(_vpn_csv_path)
+                                _out_dir = os.path.dirname(_resolved_csv_path)
                                 if _out_dir:
                                     os.makedirs(_out_dir, exist_ok=True)
-                                with open(_vpn_csv_path, "w", newline="", encoding="utf-8") as _f:
+                                with open(_resolved_csv_path, "w", newline="", encoding="utf-8") as _f:
                                     _writer = csv.writer(_f)
                                     _writer.writerow(["cidr", "provider", "category"])
                                     _writer.writerows(_fetched_rows)
-                                st.success(
-                                    f"Wrote {len(_fetched_rows)} ranges to `{_vpn_csv_path}`. "
-                                    "Click 'Scan all loaded emails' to use it."
-                                )
-                with _scan_col:
-                    _run_scan = st.button("Scan all loaded emails", key="run_vpn_bulk_scan", type="primary", use_container_width=True)
-                if _run_scan:
+                                _vpn_fetch_ok = True
+                                _vpn_fetched_n = len(_fetched_rows)
+                    elif not FETCH_VPN_RANGES_AVAILABLE:
+                        st.caption("Live fetch unavailable (fetch_vpn_ranges.py not found) -- scanning against the local file.")
+
                     try:
                         _vpn_ranges = load_vpn_ranges(_vpn_csv_path)
                     except (FileNotFoundError, OSError) as e:
@@ -4618,6 +4682,18 @@ if active_panel == "Origin & Route":
                         if not _vpn_ranges:
                             st.warning("That file loaded but contained no valid CIDR rows.")
                         else:
+                            _live_class = "" if _vpn_fetch_ok else "stale"
+                            _live_text = (
+                                f"Live &middot; {_vpn_fetched_n} ranges fetched just now from X4BNet"
+                                if _vpn_fetch_ok else
+                                f"Cached &middot; scanning against {len(_vpn_ranges)} previously-saved range(s) at "
+                                f"<code>{html.escape(_vpn_csv_path)}</code>"
+                            )
+                            st.markdown(
+                                f'<div class="infra-scan-livebar {_live_class}"><span class="dot"></span>{_live_text}</div>',
+                                unsafe_allow_html=True,
+                            )
+
                             _vpn_cases = [r for r in _corr_cases.values() if "error" not in r]
                             _vpn_current = dict(result)
                             _vpn_current["_evidence_hash"] = current_evidence_hash
@@ -4632,39 +4708,37 @@ if active_panel == "Origin & Route":
                                 _flagged_n = int(_vpn_df["flagged"].sum())
                                 st.metric("Flagged IPs", f"{_flagged_n} / {len(_vpn_df)}")
                                 _render_polished_table(_vpn_df.sort_values("flagged", ascending=False))
-                st.markdown(
-                    "**Where the range list comes from, and whether you need a key:** "
-                    "`load_vpn_ranges()` reads a local CSV — it never calls a live API, so no "
-                    "account or API key is required. You supply the CSV yourself, built from a "
-                    "free public source such as [X4BNet/lists\\_vpn](https://github.com/X4BNet/lists_vpn) "
-                    "(VPN + datacenter CIDRs, auto-updated, no signup), IP2Location LITE (free tier, "
-                    "email signup for a download token), or the cloud providers' own published ranges "
-                    "(AWS/GCP/Azure/DigitalOcean/OVH, all public, no key). Reformat whichever source you "
-                    "pick into `cidr,provider,category` columns and point the field above at that file."
+                st.caption(
+                    "Ranges come from [X4BNet/lists\\_vpn](https://github.com/X4BNet/lists_vpn) "
+                    "(public, auto-updated, no signup) -- refetched automatically on every scan "
+                    "unless 'Skip the live fetch' is checked above."
                 )
 
             with _bulk_tor_tab:
                 st.caption(
                     "Checks every origin + hop IP across every email currently loaded "
-                    "(this session's cases) against three cached lists -- the Tor "
-                    "Project's official exit list, a community exit-node mirror, and "
-                    "that same mirror's full Tor node list -- in one pass, no per-email "
-                    "lookups."
+                    "(this session's cases) against three lists -- the Tor Project's "
+                    "official exit list, a community exit-node mirror, and that "
+                    "mirror's full Tor node list. One click force-refreshes all three, "
+                    "then scans -- no separate 'refresh first' step."
                 )
 
-                # Same left/right layout as the VPN tab: fetch on the left,
-                # scan on the right -- one row, not stacked. This replaces
-                # the separate fetch button that used to live only in the
-                # "Tor Exit-Node List Status" panel below, so there's a
-                # single place to refresh before scanning, not two.
-                _tor_fetch_col, _tor_scan_col = st.columns(2)
-                with _tor_fetch_col:
-                    if st.button(
-                        "Fetch Tor lists now (needs internet)",
-                        key="fetch_tor_list_btn",
-                        use_container_width=True,
-                    ):
-                        with st.spinner("Fetching from the Tor Project and community mirrors..."):
+                _run_tor_scan = st.button(
+                    "Scan All Loaded Emails", key="run_tor_bulk_scan",
+                    type="primary", use_container_width=True,
+                )
+
+                with st.expander("Advanced: skip live refresh"):
+                    _tor_skip_live = st.checkbox(
+                        "Skip the live Tor-list refresh -- scan against whatever's already cached",
+                        key="tor_skip_live_fetch",
+                        help="Use this offline, or when you already refreshed moments ago and want "
+                             "to re-scan instantly without hitting the network again.",
+                    )
+
+                if _run_tor_scan:
+                    if not st.session_state.get("tor_skip_live_fetch"):
+                        with st.spinner("Refreshing Tor exit-node lists from the Tor Project and community mirrors..."):
                             _tor_results = tor_check.update_tor_exit_list()
                         _tor_failed = [k for k, v in _tor_results.items() if v is None]
                         if _tor_failed:
@@ -4673,20 +4747,27 @@ if active_panel == "Origin & Route":
                             # that fails keeps whatever it had before rather
                             # than going blank, so detection only ever gets
                             # weaker, never wrong.
-                            st.warning(
-                                "Refreshed what we could. This source failed and kept its "
-                                "previous cached data rather than being wiped: " +
-                                "; ".join(_fail_labels)
+                            st.markdown(
+                                '<div class="infra-scan-livebar stale"><span class="dot"></span>'
+                                'Refreshed what we could -- kept previous cached data for: '
+                                f'{html.escape("; ".join(_fail_labels))}</div>',
+                                unsafe_allow_html=True,
                             )
                         else:
-                            st.success(
-                                "Refreshed all sources — " +
-                                ", ".join(f"{tor_check.SOURCES[k][1]}: {v} IPs" for k, v in _tor_results.items())
+                            st.markdown(
+                                '<div class="infra-scan-livebar"><span class="dot"></span>'
+                                'Live &middot; all sources refreshed just now &mdash; '
+                                + html.escape(", ".join(f"{tor_check.SOURCES[k][1]}: {v} IPs" for k, v in _tor_results.items()))
+                                + '</div>',
+                                unsafe_allow_html=True,
                             )
-                        st.rerun()
-                with _tor_scan_col:
-                    _run_tor_scan = st.button("Scan all loaded emails", key="run_tor_bulk_scan", type="primary", use_container_width=True)
-                if _run_tor_scan:
+                    else:
+                        st.markdown(
+                            '<div class="infra-scan-livebar stale"><span class="dot"></span>'
+                            'Cached &middot; scanning against whatever is already cached (live refresh skipped)</div>',
+                            unsafe_allow_html=True,
+                        )
+
                     _tor_scan_cases = [r for r in _corr_cases.values() if "error" not in r]
                     _tor_scan_current = dict(result)
                     _tor_scan_current["_evidence_hash"] = current_evidence_hash
@@ -4708,7 +4789,7 @@ if active_panel == "Origin & Route":
                         _render_polished_table(_tor_scan_df.sort_values("flagged", ascending=False))
                 st.caption(
                     "Source-by-source counts and last-sync times are in the "
-                    "' Tor Exit-Node List Status' panel below."
+                    "'Tor Exit-Node List Status' panel below."
                 )
 
         # Routing chain / anonymised caution follow whichever email the map
