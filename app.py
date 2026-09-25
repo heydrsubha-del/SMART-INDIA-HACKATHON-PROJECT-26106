@@ -1190,13 +1190,13 @@ st.markdown(
        stHeader height (just enough to clear the icon); the content
        wrapper is trimmed to a small, deliberate gap instead. */
     [data-testid="stSidebarHeader"] {
-        height:2.75rem !important;
-        min-height:2.75rem !important;
+        height:2rem !important;
+        min-height:2rem !important;
         padding-top:0 !important;
         padding-bottom:0 !important;
     }
     [data-testid="stSidebarUserContent"] {
-        padding-top:0.5rem !important;
+        padding-top:0 !important;
     }
 
     /* Right summary panel: a real dock, not a block that happens to sit in
@@ -1721,7 +1721,7 @@ st.markdown(
        consistent "this is live" language rather than a static icon. */
     @keyframes sbPulse {0%,100%{opacity:1; box-shadow:0 0 6px rgba(47,206,135,.6);} 50%{opacity:.55; box-shadow:0 0 14px rgba(47,206,135,.9);}}
 
-    .sidebar-brand-v2 {padding:10px 6px 16px; border-bottom:1px solid #452760; margin-bottom:10px;}
+    .sidebar-brand-v2 {padding:2px 6px 14px; border-bottom:1px solid #452760; margin-bottom:10px;}
     .brand-row {display:flex; align-items:center; gap:10px;}
     .brand-mark {
         width:34px; height:34px; flex:0 0 34px; border-radius:var(--r-md);
@@ -1790,6 +1790,18 @@ st.markdown(
     }
     [data-testid="stSidebar"] .stButton > button[kind="primary"]::before {
         opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(178,91,240,.7);
+    }
+    /* Uniform, tight vertical rhythm between sidebar nav rows. Streamlit's
+       own default gap between stacked element-containers is larger and can
+       read as uneven next to the primary (active) button's glow, which
+       visually "pushes" the row below it further away even though the
+       real spacing is identical. Pin the gap explicitly so every row -- 
+       active or not -- sits the same distance from its neighbours. */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.15rem !important;
+    }
+    [data-testid="stSidebar"] .stButton {
+        margin-bottom: 0 !important;
     }
     /* System-status widget: a small two-tile "health" card instead of a
        plain list of rows, with its own pulse dot and hover lift so it
@@ -3378,8 +3390,11 @@ if active_panel == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
 
-            load_clicked = st.button("Load & Scan Selected Message", type="primary", use_container_width=True, key="load_imap_message")
-            rescan_clicked = st.button("Rescan Selected Message", use_container_width=True, key="rescan_imap_message")
+            _load_col, _rescan_col = st.columns(2)
+            with _load_col:
+                load_clicked = st.button("Load & Scan", type="primary", use_container_width=True, key="load_imap_message")
+            with _rescan_col:
+                rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
 
             if load_clicked or rescan_clicked:
                 cfg = st.session_state.get("live_mailbox_config", {})
