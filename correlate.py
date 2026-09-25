@@ -652,6 +652,26 @@ def graph_figure(G, height=520, highlight_node=None):
             ),
         ))
 
+    # Default zoom: fit the view tightly to where the nodes actually are,
+    # rather than leaving Plotly's own autorange decide it. With the strict
+    # equal-aspect axes this used to have (scaleanchor="x", scaleratio=1),
+    # a compact cluster in a wide container forced Plotly to pad the wider
+    # axis to keep the same per-unit scale on both -- which is exactly what
+    # left the graph looking small and "zoomed out" in the middle of a lot
+    # of empty canvas, with the person having to scroll-zoom in every time
+    # just to read it. Computing an explicit range from the node bounding
+    # box (with a modest margin) fills the actual chart area on load
+    # instead; panning/scrolling to zoom in further still works exactly as
+    # before, this only changes where the view starts.
+    all_x = [p[0] for p in pos.values()]
+    all_y = [p[1] for p in pos.values()]
+    x_span = max(max(all_x) - min(all_x), 1e-6)
+    y_span = max(max(all_y) - min(all_y), 1e-6)
+    x_pad = x_span * 0.18 + 0.3
+    y_pad = y_span * 0.22 + 0.3
+    x_range = [min(all_x) - x_pad, max(all_x) + x_pad]
+    y_range = [min(all_y) - y_pad, max(all_y) + y_pad]
+
     fig.update_layout(
         height=height, showlegend=True,
         legend=dict(
@@ -660,8 +680,8 @@ def graph_figure(G, height=520, highlight_node=None):
             bgcolor="rgba(15,23,42,0.85)",
         ),
         margin=dict(l=10, r=10, t=30, b=10),
-        xaxis=dict(visible=False, showgrid=False, zeroline=False),
-        yaxis=dict(visible=False, showgrid=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        xaxis=dict(visible=False, showgrid=False, zeroline=False, range=x_range, autorange=False),
+        yaxis=dict(visible=False, showgrid=False, zeroline=False, range=y_range, autorange=False),
         paper_bgcolor=_CANVAS["paper"],
         plot_bgcolor=_CANVAS["plot"],
         font=dict(family="Inter, Segoe UI, Arial, sans-serif", color=_CANVAS["text"]),
