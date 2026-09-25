@@ -1054,6 +1054,21 @@ st.markdown(
         transition:opacity .25s var(--ease), transform .25s var(--ease);
     }
     .stTabs [aria-selected="true"]::after {opacity:1; transform:scaleX(1);}
+    /* The stray red line under the active tab in every st.tabs() in the
+       app (Email Results/Antivirus Scan, VPN/Datacenter/Tor Exit Nodes,
+       CSV/AV, everywhere) isn't coming from any rule above -- it's
+       baseweb's own native sliding tab-highlight indicator, painted with
+       Streamlit's theme primaryColor (default red) via inline style at
+       render time. No amount of styling the tab background/text touches
+       it, which is exactly why every tab redesign attempt still had a
+       flat red underline left over from the unstyled default. This
+       repaints that specific native element directly, everywhere, with
+       the app's own accent gradient instead of the leftover default red. */
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] {
+        background:linear-gradient(90deg, var(--cyan), var(--violet)) !important;
+        height:2.5px !important;
+    }
     .stDataFrame {border:1px solid #203b57 !important; border-radius:var(--r-md) !important; overflow:hidden !important; box-shadow:var(--shadow-sm) !important;}
 
     /* Polished static table -- used in place of st.dataframe wherever the
@@ -1285,8 +1300,11 @@ st.markdown(
        flat SCADA panel. */
     [data-testid="stExpander"], div[data-testid="stMetric"] {border-radius:var(--r-lg) !important;}
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button {border-radius:var(--r-md) !important; text-transform:uppercase; letter-spacing:.6px;}
-    .stTabs [data-baseweb="tab-list"] {border-radius:var(--r-md) !important;}
-    .stTabs [data-baseweb="tab"] {border-radius:var(--r-sm) !important; text-transform:uppercase; font-size:10px !important; letter-spacing:.6px;}
+    /* (Tab radius/case/size is fully owned by the .stTabs rules above and
+       the per-panel .st-key-* overrides further down -- this used to
+       re-declare a conflicting tiny-uppercase variant here, fighting the
+       readable design set everywhere else. Removed rather than left to
+       silently compete. ) */
 
     /* Native Streamlit uploader only — no synthetic Browse Evidence labels.
        Richer layered background (soft cyan/green glows over the industrial
@@ -1905,6 +1923,31 @@ st.markdown(
         color:#f4f9ff !important;
     }
     .st-key-bulk_infra_scan .stTabs [data-baseweb="tab"]::after {display:none !important;}
+    /* The Scan buttons themselves used to be identical generic teal
+       primary buttons in both tabs -- functionally fine but visually
+       interchangeable, giving no sense that one drives a VPN/datacenter
+       check and the other a Tor check. Recolored per tab-panel to match
+       that panel's own dot colour (cyan for VPN/Datacenter, violet for
+       Tor), still clearly a "primary action" button, just no longer a
+       copy-paste twin of the other tab's. */
+    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(1) .stButton > button[kind^="primary"] {
+        background:linear-gradient(180deg,#123a5c,#0c283f) !important;
+        border:1px solid rgba(84,112,255,.55) !important;
+        color:#eaf6ff !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(84,112,255,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+    }
+    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(1) .stButton > button[kind^="primary"]:hover {
+        box-shadow:0 0 0 1px rgba(84,112,255,.35), 0 10px 26px rgba(84,112,255,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+    }
+    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(2) .stButton > button[kind^="primary"] {
+        background:linear-gradient(180deg,#291c47,#190f2b) !important;
+        border:1px solid rgba(140,123,240,.55) !important;
+        color:#f1ecff !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(140,123,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+    }
+    .st-key-bulk_infra_scan [data-baseweb="tab-panel"]:nth-of-type(2) .stButton > button[kind^="primary"]:hover {
+        box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+    }
     /* Live-status chip shown above each Scan button (freshness + source
        count) -- filled in with real fetch results after each scan run. */
     .infra-scan-livebar {
@@ -1917,6 +1960,57 @@ st.markdown(
         box-shadow:0 0 6px 1px rgba(47,206,135,.7); flex:none;
     }
     .infra-scan-livebar.stale .dot {background:var(--amber); box-shadow:0 0 6px 1px rgba(242,169,60,.7);}
+
+    /* Technical Logs & Antivirus tabs -- same "flat default grid" problem
+       as the table below it: nothing here overrode the base uppercase/
+       10px tab style with any presence, so next to the rest of the app it
+       read as an afterthought. Scoped bespoke treatment: a cyan dot for
+       Email Results, a red/amber dot for Antivirus Scan (it's the
+       threat-scanning tab), larger comfortable type, a soft glass active
+       state. */
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] {
+        background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
+        border:1px solid #1e3350 !important;
+        padding:6px !important; gap:8px !important;
+        border-radius:var(--r-md) !important;
+    }
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"] {
+        text-transform:none !important;
+        font-size:13.5px !important;
+        font-weight:700 !important;
+        letter-spacing:.2px !important;
+        padding:11px 20px !important;
+        border-radius:9px !important;
+    }
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"] p {font-size:13.5px !important; font-weight:700 !important;}
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"]::before {
+        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
+        margin-right:9px; vertical-align:middle;
+        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    }
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] > button:nth-of-type(1)::before {background:var(--cyan);}
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab-list"] > button:nth-of-type(2)::before {background:var(--red);}
+    .st-key-tech_logs_tabs .stTabs [aria-selected="true"]::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
+    .st-key-tech_logs_tabs .stTabs [aria-selected="true"] {
+        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(84,112,255,.06)) !important;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
+        color:#f4f9ff !important;
+    }
+    .st-key-tech_logs_tabs .stTabs [data-baseweb="tab"]::after {display:none !important;}
+
+    /* Rich email-results grid -- replaces st.dataframe's canvas-rendered
+       ProgressColumn/plain verdict text (which, like every st.dataframe
+       in this app, can't pick up the dark theme) with real HTML: a
+       coloured bar + coloured pill, both keyed off the same severity
+       colours the map markers already use, so LOW/MEDIUM/HIGH/CRITICAL
+       mean the same colour everywhere in the app. */
+    .email-score-cell {display:flex; align-items:center; gap:10px; min-width:130px;}
+    .email-score-track {flex:1; height:6px; border-radius:4px; background:#121f30; overflow:hidden;}
+    .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
+    .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
+    .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(84,112,255,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
+    .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -2659,24 +2753,6 @@ def get_email_date(email_text):
         pass
     return None
 
-def _display_email_table(df):
-    """Presentation-only helper: adds a progress-bar column config for Threat
-    Score. Never mutates the caller's dataframe or the underlying analysis
-    data -- purely how the existing 'Row #, Email, Origin IP, Country, Threat
-    Score, Verdict, Subject' table is *displayed*."""
-    view = df.copy()
-    if "Verdict" in view.columns:
-        view["Verdict"] = view["Verdict"].apply(lambda v: str(v))
-    col_config = {}
-    if "Threat Score" in view.columns:
-        col_config["Threat Score"] = st.column_config.ProgressColumn(
-            "Threat Score", min_value=0, max_value=100, format="%.1f"
-        )
-    if "Row #" in view.columns:
-        col_config["Row #"] = st.column_config.NumberColumn("Row #", width="small")
-    return view, col_config
-
-
 def _render_polished_table(df, empty_text="No data available.", max_height=None):
     """Presentation-only replacement for st.dataframe on plain, read-only
     tables -- draws real themed HTML/CSS (see '.polished-table' in the
@@ -2703,6 +2779,70 @@ def _render_polished_table(df, empty_text="No data available.", max_height=None)
     wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
     st.markdown(
         f'<div class="polished-table-wrap"{wrap_style}>'
+        f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
+        f'<tbody>{tbody}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_email_results_table(df, height=300):
+    """Rich HTML replacement for the Email Results / Threat History grids,
+    which used to go through st.dataframe + _display_email_table's
+    ProgressColumn config. st.dataframe renders that onto a canvas (see
+    _render_polished_table's docstring for why that can never pick up the
+    app's dark theme), so Threat Score sat there as a flat, always-red
+    default bar no matter the actual severity, and Verdict as plain
+    unstyled text -- both look like an unstyled default grid next to
+    everything else in the app that *is* themed.
+
+    This draws the same rows as real HTML instead: Threat Score becomes a
+    coloured progress bar, Verdict a coloured pill, Origin IP/IP a
+    monospace chip -- all keyed off the same _LEVEL_MARKER_COLORS map the
+    map markers already use, so severity means the same colour everywhere
+    in the app. Read-only, presentation-only: same rows/columns in, none
+    added, dropped, or reordered."""
+    if df is None or getattr(df, "empty", True):
+        st.markdown('<div class="polished-table-empty">No data available.</div>', unsafe_allow_html=True)
+        return
+    cols = list(df.columns)
+    thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
+    body_rows = []
+    for _, row in df.iterrows():
+        tds = []
+        verdict_key = str(row.get("Verdict", "")).upper()
+        for c in cols:
+            v = row[c]
+            text = "" if (v is None or (isinstance(v, float) and pd.isna(v))) else str(v)
+            if c == "Threat Score":
+                try:
+                    score = float(v)
+                except (TypeError, ValueError):
+                    score = 0.0
+                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#5470ff")
+                pct = max(0.0, min(100.0, score))
+                tds.append(
+                    '<td><div class="email-score-cell">'
+                    f'<div class="email-score-track"><div class="email-score-fill" '
+                    f'style="width:{pct}%;background:{bar_color};"></div></div>'
+                    f'<span class="email-score-num">{score:.1f}</span>'
+                    '</div></td>'
+                )
+            elif c == "Verdict":
+                color = _LEVEL_MARKER_COLORS.get(verdict_key, "#8fa5bd")
+                tds.append(
+                    f'<td><span class="verdict-pill" style="background:{color}22;color:{color};'
+                    f'box-shadow:inset 0 0 0 1px {color}55;">{html.escape(verdict_key or "UNKNOWN")}</span></td>'
+                )
+            elif c in ("Origin IP", "IP"):
+                tds.append(f'<td><span class="ip-chip">{html.escape(text)}</span></td>')
+            elif c == "Row #":
+                tds.append(f'<td><span class="row-chip">{html.escape(text)}</span></td>')
+            else:
+                tds.append(f"<td>{html.escape(text)}</td>")
+        body_rows.append(f"<tr>{''.join(tds)}</tr>")
+    tbody = "".join(body_rows)
+    st.markdown(
+        f'<div class="polished-table-wrap" style="max-height:{int(height)}px;overflow-y:auto;">'
         f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
         f'<tbody>{tbody}</tbody></table></div>',
         unsafe_allow_html=True,
@@ -3218,34 +3358,17 @@ if active_panel == "Dashboard":
                 for i, x in enumerate(mailbox_messages)
             ]
 
-            # Clicking a row here selects it the same way picking it from
-            # the "Message to investigate" dropdown below does, instead of
-            # the table and the dropdown being two disconnected controls
-            # that just happen to sit next to each other. Streamlit hands
-            # back the currently-selected row on *every* rerun, not just the
-            # run where the click happened -- so this only pushes into the
-            # dropdown's own state when the clicked row has actually
-            # changed since last time. Without that guard, picking a
-            # message from the dropdown directly would get silently
-            # snapped back to whatever row was clicked earlier.
-            _table_event = st.dataframe(
-                pd.DataFrame(display_rows),
-                width="stretch",
-                hide_index=True,
-                on_select="rerun",
-                selection_mode="single-row",
-                key="imap_message_table",
-            )
-            st.caption("Click a row above to load it into **Message to investigate** below.")
-            try:
-                _clicked_rows = list(_table_event.selection.rows)
-            except Exception:
-                _clicked_rows = []
-            if _clicked_rows and _clicked_rows[0] < len(labels):
-                _clicked_row = _clicked_rows[0]
-                if st.session_state.get("_imap_table_last_clicked_row") != _clicked_row:
-                    st.session_state["_imap_table_last_clicked_row"] = _clicked_row
-                    st.session_state["imap_message_selector"] = labels[_clicked_row]
+            # This used to be a click-to-select st.dataframe (canvas-rendered,
+            # so it never picked up the app's theme -- the exact "lifeless
+            # grid" problem every other table in the app had). Row-click
+            # selection can't be reproduced in real themed HTML, so the
+            # table below is now display-only and the "Message to
+            # investigate" dropdown underneath is the one control that
+            # picks the message -- same underlying selection state, one
+            # obvious place to make it instead of two controls that used
+            # to shadow each other.
+            _render_polished_table(pd.DataFrame(display_rows), max_height=360)
+            st.caption("Pick the message to investigate from the dropdown below.")
 
             selected_label = st.selectbox("Message to investigate", labels, key="imap_message_selector")
             selected_index = labels.index(selected_label)
@@ -3368,7 +3491,9 @@ if active_panel == "Dashboard":
 
         st.write("")
         st.markdown("#### Technical Logs & Antivirus")
-        tab_logs, tab_av = st.tabs(["Email Results", "Antivirus Scan"])
+        _tech_logs_container = st.container(key="tech_logs_tabs")
+        with _tech_logs_container:
+            tab_logs, tab_av = st.tabs(["Email Results", "Antivirus Scan"])
 
         with tab_logs:
             st.caption(
@@ -3381,8 +3506,7 @@ if active_panel == "Dashboard":
             _is_current_csv = uploaded is not None and uploaded.name.lower().endswith(".csv")
             unified_table = st.session_state.get("unified_email_table") if _is_current_csv else None
             if unified_table is not None and not unified_table.empty:
-                _view, _cfg = _display_email_table(unified_table)
-                st.dataframe(_view, width="stretch", hide_index=True, height=280, column_config=_cfg)
+                _render_email_results_table(unified_table, height=280)
             else:
                 log_rows = [{
                     "Row #": i,
@@ -3393,8 +3517,7 @@ if active_panel == "Dashboard":
                     "Verdict": str(r.get("level", "unknown")).upper(),
                     "Subject": (r.get("parsed", {}) or {}).get("subject", "No Subject"),
                 } for i, r in enumerate(cases)]
-                _view, _cfg = _display_email_table(pd.DataFrame(log_rows))
-                st.dataframe(_view, width="stretch", hide_index=True, height=280, column_config=_cfg)
+                _render_email_results_table(pd.DataFrame(log_rows), height=280)
 
         with tab_av:
             av_up = _clamd_up_cached()
@@ -5268,8 +5391,7 @@ if active_panel == "Threat History":
         m2.metric("Critical / High", int((hist_df["verdict"].isin(["CRITICAL", "HIGH"])).sum()))
         m3.metric("Average Score", f"{hist_df['score'].mean():.1f}")
         _hist_view = hist_df.rename(columns={"date": "Date", "ip": "IP", "country": "Country", "score": "Threat Score", "verdict": "Verdict"})
-        _view, _cfg = _display_email_table(_hist_view)
-        st.dataframe(_view, width="stretch", hide_index=True, column_config=_cfg)
+        _render_email_results_table(_hist_view, height=360)
 
     panel(_threat_history, "Threat History")
 
