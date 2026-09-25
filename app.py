@@ -1119,6 +1119,25 @@ st.markdown(
             var(--bg) !important;
         background-size: auto !important;
     }
+    /* Global horizontal-overflow guard. The topnav min-width:0 fix stops
+       THAT one element from forcing the page wide, but it's a narrow,
+       component-specific fix -- it only helps if that element is the
+       cause. Any other element anywhere in the app that ever ends up
+       wider than the viewport (a long unbroken string, a wide chart, a
+       future widget nobody thought to bound) would reproduce the exact
+       same symptom: the whole page gets a horizontal scrollbar and a
+       blank gap opens up on the side, because the browser's default
+       behavior is to grow the page to fit its widest child rather than
+       clip it. Nothing in this app is meant to be scrolled at the page
+       level -- every intentional horizontal scroller (like the topnav
+       tab row) does its own scrolling internally via its own
+       overflow-x:auto -- so clipping overflow at the document root is
+       safe and simply removes this entire bug class outright, rather
+       than chasing it one oversized element at a time. */
+    html, body {overflow-x:hidden !important; max-width:100vw !important;}
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        overflow-x:hidden !important; max-width:100vw !important;
+    }
     .block-container {padding-left:1.35rem !important; padding-right:1.35rem !important;}
     [data-testid="stSidebar"] {
         background:linear-gradient(180deg,#060b13 0%,#05090f 100%) !important;
@@ -1505,12 +1524,27 @@ st.markdown(
        stepper track beneath the workflow tabs (purely decorative, additive
        element -- doesn't affect the radio widget itself). */
     .st-key-topnav {position:relative !important;}
+    /* Belt-and-braces: harmless on the normal block-level wrappers Streamlit
+       puts around this widget (min-width:0 is already their default), but
+       guards against any of them turning out to be a flex/grid item too --
+       without this, a fix on the innermost row alone can still get undone
+       by the same min-width:auto trap one level up. */
+    .st-key-topnav, .st-key-topnav [data-testid="stRadio"] {min-width:0 !important;}
     .st-key-topnav::after {
         content:""; position:absolute; left:12px; right:12px; bottom:0; height:2px;
         background:linear-gradient(90deg,#5470ff 0%,rgba(84,112,255,.12) 60%,transparent 100%);
         border-radius:2px; pointer-events:none;
     }
     .st-key-topnav .stRadio > div {
+        /* min-width:0 is the actual fix for the horizontal page-overflow
+           bug: flex items default to an implicit min-width:auto, which
+           locks their minimum size to their content's natural (nowrap)
+           width. With 13 nowrap pills in here, that pushed this box --
+           and the whole page along with it -- wider than the viewport
+           instead of respecting overflow-x:auto below. Setting it to 0
+           is what lets this box actually shrink to the space it's given
+           and scroll its own contents internally, as intended. */
+        min-width:0 !important;
         flex-wrap:nowrap !important;
         gap:8px !important;
         padding:9px 12px !important;
