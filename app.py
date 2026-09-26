@@ -840,6 +840,21 @@ st.markdown(
     .stage-title {position:relative; z-index:1; color:#ebf6ff !important; font-size:16px !important; font-weight:750 !important; margin-top:7px !important;}
     .stage-help {position:relative; z-index:1; color:#8299b2 !important; font-size:12px !important; margin-top:3px !important; line-height:1.45 !important;}
 
+    /* Per-step color coding for the numbered workflow cards (01 Mail
+       server / 02 Authentication / 03 Mail scope). They used to all share
+       one cyan accent, so three different steps of one workflow read as
+       one repeated block. Each step now gets its own hue -- cyan
+       (connect), violet (authenticate), amber (scope) -- carried through
+       the spine, the corner glow and the step pill, so the steps are
+       visually distinct while still reading as one family of card. */
+    .stage-card {background:linear-gradient(135deg, rgba(18,224,171,.05), var(--panel) 55%) !important;}
+    .stage-card-auth {border-left-color:#8c7bf0 !important; background:linear-gradient(135deg, rgba(140,123,240,.06), var(--panel) 55%) !important;}
+    .stage-card-auth:hover {border-color:rgba(140,123,240,.55) !important;}
+    .stage-card-auth .stage-label {color:#c9bdff !important; background:rgba(140,123,240,.12) !important; border-color:rgba(140,123,240,.32) !important;}
+    .stage-card-scope {border-left-color:#f4b23d !important; background:linear-gradient(135deg, rgba(244,178,61,.06), var(--panel) 55%) !important;}
+    .stage-card-scope:hover {border-color:rgba(244,178,61,.55) !important;}
+    .stage-card-scope .stage-label {color:#ffd98a !important; background:rgba(244,178,61,.12) !important; border-color:rgba(244,178,61,.32) !important;}
+
     /* ------------------------------------------------------------------
        BUTTON SYSTEM -- one restrained, enterprise-grade look for every
        action button in the workspace (st.button, download buttons and
@@ -3627,7 +3642,7 @@ if active_panel == "Dashboard":
                         _save_cached_google_email(_resolved_email)
 
             st.markdown("""
-            <div class="stage-card">
+            <div class="stage-card stage-card-auth">
               <div class="stage-label">02 · Authentication</div>
               <div class="stage-title">Sign in to the mailbox</div>
               <div class="stage-help">Gmail signs in with your Google account. Other providers use an app password or OAuth2 token.</div>
@@ -3720,15 +3735,35 @@ if active_panel == "Dashboard":
                 st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Switch to OAuth2 if password authentication is rejected.")
 
             st.markdown("""
-            <div class="stage-card">
+            <div class="stage-card stage-card-scope">
               <div class="stage-label">03 · Mail scope</div>
               <div class="stage-title">Define the folder and browsing window</div>
               <div class="stage-help">Only headers are loaded during browsing. The complete raw message is fetched after selection.</div>
             </div>
             """, unsafe_allow_html=True)
+            # Mailbox folder used to be a bare text box defaulting to "INBOX"
+            # -- functional, but it made you already know (and correctly
+            # spell) a folder name like "[Gmail]/Important" before you could
+            # browse anything else. Now it's a dropdown of the common IMAP
+            # folders across Gmail/Yahoo/Outlook, plus a "Custom folder..."
+            # escape hatch that reveals a text box for anything not listed
+            # (a nested label, a shared mailbox folder, etc.) -- so the
+            # common case is one click, and the rare case is still typable.
+            _COMMON_FOLDERS = [
+                "INBOX", "Sent", "Drafts", "Important", "Starred",
+                "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
+            ]
             _sc1, _sc2 = st.columns([2, 1])
             with _sc1:
-                folder = st.text_input("Mailbox folder", "INBOX", key="imap_folder")
+                folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
+                if folder_choice == "Custom folder...":
+                    folder = st.text_input(
+                        "Custom folder name",
+                        placeholder="e.g. [Gmail]/Important or Projects/Client-A",
+                        key="imap_folder_custom",
+                    )
+                else:
+                    folder = folder_choice
             with _sc2:
                 browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
             connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
@@ -3736,6 +3771,8 @@ if active_panel == "Dashboard":
             if connect_clicked:
                 if not imap_user or not imap_credential or not imap_host:
                     st.error("Enter the mailbox address, server and authentication credential first.")
+                elif not folder:
+                    st.error("Enter a custom folder name, or pick one of the listed folders.")
                 else:
                     try:
                         with st.spinner("Connecting securely and loading mailbox headers..."):
