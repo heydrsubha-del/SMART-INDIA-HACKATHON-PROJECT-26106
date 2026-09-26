@@ -884,6 +884,52 @@ st.markdown(
     /* Disabled keys: dimmed and inert, so they never look clickable. */
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:disabled {opacity:.4 !important; filter:saturate(.55) !important; pointer-events:none !important; box-shadow:none !important;}
 
+    /* "Download Forensic Report" row -- these three used to all be plain
+       identical secondary/graphite buttons (the default for any
+       non-primary button), which reads as three interchangeable options
+       when they aren't: AI Only and Machine Only are two different
+       partial views, and Combined is the one most people actually want.
+       Recolored per-column so they read as distinct choices at a glance
+       -- violet for AI, cyan/blue for Machine, and the app's own primary
+       gradient for Combined (it's the recommended pick, so it gets the
+       "main action" treatment instead of blending into the graphite
+       row). The container key is fixed even though the download keys
+       inside it change per email, so this survives switching emails. */
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button {
+        background:linear-gradient(180deg,#241a3d,#160f28) !important;
+        border:1px solid rgba(140,123,240,.55) !important;
+        color:#f1ecff !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(140,123,240,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button:hover {
+        box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button {
+        background:linear-gradient(180deg,#0f3350,#0a2032) !important;
+        border:1px solid rgba(84,112,255,.5) !important;
+        color:#eaf6ff !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(84,112,255,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button:hover {
+        box-shadow:0 0 0 1px rgba(84,112,255,.32), 0 10px 26px rgba(84,112,255,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button {
+        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
+        color:var(--act-1-text) !important;
+        border:1px solid var(--act-1-border) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(84,112,255,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
+        font-weight:800 !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button:hover {
+        background:linear-gradient(135deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
+        border-color:var(--act-1-border-hover) !important;
+    }
+    .st-key-forensic_download_row [data-testid="column"] .stDownloadButton > button:disabled {
+        background:linear-gradient(180deg,var(--act-2-top) 0%,var(--act-2-bot) 100%) !important;
+        border:1px solid var(--act-2-border) !important;
+        color:var(--act-2-text) !important;
+    }
+
     /* Action-color semantics: color should tell you what a button *does*,
        not just decorate it. Everywhere else in the app, "primary" (the
        cyan-to-violet gradient) means "the main/confirm action" -- that's
@@ -6583,35 +6629,36 @@ if active_panel == "Forensic Report":
         if not ai_markdown_body:
             st.caption("Generate the AI Threat Report above first to unlock a true combined download.")
 
-        dl1, dl2, dl3 = st.columns(3)
-        with dl1:
-            st.download_button(
-                label="AI Result Only (.md)",
-                data=ai_md.encode("utf-8"),
-                file_name=f"ai_report_email_{sel_pos}.md",
-                mime="text/markdown",
-                use_container_width=True,
-                disabled=not ai_markdown_body,
-                key=f"dl_ai_only_{sel_pos}",
-                help="Requires an AI report to be generated for this email first." if not ai_markdown_body else None,
-            )
-        with dl2:
-            st.download_button(
-                label="Machine Result Only (.md)",
-                data=machine_md.encode("utf-8"),
-                file_name=f"machine_report_email_{sel_pos}.md",
-                mime="text/markdown",
-                use_container_width=True,
-                key=f"dl_machine_only_{sel_pos}",
-            )
-        with dl3:
-            st.download_button(
-                label="Combined Report (.md)",
-                data=combined_md.encode("utf-8"),
-                file_name=f"combined_forensic_report_email_{sel_pos}.md",
-                mime="text/markdown",
-                use_container_width=True,
-                disabled=not ai_markdown_body,
-                key=f"dl_combined_{sel_pos}",
-                help="Requires an AI report to be generated for this email first — otherwise this would just be the machine report again." if not ai_markdown_body else None,
-            )
+        with st.container(key="forensic_download_row"):
+            dl1, dl2, dl3 = st.columns(3)
+            with dl1:
+                st.download_button(
+                    label="AI Result Only (.md)",
+                    data=ai_md.encode("utf-8"),
+                    file_name=f"ai_report_email_{sel_pos}.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                    disabled=not ai_markdown_body,
+                    key=f"dl_ai_only_{sel_pos}",
+                    help="Requires an AI report to be generated for this email first." if not ai_markdown_body else None,
+                )
+            with dl2:
+                st.download_button(
+                    label="Machine Result Only (.md)",
+                    data=machine_md.encode("utf-8"),
+                    file_name=f"machine_report_email_{sel_pos}.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                    key=f"dl_machine_only_{sel_pos}",
+                )
+            with dl3:
+                st.download_button(
+                    label="Combined Report (.md)",
+                    data=combined_md.encode("utf-8"),
+                    file_name=f"combined_forensic_report_email_{sel_pos}.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                    disabled=not ai_markdown_body,
+                    key=f"dl_combined_{sel_pos}",
+                    help="Requires an AI report to be generated for this email first — otherwise this would just be the machine report again." if not ai_markdown_body else None,
+                )
