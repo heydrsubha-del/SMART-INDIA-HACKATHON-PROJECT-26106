@@ -1361,6 +1361,34 @@ st.markdown(
     [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
     [data-testid="stExpander"]:hover {border-color:#2c5877 !important; border-left-color:var(--violet) !important;}
 
+    /* "Custom IMAP server" toggle: this is a one-off setting most people
+       never touch, sitting between two full-width form fields -- as a
+       full-width expander it read as another big bar to fill the row,
+       when all it needs is a small, clearly-optional link/button. Shrink
+       just this one expander's clickable header to fit its text (a real
+       compact button, not a stretched full-width strip); the fields
+       inside still lay out normally once it's opened. */
+    .st-key-imap_custom_server_wrap [data-testid="stExpander"] {
+        background:transparent !important; border:none !important;
+    }
+    .st-key-imap_custom_server_wrap [data-testid="stExpander"] summary {
+        display:inline-flex !important; width:fit-content !important;
+        background:#0b1828 !important; border:1px solid #3a3358 !important;
+        border-radius:999px !important; padding:6px 14px !important;
+        font-size:12.5px !important; color:#c9bdff !important;
+    }
+    .st-key-imap_custom_server_wrap [data-testid="stExpander"] summary:hover {
+        border-color:var(--violet) !important; color:#eaf6ff !important;
+    }
+    .st-key-imap_custom_server_wrap [data-testid="stExpander"] summary svg {
+        width:13px !important; height:13px !important;
+    }
+    .st-key-imap_custom_server_wrap [data-testid="stExpander"] > div:last-child {
+        margin-top:8px !important; padding:12px !important;
+        background:#0b1828 !important; border:1px solid #1e3954 !important;
+        border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important;
+    }
+
     /* Two always-open, side-by-side sign-in option boxes (App password /
        Google account) -- replaces a layout where Google sign-in stood
        alone and the app-password field hid behind a collapsed expander,
@@ -3906,18 +3934,19 @@ if active_panel == "Dashboard":
             _is_outlook = _detected_key == _outlook_key and _outlook_key is not None
             _is_yahoo = _detected_key == _yahoo_key and _yahoo_key is not None
 
-            with st.expander("Custom IMAP server (host / port)", expanded=(_detected_key is None and bool(imap_user))):
-                if _detected_key is None and imap_user:
-                    st.caption("Provider not recognised from the email domain -- set the server manually below.")
-                _cc1, _cc2 = st.columns([2, 1])
-                with _cc1:
-                    imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
-                with _cc2:
-                    imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
-                if _detected_key is None:
-                    custom_auth_mode = st.selectbox("Authentication", ["App Password / Password", "OAuth2 Access Token"], key="imap_auth_mode")
-                else:
-                    custom_auth_mode = "App Password / Password"
+            with st.container(key="imap_custom_server_wrap"):
+                with st.expander("Custom IMAP server (host / port)", expanded=(_detected_key is None and bool(imap_user))):
+                    if _detected_key is None and imap_user:
+                        st.caption("Provider not recognised from the email domain -- set the server manually below.")
+                    _cc1, _cc2 = st.columns([2, 1])
+                    with _cc1:
+                        imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
+                    with _cc2:
+                        imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
+                    if _detected_key is None:
+                        custom_auth_mode = st.selectbox("Authentication", ["App Password / Password", "OAuth2 Access Token"], key="imap_auth_mode")
+                    else:
+                        custom_auth_mode = "App Password / Password"
 
             # Resolve the credential actually used by "Connect & Load
             # Mailbox" below: a cached OAuth token for the DETECTED
