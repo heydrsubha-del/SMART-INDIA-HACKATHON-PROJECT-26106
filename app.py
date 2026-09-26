@@ -2198,6 +2198,22 @@ st.markdown(
         border:1px solid #4a2a63; border-radius:6px; padding:1.5px 4px; background:#0a1826;
     }
     .sidebar-group-label:after {content:""; flex:1; height:1px; background:linear-gradient(90deg,#4a2a63,transparent);}
+    /* Per-group accent: Threat Operations (teal, the app's core action),
+       Visualization (green, matches the map/geo panels), Intelligence
+       (violet, matches the AI Copilot & correlation graph), Security
+       (rose, a distinct warning-adjacent hue not used elsewhere in the
+       sidebar), System (neutral slate -- settings/about, deliberately
+       the quietest one). */
+    .sidebar-group-teal .grp-index {color:var(--teal) !important; border-color:rgba(18,224,171,.4) !important;}
+    .sidebar-group-teal:after {background:linear-gradient(90deg,rgba(18,224,171,.4),transparent) !important;}
+    .sidebar-group-green .grp-index {color:#7be0a8 !important; border-color:rgba(47,206,135,.4) !important;}
+    .sidebar-group-green:after {background:linear-gradient(90deg,rgba(47,206,135,.4),transparent) !important;}
+    .sidebar-group-violet .grp-index {color:#d9c7ff !important; border-color:rgba(178,91,240,.4) !important;}
+    .sidebar-group-violet:after {background:linear-gradient(90deg,rgba(178,91,240,.4),transparent) !important;}
+    .sidebar-group-rose .grp-index {color:#ffb0c0 !important; border-color:rgba(255,90,130,.4) !important;}
+    .sidebar-group-rose:after {background:linear-gradient(90deg,rgba(255,90,130,.4),transparent) !important;}
+    .sidebar-group-slate .grp-index {color:#9db3c8 !important; border-color:#2c4a60 !important;}
+    .sidebar-group-slate:after {background:linear-gradient(90deg,#2c4a60,transparent) !important;}
 
     [data-testid="stSidebar"] .stButton > button {
         position:relative !important;
@@ -2652,14 +2668,18 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-    def _nav_group(label):
+    def _nav_group(label, accent="teal"):
         """Section header for a run of sidebar nav buttons: a small
         auto-incrementing index tag + label + a gradient rule filling the
         rest of the row (see .sidebar-group-label), so groups read as
-        labelled dividers rather than floating caption text."""
+        labelled dividers rather than floating caption text. `accent`
+        picks a distinct hue per section (see .sidebar-group-<accent>)
+        so the sidebar's own sections are as visually distinguishable as
+        the color-coded panels in the main content area."""
         _nav_group._n = getattr(_nav_group, "_n", 0) + 1
         st.markdown(
-            f'<div class="sidebar-group-label"><span class="grp-index">{_nav_group._n:02d}</span>{label}</div>',
+            f'<div class="sidebar-group-label sidebar-group-{accent}">'
+            f'<span class="grp-index">{_nav_group._n:02d}</span>{label}</div>',
             unsafe_allow_html=True,
         )
 
@@ -2704,7 +2724,7 @@ with st.sidebar:
         active_when=_on_dashboard and _mode_now not in (_UPLOAD_MODE, _LIVE_MODE),
     )
 
-    _nav_group("Threat Operations")
+    _nav_group("Threat Operations", accent="teal")
     _nav_button(
         "Upload Email(s)", "Dashboard", force_mode=_UPLOAD_MODE, key="nav_upload",
         active_when=_on_dashboard and _mode_now == _UPLOAD_MODE,
@@ -2720,7 +2740,7 @@ with st.sidebar:
         on_click_set={"origin_route_focus": "nomic"},
     )
 
-    _nav_group("Visualization")
+    _nav_group("Visualization", accent="green")
     _nav_button(
         "Global Threat Map", "Origin & Route", key="nav_map_side",
         active_when=_on_origin_route and _origin_focus == "map",
@@ -2729,15 +2749,15 @@ with st.sidebar:
     _nav_button("Correlation Graph", "Correlation", key="nav_graph_side")
     _nav_button("Analytics", "Classification", key="nav_analytics_side")
 
-    _nav_group("Intelligence")
+    _nav_group("Intelligence", accent="violet")
     _nav_button("Threat History", "Threat History", key="nav_history_side")
     _nav_button("IOC Lookup", "Indicators", key="nav_ioc_side")
     _nav_button("URLHaus Feed", "URLHaus Feed", key="nav_urlhaus_side")
 
-    _nav_group("Security")
+    _nav_group("Security", accent="rose")
     _nav_button("Antivirus (ClamAV)", "Antivirus", key="nav_av_side")
 
-    _nav_group("System")
+    _nav_group("System", accent="slate")
     _nav_button("Settings", "Settings", key="nav_settings_side")
     _nav_button("ℹ About", "About", key="nav_about_side")
 
@@ -3636,7 +3656,7 @@ def _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash):
     twice. Shares _copilot_handle_command with every other place a command
     can be typed, so behaviour never diverges."""
     st.markdown(
-        '<div class="panel-card-head" style="margin-top:14px;">'
+        '<div class="panel-card-head panel-card-head-violet" style="margin-top:14px;">'
         '<span>SYNAPSE COPILOT</span><span style="color:#8fa5bd;font-size:9px;">QWEN 3.5 + NOMIC AI</span>'
         '</div>',
         unsafe_allow_html=True,
