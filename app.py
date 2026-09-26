@@ -641,11 +641,14 @@ st.markdown(
            primary action / active state, instead of a two-hue gradient --
            gives the app a single deliberate identity color. */
         --brand-gradient: linear-gradient(90deg,#12e0ab,#b25bf0);
-        /* Action-button tokens -- the whole button family (primary = teal
-           action key, secondary = graphite key) is tinted from here, so the
-           look can be re-colored in one place without touching any rule. */
-        --act-1-top:#2bd5b4; --act-1-bot:#17a58b; --act-1-border:rgba(94,236,210,.55); --act-1-text:#03110e;
-        --act-1-top-hover:#3ae0c0; --act-1-bot-hover:#1db89c; --act-1-border-hover:rgba(140,248,226,.85);
+        /* Action-button tokens -- the whole button family (primary = brand
+           cyan-to-violet gradient key, secondary = graphite key) is tinted
+           from here, so the look can be re-colored in one place without
+           touching any rule. Was a flat teal; now the same punchier
+           cyan-to-violet gradient the Synapse Copilot button used, applied
+           app-wide so every primary button matches instead of just one. */
+        --act-1-top:#5470ff; --act-1-bot:#8c7bf0; --act-1-border:rgba(140,123,240,.55); --act-1-text:#ffffff;
+        --act-1-top-hover:#647eff; --act-1-bot-hover:#9c8cf5; --act-1-border-hover:rgba(140,123,240,.85);
         --act-2-top:#161d2a; --act-2-bot:#0e141e; --act-2-border:#2a3444; --act-2-text:#dbe4ef;
         --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(34,199,172,.65);
         --ease: cubic-bezier(.4,0,.2,1);
@@ -867,35 +870,19 @@ st.markdown(
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:active {transform:translateY(1px) !important; transition-duration:.08s !important;}
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:focus-visible {outline:2px solid rgba(34,199,172,.55) !important; outline-offset:2px !important;}
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"] {
-        background:linear-gradient(180deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
+        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         color:var(--act-1-text) !important;
         border:1px solid var(--act-1-border) !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(34,199,172,.14), inset 0 1px 0 rgba(255,255,255,.22) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(84,112,255,.25), inset 0 1px 0 rgba(255,255,255,.22) !important;
     }
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"]:hover {
-        background:linear-gradient(180deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
+        background:linear-gradient(135deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
         border-color:var(--act-1-border-hover) !important;
         color:var(--act-1-text) !important;
-        box-shadow:0 0 0 1px rgba(34,199,172,.30), 0 10px 26px rgba(34,199,172,.22), inset 0 1px 0 rgba(255,255,255,.28) !important;
+        box-shadow:0 0 0 1px rgba(140,123,240,.30), 0 10px 26px rgba(140,123,240,.4), inset 0 1px 0 rgba(255,255,255,.28) !important;
     }
     /* Disabled keys: dimmed and inert, so they never look clickable. */
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:disabled {opacity:.4 !important; filter:saturate(.55) !important; pointer-events:none !important; box-shadow:none !important;}
-
-    /* Synapse Copilot's "Full Report" quick-launch button, specifically --
-       matches the reference picture's punchier cyan-to-violet gradient
-       with a real glow, instead of the app's usual teal primary-button
-       gradient. Scoped to just this one key so it doesn't change any
-       other button in the app. */
-    .st-key-mailbox_quick_full_report_btn .stButton > button[kind^="primary"] {
-        background:linear-gradient(90deg,#5470ff 0%,#8c7bf0 100%) !important;
-        border:1px solid rgba(140,123,240,.55) !important;
-        box-shadow:0 2px 4px rgba(0,0,0,.35), 0 10px 28px rgba(84,112,255,.35), inset 0 1px 0 rgba(255,255,255,.25) !important;
-    }
-    .st-key-mailbox_quick_full_report_btn .stButton > button[kind^="primary"]:hover {
-        background:linear-gradient(90deg,#647eff 0%,#9c8cf5 100%) !important;
-        border-color:rgba(140,123,240,.8) !important;
-        box-shadow:0 0 0 1px rgba(140,123,240,.3), 0 12px 32px rgba(140,123,240,.45), inset 0 1px 0 rgba(255,255,255,.3) !important;
-    }
 
     /* Google-branded "Sign in with Google" link-button. Plain HTML/CSS
        (not a Streamlit widget) so it renders identically across Streamlit
