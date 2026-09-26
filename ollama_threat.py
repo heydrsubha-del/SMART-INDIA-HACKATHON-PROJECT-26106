@@ -7,6 +7,7 @@ No external AI API key is required.
 
 import json
 import os
+import time
 import requests
 
 from cloud_backend import BackendError, resolve_backend
@@ -477,46 +478,75 @@ def _groq_payload(payload):
     }
 
 
-def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback):
+def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, max_retries=4):
     """Cloud fallback: Groq's OpenAI-style SSE stream (`data: {...}`
     lines, terminated by `data: [DONE]`) -- a different wire format from
-    Ollama's raw NDJSON, but the same progress-percentage math applies."""
+    Ollama's raw NDJSON, but the same progress-percentage math applies.
+
+    Retries on 429 (rate limit) with backoff -- honoring Groq's own
+    Retry-After header when it sends one, since the free tier's
+    requests/tokens-per-minute limit is easy to hit once a batch report
+    is chunked into several back-to-back requests (see
+    _analyze_batch_chunked)."""
     groq_payload = _groq_payload(payload)
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    answer = ""
-    with requests.post(GROQ_URL, headers=headers, json=groq_payload, timeout=timeout, stream=True) as response:
-        response.raise_for_status()
-        tokens_seen = 0
-        for raw_line in response.iter_lines():
-            if not raw_line:
-                continue
-            line = raw_line.decode("utf-8", errors="replace") if isinstance(raw_line, bytes) else raw_line
-            if not line.startswith("data:"):
-                continue
-            data = line[len("data:"):].strip()
-            if data == "[DONE]":
-                break
-            try:
-                chunk = json.loads(data)
-            except ValueError:
-                continue
-            choices = chunk.get("choices") or []
-            if not choices:
-                continue
-            piece = (choices[0].get("delta") or {}).get("content", "")
-            if piece:
-                answer += piece
-                tokens_seen += 1
+    for attempt in range(max_retries + 1):
+        answer = ""
+        with requests.post(GROQ_URL, headers=headers, json=groq_payload, timeout=timeout, stream=True) as response:
+            if response.status_code == 429:
+                if attempt >= max_retries:
+                    response.raise_for_status()
+                wait = _retry_after_seconds(response, attempt)
                 if progress_callback:
-                    pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
-                    progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
-            if choices[0].get("finish_reason"):
-                break
-    return answer
+                    progress_callback(20, f"Rate limited by Groq, retrying in {int(wait)}s...")
+                time.sleep(wait)
+                continue
+
+            response.raise_for_status()
+            tokens_seen = 0
+            for raw_line in response.iter_lines():
+                if not raw_line:
+                    continue
+                line = raw_line.decode("utf-8", errors="replace") if isinstance(raw_line, bytes) else raw_line
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:"):].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except ValueError:
+                    continue
+                choices = chunk.get("choices") or []
+                if not choices:
+                    continue
+                piece = (choices[0].get("delta") or {}).get("content", "")
+                if piece:
+                    answer += piece
+                    tokens_seen += 1
+                    if progress_callback:
+                        pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
+                        progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
+                if choices[0].get("finish_reason"):
+                    break
+        return answer
+    return ""
+
+
+def _retry_after_seconds(response, attempt):
+    """Groq sends Retry-After on 429s; fall back to capped exponential
+    backoff (2s, 4s, 8s, 16s) if it doesn't."""
+    header = response.headers.get("Retry-After")
+    if header:
+        try:
+            return max(0.5, float(header))
+        except ValueError:
+            pass
+    return min(16, 2 ** (attempt + 1))
 
 
 def _base_payload(prompt):
@@ -763,5 +793,9 @@ def _analyze_batch_chunked(batch_items, timeout, progress_callback):
         payload["options"]["num_predict"] = min(1400, 350 + 45 * len(chunk))
         answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=_chunk_cb)
         sections.append(_split_per_email_summary(answer))
+        # Small pause between chunks -- free-tier rate limits are easy to
+        # hit with several requests fired back-to-back for one report.
+        if i < total - 1:
+            time.sleep(1.5)
 
     return "PER-EMAIL SUMMARY:\n" + "\n\n".join(sections)
