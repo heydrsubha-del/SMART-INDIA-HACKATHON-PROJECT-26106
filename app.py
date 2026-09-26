@@ -884,6 +884,45 @@ st.markdown(
     /* Disabled keys: dimmed and inert, so they never look clickable. */
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:disabled {opacity:.4 !important; filter:saturate(.55) !important; pointer-events:none !important; box-shadow:none !important;}
 
+    /* Action-color semantics: color should tell you what a button *does*,
+       not just decorate it. Everywhere else in the app, "primary" (the
+       cyan-to-violet gradient) means "the main/confirm action" -- that's
+       already correct on "Connect & Load Mailbox", so it's untouched.
+       These are the app's only genuinely destructive/irreversible
+       actions, scoped by key so nothing else changes:
+       - "Delete my data & sign out" permanently deletes local data ->
+         solid red, the one truly destructive action in the app.
+       - "Disconnect mailbox" ends a live session but is trivially
+         reversible (just reconnect) -> a red *outline* instead of a
+         solid fill, so it still reads as "be careful" without carrying
+         the same weight as an irreversible delete.
+       Plain session actions that aren't destructive (Sign out of Google,
+       Clear graph highlight, Sync feed) are left as the ordinary
+       secondary/graphite button -- not everything needs a warning color,
+       and coloring low-risk actions red would just teach people to
+       ignore red on the actually risky ones. */
+    .st-key-delete_my_data_btn .stButton > button {
+        background:linear-gradient(135deg,#ef5a5a 0%,#c73f3f 100%) !important;
+        border:1px solid rgba(239,90,90,.6) !important;
+        color:#ffffff !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 16px rgba(239,90,90,.25), inset 0 1px 0 rgba(255,255,255,.18) !important;
+    }
+    .st-key-delete_my_data_btn .stButton > button:hover {
+        background:linear-gradient(135deg,#f56b6b 0%,#d84c4c 100%) !important;
+        border-color:rgba(239,90,90,.85) !important;
+        box-shadow:0 0 0 1px rgba(239,90,90,.3), 0 10px 22px rgba(239,90,90,.35), inset 0 1px 0 rgba(255,255,255,.22) !important;
+    }
+    .st-key-imap_disconnect_btn .stButton > button {
+        background:transparent !important;
+        border:1px solid rgba(239,90,90,.55) !important;
+        color:#ff9d9d !important;
+    }
+    .st-key-imap_disconnect_btn .stButton > button:hover {
+        background:rgba(239,90,90,.12) !important;
+        border-color:rgba(239,90,90,.85) !important;
+        color:#ffbcbc !important;
+    }
+
     /* Google-branded "Sign in with Google" link-button. Plain HTML/CSS
        (not a Streamlit widget) so it renders identically across Streamlit
        versions -- it needs to be a real <a> so clicking it navigates the
@@ -1657,17 +1696,17 @@ st.markdown(
     .st-key-topnav .stRadio label > div:first-child {display:none !important;}
 
     /* Active tab, all three tab-strip radios (top nav, bulk infra scan,
-       technical logs) share one flat, confident blue fill -- no gradient,
-       no lift, no glow ring -- so "what's currently selected" reads the
-       same way everywhere in the app instead of three slightly different
-       looks. Consolidated into one rule instead of three near-duplicates
-       so future edits can't quietly drift out of sync again. */
+       technical logs) -- now pulls from the exact same --act-1-* tokens
+       every primary button uses (see :root), instead of its own separate
+       flat teal. One "this is the selected/primary thing" language for
+       the whole app: tabs and buttons read as the same design system
+       instead of two different ones that happen to sit near each other. */
     .st-key-topnav .stRadio label:has(input:checked),
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
     .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
-        background:#12e0ab !important;
-        border-color:#12e0ab !important;
-        box-shadow:0 2px 8px rgba(18,224,171,.35) !important;
+        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
+        border-color:var(--act-1-border) !important;
+        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
