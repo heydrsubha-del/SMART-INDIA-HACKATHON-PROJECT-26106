@@ -1239,6 +1239,30 @@ st.markdown(
     [data-testid="stAlertContentError"] {color:#ffb4bc !important;}
     [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
     [data-testid="stExpander"]:hover {border-color:#2c5877 !important; border-left-color:var(--violet) !important;}
+
+    /* Two always-open, side-by-side sign-in option boxes (App password /
+       Google account) -- replaces a layout where Google sign-in stood
+       alone and the app-password field hid behind a collapsed expander,
+       which meant one path was a click-to-reveal search while the other
+       wasn't. Both now read as equal, permanently visible choices in a
+       clean two-column card row. Targeted by the container `key=` Streamlit
+       emits as a `st-key-*` class, since these need to actually wrap the
+       widgets inside them (a markdown div can't nest around a widget). */
+    .st-key-auth_password_box, .st-key-auth_google_box {
+        border-radius:var(--r-md) !important;
+        background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
+        padding:14px 14px 16px !important;
+        box-shadow:var(--shadow-sm) !important;
+        height:100% !important;
+    }
+    .auth-option-label {
+        font-size:10.5px !important; font-weight:800 !important; letter-spacing:1.4px !important;
+        text-transform:uppercase !important; margin-bottom:9px !important;
+    }
+    .st-key-auth_password_box {border:1px solid rgba(140,123,240,.35) !important;}
+    .auth-option-label-violet {color:#c9bdff !important;}
+    .st-key-auth_google_box {border:1px solid rgba(18,224,171,.35) !important;}
+    .auth-option-label-cyan {color:#7fe9cf !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
        tabs (with the theme's raw red underline) no matter how this was
@@ -3727,41 +3751,50 @@ if active_panel == "Dashboard":
                             st.caption("The sign-in link may have expired or already been used. Click 'Sign in with Google' again below.")
 
                         issue = client_secret_issue()
-                        if issue:
-                            st.warning(f"Google Sign-In isn't configured correctly: {issue}")
-                        else:
-                            # On a public host this box is hidden: it edits a process-wide
-                            # setting, so one visitor could otherwise change the redirect
-                            # URL for everybody. Set SIH26106_GOOGLE_REDIRECT_URI instead.
-                            if not MULTIUSER:
-                                with st.expander("Redirect URL setup (only needed once per environment)"):
-                                    st.caption(
-                                        "Must exactly match a redirect URI registered on the Google OAuth client, "
-                                        "and be the URL this app is actually reachable at right now (e.g. "
-                                        "`http://localhost:8501` when testing locally, or your deployed https:// URL)."
-                                    )
-                                    redirect_override = st.text_input(
-                                        "App URL (redirect URI)",
-                                        value=google_redirect_uri(),
-                                        key="google_redirect_uri_input",
-                                    )
-                                    if redirect_override.strip():
-                                        os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = redirect_override.strip().rstrip("/")
 
-                            try:
-                                auth_url, _state = get_authorization_url(email_hint=imap_user)
-                                st.markdown(
-                                    f'<a href="{html.escape(auth_url)}" target="_self" class="google-signin-btn">Sign in with Google</a>',
-                                    unsafe_allow_html=True,
+                        if not MULTIUSER and not issue:
+                            with st.expander("Redirect URL setup (only needed once per environment)"):
+                                st.caption(
+                                    "Must exactly match a redirect URI registered on the Google OAuth client, "
+                                    "and be the URL this app is actually reachable at right now (e.g. "
+                                    "`http://localhost:8501` when testing locally, or your deployed https:// URL)."
                                 )
-                                st.caption("Opens Google's sign-in page. After you approve access, Google sends you back here automatically.")
-                            except Exception as e:
-                                st.error(f"Google sign-in failed to start: {e}")
+                                redirect_override = st.text_input(
+                                    "App URL (redirect URI)",
+                                    value=google_redirect_uri(),
+                                    key="google_redirect_uri_input",
+                                )
+                                if redirect_override.strip():
+                                    os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = redirect_override.strip().rstrip("/")
 
-                        with st.expander("Use an app password instead"):
-                            manual_cred = st.text_input("App password", type="password", key="gmail_app_password")
-                            if manual_cred:
-                                imap_credential = manual_cred
+                        # Both sign-in options laid out as two always-open
+                        # boxes side by side, instead of the Google button
+                        # sitting on its own with the app-password field
+                        # tucked away behind a click-to-expand accordion.
+                        # Neither option is hidden, so there's nothing to
+                        # search for -- you just look left or right.
+                        _auth1, _auth2 = st.columns(2)
+                        with _auth1:
+                            with st.container(border=True, key="auth_password_box"):
+                                st.markdown('<div class="auth-option-label auth-option-label-violet">APP PASSWORD</div>', unsafe_allow_html=True)
+                                manual_cred = st.text_input("App password", type="password", key="gmail_app_password", label_visibility="collapsed", placeholder="Paste your 16-character app password")
+                                if manual_cred:
+                                    imap_credential = manual_cred
+                        with _auth2:
+                            with st.container(border=True, key="auth_google_box"):
+                                st.markdown('<div class="auth-option-label auth-option-label-cyan">GOOGLE ACCOUNT</div>', unsafe_allow_html=True)
+                                if issue:
+                                    st.warning(f"Google Sign-In isn't configured correctly: {issue}")
+                                else:
+                                    try:
+                                        auth_url, _state = get_authorization_url(email_hint=imap_user)
+                                        st.markdown(
+                                            f'<a href="{html.escape(auth_url)}" target="_self" class="google-signin-btn">Sign in with Google</a>',
+                                            unsafe_allow_html=True,
+                                        )
+                                        st.caption("Opens Google's sign-in page. After you approve access, Google sends you back here automatically.")
+                                    except Exception as e:
+                                        st.error(f"Google sign-in failed to start: {e}")
                 else:
                     if not GOOGLE_OAUTH_READY:
                         st.warning("Google Sign-In isn't available: google_Oauth.py failed to import. Run `pip install google-auth google-auth-oauthlib` and restart the app.")
