@@ -21,6 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Keep all Plotly visuals consistent with the dark SOC interface: extend the
 # built-in dark template with our own palette/typography instead of leaving
@@ -2399,6 +2400,28 @@ def _clean_ai_display(text):
         cleaned.append(line.rstrip())
     return "\n".join(cleaned).strip()
 
+
+def _annotate_email_labels(text, report_items):
+    """Replace bare 'Email #N' / 'Email #N, #M' references in a batch AI
+    report with the sender and subject for each position, so 'Email #3'
+    reads as something identifiable instead of a number the reader has to
+    cross-reference against a separate table."""
+    labels = {}
+    for it in report_items or []:
+        parsed = ((it.get("result") or {}).get("parsed") or {})
+        subject = str(parsed.get("subject") or "No Subject").strip()
+        if len(subject) > 40:
+            subject = subject[:37] + "..."
+        sender = str(parsed.get("from_addr") or parsed.get("from") or "Unknown sender").strip()
+        labels[it.get("position")] = f'{sender} — "{subject}"'
+
+    def _replace(match):
+        nums = [int(n) for n in re.findall(r"#(\d+)", match.group(0))]
+        parts = [f"#{n} ({labels[n]})" if n in labels else f"#{n}" for n in nums]
+        return "Email " + ", ".join(parts)
+
+    return re.sub(r"Email\s+#\d+(?:\s*,\s*#\d+)*", _replace, text)
+
 def _ai_markdown_to_html(text):
     src = str(text or "").replace("\r\n", "\n").replace("\r", "\n")
     src = _clean_ai_display(src)
@@ -2839,6 +2862,7 @@ def _run_batch_pipeline(source_items, source_label):
     # the target panel in a plain, non-widget key instead; it's applied to
     # "active_panel" on the rerun, *before* the radio widget is created.
     st.session_state["_pending_active_panel"] = "Forensic Report"
+    st.session_state["_scroll_to_joint_report"] = True
     st.success(f"Analyzed {len(batch_items)} emails. Opening the Forensic Report...")
     st.rerun()
 
@@ -4553,6 +4577,7 @@ if active_panel == "AI Threat Analysis":
                 if b_res.get("ok"):
                     st.markdown(f"#### Full Campaign Summary ({saved_batch.get('count')} Emails Assessed)")
                     cleaned_summary = _clean_ai_display(b_res.get("analysis", ""))
+                    cleaned_summary = _annotate_email_labels(cleaned_summary, st.session_state.get("qwen_batch_items") or [])
                     st.markdown(
                         f"""<div class="ai-report-frame">
                             <div class="ai-report-bar">
@@ -5822,6 +5847,24 @@ if active_panel == "Forensic Report":
             st.stop()
 
         if pipeline_active:
+            st.markdown('<div id="joint-report-anchor"></div>', unsafe_allow_html=True)
+            if st.session_state.pop("_scroll_to_joint_report", False):
+                # Lands the user on the report itself instead of wherever the
+                # page happened to be scrolled to (e.g. this same panel's
+                # per-email dossier section further down) right after a
+                # fresh Full Report run. Streamlit components render in an
+                # iframe, so we reach the parent document to scroll it.
+                components.html(
+                    """
+                    <script>
+                    setTimeout(function() {
+                        var el = window.parent.document.getElementById('joint-report-anchor');
+                        if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+                    }, 250);
+                    </script>
+                    """,
+                    height=0,
+                )
             st.markdown("---")
             st.markdown(f"#### Joint Report — {pipeline_result.get('count', len(report_items))} Emails ({pipeline_result.get('source', '')})")
             st.caption("Machine analysis + AI threat analysis + semantic origin correlation, combined across the batch. Drill into any single email below, or grab everything at once.")
@@ -5830,6 +5873,7 @@ if active_panel == "Forensic Report":
             _joint_ai_text = ""
             if _ai_res.get("ok"):
                 _joint_ai_text = _clean_ai_display(_ai_res.get("analysis", ""))
+                _joint_ai_text = _annotate_email_labels(_joint_ai_text, report_items)
                 st.markdown(
                     f"""<div class="ai-report-frame">
                         <div class="ai-report-bar">
