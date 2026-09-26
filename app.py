@@ -1935,8 +1935,15 @@ st.markdown(
     .sidebar-group-label {
         display:flex !important; align-items:center !important; gap:7px !important;
         color:#5b7690 !important; font-size:10px !important; font-weight:800 !important;
-        letter-spacing:1.6px !important; text-transform:uppercase !important; margin:18px 4px 7px !important;
+        letter-spacing:1.6px !important; text-transform:uppercase !important; margin:18px 4px 12px !important;
     }
+    /* The selected nav button's glow/gradient used to sit close enough to
+       the group-label's divider line above it that it visually crossed
+       into it (almost no breathing room between the "01 THREAT
+       OPERATIONS" rule and the first pill below). The extra bottom-margin
+       above is the fix -- simple and guaranteed to apply, rather than a
+       sibling-selector that depends on exact DOM nesting Streamlit
+       doesn't guarantee. */
     .sidebar-group-label .grp-index {
         color:var(--teal); font:900 9px/1 "Consolas","Cascadia Code",monospace; letter-spacing:0;
         border:1px solid #4a2a63; border-radius:6px; padding:1.5px 4px; background:#0a1826;
@@ -3590,10 +3597,20 @@ if active_panel == "Dashboard":
               <div class="stage-help">Provider defaults are supplied automatically. Custom IMAP servers remain supported.</div>
             </div>
             """, unsafe_allow_html=True)
-            provider = st.selectbox("Mail provider", list(PROVIDERS.keys()), key="imap_provider")
+            # These three used to be three separate full-width rows -- a
+            # provider dropdown, a text box, and a number box each getting
+            # its own full-width line, which read as three boxes for what
+            # is really one decision (which server to connect to). Side by
+            # side instead: same fields, same keys/behaviour, a third of
+            # the vertical space.
+            _mc1, _mc2, _mc3 = st.columns([1, 2, 1])
+            with _mc1:
+                provider = st.selectbox("Mail provider", list(PROVIDERS.keys()), key="imap_provider")
             provider_defaults = PROVIDERS[provider]
-            imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
-            imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
+            with _mc2:
+                imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
+            with _mc3:
+                imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
 
             # Gmail + already signed in (this session, or restored from the
             # token cache after a restart) but no address on file yet ->
@@ -3709,8 +3726,11 @@ if active_panel == "Dashboard":
               <div class="stage-help">Only headers are loaded during browsing. The complete raw message is fetched after selection.</div>
             </div>
             """, unsafe_allow_html=True)
-            folder = st.text_input("Mailbox folder", "INBOX", key="imap_folder")
-            browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
+            _sc1, _sc2 = st.columns([2, 1])
+            with _sc1:
+                folder = st.text_input("Mailbox folder", "INBOX", key="imap_folder")
+            with _sc2:
+                browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
             connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
 
             if connect_clicked:
