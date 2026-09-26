@@ -4591,21 +4591,91 @@ if active_panel == "AI Threat Analysis":
 
                     st.markdown("#### Download Multi-Email Forensic Intelligence")
 
-                    batch_markdown_report = (
+                    # BUG FIX: this used to offer only one download -- the AI
+                    # campaign summary -- with a caption redirecting anyone
+                    # who wanted an actual AI + machine combined report to go
+                    # open a different email one at a time in the Forensic
+                    # Report module. That's not what "combined report" means
+                    # for a batch of 10 or 20 emails someone just scanned
+                    # together. Every batch item already carries its full
+                    # analyze_bytes() result and raw bytes (see batch_items
+                    # above), so the same build_report() the single-email
+                    # Forensic Report module uses can build a real per-email
+                    # machine section for every email in this batch here too
+                    # -- no separate module trip required.
+                    _batch_items_for_dl = st.session_state.get("qwen_batch_items") or []
+                    _batch_machine_sections = []
+                    for _bi in _batch_items_for_dl:
+                        _bi_result = _bi.get("result")
+                        _bi_header = f"### Email #{_bi.get('position')} (CSV Row {_bi.get('row')})"
+                        if not _bi_result or "error" in _bi_result:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n_Machine report unavailable for this email "
+                                f"({_bi_result.get('error') if _bi_result else 'no result'})._"
+                            )
+                            continue
+                        try:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n"
+                                + build_report(_bi_result, _bi.get("_raw"), analyst="SIH26106 automated triage")
+                            )
+                        except Exception as e:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n_Machine report could not be generated ({e})._"
+                            )
+                    _batch_machine_body = "\n\n---\n\n".join(_batch_machine_sections) or \
+                        "_No per-email machine results available for this batch._"
+
+                    ai_only_batch_md = (
                         f"# SIH26106 - MULTI-EMAIL CAMPAIGN ASSESSMENT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
                         f"## AI Campaign Summary\n\n{cleaned_summary}"
                     )
-
-                    st.download_button(
-                        label="Download Campaign Summary (.md)",
-                        data=batch_markdown_report.encode("utf-8"),
-                        file_name=f"ai_campaign_summary_{saved_batch.get('count')}_emails.md",
-                        mime="text/markdown",
-                        use_container_width=True,
-                        key="dl_ai_campaign_md",
+                    machine_only_batch_md = (
+                        f"# SIH26106 - MULTI-EMAIL MACHINE FORENSIC REPORT\n\n"
+                        f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n---\n\n"
+                        f"{_batch_machine_body}"
                     )
-                    st.caption("For a per-email combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
+                    combined_batch_md = (
+                        f"# SIH26106 - MULTI-EMAIL COMBINED FORENSIC + AI REPORT\n\n"
+                        f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
+                        f"## AI Campaign Summary\n\n{cleaned_summary}\n\n---\n\n"
+                        f"## Per-Email Machine Forensic Reports\n\n{_batch_machine_body}"
+                    )
+
+                    _count_tag = saved_batch.get('count')
+                    bdl1, bdl2, bdl3 = st.columns(3)
+                    with bdl1:
+                        st.download_button(
+                            label="AI Summary Only (.md)",
+                            data=ai_only_batch_md.encode("utf-8"),
+                            file_name=f"ai_campaign_summary_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_ai_campaign_md",
+                        )
+                    with bdl2:
+                        st.download_button(
+                            label="Machine Results Only (.md)",
+                            data=machine_only_batch_md.encode("utf-8"),
+                            file_name=f"machine_report_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_machine_campaign_md",
+                        )
+                    with bdl3:
+                        st.download_button(
+                            label="Combined Report (.md)",
+                            data=combined_batch_md.encode("utf-8"),
+                            file_name=f"combined_forensic_report_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_combined_campaign_md",
+                        )
+                    st.caption(
+                        f"Combined Report and Machine Results Only include a full forensic "
+                        f"breakdown for all {_count_tag} emails in this batch, not just the AI summary."
+                    )
                 else:
                     st.error(f"AI Batch Analysis Error: {b_res.get('error', 'Unknown Error')}")
         else:
