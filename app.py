@@ -67,6 +67,18 @@ try:
 except ImportError:
     GOOGLE_OAUTH_READY = False
 
+try:
+    import microsoft_oauth
+    MICROSOFT_OAUTH_READY = True
+except ImportError:
+    MICROSOFT_OAUTH_READY = False
+
+try:
+    import yahoo_oauth
+    YAHOO_OAUTH_READY = True
+except ImportError:
+    YAHOO_OAUTH_READY = False
+
 # google_Oauth.py caches the OAuth *token* across restarts, but not the
 # account email that goes with it -- so a restored session knew it was
 # "signed in" without knowing which address that meant, and the Email
@@ -120,6 +132,36 @@ def _fetch_google_email_from_token(access_token: str):
         return data.get("email") or None
     except Exception:
         return None
+
+
+# Same email-cache idea as Google's, generalized so Microsoft and Yahoo
+# sign-in get the same "don't make me retype my address after a restart"
+# behavior without three near-identical copies of the Google helpers above.
+_PROVIDER_EMAIL_CACHE_PATHS = {
+    "microsoft": ".microsoft_email_cache.json",
+    "yahoo": ".yahoo_email_cache.json",
+}
+
+
+def _load_cached_provider_email(provider_key: str):
+    if MULTIUSER:
+        return st.session_state.get(f"_{provider_key}_email_cache") or None
+    try:
+        with open(_PROVIDER_EMAIL_CACHE_PATHS[provider_key], "r", encoding="utf-8") as f:
+            return (json.load(f) or {}).get("email") or None
+    except Exception:
+        return None
+
+
+def _save_cached_provider_email(provider_key: str, email: str):
+    if MULTIUSER:
+        st.session_state[f"_{provider_key}_email_cache"] = email
+        return
+    try:
+        with open(_PROVIDER_EMAIL_CACHE_PATHS[provider_key], "w", encoding="utf-8") as f:
+            json.dump({"email": email}, f)
+    except Exception:
+        pass
 
 from tracker import (
     init_db,
@@ -563,14 +605,57 @@ st.session_state.setdefault("single_ai_reports", {})
 # widget is never created during *this* run at all, so there's nothing to
 # conflict with -- the very next run picks up st.session_state["imap_user"]
 # cleanly, exactly like any other pre-seeded default value.
-if GOOGLE_OAUTH_READY:
+if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YAHOO_OAUTH_READY:
     _oauth_code = st.query_params.get("code")
     _oauth_state = st.query_params.get("state")
     _oauth_error = st.query_params.get("error")
-    if _oauth_error:
+    # The redirect URI is shared across every provider (it's the same
+    # running app), so the same ?code=/?state= callback can belong to
+    # Google, Microsoft or Yahoo. Each provider's own get_authorization_url()
+    # prefixes its `state` value (msoauth:/yhoauth:) precisely so this one
+    # handler can tell them apart and call the right exchange function --
+    # anything without a recognized prefix falls through to Google, exactly
+    # matching the original behavior from before Microsoft/Yahoo existed.
+    if _oauth_state and MICROSOFT_OAUTH_READY and _oauth_state.startswith(microsoft_oauth.STATE_PREFIX):
+        if _oauth_error:
+            st.query_params.clear()
+            st.session_state["_microsoft_oauth_error"] = _oauth_error
+        elif _oauth_code:
+            try:
+                _ms_token, _ms_email = microsoft_oauth.exchange_code_for_token(_oauth_code, state=_oauth_state)
+                st.query_params.clear()
+                st.session_state["microsoft_oauth_token"] = _ms_token
+                if _ms_email:
+                    st.session_state["imap_user"] = _ms_email
+                    _save_cached_provider_email("microsoft", _ms_email)
+                st.session_state["imap_provider"] = "Outlook / Microsoft 365"
+                st.session_state["show_imap_connection_form"] = True
+                st.rerun()
+            except Exception as _ms_exc:
+                st.query_params.clear()
+                st.session_state["_microsoft_oauth_error"] = f"Microsoft sign-in failed while completing sign-in: {_ms_exc}"
+    elif _oauth_state and YAHOO_OAUTH_READY and _oauth_state.startswith(yahoo_oauth.STATE_PREFIX):
+        if _oauth_error:
+            st.query_params.clear()
+            st.session_state["_yahoo_oauth_error"] = _oauth_error
+        elif _oauth_code:
+            try:
+                _yh_token, _yh_email = yahoo_oauth.exchange_code_for_token(_oauth_code, state=_oauth_state)
+                st.query_params.clear()
+                st.session_state["yahoo_oauth_token"] = _yh_token
+                if _yh_email:
+                    st.session_state["imap_user"] = _yh_email
+                    _save_cached_provider_email("yahoo", _yh_email)
+                st.session_state["imap_provider"] = "Yahoo"
+                st.session_state["show_imap_connection_form"] = True
+                st.rerun()
+            except Exception as _yh_exc:
+                st.query_params.clear()
+                st.session_state["_yahoo_oauth_error"] = f"Yahoo sign-in failed while completing sign-in: {_yh_exc}"
+    elif GOOGLE_OAUTH_READY and _oauth_error:
         st.query_params.clear()
         st.session_state["_google_oauth_error"] = _oauth_error
-    elif _oauth_code:
+    elif GOOGLE_OAUTH_READY and _oauth_code:
         try:
             _token, _email_hint = exchange_code_for_token(_oauth_code, state=_oauth_state)
             st.query_params.clear()
@@ -1017,6 +1102,42 @@ st.markdown(
         color:#3c4043 !important;
     }
 
+    /* "Sign in with Microsoft" / "Sign in with Yahoo" -- same real <a>-tag
+       button device as Google's (needs to be a genuine link so it
+       navigates the browser to the provider, not a server-side st.button),
+       each carrying that provider's own brand mark and colors instead of
+       reusing Google's white pill for a different service. */
+    .microsoft-signin-btn {
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        width:100% !important; min-height:42px !important; box-sizing:border-box !important;
+        background:#2f2f2f !important; color:#ffffff !important;
+        border:1px solid #505050 !important; border-radius:8px !important;
+        font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:600 !important; font-size:14px !important;
+        text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
+        padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
+        background-position:14px center !important; background-size:18px 18px !important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 21 21'%3E%3Crect x='1' y='1' width='9' height='9' fill='%23f25022'/%3E%3Crect x='11' y='1' width='9' height='9' fill='%2300a4ef'/%3E%3Crect x='1' y='11' width='9' height='9' fill='%23ffb900'/%3E%3Crect x='11' y='11' width='9' height='9' fill='%237fba00'/%3E%3C/svg%3E") !important;
+        transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
+    }
+    .microsoft-signin-btn:hover {
+        background:#3c3c3c !important; box-shadow:0 2px 8px rgba(0,0,0,.35) !important; border-color:#6b6b6b !important; color:#ffffff !important;
+    }
+    .yahoo-signin-btn {
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        width:100% !important; min-height:42px !important; box-sizing:border-box !important;
+        background:#6001d2 !important; color:#ffffff !important;
+        border:1px solid #7a1fe0 !important; border-radius:8px !important;
+        font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:700 !important; font-size:14px !important;
+        text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
+        padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
+        background-position:16px center !important; background-size:16px 16px !important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='2' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='22' fill='white'%3E!%3C/text%3E%3C/svg%3E") !important;
+        transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
+    }
+    .yahoo-signin-btn:hover {
+        background:#7412e8 !important; box-shadow:0 2px 8px rgba(96,1,210,.45) !important; border-color:#9142f0 !important; color:#ffffff !important;
+    }
+
     .stTextInput input, .stNumberInput input, textarea {
         background:linear-gradient(180deg,#0d2035,#091729) !important;
         color:#eaf2fa !important;
@@ -1248,7 +1369,9 @@ st.markdown(
        clean two-column card row. Targeted by the container `key=` Streamlit
        emits as a `st-key-*` class, since these need to actually wrap the
        widgets inside them (a markdown div can't nest around a widget). */
-    .st-key-auth_password_box, .st-key-auth_google_box {
+    .st-key-auth_password_box, .st-key-auth_google_box,
+    .st-key-auth_password_box_ms, .st-key-auth_microsoft_box,
+    .st-key-auth_password_box_yh, .st-key-auth_yahoo_box {
         border-radius:var(--r-md) !important;
         background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
         padding:14px 14px 16px !important;
@@ -1259,10 +1382,18 @@ st.markdown(
         font-size:10.5px !important; font-weight:800 !important; letter-spacing:1.4px !important;
         text-transform:uppercase !important; margin-bottom:9px !important;
     }
-    .st-key-auth_password_box {border:1px solid rgba(140,123,240,.35) !important;}
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border:1px solid rgba(140,123,240,.35) !important;}
     .auth-option-label-violet {color:#c9bdff !important;}
     .st-key-auth_google_box {border:1px solid rgba(18,224,171,.35) !important;}
     .auth-option-label-cyan {color:#7fe9cf !important;}
+    /* Microsoft's brand blue and Yahoo's brand purple for their own
+       sign-in boxes/buttons, so each provider still reads as itself next
+       to Google's cyan and the app-password violet, instead of every
+       OAuth option looking identical apart from a label. */
+    .st-key-auth_microsoft_box {border:1px solid rgba(0,120,212,.4) !important;}
+    .auth-option-label-msblue {color:#7fc4ff !important;}
+    .st-key-auth_yahoo_box {border:1px solid rgba(112,0,182,.4) !important;}
+    .auth-option-label-yahoo {color:#d6a3ff !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
        tabs (with the theme's raw red underline) no matter how this was
@@ -3692,12 +3823,24 @@ if active_panel == "Dashboard":
             with _mc3:
                 imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
 
-            # Gmail + already signed in (this session, or restored from the
-            # token cache after a restart) but no address on file yet ->
-            # resolve it now, once, before the Email address field below is
-            # created, so the field opens pre-filled instead of asking the
-            # user to retype an address Google already gave us.
-            if provider == "Gmail" and GOOGLE_OAUTH_READY and oauth_available() and not st.session_state.get("imap_user"):
+            # Matched loosely (substring, case-insensitive) rather than an
+            # exact string against `provider` -- PROVIDERS' exact key
+            # spelling ("Outlook / Microsoft 365" vs "Microsoft 365" vs
+            # "Outlook", etc.) can vary, and a loose match keeps the OAuth
+            # branches below working across any of those spellings instead
+            # of silently falling back to plain password auth.
+            _provider_l = provider.lower()
+            _is_gmail = "gmail" in _provider_l
+            _is_outlook = ("outlook" in _provider_l) or ("microsoft" in _provider_l) or ("office 365" in _provider_l) or ("office365" in _provider_l)
+            _is_yahoo = "yahoo" in _provider_l
+
+            # Gmail/Microsoft/Yahoo + already signed in (this session, or
+            # restored from the token cache after a restart) but no address
+            # on file yet -> resolve it now, once, before the Email address
+            # field below is created, so the field opens pre-filled instead
+            # of asking the user to retype an address the provider already
+            # gave us.
+            if _is_gmail and GOOGLE_OAUTH_READY and oauth_available() and not st.session_state.get("imap_user"):
                 _cached_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
                 if _cached_tok and not st.session_state.get("_google_email_autofill_tried"):
                     st.session_state["_google_email_autofill_tried"] = True
@@ -3705,12 +3848,28 @@ if active_panel == "Dashboard":
                     if _resolved_email:
                         st.session_state["imap_user"] = _resolved_email
                         _save_cached_google_email(_resolved_email)
+            elif _is_outlook and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available() and not st.session_state.get("imap_user"):
+                _cached_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                if _cached_tok and not st.session_state.get("_microsoft_email_autofill_tried"):
+                    st.session_state["_microsoft_email_autofill_tried"] = True
+                    _resolved_email = _load_cached_provider_email("microsoft") or microsoft_oauth.fetch_email(_cached_tok)
+                    if _resolved_email:
+                        st.session_state["imap_user"] = _resolved_email
+                        _save_cached_provider_email("microsoft", _resolved_email)
+            elif _is_yahoo and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available() and not st.session_state.get("imap_user"):
+                _cached_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+                if _cached_tok and not st.session_state.get("_yahoo_email_autofill_tried"):
+                    st.session_state["_yahoo_email_autofill_tried"] = True
+                    _resolved_email = _load_cached_provider_email("yahoo") or yahoo_oauth.fetch_email(_cached_tok)
+                    if _resolved_email:
+                        st.session_state["imap_user"] = _resolved_email
+                        _save_cached_provider_email("yahoo", _resolved_email)
 
             st.markdown("""
             <div class="stage-card stage-card-auth">
               <div class="stage-label">02 · Authentication</div>
               <div class="stage-title">Sign in to the mailbox</div>
-              <div class="stage-help">Gmail signs in with your Google account. Other providers use an app password or OAuth2 token.</div>
+              <div class="stage-help">Gmail, Outlook/Microsoft 365 and Yahoo can all sign in with their own account. Any provider also accepts an app password or OAuth2 token.</div>
             </div>
             """, unsafe_allow_html=True)
             imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
@@ -3718,7 +3877,7 @@ if active_panel == "Dashboard":
             imap_credential = ""
             auth_mode = "App Password / Password"
 
-            if provider == "Gmail":
+            if _is_gmail:
                 if GOOGLE_OAUTH_READY and oauth_available():
                     cached_token = st.session_state.get("google_oauth_token") or get_cached_access_token()
                     if cached_token:
@@ -3801,11 +3960,159 @@ if active_panel == "Dashboard":
                     else:
                         st.warning("Google Sign-In needs setup: add a `client_secret.json` OAuth Desktop credential next to app.py, then restart the app.")
                     imap_credential = st.text_input("App password / access token", type="password", key=f"imap_credential_{provider}")
+            elif _is_outlook:
+                if MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
+                    cached_token = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                    if cached_token:
+                        st.session_state["microsoft_oauth_token"] = cached_token
+                        auth_mode = "OAuth2 Access Token"
+                        imap_credential = cached_token
+                        st.success("Signed in with Microsoft.")
+                        if st.button("Sign out of Microsoft", key="microsoft_signout_btn"):
+                            microsoft_oauth.clear_saved_token()
+                            st.session_state.pop("microsoft_oauth_token", None)
+                            st.session_state.pop("imap_user", None)
+                            st.session_state.pop("_microsoft_email_autofill_tried", None)
+                            st.session_state.pop("_microsoft_email_cache", None)
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_PROVIDER_EMAIL_CACHE_PATHS["microsoft"])
+                                except OSError:
+                                    pass
+                            st.rerun()
+                    else:
+                        # Same one-time-consumption pattern as Google's
+                        # callback: the ?code=/?state= redirect is handled
+                        # at the top of the script, so only a leftover error
+                        # (if sign-in failed) shows up here.
+                        _pending_ms_error = st.session_state.pop("_microsoft_oauth_error", None)
+                        if _pending_ms_error:
+                            st.error(f"Microsoft sign-in didn't complete: {_pending_ms_error}")
+                            st.caption("The sign-in link may have expired or already been used. Click 'Sign in with Microsoft' again below.")
+
+                        ms_issue = microsoft_oauth.client_secret_issue()
+
+                        if not MULTIUSER and not ms_issue:
+                            with st.expander("Redirect URL setup (only needed once per environment)"):
+                                st.caption(
+                                    "Must exactly match a redirect URI registered on the Azure app registration "
+                                    "(portal.azure.com -> App registrations), and be the URL this app is actually "
+                                    "reachable at right now (e.g. `http://localhost:8501` when testing locally, or "
+                                    "your deployed https:// URL)."
+                                )
+                                ms_redirect_override = st.text_input(
+                                    "App URL (redirect URI)",
+                                    value=microsoft_oauth.redirect_uri(),
+                                    key="microsoft_redirect_uri_input",
+                                )
+                                if ms_redirect_override.strip():
+                                    os.environ["SIH26106_MS_REDIRECT_URI"] = ms_redirect_override.strip().rstrip("/")
+
+                        _auth1, _auth2 = st.columns(2)
+                        with _auth1:
+                            with st.container(border=True, key="auth_password_box_ms"):
+                                st.markdown('<div class="auth-option-label auth-option-label-violet">APP PASSWORD</div>', unsafe_allow_html=True)
+                                manual_cred = st.text_input("App password", type="password", key="microsoft_app_password", label_visibility="collapsed", placeholder="Paste your app password or access token")
+                                if manual_cred:
+                                    imap_credential = manual_cred
+                        with _auth2:
+                            with st.container(border=True, key="auth_microsoft_box"):
+                                st.markdown('<div class="auth-option-label auth-option-label-msblue">MICROSOFT ACCOUNT</div>', unsafe_allow_html=True)
+                                if ms_issue:
+                                    st.warning(f"Microsoft Sign-In isn't configured correctly: {ms_issue}")
+                                else:
+                                    try:
+                                        auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
+                                        st.markdown(
+                                            f'<a href="{html.escape(auth_url)}" target="_self" class="microsoft-signin-btn">Sign in with Microsoft</a>',
+                                            unsafe_allow_html=True,
+                                        )
+                                        st.caption("Opens Microsoft's sign-in page. After you approve access, it sends you back here automatically.")
+                                    except Exception as e:
+                                        st.error(f"Microsoft sign-in failed to start: {e}")
+                else:
+                    if not MICROSOFT_OAUTH_READY:
+                        st.warning("Microsoft Sign-In isn't available: microsoft_oauth.py failed to import.")
+                    else:
+                        st.warning("Microsoft Sign-In needs setup: add a `client_secret_microsoft.json` OAuth Web app credential next to app.py, then restart the app.")
+                    imap_credential = st.text_input("App password / access token", type="password", key=f"imap_credential_{provider}")
+            elif _is_yahoo:
+                if YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
+                    cached_token = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+                    if cached_token:
+                        st.session_state["yahoo_oauth_token"] = cached_token
+                        auth_mode = "OAuth2 Access Token"
+                        imap_credential = cached_token
+                        st.success("Signed in with Yahoo.")
+                        if st.button("Sign out of Yahoo", key="yahoo_signout_btn"):
+                            yahoo_oauth.clear_saved_token()
+                            st.session_state.pop("yahoo_oauth_token", None)
+                            st.session_state.pop("imap_user", None)
+                            st.session_state.pop("_yahoo_email_autofill_tried", None)
+                            st.session_state.pop("_yahoo_email_cache", None)
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yahoo"])
+                                except OSError:
+                                    pass
+                            st.rerun()
+                    else:
+                        _pending_yh_error = st.session_state.pop("_yahoo_oauth_error", None)
+                        if _pending_yh_error:
+                            st.error(f"Yahoo sign-in didn't complete: {_pending_yh_error}")
+                            st.caption("The sign-in link may have expired or already been used. Click 'Sign in with Yahoo' again below.")
+
+                        yh_issue = yahoo_oauth.client_secret_issue()
+
+                        if not MULTIUSER and not yh_issue:
+                            with st.expander("Redirect URL setup (only needed once per environment)"):
+                                st.caption(
+                                    "Must exactly match a redirect URI registered on the Yahoo app "
+                                    "(developer.yahoo.com/apps), and be the URL this app is actually reachable "
+                                    "at right now (e.g. `http://localhost:8501` when testing locally, or your "
+                                    "deployed https:// URL)."
+                                )
+                                yh_redirect_override = st.text_input(
+                                    "App URL (redirect URI)",
+                                    value=yahoo_oauth.redirect_uri(),
+                                    key="yahoo_redirect_uri_input",
+                                )
+                                if yh_redirect_override.strip():
+                                    os.environ["SIH26106_YAHOO_REDIRECT_URI"] = yh_redirect_override.strip().rstrip("/")
+
+                        _auth1, _auth2 = st.columns(2)
+                        with _auth1:
+                            with st.container(border=True, key="auth_password_box_yh"):
+                                st.markdown('<div class="auth-option-label auth-option-label-violet">APP PASSWORD</div>', unsafe_allow_html=True)
+                                manual_cred = st.text_input("App password", type="password", key="yahoo_app_password", label_visibility="collapsed", placeholder="Paste your app password or access token")
+                                if manual_cred:
+                                    imap_credential = manual_cred
+                        with _auth2:
+                            with st.container(border=True, key="auth_yahoo_box"):
+                                st.markdown('<div class="auth-option-label auth-option-label-yahoo">YAHOO ACCOUNT</div>', unsafe_allow_html=True)
+                                if yh_issue:
+                                    st.warning(f"Yahoo Sign-In isn't configured correctly: {yh_issue}")
+                                else:
+                                    try:
+                                        auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
+                                        st.markdown(
+                                            f'<a href="{html.escape(auth_url)}" target="_self" class="yahoo-signin-btn">Sign in with Yahoo</a>',
+                                            unsafe_allow_html=True,
+                                        )
+                                        st.caption("Opens Yahoo's sign-in page. After you approve access, it sends you back here automatically.")
+                                    except Exception as e:
+                                        st.error(f"Yahoo sign-in failed to start: {e}")
+                else:
+                    if not YAHOO_OAUTH_READY:
+                        st.warning("Yahoo Sign-In isn't available: yahoo_oauth.py failed to import.")
+                    else:
+                        st.warning("Yahoo Sign-In needs setup: add a `client_secret_yahoo.json` OAuth app credential next to app.py, then restart the app.")
+                    imap_credential = st.text_input("App password / access token", type="password", key=f"imap_credential_{provider}")
             else:
                 auth_mode = st.selectbox("Authentication", ["App Password / Password", "OAuth2 Access Token"], key="imap_auth_mode")
                 imap_credential = st.text_input("App password / access token", type="password", key=f"imap_credential_{provider}")
 
-            if provider == "Outlook / Microsoft 365" and auth_mode == "App Password / Password":
+            if _is_outlook and auth_mode == "App Password / Password":
                 st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Switch to OAuth2 if password authentication is rejected.")
 
             st.markdown("""
