@@ -4054,6 +4054,32 @@ else:
             def __init__(self, name):
                 self.name = name
         uploaded = _EvidenceRef(_cached_upload_name)
+
+    # BUG FIX: a batch pipeline run (_run_batch_pipeline -- e.g. Synapse
+    # Copilot's "track my last 10/20 emails") stages
+    # `_pending_active_panel = "Forensic Report"` and reruns straight there.
+    # If this is the very first evidence loaded all session -- nobody has
+    # opened Dashboard and loaded a single file/mailbox message yet --
+    # `_evidence_cache` above is still empty, `raw` stays None, and this
+    # branch fell straight through to "No evidence loaded yet" below even
+    # though a batch had just finished analyzing 10/20 real emails. It only
+    # ever "worked" after separately clicking Dashboard, because that click
+    # happened to populate `_evidence_cache` as a side effect of rendering
+    # its own UI, not because it did anything with the batch itself. Falling
+    # back to the batch's own first item here removes that dependency on an
+    # unrelated click, for every acquisition mode the pipeline can be
+    # launched from (Live IMAP or a CSV upload), not just the Live-IMAP-only
+    # case the Dashboard block above already handles for itself.
+    if (
+        (not isinstance(raw, (bytes, bytearray)) or not raw)
+        and st.session_state.get("forensic_report_source") == "pipeline"
+        and st.session_state.get("pipeline_batch_items")
+    ):
+        _pipeline_fallback_item = st.session_state["pipeline_batch_items"][0]
+        raw = bytes(_pipeline_fallback_item["_raw"])
+        _fallback_source = (st.session_state.get("pipeline_batch_result") or {}).get("source", "Batch")
+        case_name = f"{_fallback_source}: Batch item #{_pipeline_fallback_item.get('position', 1)}"
+
     if not isinstance(raw, (bytes, bytearray)) or not raw:
         # Settings and About don't depend on any evidence -- show them as
         # normal even before a mailbox is connected or a file is uploaded.
