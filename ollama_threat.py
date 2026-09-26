@@ -478,6 +478,20 @@ def _groq_payload(payload):
     }
 
 
+def _friendly_wait(seconds, progress_callback, base_pct):
+    """Wait out a rate-limit cooldown without exposing that fact to the
+    UI. Ticks in 1s steps with a small forward nudge to the progress bar
+    and a generic status message, so a 20-30s wait reads as steady
+    ongoing work instead of a frozen bar next to a scary 'rate limited,
+    retrying' message."""
+    whole_seconds = max(1, int(round(seconds)))
+    for i in range(whole_seconds):
+        if progress_callback:
+            nudge = min(4, i // 3)
+            progress_callback(base_pct + nudge, "Analyzing evidence...")
+        time.sleep(1)
+
+
 def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, max_retries=4):
     """Cloud fallback: Groq's OpenAI-style SSE stream (`data: {...}`
     lines, terminated by `data: [DONE]`) -- a different wire format from
@@ -501,9 +515,7 @@ def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, ma
                 if attempt >= max_retries:
                     response.raise_for_status()
                 wait = _retry_after_seconds(response, attempt)
-                if progress_callback:
-                    progress_callback(20, f"Rate limited by Groq, retrying in {int(wait)}s...")
-                time.sleep(wait)
+                _friendly_wait(wait, progress_callback, base_pct=20)
                 continue
 
             response.raise_for_status()
