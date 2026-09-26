@@ -1827,11 +1827,11 @@ st.markdown(
 
     /* ================= NEW DASHBOARD-STYLE UI SHELL ================= */
     .topbar-shell {
-        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
-        background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
-        border:1px solid #24506a; border-radius:var(--r-lg);
-        padding:14px 20px; margin-bottom:12px;
-        box-shadow:0 10px 26px rgba(0,0,0,.25);
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
+        background:linear-gradient(180deg,#122744 0%,#0a1826 100%);
+        border:1px solid #2c5a78; border-radius:var(--r-lg);
+        padding:26px 32px; margin-bottom:14px;
+        box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
     }
     /* Network/globe background graphic (image itself set in a small
@@ -1848,31 +1848,24 @@ st.markdown(
         pointer-events:none; z-index:0;
     }
     .topbar-brand, .topbar-status-wrap {position:relative; z-index:1;}
-    .topbar-brand {display:flex; align-items:center; gap:12px;}
-    .topbar-logo {width:34px; height:34px; flex:0 0 34px;}
+    .topbar-brand {display:flex; align-items:center; gap:20px;}
+    /* Logo + name are the whole point of this banner, so both got a real
+       size increase (34px logo -> 64px, 23px title -> 34px) instead of
+       sharing the header row with an unrelated, non-functional search
+       box. That search input never filtered anything (see the removed
+       .st-key-topbar_utility rule this replaced) -- it just sat above the
+       banner as clutter with no real feature behind it, so it's gone
+       rather than kept and restyled. The bell + account chip it used to
+       carry are folded into this same shell instead (top-right), so
+       there's one prominent header, not two stacked bars. */
+    .topbar-logo {
+        width:64px; height:64px; flex:0 0 64px; border-radius:16px;
+        background:radial-gradient(circle at 35% 30%, rgba(84,112,255,.22), transparent 70%);
+        box-shadow:0 0 0 1px rgba(84,112,255,.28), 0 8px 20px rgba(0,0,0,.3);
+        display:flex; align-items:center; justify-content:center; padding:8px;
+    }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
-
-    /* New utility row (search / bell / account chip) that sits above the
-       main banner. A separate st.container(key=...) rather than more
-       markdown in the banner itself, since the search box needs to be a
-       real st.text_input (interactive Streamlit widgets can't live inside
-       raw st.markdown HTML) -- this keeps it visually part of the same
-       header cluster while still being a genuine, functioning widget. */
-    .st-key-topbar_utility {margin-bottom:10px;}
-    .st-key-topbar_utility [data-testid="stTextInput"] input {
-        background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
-        border:1px solid #1e3350 !important;
-        border-radius:var(--r-md) !important;
-        color:var(--text) !important;
-        padding:10px 14px !important;
-        font-size:13px !important;
-    }
-    .st-key-topbar_utility [data-testid="stTextInput"] input:focus {
-        border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.18) !important;
-    }
-    .st-key-topbar_utility [data-testid="stTextInput"] input::placeholder {color:#5b7690 !important;}
-    .topbar-actions {display:flex; align-items:center; justify-content:flex-end; gap:10px;}
+    .topbar-actions {display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-bottom:8px;}
     .topbar-icon-btn {
         width:36px; height:36px; border-radius:50%;
         display:flex; align-items:center; justify-content:center;
@@ -1898,9 +1891,9 @@ st.markdown(
     }
     .topbar-account-chevron {color:#5b7690; flex:0 0 13px; margin-left:2px; transition:color .18s var(--ease), transform .18s var(--ease);}
     .topbar-account-chip:hover .topbar-account-chevron {color:#9fb4cc;}
-    .topbar-kicker {font-size:10px; font-weight:800; letter-spacing:1.4px; color:var(--teal); text-transform:uppercase; margin-bottom:3px;}
-    .topbar-title {font-size:23px; font-weight:900; letter-spacing:.2px; color:#f2f8ff; line-height:1.25;}
-    .topbar-subtitle {font-size:11.5px; color:#93abc3; line-height:1.5; margin-top:4px;}
+    .topbar-kicker {font-size:11.5px; font-weight:800; letter-spacing:1.8px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
+    .topbar-title {font-size:34px; font-weight:900; letter-spacing:.2px; color:#f6fbff; line-height:1.2; text-shadow:0 2px 18px rgba(84,112,255,.25);}
+    .topbar-subtitle {font-size:12.5px; color:#93abc3; line-height:1.5; margin-top:6px;}
     .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:7px;}
     .topbar-status-pill {
         display:flex; align-items:center; gap:8px; font-size:11.5px; color:#c9f5df; white-space:nowrap;
@@ -2515,39 +2508,17 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# Utility bar: search + notification bell + account chip, sitting above the
-# main banner. The search box is a real st.text_input (captured into
-# session_state for whenever search gets wired up to something), not fake
-# decoration -- but it doesn't filter anything yet, so it's deliberately
-# not claiming to. The account chip shows the actually-connected mailbox
-# address when there is one (st.session_state["imap_user"], set by the
-# live IMAP connect flow elsewhere in this file) instead of a placeholder
-# name, so it's always telling the truth about who's signed in.
-with st.container(key="topbar_utility"):
-    _util_search_col, _util_actions_col = st.columns([3, 1], vertical_alignment="center")
-    with _util_search_col:
-        st.text_input(
-            "Search", key="global_search_query",
-            placeholder="Search emails, domains, IPs...",
-            label_visibility="collapsed",
-        )
-    with _util_actions_col:
-        _acct_email = st.session_state.get("imap_user") or ""
-        _acct_initial = html.escape(_acct_email[:1].upper()) if _acct_email else "?"
-        _acct_label = html.escape(_acct_email) if _acct_email else "Not signed in"
-        st.markdown(
-            f"""<div class="topbar-actions">
-                <button class="topbar-icon-btn" title="Notifications" type="button">
-                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                </button>
-                <div class="topbar-account-chip" title="{_acct_label}">
-                    <span class="topbar-account-avatar">{_acct_initial}</span>
-                    <span class="topbar-account-email">{_acct_label}</span>
-                    <svg class="topbar-account-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                </div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+# The account chip shows the actually-connected mailbox address when there
+# is one (st.session_state["imap_user"], set by the live IMAP connect flow
+# elsewhere in this file) instead of a placeholder name, so it's always
+# telling the truth about who's signed in. This used to sit in a separate
+# utility row above the banner alongside a search box that never filtered
+# anything -- that box is gone (see the redesign note by .topbar-logo), and
+# the bell + account chip now render as plain markup inside the banner
+# itself (below), so there's one header, not two stacked bars.
+_acct_email = st.session_state.get("imap_user") or ""
+_acct_initial = html.escape(_acct_email[:1].upper()) if _acct_email else "?"
+_acct_label = html.escape(_acct_email) if _acct_email else "Not signed in"
 
 # Just the background-image url() for .topbar-shell::after, in its own
 # tiny interpolated <style> tag -- the main stylesheet above is one large
@@ -2570,6 +2541,16 @@ st.markdown(
         </div>
       </div>
       <div class="topbar-status-wrap">
+        <div class="topbar-actions">
+            <button class="topbar-icon-btn" title="Notifications" type="button">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </button>
+            <div class="topbar-account-chip" title="{_acct_label}">
+                <span class="topbar-account-avatar">{_acct_initial}</span>
+                <span class="topbar-account-email">{_acct_label}</span>
+                <svg class="topbar-account-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+        </div>
         <div class="topbar-status-pill">
           <span class="topbar-status-dot"></span>
           <span class="topbar-status-online">System operational</span>
