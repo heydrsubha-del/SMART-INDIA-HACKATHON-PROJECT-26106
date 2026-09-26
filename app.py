@@ -41,7 +41,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama
-from nomic_embed import nomic_available, describe_origin, embed_text, save_origin_embedding, find_similar_origins
+from nomic_embed import nomic_available, embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
 
@@ -233,16 +233,26 @@ except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
 from report import build_report, evidence_hash
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
-from antivirus_scan import clamd_available, clamd_version, scan_bytes
+from antivirus_scan import clamd_available, clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _clamd_up_cached():
-    """clamd_available() opens a real TCP socket -- st.tabs renders every
-    tab's body on every rerun (only visibility is toggled client-side), so
-    without this the antivirus tab would re-probe clamd on every single
-    interaction anywhere in the app, even the map tab. A 20s cache keeps the
-    same live check without hammering the daemon."""
-    return clamd_available(timeout=2)
+    """antivirus_usable() opens a real TCP socket to check clamd (and may
+    check for a cloud API key too) -- st.tabs renders every tab's body on
+    every rerun (only visibility is toggled client-side), so without this
+    the antivirus tab would re-probe on every single interaction anywhere
+    in the app, even the map tab. A 20s cache keeps the same live check
+    without hammering the daemon. Despite the name, this now reflects
+    whether scan_bytes() can actually scan at all -- local clamd or the
+    cloud fallback -- not just local clamd; see antivirus_backend() for
+    which one it'll actually use."""
+    return antivirus_usable()
+
+@st.cache_data(ttl=20, show_spinner=False)
+def _antivirus_backend_cached():
+    """Which backend scan_bytes() will actually use right now ('local',
+    'cloud', or None) -- same caching rationale as _clamd_up_cached."""
+    return antivirus_backend()
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _scan_bytes_cached(data):
@@ -336,14 +346,18 @@ def _sem_describe_origin(geo):
 
 
 def _nomic_ready():
-    """nomic_available() pings Ollama, so cache the answer briefly -- the
-    Forensic Report reruns on every widget click."""
+    """embeddings_usable() may ping Ollama (and check a cloud API key), so
+    cache the answer briefly -- the Forensic Report reruns on every widget
+    click. Despite the name, this now reflects whether embed_text() can
+    actually embed at all -- local Ollama or the Cohere cloud fallback --
+    not just local Ollama; see embeddings_backend() for which one it'll
+    actually use."""
     now = time.time()
     cached = st.session_state.get("_nomic_ready_cache")
     if cached and now - cached[0] < 30:
         return cached[1]
     try:
-        ok = bool(nomic_available())
+        ok = bool(embeddings_usable())
     except Exception:
         ok = False
     st.session_state["_nomic_ready_cache"] = (now, ok)
@@ -2773,7 +2787,7 @@ def _run_batch_pipeline(source_items, source_label):
     semantic_lines = []
     semantic_matches_by_position = {}
     semantic_matches_all = {}
-    if nomic_available():
+    if _nomic_ready():
         sem_progress = st.progress(0, text="Running semantic origin correlation...")
         # Pass 1 indexes EVERY email in the batch; pass 2 searches. Searching
         # inside the same loop meant email #1 was compared before emails
@@ -3668,10 +3682,13 @@ if active_panel == "Dashboard":
 
         if _tech_logs_view == "Antivirus Scan":
             av_up = _clamd_up_cached()
-            if av_up:
+            _av_backend = _antivirus_backend_cached()
+            if av_up and _av_backend == "cloud":
+                st.success("Antivirus scanning available via VirusTotal (cloud fallback) - local ClamAV daemon not reachable.")
+            elif av_up:
                 st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
             else:
-                st.warning("ClamAV daemon not reachable right now - showing the built-in risky-extension check instead.")
+                st.warning("Antivirus scanning unavailable right now (no local clamd, no SIH26106_VT_API_KEY set) - showing the built-in risky-extension check instead.")
             files_scanned, threats_found, av_rows = 0, 0, []
             for r in cases:
                 for att in (r.get("parsed", {}) or {}).get("attachments", []) or []:
@@ -5246,19 +5263,20 @@ if active_panel == "Origin & Route":
         st.markdown("---")
         st.subheader("Semantic Origin Correlation (Nomic Embeddings)")
         st.caption(
-            "Uses the local nomic-embed-text model, served by Ollama, to compare this "
-            "message's origin/routing profile against previously analyzed emails by "
-            "MEANING rather than exact match - so differently-hosted infrastructure "
-            "that behaves the same way can still surface as related, even with no "
-            "shared IP or domain."
+            "Compares this message's origin/routing profile against previously "
+            "analyzed emails by MEANING rather than exact match - so differently-hosted "
+            "infrastructure that behaves the same way can still surface as related, "
+            "even with no shared IP or domain. Uses the local nomic-embed-text model "
+            "via Ollama when available, falling back to Cohere's cloud embeddings "
+            "otherwise."
         )
 
-        if not nomic_available():
+        if not _nomic_ready():
             st.warning(
-                "Nomic embeddings unavailable right now: either Ollama isn't running, "
-                "or the `nomic-embed-text` model hasn't been pulled yet. Run "
-                "`ollama pull nomic-embed-text`, make sure Ollama is running, then "
-                "reopen this panel."
+                "Semantic embeddings unavailable right now: locally, either Ollama isn't "
+                "running or `nomic-embed-text` hasn't been pulled; run `ollama pull "
+                "nomic-embed-text` and make sure Ollama is running. For the cloud "
+                "fallback, set SIH26106_COHERE_API_KEY. Then reopen this panel."
             )
             return
 
@@ -5683,14 +5701,19 @@ if active_panel == "Antivirus":
     def _antivirus():
         st.subheader("Antivirus (ClamAV)")
         av_up = _clamd_up_cached()
-        if av_up:
+        _av_backend = _antivirus_backend_cached()
+        if av_up and _av_backend == "cloud":
+            st.success("Antivirus scanning available via VirusTotal (cloud fallback) - local ClamAV daemon not reachable.")
+            st.caption("Every attachment below was hashed and checked/scanned against VirusTotal's multi-engine service.")
+        elif av_up:
             st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
             st.caption("Every attachment below was streamed to your local clamd daemon in memory (zINSTREAM) - a real signature scan, not a heuristic.")
         else:
             st.warning(
-                "Could not reach the clamd daemon at the configured host/port - falling back to the "
-                "app's own risky-extension check. Confirm clamd is running, or set "
-                "SIH26106_CLAMD_HOST / SIH26106_CLAMD_PORT if it isn't on 127.0.0.1:3310."
+                "Could not reach the clamd daemon at the configured host/port, and no "
+                "SIH26106_VT_API_KEY is set for the cloud fallback - falling back to the "
+                "app's own risky-extension check. Confirm clamd is running (or set "
+                "SIH26106_CLAMD_HOST / SIH26106_CLAMD_PORT), or set SIH26106_VT_API_KEY."
             )
 
         cases = list(_corr_cases.values()) + [result]

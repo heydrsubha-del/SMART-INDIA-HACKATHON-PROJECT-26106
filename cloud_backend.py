@@ -89,3 +89,17 @@ class BackendError(Exception):
     be used given the current mode/env vars. Callers catch this and
     return their own normal fail-soft dict -- this never propagates."""
     pass
+
+
+def is_usable(local_available, env_var):
+    """Non-raising variant of resolve_backend(): True if SOME backend
+    (local or cloud) would actually work right now, given the current
+    mode/env vars. For UI gates that decide whether to show a live panel
+    or a "not available" message -- checking this instead of only the
+    local probe is what lets those panels work on a deployment with no
+    local services at all."""
+    try:
+        resolve_backend(local_available, env_var, "")
+        return True
+    except BackendError:
+        return False

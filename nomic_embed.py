@@ -28,7 +28,7 @@ import math
 import requests
 
 from tracker import get_connection
-from cloud_backend import BackendError, resolve_backend
+from cloud_backend import BackendError, is_usable, resolve_backend
 
 OLLAMA_BASE = "http://127.0.0.1:11434"
 OLLAMA_EMBED_URL = f"{OLLAMA_BASE}/api/embeddings"
@@ -47,7 +47,9 @@ TASK_PREFIX = "clustering: "
 
 
 def nomic_available(timeout=2):
-    """True only when Ollama is reachable AND nomic-embed-text is pulled."""
+    """True only when Ollama is reachable AND nomic-embed-text is pulled.
+    Local-only probe -- for UI gates, use embeddings_usable() instead,
+    which also accounts for the cloud fallback."""
     try:
         response = requests.get(OLLAMA_TAGS_URL, timeout=timeout)
         response.raise_for_status()
@@ -55,6 +57,26 @@ def nomic_available(timeout=2):
         return any(n.split(":")[0] == NOMIC_MODEL for n in names)
     except Exception:
         return False
+
+
+def embeddings_usable():
+    """True if embed_text() would actually be able to embed right now,
+    whether via local Ollama or the Cohere cloud fallback. Use this (not
+    the local-only nomic_available()) for any UI gate that decides
+    whether to show a live embeddings panel or a "not available" message
+    -- otherwise a deployment with no local Ollama can never reach the
+    cloud fallback at all."""
+    return is_usable(nomic_available(), COHERE_API_KEY_VAR)
+
+
+def embeddings_backend():
+    """Which backend embed_text() would use right now: 'local', 'cloud',
+    or None if neither is usable. For UI status messages only."""
+    try:
+        backend, _ = resolve_backend(nomic_available(), COHERE_API_KEY_VAR, "text embedding")
+        return backend
+    except BackendError:
+        return None
 
 
 def describe_origin(geo):
