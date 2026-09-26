@@ -28,11 +28,16 @@ import math
 import requests
 
 from tracker import get_connection
+from cloud_backend import BackendError, resolve_backend
 
 OLLAMA_BASE = "http://127.0.0.1:11434"
 OLLAMA_EMBED_URL = f"{OLLAMA_BASE}/api/embeddings"
 OLLAMA_TAGS_URL = f"{OLLAMA_BASE}/api/tags"
 NOMIC_MODEL = "nomic-embed-text"
+
+COHERE_API_KEY_VAR = "SIH26106_COHERE_API_KEY"
+COHERE_EMBED_URL = "https://api.cohere.com/v1/embed"
+COHERE_MODEL = "embed-english-v3.0"
 
 # nomic-embed-text is instruction-prefixed: skipping the task prefix
 # measurably degrades embedding quality. We're grouping similar origins
@@ -99,11 +104,31 @@ def describe_origin(geo):
 def embed_text(text, timeout=60):
     """Return {"ok": True, "embedding": [...]} or {"ok": False, "error": ...}.
 
+    Dispatches to local Ollama/nomic-embed-text (default, unchanged
+    behaviour) or Cohere's cloud embed endpoint, per SIH26106_AI_BACKEND
+    and Ollama's own reachability -- see cloud_backend.resolve_backend().
     Never raises -- callers can show `error` directly to the user, the same
     pattern ollama_threat.py already uses for the chat model.
     """
     if not text or not text.strip():
         return {"ok": False, "error": "Nothing to embed."}
+
+    try:
+        backend, api_key = resolve_backend(
+            local_available=nomic_available(),
+            env_var=COHERE_API_KEY_VAR,
+            service_label="text embedding",
+        )
+    except BackendError as exc:
+        return {"ok": False, "error": str(exc)}
+
+    if backend == "cloud":
+        return _embed_text_cohere(text, api_key, timeout=timeout)
+    return _embed_text_ollama(text, timeout=timeout)
+
+
+def _embed_text_ollama(text, timeout=60):
+    """Original local Ollama/nomic-embed-text path -- unmoved."""
     try:
         response = requests.post(
             OLLAMA_EMBED_URL,
@@ -124,6 +149,45 @@ def embed_text(text, timeout=60):
             "ok": False,
             "error": f"Ollama HTTP error: {exc}. Is nomic-embed-text pulled? (ollama pull nomic-embed-text)",
         }
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def _embed_text_cohere(text, api_key, timeout=60):
+    """Cloud fallback: Cohere's embed endpoint.
+
+    Cohere has a native equivalent of the TASK_PREFIX text-prefix trick --
+    input_type="clustering" -- so we use that instead of prefixing the
+    text ourselves. _cosine() and the SQLite storage are already
+    model-agnostic and already safely no-op (0 similarity, not a crash) if
+    they ever compare vectors of two different dimensions, which matters
+    here since Cohere's vectors are a different size than nomic's.
+    """
+    try:
+        response = requests.post(
+            COHERE_EMBED_URL,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": COHERE_MODEL,
+                "texts": [text],
+                "input_type": "clustering",
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        embeddings = response.json().get("embeddings")
+        if not embeddings or not embeddings[0]:
+            return {"ok": False, "error": "Cohere returned an empty embedding."}
+        return {"ok": True, "embedding": embeddings[0]}
+    except requests.exceptions.ConnectionError:
+        return {"ok": False, "error": "Could not reach Cohere."}
+    except requests.exceptions.Timeout:
+        return {"ok": False, "error": "Cohere embedding request timed out."}
+    except requests.exceptions.HTTPError as exc:
+        return {"ok": False, "error": f"Cohere HTTP error: {exc}"}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
 

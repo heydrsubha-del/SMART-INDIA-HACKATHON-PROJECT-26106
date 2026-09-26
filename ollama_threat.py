@@ -9,10 +9,31 @@ import json
 import os
 import requests
 
+from cloud_backend import BackendError, resolve_backend
+
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
 OLLAMA_MODEL = "qwen3.5:0.8b"
 OLLAMA_TIMEOUT = 600
+
+GROQ_API_KEY_VAR = "SIH26106_GROQ_API_KEY"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+# Deliberately the most generous free-tier option (14,400 requests/day)
+# rather than a fancier model -- this is the path that'll get hit most
+# under real multi-user cloud traffic.
+GROQ_MODEL = "llama-3.1-8b-instant"
+
+
+def _ollama_available(timeout=2):
+    """True only when Ollama is reachable AND OLLAMA_MODEL is pulled."""
+    try:
+        response = requests.get(OLLAMA_TAGS_URL, timeout=timeout)
+        response.raise_for_status()
+        names = [str(m.get("name", "")) for m in response.json().get("models", [])]
+        return any(n.split(":")[0] == OLLAMA_MODEL.split(":")[0] for n in names)
+    except Exception:
+        return False
 
 # Leave one core free for the OS / the Streamlit process itself, but
 # otherwise let Qwen use what's actually available rather than a
@@ -356,18 +377,48 @@ def _looks_like_dumped_evidence(answer, required_heading):
 
 
 def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_callback=None):
-    """Run one bounded local Ollama request and normalize errors.
+    """Resolve local-vs-cloud backend, run one bounded streaming request,
+    and normalize errors -- shared by the single-email and batch paths.
 
-    Streams the response instead of waiting for the single non-streaming
-    reply. On a small CPU model, generating several hundred tokens can
-    take a while; without streaming the caller had no way to show real
-    progress during that time, so the progress bar sat frozen right after
-    "request sent" until the whole answer arrived -- which looked
-    indistinguishable from a hang even when everything was working.
+    Streams the response instead of waiting for a single non-streaming
+    reply, so the progress bar keeps moving instead of sitting frozen
+    right after "request sent" until the whole answer arrives. The
+    progress-callback percentage math is identical for both backends;
+    only the wire format differs (Ollama's raw NDJSON vs Groq's
+    OpenAI-style SSE `data: {...}` lines), so that math lives once here
+    and each backend has its own tiny line-parser.
     """
+    try:
+        backend, api_key = resolve_backend(
+            local_available=_ollama_available(),
+            env_var=GROQ_API_KEY_VAR,
+            service_label="AI threat analysis",
+        )
+    except BackendError as exc:
+        raise RuntimeError(str(exc))
+
+    target_tokens = max(1, int((payload.get("options") or {}).get("num_predict", 700)))
+
+    if backend == "cloud":
+        answer = _stream_groq(payload, api_key, timeout, target_tokens, progress_callback)
+    else:
+        answer = _stream_ollama(payload, timeout, target_tokens, progress_callback)
+
+    answer = answer.strip()
+    if not answer:
+        raise RuntimeError("The model returned an empty response.")
+    if required_heading and _looks_like_dumped_evidence(answer, required_heading):
+        raise RuntimeError(
+            "The model returned raw evidence instead of a report — the prompt likely didn't fit "
+            "its context window. Try again, or analyze fewer emails at once."
+        )
+    return answer
+
+
+def _stream_ollama(payload, timeout, target_tokens, progress_callback):
+    """Original local Ollama NDJSON streaming path -- unmoved."""
     stream_payload = dict(payload)
     stream_payload["stream"] = True
-    target_tokens = max(1, int((payload.get("options") or {}).get("num_predict", 700)))
 
     answer = ""
     with requests.post(OLLAMA_URL, json=stream_payload, timeout=timeout, stream=True) as response:
@@ -391,15 +442,63 @@ def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_ca
                     progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
             if chunk.get("done"):
                 break
+    return answer
 
-    answer = answer.strip()
-    if not answer:
-        raise RuntimeError("Ollama returned an empty response.")
-    if required_heading and _looks_like_dumped_evidence(answer, required_heading):
-        raise RuntimeError(
-            "Qwen returned raw evidence instead of a report — the prompt likely didn't fit "
-            "its context window. Try again, or analyze fewer emails at once."
-        )
+
+def _groq_payload(payload):
+    """Translate our Ollama-shaped payload into Groq's OpenAI-style
+    chat-completions body. build_evidence/build_prompt/_batch_prompt are
+    all model-agnostic prompt engineering and need zero changes -- only
+    the wire shape differs."""
+    options = payload.get("options") or {}
+    return {
+        "model": GROQ_MODEL,
+        "messages": payload.get("messages", []),
+        "temperature": options.get("temperature", 0.1),
+        "max_tokens": options.get("num_predict", 700),
+        "stream": True,
+    }
+
+
+def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback):
+    """Cloud fallback: Groq's OpenAI-style SSE stream (`data: {...}`
+    lines, terminated by `data: [DONE]`) -- a different wire format from
+    Ollama's raw NDJSON, but the same progress-percentage math applies."""
+    groq_payload = _groq_payload(payload)
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    answer = ""
+    with requests.post(GROQ_URL, headers=headers, json=groq_payload, timeout=timeout, stream=True) as response:
+        response.raise_for_status()
+        tokens_seen = 0
+        for raw_line in response.iter_lines():
+            if not raw_line:
+                continue
+            line = raw_line.decode("utf-8", errors="replace") if isinstance(raw_line, bytes) else raw_line
+            if not line.startswith("data:"):
+                continue
+            data = line[len("data:"):].strip()
+            if data == "[DONE]":
+                break
+            try:
+                chunk = json.loads(data)
+            except ValueError:
+                continue
+            choices = chunk.get("choices") or []
+            if not choices:
+                continue
+            piece = (choices[0].get("delta") or {}).get("content", "")
+            if piece:
+                answer += piece
+                tokens_seen += 1
+                if progress_callback:
+                    pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
+                    progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
+            if choices[0].get("finish_reason"):
+                break
     return answer
 
 
