@@ -19,10 +19,14 @@ OLLAMA_TIMEOUT = 600
 
 GROQ_API_KEY_VAR = "SIH26106_GROQ_API_KEY"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-# Deliberately the most generous free-tier option (14,400 requests/day)
-# rather than a fancier model -- this is the path that'll get hit most
-# under real multi-user cloud traffic.
-GROQ_MODEL = "llama-3.1-8b-instant"
+# llama-3.1-8b-instant (this file's original default) was decommissioned
+# by Groq on 2026-08-16 for free/developer-tier keys and now 404s.
+# openai/gpt-oss-20b is Groq's own documented 1:1 replacement for it.
+# NOTE: gpt-oss models are "reasoning" models -- they spend part of the
+# completion budget on hidden reasoning before emitting visible content,
+# so num_predict/max_tokens needs enough headroom or the visible answer
+# comes back empty. _groq_payload() below gives it a floor for this.
+GROQ_MODEL = "openai/gpt-oss-20b"
 
 
 def _ollama_available(timeout=2):
@@ -449,13 +453,21 @@ def _groq_payload(payload):
     """Translate our Ollama-shaped payload into Groq's OpenAI-style
     chat-completions body. build_evidence/build_prompt/_batch_prompt are
     all model-agnostic prompt engineering and need zero changes -- only
-    the wire shape differs."""
+    the wire shape differs.
+
+    openai/gpt-oss-20b is a reasoning model: it spends part of its token
+    budget on hidden reasoning before any visible content, so a low
+    max_tokens (fine for Ollama's non-reasoning Qwen) can come back with
+    an empty visible answer here. reasoning_effort="low" keeps that
+    hidden spend small, and max_tokens gets a floor with room for it."""
     options = payload.get("options") or {}
+    requested_tokens = int(options.get("num_predict", 700))
     return {
         "model": GROQ_MODEL,
         "messages": payload.get("messages", []),
         "temperature": options.get("temperature", 0.1),
-        "max_tokens": options.get("num_predict", 700),
+        "max_tokens": max(requested_tokens, 1024),
+        "reasoning_effort": "low",
         "stream": True,
     }
 
