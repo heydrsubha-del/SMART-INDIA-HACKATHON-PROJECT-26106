@@ -1071,12 +1071,24 @@ st.markdown(
        (the same one .stButton's primary action uses, for one consistent
        "button" language across the app) instead of just a colored dot, so
        the active workflow step reads at a glance and selecting it feels
-       like pressing a real button rather than flipping a bare radio. */
+       like pressing a real button rather than flipping a bare radio.
+
+       This is the app-wide DEFAULT for any st.radio, and it turned out to
+       be quietly overriding every specific fix made to the top nav / bulk
+       scan / tech logs tab strips further down this file: this selector
+       happens to carry one more element-type selector than those, which
+       (by the letter of CSS specificity rules, not by anything about
+       source order) made it win regardless of what those later, more
+       specific-looking rules said. Every genuinely "why is this still the
+       old color" report earlier trace back to this. Fixed by pointing
+       both places at the same --act-1-* tokens instead of two different
+       hard-coded palettes, so which one technically "wins" no longer
+       matters -- they now agree. */
     .stRadio label[data-baseweb="radio"]:has(input:checked),
     .stRadio div[role="radiogroup"] label:has(input:checked) {
-        background:var(--brand-gradient) !important;
-        border-color:#8b7bd8 !important;
-        box-shadow:var(--glow-violet) !important;
+        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
+        border-color:var(--act-1-border) !important;
+        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
         transform:translateY(-1px) !important;
     }
     .stRadio label:has(input:checked):hover {transform:translateY(-1px) !important;}
