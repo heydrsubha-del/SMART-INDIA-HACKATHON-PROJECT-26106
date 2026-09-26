@@ -733,9 +733,9 @@ st.markdown(
     /* Slim, on-theme scrollbars instead of the default OS chrome. */
     ::-webkit-scrollbar {width:10px; height:10px;}
     ::-webkit-scrollbar-track {background:#081420;}
-    ::-webkit-scrollbar-thumb {background:#1f3f58; border-radius:8px; border:2px solid #081420;}
-    ::-webkit-scrollbar-thumb:hover {background:#2c5877;}
-    * {scrollbar-color:#1f3f58 #081420; scrollbar-width:thin;}
+    ::-webkit-scrollbar-thumb {background:linear-gradient(180deg, var(--cyan), var(--violet)); border-radius:8px; border:2px solid #081420;}
+    ::-webkit-scrollbar-thumb:hover {background:linear-gradient(180deg, #35f0c2, #c48cff);}
+    * {scrollbar-color:#2c5877 #081420; scrollbar-width:thin;}
 
 
     #MainMenu, footer {display:none !important;}
@@ -1177,6 +1177,29 @@ st.markdown(
         transform:translateY(-1px) !important; border-color:#2c5877 !important;
         box-shadow:var(--shadow-md) !important;
     }
+    /* Metrics almost always show up in a row of several side by side
+       (KPIs, dashboard summaries) -- with every card using the same cyan
+       top-bar, a row of four reads as one repeated tile rather than four
+       distinct numbers. Rotating the top-bar hue by position (cyan ->
+       violet -> amber -> green, repeating) keeps each card legible as its
+       own thing while staying inside the app's existing accent family --
+       nothing here overrides severity-meaningful color used elsewhere. */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:before {
+        background:linear-gradient(90deg, var(--cyan), transparent 95%) !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:before {
+        background:linear-gradient(90deg, var(--violet), transparent 95%) !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+3) div[data-testid="stMetric"]:before {
+        background:linear-gradient(90deg, var(--amber), transparent 95%) !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:before {
+        background:linear-gradient(90deg, var(--green), transparent 95%) !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:hover {border-color:rgba(18,224,171,.45) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:hover {border-color:rgba(140,123,240,.5) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+3) div[data-testid="stMetric"]:hover {border-color:rgba(244,178,61,.5) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:hover {border-color:rgba(47,206,135,.5) !important;}
     div[data-testid="stMetricLabel"] {color:#7d94ad !important;}
     div[data-testid="stMetricValue"] {color:#f2f8ff !important; font-variant-numeric:tabular-nums !important;}
     div[data-testid="stMetricDelta"] {font-variant-numeric:tabular-nums !important;}
@@ -1214,8 +1237,8 @@ st.markdown(
     [data-testid="stAlertContentInfo"] {color:#bfe9ff !important;}
     [data-testid="stAlertContentWarning"] {color:#ffe3a3 !important;}
     [data-testid="stAlertContentError"] {color:#ffb4bc !important;}
-    [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
-    [data-testid="stExpander"]:hover {border-color:#2c5877 !important;}
+    [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
+    [data-testid="stExpander"]:hover {border-color:#2c5877 !important; border-left-color:var(--violet) !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
        tabs (with the theme's raw red underline) no matter how this was
@@ -2087,6 +2110,24 @@ st.markdown(
         line-height:2;
     }
     .panel-card-body b { color:#dbe6f2; font-weight:700; }
+
+    /* Color variants for .panel-card-head/.panel-card-body -- section
+       headers across the dashboard (Key Metrics, Investigation Summary,
+       Top Threat Signal Breakdown, Globe-Scan, Network Correlation...)
+       previously all shared the same cyan spine regardless of what they
+       actually showed, so a stacked dock of them read as one long cyan
+       strip. Add class="panel-card-head panel-card-head-violet" (etc.) at
+       the call site to give a section its own identity color while
+       keeping the same card shape/spacing as every other panel. */
+    .panel-card-head-violet, .panel-card-body-violet {border-left-color:var(--violet) !important;}
+    .panel-card-head-violet {color:#d9c7ff !important; background:linear-gradient(180deg,#20163a,#170f2a) !important; border-color:#3a2a5c !important;}
+    .panel-card-body-violet {border-color:#3a2a5c !important;}
+    .panel-card-head-amber, .panel-card-body-amber {border-left-color:var(--amber) !important;}
+    .panel-card-head-amber {color:#ffdf9e !important; background:linear-gradient(180deg,#332510,#241a0b) !important; border-color:#5c4520 !important;}
+    .panel-card-body-amber {border-color:#5c4520 !important;}
+    .panel-card-head-green, .panel-card-body-green {border-left-color:var(--green) !important;}
+    .panel-card-head-green {color:#a4f0c9 !important; background:linear-gradient(180deg,#0e2a1e,#0a1f17) !important; border-color:#1e4a35 !important;}
+    .panel-card-body-green {border-color:#1e4a35 !important;}
 
     /* The right dock (border=True container) previously relied on
        Streamlit's own default inner padding, which reads tight next to
@@ -4263,9 +4304,9 @@ if active_panel == "Dashboard":
                             kc3.metric("Auth Pass", f"{dd_auth_pass}/3")
                             kc4.metric("Anomalies", dd_anomaly_count)
 
-                        st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
+                        st.markdown('<div class="panel-card-head panel-card-head-violet" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                         st.markdown(
-                            f"""<div class="panel-card-body">
+                            f"""<div class="panel-card-body panel-card-body-violet">
                                 <b>From:</b> {dd_p.get('from_addr','Unknown')}<br>
                                 <b>Subject:</b> {dd_p.get('subject','No Subject')}<br>
                                 <b>Date:</b> {dd_p.get('date','Unknown')}<br>
@@ -4278,7 +4319,7 @@ if active_panel == "Dashboard":
                             unsafe_allow_html=True,
                         )
 
-                        st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>TOP THREAT SIGNAL BREAKDOWN</span></div>', unsafe_allow_html=True)
+                        st.markdown('<div class="panel-card-head panel-card-head-amber" style="margin-top:12px;"><span>TOP THREAT SIGNAL BREAKDOWN</span></div>', unsafe_allow_html=True)
                         dd_contributions = dd_verdict.get("contributions", []) or []
                         colors = ["#ff4757", "#ff9f43", "#2fd8ff", "#35d399", "#a389f4", "#f47ab0"]
                         if dd_contributions:
@@ -4536,9 +4577,9 @@ if active_panel == "Dashboard":
                         rc3.metric("Auth Pass", f"{auth_pass}/3")
                         rc4.metric("Anomalies", anomaly_count)
 
-                    st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="panel-card-head panel-card-head-violet" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                     st.markdown(
-                        f"""<div class="panel-card-body">
+                        f"""<div class="panel-card-body panel-card-body-violet">
                             <b>From:</b> {sel_p.get('from_addr','Unknown')}<br>
                             <b>Subject:</b> {sel_p.get('subject','No Subject')}<br>
                             <b>Date:</b> {sel_p.get('date','Unknown')}<br>
@@ -4551,7 +4592,7 @@ if active_panel == "Dashboard":
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>TOP THREAT SIGNAL BREAKDOWN</span></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="panel-card-head panel-card-head-amber" style="margin-top:12px;"><span>TOP THREAT SIGNAL BREAKDOWN</span></div>', unsafe_allow_html=True)
                     contributions = sel_verdict.get("contributions", []) or []
                     colors = ["#ff4757", "#ff9f43", "#2fd8ff", "#35d399", "#a389f4", "#f47ab0"]
                     for i, c in enumerate(contributions[:6]):
@@ -4589,14 +4630,14 @@ if active_panel == "Dashboard":
                         key="dash_map_mode", label_visibility="collapsed",
                     )
                     if _dash_map_mode == _MAP_MODE_ALL:
-                        st.markdown("""<div class="panel-card-head"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
+                        st.markdown("""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
                             <span>All senders</span></div>""", unsafe_allow_html=True)
                         _render_all_senders_map(cases, key_prefix="dash", height=430)
                     else:
                         _dash_sel_case = _pick_case_for_map(cases, result, case_name, key="dash_map_email_pick", source_rows=data)
                         _dash_sel_geo = _dash_sel_case.get("geo", {}) or {}
                         _dash_sel_origin = _dash_sel_geo.get("origin", {}) or {}
-                        st.markdown(f"""<div class="panel-card-head"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
+                        st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
                             <span>{_dash_sel_origin.get('ip','Unknown')}</span></div>""", unsafe_allow_html=True)
                         hops = [h for h in _dash_sel_geo.get("hops", []) if h.get("lat") is not None]
                         if hops:
@@ -4616,7 +4657,7 @@ if active_panel == "Dashboard":
                             st.info("No geolocatable hop for this email yet.")
 
                 with graph_col:
-                    st.markdown(f"""<div class="panel-card-head"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
+                    st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
                         <span>{len(cases)} CASES</span></div>""", unsafe_allow_html=True)
                     # A fixed seed here keeps this small preview stable between
                     # reruns; the full, shuffleable, interactive version lives
