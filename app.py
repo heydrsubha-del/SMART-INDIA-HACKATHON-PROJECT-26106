@@ -4,6 +4,7 @@ Intelligence Platform.
 Run:   streamlit run app.py
 """
 import traceback
+import base64
 import hashlib
 import csv
 import io
@@ -76,6 +77,22 @@ except ImportError:
 # remember it on disk so future restarts don't need the field retyped or
 # even a network call.
 _GOOGLE_EMAIL_CACHE_PATH = ".google_email_cache.json"
+
+# ---------------------------------------------------------------------------
+# Brand asset
+# Keep the supplied Algorithmistic logo in the repository and render it as a
+# data URI so the same file works locally and on Streamlit Cloud without any
+# special static-file server configuration.
+_LOGO_PATH = os.path.join(os.path.dirname(__file__), "algorithmistic_logo.jpg")
+
+def _algorithmistic_logo_uri():
+    try:
+        with open(_LOGO_PATH, "rb") as _logo_f:
+            return "data:image/jpeg;base64," + base64.b64encode(_logo_f.read()).decode("ascii")
+    except Exception:
+        return ""
+
+ALGORITHMISTIC_LOGO_URI = _algorithmistic_logo_uri()
 
 
 def _load_cached_google_email():
@@ -2167,6 +2184,182 @@ st.markdown(
        as glued to the card header underneath it, matching the breathing
        room the right dock now has between its own sections. */
     .st-key-dash_map_mode { margin-bottom:16px !important; }
+
+    /* ======================================================================
+       ALGORITHMISTIC UI POLISH
+       Visual-only overrides. Existing controls, keys, state, workflows and
+       analysis logic remain unchanged. Correlation-graph styling is not
+       targeted here. The goal is a calmer enterprise SOC appearance: less
+       glow, tighter spacing, clear hierarchy, real brand asset.
+       ====================================================================== */
+    .topbar-shell {
+        background:linear-gradient(180deg,#0b1a2a 0%,#091523 100%) !important;
+        border:1px solid #1b4866 !important;
+        border-radius:12px !important;
+        padding:15px 20px !important;
+        margin-bottom:12px !important;
+        box-shadow:0 8px 24px rgba(0,0,0,.22) !important;
+    }
+    .topbar-brand {gap:14px !important;}
+    .topbar-logo {
+        width:48px !important; height:48px !important; flex:0 0 48px !important;
+        border-radius:12px !important; overflow:hidden !important;
+        border:1px solid #2d688b !important;
+        background:#06101b !important; box-shadow:0 4px 12px rgba(0,0,0,.28) !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+    }
+    .topbar-logo-img {width:100% !important; height:100% !important; object-fit:cover !important; display:block !important;}
+    .topbar-kicker {
+        color:#63d7ff !important; font-size:9.5px !important;
+        letter-spacing:1.2px !important; margin-bottom:4px !important;
+    }
+    .topbar-title {
+        font-size:21px !important; font-weight:800 !important; letter-spacing:.05px !important;
+        line-height:1.25 !important;
+    }
+    .topbar-subtitle {font-size:11px !important; color:#8da7be !important; margin-top:4px !important;}
+    .topbar-status-pill {
+        background:rgba(47,206,135,.07) !important; border-color:rgba(47,206,135,.24) !important;
+        padding:5px 11px !important; font-size:11px !important;
+    }
+
+    .sidebar-brand-v2 {
+        padding:2px 5px 13px !important; margin-bottom:8px !important;
+        border-bottom:1px solid #17344a !important;
+    }
+    .brand-row {gap:10px !important;}
+    .brand-mark {
+        width:46px !important; height:46px !important; flex:0 0 46px !important;
+        border-radius:11px !important; overflow:hidden !important;
+        background:#07101a !important; border:1px solid #2d688b !important;
+        box-shadow:0 4px 12px rgba(0,0,0,.28) !important;
+    }
+    .brand-logo-img {width:100% !important; height:100% !important; object-fit:cover !important; display:block !important;}
+    .brand-text .name {
+        color:#f0f6fb !important; font-size:15.5px !important; letter-spacing:1px !important;
+    }
+    .brand-text .role {
+        color:#6f8ca5 !important; font-size:8.5px !important; letter-spacing:.75px !important;
+        text-transform:none !important;
+    }
+    .brand-meta {margin-top:10px !important; color:#69849d !important;}
+
+    [data-testid="stSidebar"] .stButton > button {
+        min-height:36px !important; padding:7px 10px 7px 13px !important;
+        border-radius:8px !important; font-size:13px !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background:rgba(39,125,196,.11) !important; border-color:#194360 !important;
+        color:#f1f7fd !important; padding-left:16px !important;
+    }
+    [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+        background:linear-gradient(90deg,rgba(34,126,201,.25),rgba(34,126,201,.07)) !important;
+        border-color:#2a78a8 !important; color:#ffffff !important;
+        box-shadow:inset 0 0 0 1px rgba(67,177,232,.10) !important;
+    }
+    [data-testid="stSidebar"] .stButton > button::before {background:#42c5ff !important;}
+    .sidebar-group-label {
+        margin:15px 4px 6px !important; font-size:9.5px !important;
+        letter-spacing:1.35px !important; color:#67829a !important;
+    }
+    .sidebar-group-label .grp-index {
+        color:#5dcfff !important; border-color:#234c67 !important; background:#081724 !important;
+    }
+    .sidebar-group-label:after {background:linear-gradient(90deg,#214b66,transparent) !important;}
+    .sidebar-status-card-v2 {
+        margin-top:13px !important; padding:11px !important; border-radius:10px !important;
+        background:#0a1724 !important; border-color:#183c54 !important; box-shadow:none !important;
+    }
+    .ssc-grid {gap:7px !important;}
+    .ssc-tile {padding:7px 8px !important; border-radius:8px !important; background:#091521 !important; border-color:#17364c !important;}
+    .ssc-tile-value {font-size:16px !important;}
+    .ssc-foot {margin-top:8px !important; padding-top:6px !important;}
+
+    .nav-caption {
+        color:#6c8aa4 !important; font-size:9.5px !important; letter-spacing:1.5px !important;
+        margin:4px 0 5px !important;
+    }
+    .st-key-topnav .stRadio > div {
+        padding:7px !important; gap:6px !important;
+        background:#091522 !important; border:1px solid #183a52 !important;
+        border-radius:10px !important;
+    }
+    .st-key-topnav .stRadio label {
+        padding:9px 15px !important; border-radius:8px !important;
+        color:#9db4c9 !important;
+    }
+    .st-key-topnav .stRadio label:hover {background:rgba(48,133,194,.09) !important;}
+    .st-key-topnav .stRadio label:has(input:checked) {
+        background:#1769c2 !important; border-color:#318ee0 !important;
+        box-shadow:0 3px 10px rgba(23,105,194,.24) !important;
+    }
+    .st-key-topnav::after {background:linear-gradient(90deg,#2cc5ff,rgba(44,197,255,.08),transparent) !important;}
+
+    .mode-select-heading {
+        font-size:15px !important; font-weight:750 !important; margin:3px 0 10px 1px !important;
+    }
+    .mode-card {
+        background:#0b1725 !important; border-color:#1b3c53 !important;
+        border-radius:12px !important; padding:16px 17px !important;
+        box-shadow:none !important; transform:none !important;
+        transition:border-color .18s ease, background .18s ease !important;
+    }
+    .mode-card:hover {background:#0d1b2b !important; border-color:#2b6385 !important; transform:none !important;}
+    .mode-card-active {
+        border-color:#28bce8 !important; background:#0d1f31 !important;
+        box-shadow:0 0 0 1px rgba(40,188,232,.18) !important; animation:none !important;
+    }
+    .mode-card-active .mode-card-icon {animation:none !important;}
+    .mode-card-icon {width:42px !important; height:42px !important; flex-basis:42px !important; border-radius:9px !important;}
+    .mode-card-title {font-size:14px !important;}
+    .mode-card-sub {font-size:11.5px !important; color:#8299b0 !important;}
+
+    .stage-card, .acq-panel {
+        border-radius:12px !important; background:#0b1724 !important;
+        border-color:#1a384e !important; box-shadow:none !important;
+    }
+    .stage-card {padding:14px 16px !important;}
+    .stage-card:hover, .acq-panel:hover {background:#0d1a29 !important; border-color:#244b64 !important; transform:none !important;}
+    .stage-label {letter-spacing:1.25px !important; font-size:9px !important;}
+    .stage-title {font-size:15px !important;}
+    .stage-help {font-size:11.5px !important;}
+
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button {
+        min-height:42px !important; border-radius:9px !important;
+        text-transform:none !important; letter-spacing:.1px !important; font-weight:700 !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"] {
+        background:linear-gradient(180deg,#27c4ea 0%,#1688c7 100%) !important;
+        border-color:#39cdf2 !important; color:#05131c !important;
+        box-shadow:0 4px 14px rgba(22,136,199,.20), inset 0 1px 0 rgba(255,255,255,.20) !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"]:hover {
+        background:linear-gradient(180deg,#37d0f4 0%,#1b98da 100%) !important;
+        box-shadow:0 6px 18px rgba(22,136,199,.26), inset 0 1px 0 rgba(255,255,255,.22) !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:not([kind^="primary"]) {
+        background:#101b28 !important; border-color:#26455b !important; color:#cfdeea !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:not([kind^="primary"]):hover {
+        background:#132337 !important; border-color:#347195 !important;
+    }
+
+    .stTextInput input, .stNumberInput input, textarea,
+    .stSelectbox [data-baseweb="select"] > div, .stMultiSelect [data-baseweb="select"] > div {
+        background:#0a1826 !important; border-color:#22465e !important; border-radius:9px !important;
+    }
+    .stTextInput input:focus, .stNumberInput input:focus, textarea:focus,
+    .stSelectbox [data-baseweb="select"]:focus-within > div, .stMultiSelect [data-baseweb="select"]:focus-within > div {
+        border-color:#26bfe9 !important; box-shadow:0 0 0 3px rgba(38,191,233,.12) !important;
+    }
+
+    div[data-testid="stMetric"] {
+        background:#0b1724 !important; border-color:#1c3b51 !important; border-radius:10px !important;
+        box-shadow:none !important; padding:12px 14px !important;
+    }
+    div[data-testid="stMetric"]:before {background:linear-gradient(90deg,#2cc5ff,transparent 85%) !important;}
+    div[data-testid="stMetric"]:hover {transform:none !important; box-shadow:none !important; border-color:#285873 !important;}
+    [data-testid="stExpander"] {background:#0a1724 !important; border-color:#1e3c52 !important; border-radius:10px !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -2185,12 +2378,12 @@ if st.session_state.get("nav_force_mode") in _MODE_OPTIONS:
 
 with st.sidebar:
     st.markdown(
-        """<div class="sidebar-brand-v2">
+        f"""<div class="sidebar-brand-v2">
             <div class="brand-row">
-                <div class="brand-mark"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.5-7 10-3.8-1.5-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4.5"/></svg></div>
+                <div class="brand-mark"><img class="brand-logo-img" src="{ALGORITHMISTIC_LOGO_URI}" alt="Algorithmistic logo"></div>
                 <div class="brand-text">
-                    <div class="name">SIH26106</div>
-                    <div class="role">Forensic Intelligence Platform</div>
+                    <div class="name">ALGORITHMISTIC</div>
+                    <div class="role">SIH26106 · Forensic Intelligence Platform</div>
                 </div>
             </div>
             <div class="brand-meta"><span class="brand-dot"></span>Active Session</div>
@@ -2331,9 +2524,9 @@ with st.sidebar:
 st.markdown(
     f"""<div class="topbar-shell">
       <div class="topbar-brand">
-        <div class="topbar-logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.5-7 10-3.8-1.5-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4.5"/></svg></div>
+        <div class="topbar-logo"><img class="topbar-logo-img" src="{ALGORITHMISTIC_LOGO_URI}" alt="Algorithmistic logo"></div>
         <div>
-          <div class="topbar-kicker">SIH26106 · Forensic Intelligence Platform</div>
+          <div class="topbar-kicker">ALGORITHMISTIC · SIH26106 · FORENSIC INTELLIGENCE PLATFORM</div>
           <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
           <div class="topbar-subtitle">Evidence acquisition · header authentication · IOC intelligence · origin tracing · campaign correlation · local AI assessment</div>
         </div>
