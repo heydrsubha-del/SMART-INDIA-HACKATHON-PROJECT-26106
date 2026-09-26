@@ -3057,7 +3057,28 @@ def _copilot_handle_command(command, cases, raw, case_name, result, current_evid
         # variables every other panel reads; both are already resolved by
         # the time a copilot command can be typed.
         _is_csv_source = uploaded is not None and str(getattr(uploaded, "name", "") or "").lower().endswith(".csv") and data
-        if st.session_state.get("live_mailbox_config"):
+
+        # BUG FIX: this used to check "is a live mailbox config saved
+        # ANYWHERE in session_state" first, regardless of which acquisition
+        # mode is actually selected on the Dashboard right now. That meant
+        # connecting a Gmail mailbox once, then switching to Evidence File
+        # Upload and loading a CSV, silently kept reporting on the old live
+        # mailbox forever -- the leftover connection always won, so the two
+        # modes never actually worked independently the way the Dashboard's
+        # own mode picker implies they do. This now reads whichever mode is
+        # the CURRENT one (the same input_mode_radio state the Dashboard's
+        # acquisition-mode cards set), so each mode's data is only ever used
+        # while that mode is actually selected -- switching modes switches
+        # what the copilot reports on, instead of merging or getting stuck
+        # on whichever was connected first.
+        _copilot_mode = st.session_state.get("input_mode_radio", "Live IMAP Mailbox Interceptor")
+        _copilot_is_live_mode = "Live IMAP Mailbox Interceptor" in _copilot_mode
+        _copilot_is_upload_mode = "Evidence File Upload" in _copilot_mode
+
+        if _copilot_is_live_mode:
+            if not st.session_state.get("live_mailbox_config"):
+                return ("You're on **Live IMAP Mailbox Interceptor** mode, but no mailbox is connected "
+                        "yet. Connect one on the Dashboard, then ask me again.")
             with st.spinner(f"Fetching the {count} most recent messages..."):
                 _pipeline_items, _pipeline_err = _collect_recent_live_imap_items(count)
             if _pipeline_err:
@@ -3069,7 +3090,11 @@ def _copilot_handle_command(command, cases, raw, case_name, result, current_evid
             # have produced is superseded by actually landing on the report.
             _run_batch_pipeline(_pipeline_items, "Live IMAP")
             return ""
-        elif _is_csv_source:
+        elif _copilot_is_upload_mode:
+            if not _is_csv_source:
+                return ("You're on **Evidence File Upload** mode, but no CSV batch is loaded yet. "
+                        "Upload a `.csv` of emails on the Dashboard, then ask me again. (A single "
+                        "`.eml`/`.txt` file is already just one email, so there's nothing to batch.)")
             _pipeline_items = _collect_recent_csv_items(data, uploaded.name, count)
             if not _pipeline_items:
                 return "No messages were available to analyze."
