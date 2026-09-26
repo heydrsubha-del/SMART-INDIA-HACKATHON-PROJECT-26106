@@ -3897,11 +3897,14 @@ if active_panel == "Dashboard":
                             st.session_state["imap_user"] = _auto_email
                             _save_cached_provider_email("yahoo", _auto_email)
 
-            imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
-            manual_password = st.text_input(
-                "Password / App password", type="password", key="imap_manual_password",
-                placeholder="Only needed if you're not using one-click sign-in below",
-            )
+            _cred_col1, _cred_col2 = st.columns(2)
+            with _cred_col1:
+                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+            with _cred_col2:
+                manual_password = st.text_input(
+                    "Password / App password", type="password", key="imap_manual_password",
+                    placeholder="Only if not using one-click sign-in",
+                )
 
             # Detect provider from the typed email's domain -- same loose,
             # case-insensitive matching PROVIDERS' keys already used
