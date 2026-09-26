@@ -21,6 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Keep all Plotly visuals consistent with the dark SOC interface: extend the
 # built-in dark template with our own palette/typography instead of leaving
@@ -41,7 +42,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama
-from nomic_embed import nomic_available, describe_origin, embed_text, save_origin_embedding, find_similar_origins
+from nomic_embed import nomic_available, embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
 
@@ -233,16 +234,26 @@ except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
 from report import build_report, evidence_hash
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
-from antivirus_scan import clamd_available, clamd_version, scan_bytes
+from antivirus_scan import clamd_available, clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _clamd_up_cached():
-    """clamd_available() opens a real TCP socket -- st.tabs renders every
-    tab's body on every rerun (only visibility is toggled client-side), so
-    without this the antivirus tab would re-probe clamd on every single
-    interaction anywhere in the app, even the map tab. A 20s cache keeps the
-    same live check without hammering the daemon."""
-    return clamd_available(timeout=2)
+    """antivirus_usable() opens a real TCP socket to check clamd (and may
+    check for a cloud API key too) -- st.tabs renders every tab's body on
+    every rerun (only visibility is toggled client-side), so without this
+    the antivirus tab would re-probe on every single interaction anywhere
+    in the app, even the map tab. A 20s cache keeps the same live check
+    without hammering the daemon. Despite the name, this now reflects
+    whether scan_bytes() can actually scan at all -- local clamd or the
+    cloud fallback -- not just local clamd; see antivirus_backend() for
+    which one it'll actually use."""
+    return antivirus_usable()
+
+@st.cache_data(ttl=20, show_spinner=False)
+def _antivirus_backend_cached():
+    """Which backend scan_bytes() will actually use right now ('local',
+    'cloud', or None) -- same caching rationale as _clamd_up_cached."""
+    return antivirus_backend()
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _scan_bytes_cached(data):
@@ -336,14 +347,18 @@ def _sem_describe_origin(geo):
 
 
 def _nomic_ready():
-    """nomic_available() pings Ollama, so cache the answer briefly -- the
-    Forensic Report reruns on every widget click."""
+    """embeddings_usable() may ping Ollama (and check a cloud API key), so
+    cache the answer briefly -- the Forensic Report reruns on every widget
+    click. Despite the name, this now reflects whether embed_text() can
+    actually embed at all -- local Ollama or the Cohere cloud fallback --
+    not just local Ollama; see embeddings_backend() for which one it'll
+    actually use."""
     now = time.time()
     cached = st.session_state.get("_nomic_ready_cache")
     if cached and now - cached[0] < 30:
         return cached[1]
     try:
-        ok = bool(nomic_available())
+        ok = bool(embeddings_usable())
     except Exception:
         ok = False
     st.session_state["_nomic_ready_cache"] = (now, ok)
@@ -577,11 +592,11 @@ st.markdown(
         --line-strong: #2a3444;
         --text: #eef2f8;
         --muted: #93a0b3;
-        --cyan: #5470ff;
+        --cyan: #12e0ab;
         /* Secondary accent family -- gives AI/assistant surfaces (the Qwen
            dossiers, the AI console, the copilot panel) their own color
            identity instead of reusing the primary action blue everywhere. */
-        --violet: #8c7bf0;
+        --violet: #b25bf0;
         /* Tertiary accent family -- reserved for brand/navigation chrome
            (sidebar, masthead) so the app reads as deliberately multi-toned
            rather than one blue skin repeated on every surface. */
@@ -603,11 +618,11 @@ st.markdown(
         /* Calm, single-tone focus shadow for primary actions -- a soft
            blue lift instead of a saturated violet halo, so it reads as a
            clean product accent rather than a neon glow. */
-        --glow-violet: 0 0 0 1px rgba(84,112,255,.30), 0 6px 16px rgba(0,0,0,.24);
+        --glow-violet: 0 0 0 1px rgba(18,224,171,.30), 0 6px 16px rgba(0,0,0,.24);
         /* Signature brand accent: one flat, professional blue for every
            primary action / active state, instead of a two-hue gradient --
            gives the app a single deliberate identity color. */
-        --brand-gradient: linear-gradient(90deg,#5470ff,#5470ff);
+        --brand-gradient: linear-gradient(90deg,#12e0ab,#b25bf0);
         /* Action-button tokens -- the whole button family (primary = teal
            action key, secondary = graphite key) is tinted from here, so the
            look can be re-colored in one place without touching any rule. */
@@ -642,12 +657,51 @@ st.markdown(
     .stApp [role="combobox"]:focus,
     .stApp [role="combobox"][aria-expanded="true"] > div {
         border-color: var(--cyan) !important;
-        box-shadow: 0 0 0 3px rgba(84,112,255,.14) !important;
+        box-shadow: 0 0 0 3px rgba(18,224,171,.14) !important;
         outline: none !important;
     }
     .stApp input:invalid, .stApp select:invalid, .stApp textarea:invalid,
     .stApp input:required:invalid {
         box-shadow: none !important;
+    }
+
+    /* App-wide radio-dot leak fix. Three earlier attempts at this (hiding
+       `label > div:first-child`, hiding `[data-baseweb="radio"]`, then
+       `label > *:not(:has(p))`) still didn't clear it in the user's
+       browser -- at this point, stop guessing at a single selector and
+       stack every independent way of suppressing an element, so this
+       survives even if one technique is neutralized by something else in
+       the stylesheet or the browser's own defaults: `display:none` alone,
+       zero size + clipped overflow, moved off-screen, and made fully
+       transparent, all at once, on every plausible target (the circle
+       wrapper, the raw input, any svg, and the accent-color a browser
+       uses to paint a native checked radio red by default). */
+    .stRadio label > *:not(:has(p)),
+    .stRadio label input[type="radio"],
+    .stRadio label svg,
+    .stRadio label [data-baseweb="radio"] {
+        display:none !important;
+        width:0 !important; height:0 !important;
+        margin:0 !important; padding:0 !important;
+        border:0 !important; opacity:0 !important;
+        overflow:hidden !important;
+        position:absolute !important; left:-9999px !important;
+        pointer-events:none !important;
+    }
+    .stRadio input[type="radio"] {accent-color:var(--cyan) !important;}
+
+    /* The real element (confirmed from the actual rendered DOM, via
+       inspector): each radio option's marker is a plain, contentless
+       `<div>` -- not a Material icon span, which is what every earlier
+       attempt here wrongly assumed. An empty div is reliably selectable
+       with `:empty` regardless of Streamlit's internal (unstable,
+       hash-named) emotion classes, so this targets it directly instead
+       of guessing at an attribute again. Unselected stays a plain quiet
+       outline; selected gets a soft white halo so it reads as a real
+       "active" indicator instead of a flat dot. */
+    .stRadio label:has(input:checked) div:empty {
+        box-shadow:0 0 0 4px rgba(255,255,255,.20), 0 0 12px 3px rgba(255,255,255,.6) !important;
+        transition:box-shadow .2s var(--ease) !important;
     }
 
     /* Quality-floor: a visible, on-brand focus ring everywhere, so keyboard
@@ -674,12 +728,12 @@ st.markdown(
         position:fixed !important; top:14px !important; left:14px !important; z-index:999999 !important;
         background:#0c1929 !important; border:1px solid var(--cyan) !important; border-radius:8px !important;
         padding:9px 14px 9px 11px !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.25), 0 8px 22px rgba(0,0,0,.4) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.25), 0 8px 22px rgba(0,0,0,.4) !important;
         transition:transform .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
     [data-testid="collapsedControl"]:hover {
         transform:scale(1.04) !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.4), 0 10px 26px rgba(0,0,0,.45) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 10px 26px rgba(0,0,0,.45) !important;
     }
     /* The native arrow only ever means "open the nav" -- spell that out so
        it isn't mistaken for decoration and missed on a dark, busy header. */
@@ -698,9 +752,9 @@ st.markdown(
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {
         background:
-            radial-gradient(circle at 12% -8%, rgba(84,112,255,.05), transparent 28%),
+            radial-gradient(circle at 12% -8%, rgba(18,224,171,.05), transparent 28%),
             radial-gradient(circle at 92% 0%, rgba(19,139,181,.045), transparent 26%),
-            radial-gradient(circle at 55% 105%, rgba(84,112,255,.025), transparent 32%),
+            radial-gradient(circle at 55% 105%, rgba(18,224,171,.025), transparent 32%),
             var(--bg) !important;
         color: var(--text) !important;
     }
@@ -758,7 +812,7 @@ st.markdown(
         display:inline-flex !important; align-items:center !important;
         color:var(--cyan) !important; font-size:10px !important; font-weight:800 !important;
         letter-spacing:1.5px !important; text-transform:uppercase !important;
-        background:rgba(84,112,255,.08) !important; border:1px solid rgba(84,112,255,.22) !important;
+        background:rgba(18,224,171,.08) !important; border:1px solid rgba(18,224,171,.22) !important;
         border-radius:20px !important; padding:3px 10px !important;
     }
     .stage-card-success .stage-label {color:var(--green) !important; background:rgba(47,206,135,.10) !important; border-color:rgba(47,206,135,.28) !important;}
@@ -845,15 +899,15 @@ st.markdown(
     .stTextInput input, .stNumberInput input, textarea {
         background:linear-gradient(180deg,#0d2035,#091729) !important;
         color:#eaf2fa !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:inset 0 1px 3px rgba(0,0,0,.35) !important;
         transition:border-color .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
-    .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d6790 !important;}
+    .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d8a6f !important;}
     .stTextInput input:focus, .stNumberInput input:focus, textarea:focus {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     /* Number input stepper (+/-) buttons -- previously unstyled and left on
        Streamlit's stock grey/red-focus default, which read as a jarring,
@@ -864,7 +918,7 @@ st.markdown(
     .stNumberInput [data-testid="stNumberInputStepUp"],
     .stNumberInput button {
         background:linear-gradient(180deg,#14293e,#0d1c2c) !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         color:#9fc3e6 !important;
         box-shadow:none !important;
         transition:background .15s var(--ease), border-color .15s var(--ease), color .15s var(--ease) !important;
@@ -887,7 +941,7 @@ st.markdown(
     .stMultiSelect [data-baseweb="select"] > div {
         background:linear-gradient(180deg,#0d2035,#091729) !important;
         color:#eaf2fa !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:inset 0 1px 3px rgba(0,0,0,.35) !important;
         transition:border-color .15s var(--ease) !important;
@@ -902,23 +956,23 @@ st.markdown(
         color:#eaf2fa !important;
     }
     .stSelectbox [data-baseweb="select"]:hover > div,
-    .stMultiSelect [data-baseweb="select"]:hover > div {border-color:#3d6790 !important;}
+    .stMultiSelect [data-baseweb="select"]:hover > div {border-color:#3d8a6f !important;}
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     .stSelectbox svg, .stMultiSelect svg {color:var(--cyan) !important;}
     div[data-baseweb="popover"] ul[role="listbox"] {
         background:#0d1a2b !important;
-        border:1px solid #2f5478 !important;
+        border:1px solid #2f5c56 !important;
         border-radius:10px !important;
         box-shadow:0 14px 30px rgba(0,0,0,.4) !important;
         padding:4px !important;
     }
     div[data-baseweb="popover"] li[role="option"] {color:#dfeaf4 !important; border-radius:7px !important;}
     div[data-baseweb="popover"] li[role="option"]:hover,
-    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(84,112,255,.14) !important; color:#ffffff !important;}
+    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(18,224,171,.14) !important; color:#ffffff !important;}
     /* Widget labels ("Mail provider", "IMAP server", "Port"...) previously
        rode on Streamlit's plain default text -- a touch brighter, a firm
        weight and tighter line-height reads as deliberate field labelling
@@ -934,16 +988,7 @@ st.markdown(
        each option gets full button-like affordances: pointer cursor, its
        own pill hit-area, and a hover/press/select animation chain that
        shares the same easing as .stButton so switching "tabs" feels like
-       the same physical material as the rest of the UI. As a tab strip, the
-       native radio circle is pure visual noise on every one of them --
-       hidden globally rather than one screen at a time. (It was
-       `:first-child`, which never matches here: the actual hidden
-       `<input>` is the true first child of the label, so `div:first-child`
-       was silently matching nothing and the raw circle -- rendered in
-       Streamlit's red theme color -- kept showing through on every pill
-       everywhere this pattern was used. `:first-of-type` targets the first
-       *div* regardless of the input before it.) */
-    .stRadio label > div:first-of-type {display:none !important;}
+       the same physical material as the rest of the UI. */
     .stRadio label {
         color:#c9d8e7 !important;
         cursor:pointer !important;
@@ -954,8 +999,8 @@ st.markdown(
                    box-shadow .22s var(--ease), transform .16s var(--ease), color .18s var(--ease) !important;
     }
     .stRadio label:hover {
-        background:rgba(84,112,255,.08) !important;
-        border-color:#20415e !important;
+        background:rgba(18,224,171,.08) !important;
+        border-color:#20402f !important;
         transform:translateY(-1px) !important;
     }
     .stRadio label:active {
@@ -976,13 +1021,14 @@ st.markdown(
     }
     .stRadio label:has(input:checked):hover {transform:translateY(-1px) !important;}
     .stRadio label:has(input:checked):active {transform:translateY(-1px) scale(.97) !important;}
+    .stRadio label:has(input:checked) div:first-child {border-color:#eaf8ff !important;}
     .stRadio label:has(input:checked) p {color:#ffffff !important; font-weight:800 !important;}
-    .stFileUploader {background:#091625 !important; border:1px dashed #315878 !important; border-radius:12px !important;}
+    .stFileUploader {background:#091625 !important; border:1px dashed #31584f !important; border-radius:12px !important;}
     .stFileUploader section {background:transparent !important;}
 
     div[data-testid="stMetric"] {
         background:linear-gradient(180deg,#102238,#0c1b2d) !important;
-        border:1px solid #213c59 !important;
+        border:1px solid #213c37 !important;
         border-radius:var(--r-md) !important;
         padding:13px 15px !important;
         box-shadow:var(--shadow-sm) !important;
@@ -1013,7 +1059,7 @@ st.markdown(
     div[data-testid="stAlertContainer"],
     div[data-testid="stAlert"] {
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%) !important;
-        border:1px solid #1d3651 !important;
+        border:1px solid #1d3630 !important;
         border-left:3px solid var(--line-strong) !important;
         border-radius:var(--r-md) !important;
         box-shadow:0 8px 20px rgba(0,0,0,.18) !important;
@@ -1082,7 +1128,7 @@ st.markdown(
         font-weight:750;
         letter-spacing:.55px;
         text-transform:uppercase;
-        border-bottom:2px solid rgba(84,112,255,.35);
+        border-bottom:2px solid rgba(18,224,171,.35);
         white-space:nowrap;
     }
     table.polished-table tbody td {
@@ -1094,7 +1140,7 @@ st.markdown(
     table.polished-table tbody tr:last-child td {border-bottom:none;}
     table.polished-table tbody tr:nth-child(even) {background:rgba(255,255,255,.014);}
     table.polished-table tbody tr {transition:background .12s var(--ease);}
-    table.polished-table tbody tr:hover {background:rgba(84,112,255,.10);}
+    table.polished-table tbody tr:hover {background:rgba(18,224,171,.10);}
     table.polished-table tbody td:first-child {color:#cfe3f5; font-weight:600;}
     .polished-table-empty {
         padding:16px; text-align:center; color:var(--muted); font-size:13px;
@@ -1108,8 +1154,8 @@ st.markdown(
        polished SaaS console rather than an industrial SCADA panel. */
     .stApp {
         background:
-            radial-gradient(circle at 15% 0%, rgba(84,112,255,.035), transparent 26%),
-            radial-gradient(circle at 100% 15%, rgba(84,112,255,.03), transparent 30%),
+            radial-gradient(circle at 15% 0%, rgba(18,224,171,.035), transparent 26%),
+            radial-gradient(circle at 100% 15%, rgba(18,224,171,.03), transparent 30%),
             var(--bg) !important;
         background-size: auto !important;
     }
@@ -1159,13 +1205,13 @@ st.markdown(
        stHeader height (just enough to clear the icon); the content
        wrapper is trimmed to a small, deliberate gap instead. */
     [data-testid="stSidebarHeader"] {
-        height:2.75rem !important;
-        min-height:2.75rem !important;
+        height:2rem !important;
+        min-height:2rem !important;
         padding-top:0 !important;
         padding-bottom:0 !important;
     }
     [data-testid="stSidebarUserContent"] {
-        padding-top:0.5rem !important;
+        padding-top:0 !important;
     }
 
     /* Right summary panel: a real dock, not a block that happens to sit in
@@ -1369,7 +1415,7 @@ st.markdown(
         cursor:pointer !important;
         transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease) !important;
     }
-    .st-key-input_mode_radio label > div:first-of-type {display:none !important;}
+    .st-key-input_mode_radio label > div:first-child {display:none !important;}
     .st-key-input_mode_radio label p {
         color:#dbe6f2 !important; font-size:14.5px !important; font-weight:700 !important;
         line-height:1.4 !important; white-space:normal !important; letter-spacing:normal !important;
@@ -1381,7 +1427,7 @@ st.markdown(
     .st-key-input_mode_radio label:has(input:checked) {
         border-color:var(--cyan) !important;
         background:linear-gradient(180deg,#122b46,#0e1f34) !important;
-        box-shadow:0 0 0 3px rgba(84,112,255,.14) !important;
+        box-shadow:0 0 0 3px rgba(18,224,171,.14) !important;
     }
     .st-key-input_mode_radio label:has(input:checked) p {color:#eef5ff !important;}
 
@@ -1408,7 +1454,7 @@ st.markdown(
         display:flex; align-items:center; justify-content:center; font-size:19px;
     }
     .mode-card-icon-blue {
-        background:rgba(84,112,255,.14); border:1px solid rgba(84,112,255,.34); color:#93a7ff;
+        background:rgba(18,224,171,.14); border:1px solid rgba(18,224,171,.34); color:#93a7ff;
     }
     .mode-card-icon-neutral {
         background:rgba(34,199,172,.14); border:1px solid rgba(34,199,172,.34); color:#7fd8c4;
@@ -1417,9 +1463,9 @@ st.markdown(
     .mode-card-sub {color:#8299b2; font-size:12px; margin-top:2px; line-height:1.4;}
     .mode-card:hover {border-color:var(--line-strong); background:var(--panel-2); transform:translateY(-1px);}
     @keyframes modeCardSelect {
-        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(84,112,255,.0);}
+        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(18,224,171,.0);}
         55%  {transform:scale(1.012);}
-        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(84,112,255,.34);}
+        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(18,224,171,.34);}
     }
     @keyframes modeCardIconPop {
         0%   {transform:scale(.75) rotate(-6deg);}
@@ -1428,17 +1474,10 @@ st.markdown(
     }
     .mode-card-active {
         border-color:var(--cyan) !important; background:var(--panel-2) !important;
-        box-shadow:0 0 0 1px rgba(84,112,255,.34) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.34) !important;
         animation:modeCardSelect .4s var(--ease);
     }
     .mode-card-active .mode-card-icon {animation:modeCardIconPop .45s var(--ease);}
-    .mode-card {position:relative;}
-    .mode-card-check {
-        display:none; position:absolute; top:14px; right:14px;
-        width:22px; height:22px; border-radius:50%; align-items:center; justify-content:center;
-        background:var(--cyan); box-shadow:0 2px 6px rgba(0,0,0,.35);
-    }
-    .mode-card-active .mode-card-check {display:flex;}
     @media (prefers-reduced-motion: reduce) {
         .mode-card-active, .mode-card-active .mode-card-icon {animation:none !important;}
     }
@@ -1481,7 +1520,7 @@ st.markdown(
         font-family:"Consolas","Cascadia Code",monospace !important;
         font-size:13px !important;
         letter-spacing:.15px !important;
-        box-shadow:inset 0 0 18px rgba(84,112,255,.03) !important;
+        box-shadow:inset 0 0 18px rgba(18,224,171,.03) !important;
     }
     .feedback-icon { font-weight:900 !important; margin-right:9px !important; }
     .feedback-cursor { animation:feedbackBlink .8s steps(1) infinite; }
@@ -1491,7 +1530,7 @@ st.markdown(
         position:relative; overflow:hidden; margin:6px 0 14px 0; padding:18px 20px 16px;
         border:1px solid #3d3168; border-left:3px solid var(--violet); border-radius:var(--r-lg);
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
-        box-shadow:inset 0 0 26px rgba(84,112,255,.05),0 14px 34px rgba(0,0,0,.20);
+        box-shadow:inset 0 0 26px rgba(18,224,171,.05),0 14px 34px rgba(0,0,0,.20);
     }
     .ai-console-status {font:800 9px/1.3 monospace; letter-spacing:1.4px; color:#9584b8; text-transform:uppercase;}
     .ai-pulse {display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(47,206,135,.8);margin-right:7px;}
@@ -1500,7 +1539,7 @@ st.markdown(
     .ai-console-track {margin-top:13px;height:2px;background:#241c3c;position:relative;overflow:hidden;}
     .ai-console-track span {display:block;width:36%;height:100%;background:linear-gradient(90deg,transparent,var(--violet),transparent);animation:aiSweep 2.8s linear infinite;}
     @keyframes aiSweep {0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
-    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(84,112,255,.05),0 12px 28px rgba(0,0,0,.2);}
+    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(18,224,171,.05),0 12px 28px rgba(0,0,0,.2);}
     .ai-report-bar {display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-bottom:1px solid #2a2140;background:#150f24;color:#c9a8ff;font:900 10px/1.2 monospace;letter-spacing:1px;}
     .ai-report-chip {padding:4px 9px;border:1px solid #4a3a7a;background:#1c1530;color:#c9a8ff;border-radius:999px;}
     .ai-report-body {padding:18px 20px;color:#e2dcf0;font-size:14px;line-height:1.78;white-space:normal;}
@@ -1536,7 +1575,7 @@ st.markdown(
     .st-key-topnav, .st-key-topnav [data-testid="stRadio"] {min-width:0 !important;}
     .st-key-topnav::after {
         content:""; position:absolute; left:12px; right:12px; bottom:0; height:2px;
-        background:linear-gradient(90deg,#5470ff 0%,rgba(84,112,255,.12) 60%,transparent 100%);
+        background:linear-gradient(90deg,#12e0ab 0%,rgba(18,224,171,.12) 60%,transparent 100%);
         border-radius:2px; pointer-events:none;
     }
     .st-key-topnav .stRadio > div {
@@ -1559,7 +1598,7 @@ st.markdown(
         scroll-padding-inline:12px !important;
         -webkit-overflow-scrolling:touch !important;
         scrollbar-width:thin !important;
-        scrollbar-color:rgba(84,112,255,.4) transparent !important;
+        scrollbar-color:rgba(18,224,171,.4) transparent !important;
         /* Scroll-shadow trick: the two "cover" gradients scroll with the
            content (background-attachment:local) and cancel themselves
            out at the true start/end, while the two dark gradients stay
@@ -1578,10 +1617,10 @@ st.markdown(
     .st-key-topnav .stRadio > div::-webkit-scrollbar {height:5px !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-track {background:transparent !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb {
-        background:rgba(84,112,255,.4) !important; border-radius:6px !important;
+        background:rgba(18,224,171,.4) !important; border-radius:6px !important;
         transition:background .25s ease !important;
     }
-    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(84,112,255,.7) !important;}
+    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(18,224,171,.7) !important;}
 
     /* Roomier pills with no leading radio dot -- this bar behaves like a
        tab strip, not a checklist, so each item is one clean text chip. */
@@ -1594,37 +1633,26 @@ st.markdown(
         letter-spacing:.15px !important;
     }
     .st-key-topnav .stRadio label p {white-space:nowrap !important;}
-    .st-key-topnav .stRadio label > div:first-of-type {display:none !important;}
+    .st-key-topnav .stRadio label > div:first-child {display:none !important;}
 
-    /* Active tab: one flat, confident blue fill -- no gradient, no lift,
-       no glow ring -- so the current section reads as a solid selected
-       pill (clean product tab-bar) rather than a lit-up SCADA control. */
-    .st-key-topnav .stRadio label:has(input:checked) {
-        background:#5470ff !important;
-        border-color:#5470ff !important;
-        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
+    /* Active tab, all three tab-strip radios (top nav, bulk infra scan,
+       technical logs) share one flat, confident blue fill -- no gradient,
+       no lift, no glow ring -- so "what's currently selected" reads the
+       same way everywhere in the app instead of three slightly different
+       looks. Consolidated into one rule instead of three near-duplicates
+       so future edits can't quietly drift out of sync again. */
+    .st-key-topnav .stRadio label:has(input:checked),
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
+        background:#12e0ab !important;
+        border-color:#12e0ab !important;
+        box-shadow:0 2px 8px rgba(18,224,171,.35) !important;
     }
-    .st-key-topnav .stRadio label:has(input:checked) p {
+    .st-key-topnav .stRadio label:has(input:checked) p,
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) p {
         color:#ffffff !important; font-weight:700 !important; letter-spacing:.15px !important;
     }
-
-    /* Per-item icon before each nav label, generated as a CSS mask so it
-       inherits currentColor-like theming (muted grey default, white when
-       the pill is active) from one SVG asset instead of two. */
-    .st-key-topnav .stRadio label:nth-of-type(1)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M11 4l-7 6v10h5v-6h4v6h5V10z%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M11 4l-7 6v10h5v-6h4v6h5V10z%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(2)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l2.1 6.9L21 11l-6.9 2.1L12 20l-2.1-6.9L3 11l6.9-2.1z%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l2.1 6.9L21 11l-6.9 2.1L12 20l-2.1-6.9L3 11l6.9-2.1z%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(3)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z%22/%3E%3Cpath d=%22M14 2v5h5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z%22/%3E%3Cpath d=%22M14 2v5h5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(4)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2 22 8 12 14 2 8z%22/%3E%3Cpath d=%22M2 13l10 6 10-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Cpath d=%22M2 18l10 6 10-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2 22 8 12 14 2 8z%22/%3E%3Cpath d=%22M2 13l10 6 10-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Cpath d=%22M2 18l10 6 10-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(5)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l8 3.2v6.3c0 5.5-3.6 9.4-8 10.5-4.4-1.1-8-5-8-10.5V5.2L12 2z%22/%3E%3Cpath d=%22M9 12.2l2.1 2.1L15.5 10%22 fill=%22none%22 stroke=%22white%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l8 3.2v6.3c0 5.5-3.6 9.4-8 10.5-4.4-1.1-8-5-8-10.5V5.2L12 2z%22/%3E%3Cpath d=%22M9 12.2l2.1 2.1L15.5 10%22 fill=%22none%22 stroke=%22white%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(6)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M2.5 12h19M12 2.5c2.7 2.8 4 6.3 4 9.5s-1.3 6.7-4 9.5c-2.7-2.8-4-6.3-4-9.5s1.3-6.7 4-9.5z%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M2.5 12h19M12 2.5c2.7 2.8 4 6.3 4 9.5s-1.3 6.7-4 9.5c-2.7-2.8-4-6.3-4-9.5s1.3-6.7 4-9.5z%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(7)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M3 21V11h4v10zM10 21V4h4v17zM17 21v-7h4v7z%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M3 21V11h4v10zM10 21V4h4v17zM17 21v-7h4v7z%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(8)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%226%22 cy=%2212%22 r=%222.6%22/%3E%3Ccircle cx=%2218%22 cy=%226%22 r=%222.6%22/%3E%3Ccircle cx=%2218%22 cy=%2218%22 r=%222.6%22/%3E%3Cpath d=%22M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%226%22 cy=%2212%22 r=%222.6%22/%3E%3Ccircle cx=%2218%22 cy=%226%22 r=%222.6%22/%3E%3Ccircle cx=%2218%22 cy=%2218%22 r=%222.6%22/%3E%3Cpath d=%22M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(9)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M12 6.5V12l4 2.3%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M12 6.5V12l4 2.3%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(10)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M4 4a16 16 0 0 1 16 16%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M4 10.5a9.5 9.5 0 0 1 9.5 9.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%225.5%22 cy=%2218.5%22 r=%222.2%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M4 4a16 16 0 0 1 16 16%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M4 10.5a9.5 9.5 0 0 1 9.5 9.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%225.5%22 cy=%2218.5%22 r=%222.2%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(11)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l8 3.2v6.3c0 5.5-3.6 9.4-8 10.5-4.4-1.1-8-5-8-10.5V5.2L12 2z%22/%3E%3Cpath d=%22M12 8v5.3M12 16.8h.01%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222.1%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 2l8 3.2v6.3c0 5.5-3.6 9.4-8 10.5-4.4-1.1-8-5-8-10.5V5.2L12 2z%22/%3E%3Cpath d=%22M12 8v5.3M12 16.8h.01%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222.1%22 stroke-linecap=%22round%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(12)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%223.2%22/%3E%3Cpath d=%22M19.4 12a7.4 7.4 0 0 0-.1-1.3l2.1-1.7-2.1-3.6-2.5 1a7.4 7.4 0 0 0-2.1-1.3L14.2 2H9.8l-.5 2.7a7.4 7.4 0 0 0-2.1 1.3l-2.5-1-2.1 3.6 2.1 1.7a7.4 7.4 0 0 0 0 2.6l-2.1 1.7 2.1 3.6 2.5-1a7.4 7.4 0 0 0 2.1 1.3l.5 2.7h4.4l.5-2.7a7.4 7.4 0 0 0 2.1-1.3l2.5 1 2.1-3.6-2.1-1.7c.067-.42.1-.85.1-1.3z%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%223.2%22/%3E%3Cpath d=%22M19.4 12a7.4 7.4 0 0 0-.1-1.3l2.1-1.7-2.1-3.6-2.5 1a7.4 7.4 0 0 0-2.1-1.3L14.2 2H9.8l-.5 2.7a7.4 7.4 0 0 0-2.1 1.3l-2.5-1-2.1 3.6 2.1 1.7a7.4 7.4 0 0 0 0 2.6l-2.1 1.7 2.1 3.6 2.5-1a7.4 7.4 0 0 0 2.1 1.3l.5 2.7h4.4l.5-2.7a7.4 7.4 0 0 0 2.1-1.3l2.5 1 2.1-3.6-2.1-1.7c.067-.42.1-.85.1-1.3z%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:nth-of-type(13)::before {content:""; display:inline-block; width:15px; height:15px; margin-right:8px; vertical-align:-3px; mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M12 8h.01M11 11.5h1v6h1%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M12 8h.01M11 11.5h1v6h1%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E"); mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center; background-color:#7f93ab; transition:background-color .18s var(--ease);}
-    .st-key-topnav .stRadio label:has(input:checked)::before {background-color:#ffffff !important;}
 
     [data-testid="stIconMaterial"],
     [class*="material-symbols"],
@@ -1680,99 +1708,19 @@ st.markdown(
     }
 
     /* ================= NEW DASHBOARD-STYLE UI SHELL ================= */
-    /* Slim utility bar above the hero card: menu/search on the left,
-       theme/notification/account chip on the right. Every icon here is an
-       inline CSS mask (drawn the same way as the nav icons above), and the
-       avatar is a plain CSS circle with the connected mailbox's initial --
-       nothing here is an <img> or an external asset, so none of it can
-       ever show up as a broken-image icon. */
-    .util-bar {display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:12px; flex-wrap:wrap;}
-    .util-left {display:flex; align-items:center; gap:12px; flex:1 1 320px; min-width:0;}
-    .util-right {display:flex; align-items:center; gap:10px; flex:0 0 auto;}
-    .util-icon-btn {
-        position:relative;
-        width:38px; height:38px; flex:none; border-radius:10px;
-        display:flex; align-items:center; justify-content:center;
-        background:var(--panel); border:1px solid var(--line); color:#8aa0b8;
-        transition:border-color .15s var(--ease), background .15s var(--ease), color .15s var(--ease);
-    }
-    .util-icon-btn:hover {border-color:var(--line-strong); background:var(--panel-2); color:#eef2f8;}
-    .util-icon-mask {width:16px; height:16px; background-color:currentColor;
-        mask-size:contain; -webkit-mask-size:contain; mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat; mask-position:center; -webkit-mask-position:center;}
-    .util-icon-dot {position:absolute; top:7px; right:7px; width:6px; height:6px; border-radius:50%; background:var(--red); box-shadow:0 0 0 2px var(--panel);}
-    .util-search {
-        flex:1 1 auto; min-width:0; max-width:440px;
-        display:flex; align-items:center; gap:10px;
-        background:var(--panel); border:1px solid var(--line); border-radius:10px;
-        padding:0 14px; height:38px; color:#6d81986;
-        transition:border-color .15s var(--ease);
-    }
-    .util-search:hover {border-color:var(--line-strong);}
-    .util-search .util-icon-mask {color:#63768c; background-color:#63768c; flex:none;}
-    .util-search-text {font-size:13px; color:#63768c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .util-avatar {
-        display:flex; align-items:center; gap:9px;
-        background:var(--panel); border:1px solid var(--line); border-radius:999px;
-        padding:5px 14px 5px 5px; height:38px; box-sizing:border-box;
-        transition:border-color .15s var(--ease), background .15s var(--ease);
-    }
-    .util-avatar:hover {border-color:var(--line-strong); background:var(--panel-2);}
-    .util-avatar-circle {
-        width:26px; height:26px; border-radius:50%; flex:none;
-        background:linear-gradient(135deg, var(--cyan), var(--violet));
-        display:flex; align-items:center; justify-content:center;
-        font-size:12px; font-weight:800; color:#fff; text-transform:uppercase;
-    }
-    .util-avatar-label {font-size:12.5px; font-weight:650; color:#dbe6f2; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .util-avatar-chev {width:11px; height:11px; flex:none; color:#63768c; background-color:#63768c;}
-
-    /* Hero card: a self-contained CSS "network globe" impression --
-       layered radial gradients plus a masked dot-grid, no raster image, so
-       nothing here can fail to load the way an external logo/banner URL
-       can. Three small pulsing "ping" dots (see .hero-ping below) finish
-       the effect. */
     .topbar-shell {
-        position:relative;
-        overflow:hidden;
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
         border:1px solid #24506a; border-radius:var(--r-lg);
-        padding:22px 26px; margin-bottom:12px;
+        padding:14px 20px; margin-bottom:12px;
         box-shadow:0 10px 26px rgba(0,0,0,.25);
-        min-height:118px;
     }
-    .topbar-shell::before {
-        content:"";
-        position:absolute; right:-70px; top:50%; transform:translateY(-50%);
-        width:340px; height:340px; border-radius:50%; pointer-events:none;
-        background:
-            radial-gradient(circle at 32% 28%, rgba(84,112,255,.30), transparent 55%),
-            repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 17px, rgba(140,180,255,.05) 18px),
-            radial-gradient(circle at 50% 50%, #132743 0%, #0a1526 72%);
-        border:1px solid rgba(84,112,255,.22);
-        opacity:.9;
-    }
-    .topbar-shell::after {
-        content:"";
-        position:absolute; inset:0; pointer-events:none;
-        background-image:
-            linear-gradient(rgba(84,112,255,.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(84,112,255,.05) 1px, transparent 1px);
-        background-size:28px 28px;
-        -webkit-mask-image:linear-gradient(to left, black, transparent 65%);
-        mask-image:linear-gradient(to left, black, transparent 65%);
-    }
-    .hero-ping {position:absolute; width:6px; height:6px; border-radius:50%; background:#7fd8c4; box-shadow:0 0 0 3px rgba(127,216,196,.18); animation:heroPing 2.6s ease-in-out infinite;}
-    .hero-ping.p2 {background:#93a7ff; box-shadow:0 0 0 3px rgba(147,167,255,.18); animation-delay:.7s;}
-    .hero-ping.p3 {background:#f2a93c; box-shadow:0 0 0 3px rgba(242,169,60,.18); animation-delay:1.4s;}
-    @keyframes heroPing {0%,100%{opacity:.55; transform:scale(1);} 50%{opacity:1; transform:scale(1.6);}}
-    @media (prefers-reduced-motion: reduce) {.hero-ping {animation:none !important;}}
-    .topbar-brand {position:relative; z-index:1; display:flex; align-items:center; gap:12px;}
+    .topbar-brand {display:flex; align-items:center; gap:12px;}
     .topbar-logo {font-size:30px;}
     .topbar-kicker {font-size:10px; font-weight:800; letter-spacing:1.4px; color:var(--teal); text-transform:uppercase; margin-bottom:3px;}
     .topbar-title {font-size:23px; font-weight:900; letter-spacing:.2px; color:#f2f8ff; line-height:1.25;}
     .topbar-subtitle {font-size:11.5px; color:#93abc3; line-height:1.5; margin-top:4px;}
-    .topbar-status-wrap {position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-end; gap:7px;}
+    .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:7px;}
     .topbar-status-pill {
         display:flex; align-items:center; gap:8px; font-size:11.5px; color:#c9f5df; white-space:nowrap;
         background:rgba(47,206,135,.09); border:1px solid rgba(47,206,135,.28); border-radius:999px;
@@ -1788,13 +1736,13 @@ st.markdown(
        consistent "this is live" language rather than a static icon. */
     @keyframes sbPulse {0%,100%{opacity:1; box-shadow:0 0 6px rgba(47,206,135,.6);} 50%{opacity:.55; box-shadow:0 0 14px rgba(47,206,135,.9);}}
 
-    .sidebar-brand-v2 {padding:10px 6px 16px; border-bottom:1px solid #1c3a53; margin-bottom:10px;}
+    .sidebar-brand-v2 {padding:2px 6px 14px; border-bottom:1px solid #452760; margin-bottom:10px;}
     .brand-row {display:flex; align-items:center; gap:10px;}
     .brand-mark {
         width:34px; height:34px; flex:0 0 34px; border-radius:var(--r-md);
         display:flex; align-items:center; justify-content:center; font-size:17px;
-        background:linear-gradient(180deg,#12233a,#0d1c2c); border:1px solid #24445f;
-        box-shadow:0 0 0 1px rgba(91,157,249,.18), 0 6px 14px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+        background:linear-gradient(180deg,#12233a,#0d1c2c); border:1px solid #4a2a63;
+        box-shadow:0 0 0 1px rgba(178,91,240,.20), 0 6px 14px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
     }
     .brand-text .name {color:var(--teal); font-weight:900; font-size:16.5px; letter-spacing:1.2px; line-height:1.15;}
     .brand-text .role {color:#6f8aa5; font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-top:2px;}
@@ -1811,9 +1759,9 @@ st.markdown(
     }
     .sidebar-group-label .grp-index {
         color:var(--teal); font:900 9px/1 "Consolas","Cascadia Code",monospace; letter-spacing:0;
-        border:1px solid #1a3a5c; border-radius:6px; padding:1.5px 4px; background:#0a1826;
+        border:1px solid #4a2a63; border-radius:6px; padding:1.5px 4px; background:#0a1826;
     }
-    .sidebar-group-label:after {content:""; flex:1; height:1px; background:linear-gradient(90deg,#1c3a52,transparent);}
+    .sidebar-group-label:after {content:""; flex:1; height:1px; background:linear-gradient(90deg,#4a2a63,transparent);}
 
     [data-testid="stSidebar"] .stButton > button {
         position:relative !important;
@@ -1844,19 +1792,31 @@ st.markdown(
         transition:opacity .2s var(--ease), transform .2s var(--ease);
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background:rgba(91,157,249,.12) !important; border-color:#1e3a5c !important; color:#eaf6ff !important;
+        background:rgba(178,91,240,.14) !important; border-color:#4a2a63 !important; color:#eaf6ff !important;
         padding-left:18px !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover::before {opacity:.5; transform:scaleY(.7);}
     [data-testid="stSidebar"] .stButton > button:active {transform:scale(.985) !important; transition-duration:.08s !important;}
     [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-        background:linear-gradient(90deg,rgba(91,157,249,.20),rgba(91,157,249,.02)) !important;
-        border:1px solid #1e3a5c !important;
-        color:#eefaff !important; box-shadow:inset 0 0 0 1px rgba(91,157,249,.10) !important;
+        background:linear-gradient(90deg,rgba(178,91,240,.22),rgba(178,91,240,.02)) !important;
+        border:1px solid #4a2a63 !important;
+        color:#eefaff !important; box-shadow:inset 0 0 0 1px rgba(178,91,240,.12) !important;
         padding-left:18px !important;
     }
     [data-testid="stSidebar"] .stButton > button[kind="primary"]::before {
-        opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(91,157,249,.65);
+        opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(178,91,240,.7);
+    }
+    /* Uniform, tight vertical rhythm between sidebar nav rows. Streamlit's
+       own default gap between stacked element-containers is larger and can
+       read as uneven next to the primary (active) button's glow, which
+       visually "pushes" the row below it further away even though the
+       real spacing is identical. Pin the gap explicitly so every row -- 
+       active or not -- sits the same distance from its neighbours. */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.15rem !important;
+    }
+    [data-testid="stSidebar"] .stButton {
+        margin-bottom: 0 !important;
     }
     /* System-status widget: a small two-tile "health" card instead of a
        plain list of rows, with its own pulse dot and hover lift so it
@@ -1864,10 +1824,10 @@ st.markdown(
     .sidebar-status-card-v2 {
         margin-top:16px; padding:13px 13px 11px; border:1px solid #1b465a; position:relative; overflow:hidden;
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%); border-radius:var(--r-lg);
-        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(84,112,255,.02);
+        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(18,224,171,.02);
         transition:border-color .2s var(--ease), box-shadow .2s var(--ease);
     }
-    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(84,112,255,.04);}
+    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(18,224,171,.04);}
     .sidebar-status-card-v2:before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--green),transparent 80%);}
     .ssc-head {display:flex; align-items:center; gap:7px; margin-bottom:10px;}
     .ssc-pulse {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px rgba(47,206,135,.8); animation:sbPulse 2.2s ease-in-out infinite; flex:0 0 7px;}
@@ -1902,21 +1862,49 @@ st.markdown(
        runs ~2-3x taller than these, and stacking Threat + Investigation
        Summary + Top Threat Signal Breakdown on top of Synapse Copilot in
        a max-height sticky dock needs every one of those rows back, or the
-       dock scrolls internally before you ever reach the Copilot panel. */
+       dock scrolls internally before you ever reach the Copilot panel.
+
+       v2: given a left accent spine (same device as .acq-panel/.stage-card
+       elsewhere in the app) and a visible gap before/after so each
+       section (KEY METRICS, INVESTIGATION SUMMARY, TOP THREAT SIGNAL
+       BREAKDOWN) reads as its own distinct card instead of a flat strip
+       glued to the one above it. */
     .panel-card-head {
         display:flex; justify-content:space-between; align-items:center;
-        padding:9px 13px; border:1px solid #193a50; border-bottom:none;
-        background:#0a1d2b; border-radius:var(--r-lg) var(--r-lg) 0 0;
-        color:#5fdfff; font:800 10.5px/1.2 monospace; letter-spacing:1px;
+        padding:12px 16px; border:1px solid #193a50; border-left:3px solid var(--cyan);
+        border-bottom:none;
+        background:linear-gradient(180deg,#0e2233,#0a1d2b); border-radius:var(--r-lg) var(--r-lg) 0 0;
+        color:#5fdfff; font:800 11px/1.2 monospace; letter-spacing:1.2px;
+        margin-top:26px !important;
     }
-    .panel-card-body {border:1px solid #193a50; border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg); padding:12px; background:#081522;}
+    .panel-card-head:first-child { margin-top:0 !important; }
+    .panel-card-body {
+        border:1px solid #193a50; border-left:3px solid var(--cyan); border-top:none;
+        border-radius:0 0 var(--r-lg) var(--r-lg); padding:16px 16px 17px; background:#081522;
+        box-shadow:var(--shadow-sm);
+        line-height:2;
+    }
+    .panel-card-body b { color:#dbe6f2; font-weight:700; }
 
-    .threattype-row {display:flex; align-items:center; gap:10px; margin:9px 0; font-size:12px; color:#c9d8e7;}
+    /* The right dock (border=True container) previously relied on
+       Streamlit's own default inner padding, which reads tight next to
+       the generous spacing everywhere else in the app -- give it real
+       breathing room on every side, and soften the dock's square outer
+       edge into the same rounded-card language the rest of the UI uses. */
+    .st-key-right_summary_pane, .st-key-bulk_command_dock {
+        padding:22px 18px 26px !important;
+        border-radius:var(--r-lg) 0 0 var(--r-lg) !important;
+    }
+    @media (max-width: 900px) {
+        .st-key-right_summary_pane, .st-key-bulk_command_dock { border-radius:var(--r-lg) var(--r-lg) 0 0 !important; }
+    }
+    
+    .threattype-row {display:flex; align-items:center; gap:10px; margin:12px 0; font-size:12px; color:#c9d8e7;}
     .threattype-row .bar-track {flex:1; height:7px; border-radius:5px; background:#0d1f30; overflow:hidden;}
     .threattype-row .bar-fill {height:100%; border-radius:5px;}
     .threattype-row .pct {width:38px; text-align:right; color:#8fa5bd; font-size:11px;}
 
-    .copilot-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+    .copilot-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
     .copilot-title {font-weight:800; color:#eaf6ff; font-size:13px;}
     .copilot-active {font-size:9px; color:var(--green); font-weight:800; letter-spacing:1px; display:inline-flex; align-items:center;}
     .copilot-msg {background:#0a1826; border:1px solid #1c3a52; border-radius:var(--r-md); padding:10px 12px; font-size:12.5px; color:#c9d8e7; line-height:1.5; margin-bottom:9px;}
@@ -1938,8 +1926,15 @@ st.markdown(
         border:1px solid #223c58 !important; border-top:none !important;
         border-radius:0 0 var(--r-lg) var(--r-lg) !important;
         background:linear-gradient(180deg,#0d1c2c,#091623) !important;
-        padding:12px 14px 14px 14px !important;
+        padding:16px 16px 18px 16px !important;
     }
+    /* The quick-action row and the command input were sitting flush
+       against the message bubble above them with no gap at all -- give
+       each of the copilot's three stacked blocks (message, quick
+       actions, command input) real separation instead of reading as one
+       dense paragraph-and-buttons blob. */
+    .st-key-copilot_quick_actions { margin-top:14px !important; }
+    .st-key-copilot_command_row { margin-top:12px !important; }
     .st-key-copilot_quick_actions .stButton > button {
         font-size:10.5px !important; padding:6px 6px !important; min-height:34px !important;
         white-space:normal !important; line-height:1.2 !important;
@@ -1968,10 +1963,11 @@ st.markdown(
     .infra-scan-sub {margin-top:5px; color:var(--muted); font-size:13px; line-height:1.55;}
 
     /* Bulk Infrastructure Scan segmented control -- built on st.radio, the
-       same proven "pill" pattern the top nav uses (see .st-key-topnav),
-       rather than st.tabs(): full-width equal segments, a coloured status
-       dot per category (cyan = VPN/datacenter, violet = Tor), and a soft
-       glass-panel active state. */
+       same "pill" pattern the top nav uses (see .st-key-topnav): full-width
+       equal segments, plain text (no per-option colour dot -- those were
+       adding visual noise and were also colliding with a native radio
+       circle that CSS wasn't fully suppressing), flat single-accent active
+       state. Minimal and consistent with every other tab strip in the app. */
     .st-key-bulk_infra_scan [data-testid="stRadio"] > div {
         display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
         background:linear-gradient(180deg,#081726,#060f1a) !important;
@@ -1981,27 +1977,17 @@ st.markdown(
     }
     .st-key-bulk_infra_scan [data-testid="stRadio"] label {
         flex:1 1 0 !important; justify-content:center !important;
-        text-align:center !important;
+        display:flex !important; align-items:center !important;
+        text-align:center !important; white-space:nowrap !important;
+        min-height:24px !important;
         font-size:13px !important; font-weight:700 !important; letter-spacing:.2px !important;
         padding:12px 16px !important; border-radius:9px !important;
         border:1px solid transparent !important;
         transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
     }
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label p {font-size:13px !important; font-weight:700 !important;}
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label > div:first-of-type {display:none !important;}
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label::before {
-        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
-        margin-right:9px; vertical-align:middle; transition:box-shadow .2s var(--ease);
-        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    .st-key-bulk_infra_scan [data-testid="stRadio"] label p {
+        font-size:13px !important; font-weight:700 !important; white-space:nowrap !important;
     }
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:nth-of-type(1)::before {background:var(--cyan);}
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:nth-of-type(2)::before {background:var(--violet);}
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked)::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) {
-        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(140,123,240,.09)) !important;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
-    }
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p {color:#f4f9ff !important;}
     /* The Scan buttons themselves used to be identical generic teal
        primary buttons in both tabs -- functionally fine but visually
        interchangeable, giving no sense that one drives a VPN/datacenter
@@ -2011,21 +1997,21 @@ st.markdown(
        copy-paste twin of the other view's. */
     .st-key-run_vpn_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#123a5c,#0c283f) !important;
-        border:1px solid rgba(84,112,255,.55) !important;
+        border:1px solid rgba(18,224,171,.55) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(84,112,255,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(18,224,171,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_vpn_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(84,112,255,.35), 0 10px 26px rgba(84,112,255,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.35), 0 10px 26px rgba(18,224,171,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#291c47,#190f2b) !important;
-        border:1px solid rgba(140,123,240,.55) !important;
+        border:1px solid rgba(178,91,240,.55) !important;
         color:#f1ecff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(140,123,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(178,91,240,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(178,91,240,.35), 0 10px 26px rgba(178,91,240,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     /* Live-status chip shown above each Scan button (freshness + source
        count) -- filled in with real fetch results after each scan run. */
@@ -2041,11 +2027,10 @@ st.markdown(
     .infra-scan-livebar.stale .dot {background:var(--amber); box-shadow:0 0 6px 1px rgba(242,169,60,.7);}
 
     /* Technical Logs & Antivirus segmented control -- same st.radio "pill"
-       pattern as the top nav and the bulk infra scan above, replacing the
-       old st.tabs() (which rendered as plain unstyled default tabs no
-       matter how it was styled). A cyan dot for Email Results, a red dot
-       for Antivirus Scan (it's the threat-scanning view), larger
-       comfortable type, a soft glass active state. */
+       pattern as the top nav and the bulk infra scan above. Plain text
+       pills, no per-option colour dot (dropped along with bulk infra
+       scan's, for the same reason: minimal, one consistent look, and one
+       less thing colliding with the native radio circle). */
     .st-key-tech_logs_tabs [data-testid="stRadio"] > div {
         display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
         background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
@@ -2056,6 +2041,8 @@ st.markdown(
     .st-key-tech_logs_tabs [data-testid="stRadio"] label {
         text-align:center !important;
         text-transform:none !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        white-space:nowrap !important; min-height:20px !important;
         font-size:13.5px !important;
         font-weight:700 !important;
         letter-spacing:.2px !important;
@@ -2064,21 +2051,9 @@ st.markdown(
         border:1px solid transparent !important;
         transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
     }
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label p {font-size:13.5px !important; font-weight:700 !important;}
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label > div:first-of-type {display:none !important;}
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label::before {
-        content:""; display:inline-block; width:7px; height:7px; border-radius:50%;
-        margin-right:9px; vertical-align:middle;
-        box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    .st-key-tech_logs_tabs [data-testid="stRadio"] label p {
+        font-size:13.5px !important; font-weight:700 !important; white-space:nowrap !important;
     }
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:nth-of-type(1)::before {background:var(--cyan);}
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:nth-of-type(2)::before {background:var(--red);}
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked)::before {box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 0 8px 1px currentColor;}
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
-        background:linear-gradient(90deg, rgba(84,112,255,.16), rgba(84,112,255,.06)) !important;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.28) !important;
-    }
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) p {color:#f4f9ff !important;}
 
     /* Rich email-results grid -- replaces st.dataframe's canvas-rendered
        ProgressColumn/plain verdict text (which, like every st.dataframe
@@ -2091,8 +2066,107 @@ st.markdown(
     .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
     .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
     .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(84,112,255,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(18,224,171,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
     .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
+
+    /* ------------------------------------------------------------------
+       DASHBOARD SECTION HEADER -- replaces the bare st.caption("MIDDLE
+       PREVIEW PANE") label, which rendered as a small gray debug-style
+       line with no visual weight, out of step with every other titled
+       section in the app. Same family as .panel-card-head/.right-dock-title
+       (cyan monospace eyebrow) but sized for a top-level section rather
+       than a nested card, plus a bottom rule so it reads as a real
+       divider between the page header/controls above and the map +
+       correlation graph content below. */
+    .dash-section-title {
+        display:flex; align-items:center; gap:9px;
+        margin:18px 0 10px !important;
+        padding-bottom:9px;
+        border-bottom:1px solid var(--line);
+        color:#5fdfff; font:800 12px/1.3 monospace; letter-spacing:1.4px; text-transform:uppercase;
+    }
+    .dash-section-title .dash-section-dot {
+        width:7px; height:7px; border-radius:50%; background:var(--cyan);
+        box-shadow:0 0 10px rgba(18,224,171,.75); flex:0 0 7px;
+    }
+    .dash-section-title .dash-section-sub {
+        color:#6f8aa3; font-weight:600; letter-spacing:.3px; text-transform:none; font-size:11px;
+    }
+
+    /* Breathing room between the map-view radio toggle (All senders / By
+       email) and the GLOBE-SCAN card header sitting right underneath it --
+       previously flush against each other and read as one crowded block. */
+    .st-key-dash_map_mode [role="radiogroup"] { gap:8px !important; }
+
+    /* Right-hand THREAT SUMMARY dock header: vertically center the title
+       against the close (X) button instead of relying on default column
+       baseline alignment, and give the row a touch more breathing room so
+       the two don't read as jammed against the card's top edge. */
+    .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type {
+        align-items:center !important;
+        margin-bottom:12px !important;
+    }
+    .right-dock-title { padding:2px 0 !important; }
+
+    /* Synapse Copilot quick-action row (FULL REPORT / LAST WEEK / NOMIC
+       MATCH): force an even 3-up grid instead of letting buttons wrap
+       into a ragged 2+1 layout at narrower sidebar widths. */
+    .st-key-copilot_quick_actions [data-testid="stHorizontalBlock"] {
+        flex-wrap:nowrap !important; gap:6px !important;
+    }
+    .st-key-copilot_quick_actions [data-testid="column"] { min-width:0 !important; }
+
+    /* KEY METRICS 2x2 grid inside the right dock: tighten the gap between
+       metric cards so all four (Threat Score / ML Phishing / Auth Pass /
+       Anomalies) read as one compact cluster under their header instead
+       of floating with uneven whitespace. */
+    .st-key-right_summary_pane div[data-testid="stMetric"] { padding:11px 12px !important; }
+    .st-key-right_summary_pane [data-testid="stHorizontalBlock"] { gap:8px !important; }
+
+    /* Group the four KEY METRICS tiles (Threat Score / ML Phishing /
+       Auth Pass / Anomalies) inside the same bordered-card shell the
+       Investigation Summary and Top Threat Signal Breakdown sections
+       use, so all three sit as clearly separated cards of equal weight
+       instead of one loose grid floating free next to two boxed ones --
+       that inconsistency was a big part of the "congested" feel: some
+       content had a visible boundary, some didn't. Also gives the two
+       metric rows real breathing room between them instead of sitting
+       flush against each other. */
+    .st-key-right_dock_metrics_body, .st-key-dd_dock_metrics_body {
+        border:1px solid #193a50; border-left:3px solid var(--cyan); border-top:none;
+        border-radius:0 0 var(--r-lg) var(--r-lg); padding:16px 14px 4px !important; background:#081522;
+        box-shadow:var(--shadow-sm);
+    }
+    .st-key-right_dock_metrics_body [data-testid="stHorizontalBlock"],
+    .st-key-dd_dock_metrics_body [data-testid="stHorizontalBlock"] {
+        gap:12px !important; margin-bottom:12px !important;
+    }
+
+    /* Origin & Correlation card (map + graph, side by side): give the
+       generic bordered container real presence -- rounded corners, a
+       touch of depth, and a hover-quiet static look consistent with
+       .stage-card/.acq-panel -- instead of Streamlit's flat thin-gray
+       default border every other unstyled st.container(border=True)
+       still uses. */
+    .st-key-dash_map_graph_card {
+        border:1px solid var(--line-strong) !important;
+        border-radius:var(--r-lg) !important;
+        background:linear-gradient(180deg,var(--panel) 0%,var(--panel-3) 100%) !important;
+        box-shadow:var(--shadow-md) !important;
+        padding:24px !important;
+    }
+    /* The GLOBE-SCAN / NETWORK INFRASTRUCTURE card headers inside it get
+       the same left-accent treatment as the right-dock cards, so the two
+       halves of the dashboard read as one consistent card system. */
+    .st-key-dash_map_graph_card .panel-card-head { margin-top:0 !important; }
+    .st-key-dash_map_graph_card .panel-card-head span:last-child {
+        font:700 10px/1.2 'Inter',sans-serif; letter-spacing:.3px; color:#8fa5bd; text-transform:none;
+    }
+    /* The map-view radio toggle sits directly above the GLOBE-SCAN card
+       on the left side only -- give it real clearance so it doesn't read
+       as glued to the card header underneath it, matching the breathing
+       room the right dock now has between its own sections. */
+    .st-key-dash_map_mode { margin-bottom:16px !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -2254,46 +2328,8 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-_util_email = st.session_state.get("imap_user") or ""
-_util_initial = (_util_email[:1] or "?").upper()
-_util_label = _util_email if _util_email else "No mailbox connected"
-
-st.markdown(
-    f"""<div class="util-bar">
-      <div class="util-left">
-        <div class="util-icon-btn"><span class="util-icon-mask" style="mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M3 6h18M3 12h18M3 18h18%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');-webkit-mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M3 6h18M3 12h18M3 18h18%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');"></span></div>
-        <div class="util-search">
-          <span class="util-icon-mask" style="mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2210.5%22 cy=%2210.5%22 r=%226.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22/%3E%3Cpath d=%22M19.5 19.5l-4.6-4.6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');-webkit-mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2210.5%22 cy=%2210.5%22 r=%226.5%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22/%3E%3Cpath d=%22M19.5 19.5l-4.6-4.6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');"></span>
-          <span class="util-search-text">Search emails, domains, IPs&hellip;</span>
-        </div>
-      </div>
-      <div class="util-right">
-        <div class="util-icon-btn" title="Appearance"><span class="util-icon-mask" style="mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%224.2%22/%3E%3Cpath d=%22M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');-webkit-mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%224.2%22/%3E%3Cpath d=%22M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');"></span></div>
-        <div class="util-icon-btn" title="Notifications">
-          <span class="util-icon-mask" style="mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 3.5a5 5 0 0 0-5 5v3.2c0 .9-.35 1.75-1 2.4L4.8 15.3a1 1 0 0 0 .7 1.7h13a1 1 0 0 0 .7-1.7l-1.2-1.2a3.4 3.4 0 0 1-1-2.4V8.5a5 5 0 0 0-5-5z%22/%3E%3Cpath d=%22M9.7 19.5a2.4 2.4 0 0 0 4.6 0%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');-webkit-mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 3.5a5 5 0 0 0-5 5v3.2c0 .9-.35 1.75-1 2.4L4.8 15.3a1 1 0 0 0 .7 1.7h13a1 1 0 0 0 .7-1.7l-1.2-1.2a3.4 3.4 0 0 1-1-2.4V8.5a5 5 0 0 0-5-5z%22/%3E%3Cpath d=%22M9.7 19.5a2.4 2.4 0 0 0 4.6 0%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');"></span>
-          <span class="util-icon-dot"></span>
-        </div>
-        <div class="util-avatar">
-          <span class="util-avatar-circle">{_util_initial}</span>
-          <span class="util-avatar-label">{_util_label}</span>
-          <span class="util-icon-mask util-avatar-chev" style="mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M6 9l6 6 6-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E');-webkit-mask-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M6 9l6 6 6-6%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E');"></span>
-        </div>
-      </div>
-    </div>""",
-    unsafe_allow_html=True,
-)
-# The menu/search/theme/bell/avatar row above is a purely visual header
-# chip strip (matching a standard SaaS dashboard shell) -- none of its
-# controls are wired to real behaviour (search doesn't filter, the bell
-# has no real notification feed, theme is fixed dark) since none of that
-# exists elsewhere in the app yet. The avatar shows the actually-connected
-# mailbox from session_state so it's not a fake placeholder identity.
-
 st.markdown(
     f"""<div class="topbar-shell">
-      <span class="hero-ping p1" style="top:28%; right:19%;"></span>
-      <span class="hero-ping p2" style="top:55%; right:9%;"></span>
-      <span class="hero-ping p3" style="top:72%; right:24%;"></span>
       <div class="topbar-brand">
         <div class="topbar-logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.5-7 10-3.8-1.5-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4.5"/></svg></div>
         <div>
@@ -2363,6 +2399,28 @@ def _clean_ai_display(text):
             continue
         cleaned.append(line.rstrip())
     return "\n".join(cleaned).strip()
+
+
+def _annotate_email_labels(text, report_items):
+    """Replace bare 'Email #N' / 'Email #N, #M' references in a batch AI
+    report with the sender and subject for each position, so 'Email #3'
+    reads as something identifiable instead of a number the reader has to
+    cross-reference against a separate table."""
+    labels = {}
+    for it in report_items or []:
+        parsed = ((it.get("result") or {}).get("parsed") or {})
+        subject = str(parsed.get("subject") or "No Subject").strip()
+        if len(subject) > 40:
+            subject = subject[:37] + "..."
+        sender = str(parsed.get("from_addr") or parsed.get("from") or "Unknown sender").strip()
+        labels[it.get("position")] = f'{sender} — "{subject}"'
+
+    def _replace(match):
+        nums = [int(n) for n in re.findall(r"#(\d+)", match.group(0))]
+        parts = [f"#{n} ({labels[n]})" if n in labels else f"#{n}" for n in nums]
+        return "Email " + ", ".join(parts)
+
+    return re.sub(r"Email\s+#\d+(?:\s*,\s*#\d+)*", _replace, text)
 
 def _ai_markdown_to_html(text):
     src = str(text or "").replace("\r\n", "\n").replace("\r", "\n")
@@ -2752,7 +2810,7 @@ def _run_batch_pipeline(source_items, source_label):
     semantic_lines = []
     semantic_matches_by_position = {}
     semantic_matches_all = {}
-    if nomic_available():
+    if _nomic_ready():
         sem_progress = st.progress(0, text="Running semantic origin correlation...")
         # Pass 1 indexes EVERY email in the batch; pass 2 searches. Searching
         # inside the same loop meant email #1 was compared before emails
@@ -2804,6 +2862,7 @@ def _run_batch_pipeline(source_items, source_label):
     # the target panel in a plain, non-widget key instead; it's applied to
     # "active_panel" on the rerun, *before* the radio widget is created.
     st.session_state["_pending_active_panel"] = "Forensic Report"
+    st.session_state["_scroll_to_joint_report"] = True
     st.success(f"Analyzed {len(batch_items)} emails. Opening the Forensic Report...")
     st.rerun()
 
@@ -2938,7 +2997,7 @@ def _render_email_results_table(df, height=300):
                     score = float(v)
                 except (TypeError, ValueError):
                     score = 0.0
-                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#5470ff")
+                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#12e0ab")
                 pct = max(0.0, min(100.0, score))
                 tds.append(
                     '<td><div class="email-score-cell">'
@@ -2998,7 +3057,28 @@ def _copilot_handle_command(command, cases, raw, case_name, result, current_evid
         # variables every other panel reads; both are already resolved by
         # the time a copilot command can be typed.
         _is_csv_source = uploaded is not None and str(getattr(uploaded, "name", "") or "").lower().endswith(".csv") and data
-        if st.session_state.get("live_mailbox_config"):
+
+        # BUG FIX: this used to check "is a live mailbox config saved
+        # ANYWHERE in session_state" first, regardless of which acquisition
+        # mode is actually selected on the Dashboard right now. That meant
+        # connecting a Gmail mailbox once, then switching to Evidence File
+        # Upload and loading a CSV, silently kept reporting on the old live
+        # mailbox forever -- the leftover connection always won, so the two
+        # modes never actually worked independently the way the Dashboard's
+        # own mode picker implies they do. This now reads whichever mode is
+        # the CURRENT one (the same input_mode_radio state the Dashboard's
+        # acquisition-mode cards set), so each mode's data is only ever used
+        # while that mode is actually selected -- switching modes switches
+        # what the copilot reports on, instead of merging or getting stuck
+        # on whichever was connected first.
+        _copilot_mode = st.session_state.get("input_mode_radio", "Live IMAP Mailbox Interceptor")
+        _copilot_is_live_mode = "Live IMAP Mailbox Interceptor" in _copilot_mode
+        _copilot_is_upload_mode = "Evidence File Upload" in _copilot_mode
+
+        if _copilot_is_live_mode:
+            if not st.session_state.get("live_mailbox_config"):
+                return ("You're on **Live IMAP Mailbox Interceptor** mode, but no mailbox is connected "
+                        "yet. Connect one on the Dashboard, then ask me again.")
             with st.spinner(f"Fetching the {count} most recent messages..."):
                 _pipeline_items, _pipeline_err = _collect_recent_live_imap_items(count)
             if _pipeline_err:
@@ -3010,7 +3090,11 @@ def _copilot_handle_command(command, cases, raw, case_name, result, current_evid
             # have produced is superseded by actually landing on the report.
             _run_batch_pipeline(_pipeline_items, "Live IMAP")
             return ""
-        elif _is_csv_source:
+        elif _copilot_is_upload_mode:
+            if not _is_csv_source:
+                return ("You're on **Evidence File Upload** mode, but no CSV batch is loaded yet. "
+                        "Upload a `.csv` of emails on the Dashboard, then ask me again. (A single "
+                        "`.eml`/`.txt` file is already just one email, so there's nothing to batch.)")
             _pipeline_items = _collect_recent_csv_items(data, uploaded.name, count)
             if not _pipeline_items:
                 return "No messages were available to analyze."
@@ -3147,7 +3231,6 @@ if active_panel == "Dashboard":
                     <div class="mode-card-title">Live IMAP mailbox interceptor</div>
                     <div class="mode-card-sub">Read-only, connects directly to the mailbox</div>
                 </div>
-                <div class="mode-card-check"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -3162,7 +3245,6 @@ if active_panel == "Dashboard":
                     <div class="mode-card-title">Evidence file upload</div>
                     <div class="mode-card-sub">.eml, .txt, .csv batch import</div>
                 </div>
-                <div class="mode-card-check"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -3505,8 +3587,11 @@ if active_panel == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
 
-            load_clicked = st.button("Load & Scan Selected Message", type="primary", use_container_width=True, key="load_imap_message")
-            rescan_clicked = st.button("Rescan Selected Message", use_container_width=True, key="rescan_imap_message")
+            _load_col, _rescan_col = st.columns(2)
+            with _load_col:
+                load_clicked = st.button("Load & Scan", type="primary", use_container_width=True, key="load_imap_message")
+            with _rescan_col:
+                rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
 
             if load_clicked or rescan_clicked:
                 cfg = st.session_state.get("live_mailbox_config", {})
@@ -3646,10 +3731,13 @@ if active_panel == "Dashboard":
 
         if _tech_logs_view == "Antivirus Scan":
             av_up = _clamd_up_cached()
-            if av_up:
+            _av_backend = _antivirus_backend_cached()
+            if av_up and _av_backend == "cloud":
+                st.success("Antivirus scanning available via VirusTotal (cloud fallback) - local ClamAV daemon not reachable.")
+            elif av_up:
                 st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
             else:
-                st.warning("ClamAV daemon not reachable right now - showing the built-in risky-extension check instead.")
+                st.warning("Antivirus scanning unavailable right now (no local clamd, no SIH26106_VT_API_KEY set) - showing the built-in risky-extension check instead.")
             files_scanned, threats_found, av_rows = 0, 0, []
             for r in cases:
                 for att in (r.get("parsed", {}) or {}).get("attachments", []) or []:
@@ -3888,12 +3976,13 @@ if active_panel == "Dashboard":
                         dd_anomaly_count = len(dd_h.get("anomalies", []) or [])
 
                         st.markdown('<div class="panel-card-head"><span>THREAT</span></div>', unsafe_allow_html=True)
-                        kc1, kc2 = st.columns(2)
-                        kc1.metric("Threat Score", f"{float(dd_result.get('score', 0)):.1f}", str(dd_result.get('level', '?')).upper())
-                        kc2.metric("ML Phishing", f"{float(dd_m.get('prob', 0)):.1%}")
-                        kc3, kc4 = st.columns(2)
-                        kc3.metric("Auth Pass", f"{dd_auth_pass}/3")
-                        kc4.metric("Anomalies", dd_anomaly_count)
+                        with st.container(key="dd_dock_metrics_body"):
+                            kc1, kc2 = st.columns(2, gap="small")
+                            kc1.metric("Threat Score", f"{float(dd_result.get('score', 0)):.1f}", str(dd_result.get('level', '?')).upper())
+                            kc2.metric("ML Phishing", f"{float(dd_m.get('prob', 0)):.1%}")
+                            kc3, kc4 = st.columns(2, gap="small")
+                            kc3.metric("Auth Pass", f"{dd_auth_pass}/3")
+                            kc4.metric("Anomalies", dd_anomaly_count)
 
                         st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                         st.markdown(
@@ -3965,6 +4054,32 @@ else:
             def __init__(self, name):
                 self.name = name
         uploaded = _EvidenceRef(_cached_upload_name)
+
+    # BUG FIX: a batch pipeline run (_run_batch_pipeline -- e.g. Synapse
+    # Copilot's "track my last 10/20 emails") stages
+    # `_pending_active_panel = "Forensic Report"` and reruns straight there.
+    # If this is the very first evidence loaded all session -- nobody has
+    # opened Dashboard and loaded a single file/mailbox message yet --
+    # `_evidence_cache` above is still empty, `raw` stays None, and this
+    # branch fell straight through to "No evidence loaded yet" below even
+    # though a batch had just finished analyzing 10/20 real emails. It only
+    # ever "worked" after separately clicking Dashboard, because that click
+    # happened to populate `_evidence_cache` as a side effect of rendering
+    # its own UI, not because it did anything with the batch itself. Falling
+    # back to the batch's own first item here removes that dependency on an
+    # unrelated click, for every acquisition mode the pipeline can be
+    # launched from (Live IMAP or a CSV upload), not just the Live-IMAP-only
+    # case the Dashboard block above already handles for itself.
+    if (
+        (not isinstance(raw, (bytes, bytearray)) or not raw)
+        and st.session_state.get("forensic_report_source") == "pipeline"
+        and st.session_state.get("pipeline_batch_items")
+    ):
+        _pipeline_fallback_item = st.session_state["pipeline_batch_items"][0]
+        raw = bytes(_pipeline_fallback_item["_raw"])
+        _fallback_source = (st.session_state.get("pipeline_batch_result") or {}).get("source", "Batch")
+        case_name = f"{_fallback_source}: Batch item #{_pipeline_fallback_item.get('position', 1)}"
+
     if not isinstance(raw, (bytes, bytearray)) or not raw:
         # Settings and About don't depend on any evidence -- show them as
         # normal even before a mailbox is connected or a file is uploaded.
@@ -4133,13 +4248,14 @@ if active_panel == "Dashboard":
                     # three other sections to reach.
                     _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash)
 
-                    st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>KEY METRICS</span></div>', unsafe_allow_html=True)
-                    rc1, rc2 = st.columns(2)
-                    rc1.metric("Threat Score", f"{float(result.get('score',0)):.1f}", str(result.get('level','?')).upper())
-                    rc2.metric("ML Phishing", f"{float(sel_m.get('prob',0)):.1%}")
-                    rc3, rc4 = st.columns(2)
-                    rc3.metric("Auth Pass", f"{auth_pass}/3")
-                    rc4.metric("Anomalies", anomaly_count)
+                    st.markdown('<div class="panel-card-head"><span>KEY METRICS</span></div>', unsafe_allow_html=True)
+                    with st.container(key="right_dock_metrics_body"):
+                        rc1, rc2 = st.columns(2, gap="small")
+                        rc1.metric("Threat Score", f"{float(result.get('score',0)):.1f}", str(result.get('level','?')).upper())
+                        rc2.metric("ML Phishing", f"{float(sel_m.get('prob',0)):.1%}")
+                        rc3, rc4 = st.columns(2, gap="small")
+                        rc3.metric("Auth Pass", f"{auth_pass}/3")
+                        rc4.metric("Anomalies", anomaly_count)
 
                     st.markdown('<div class="panel-card-head" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                     st.markdown(
@@ -4175,12 +4291,19 @@ if active_panel == "Dashboard":
                     # second instance of the one in that dock.
 
         with col_center:
-            st.caption("MIDDLE PREVIEW PANE")
+            st.markdown(
+                """<div class="dash-section-title">
+                    <span class="dash-section-dot"></span>
+                    <span>Origin &amp; Correlation</span>
+                    <span class="dash-section-sub">— geolocation map and infrastructure graph for this case set</span>
+                </div>""",
+                unsafe_allow_html=True,
+            )
             # Map and correlation graph render side by side in one row
             # instead of stacked or behind a tab switch -- both are visible
             # at once, no extra click needed either way.
-            with st.container(border=True):
-                map_col, graph_col = st.columns(2, gap="medium")
+            with st.container(border=True, key="dash_map_graph_card"):
+                map_col, graph_col = st.columns(2, gap="large")
                 with map_col:
                     _dash_map_mode = st.radio(
                         "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True,
@@ -4220,17 +4343,91 @@ if active_panel == "Dashboard":
                     # reruns; the full, shuffleable, interactive version lives
                     # on the dedicated Correlation panel.
                     G = _build_correlation_graph(cases, max_cases=20, seed=42)
-                    st.plotly_chart(correlate.graph_figure(G, height=430), width="stretch")
+                    _corr_fig = correlate.graph_figure(G, height=430)
+                    # Truncating margins alone didn't fix this (confirmed
+                    # against a live screenshot) -- the real cause is much
+                    # simpler: several node/edge labels here are full
+                    # sentences ("Live IMAP: You shared some Google
+                    # Account data with Claude") or full email addresses,
+                    # and no amount of margin makes a fixed-width plot area
+                    # wide enough to fit a sentence next to a node without
+                    # running off the canvas edge. Truncate what's actually
+                    # drawn ON the chart (not hover text, which can stay
+                    # full length since it isn't space-constrained) to a
+                    # length that fits the preview's half-width column.
+                    _CORR_LABEL_MAX = 22
+
+                    def _corr_truncate(s):
+                        s = "" if s is None else str(s)
+                        return s if len(s) <= _CORR_LABEL_MAX else s[: _CORR_LABEL_MAX - 1].rstrip() + "…"
+
+                    def _corr_shrink_trace(tr):
+                        if "text" in (tr.mode or "") and tr.text is not None:
+                            if isinstance(tr.text, (list, tuple)):
+                                tr.text = [_corr_truncate(t) for t in tr.text]
+                            else:
+                                tr.text = _corr_truncate(tr.text)
+                            tr.update(cliponaxis=False, textfont=dict(size=10))
+
+                    _corr_fig.for_each_trace(_corr_shrink_trace)
+                    _corr_fig.for_each_annotation(lambda a: a.update(text=_corr_truncate(a.text)) if a.text else None)
+
+                    # The two "Case" star nodes (and their translucent
+                    # severity halos) were landing close enough together
+                    # that the halos overlapped and both "Live IMAP: You
+                    # shared…" labels crowded into the same patch of
+                    # canvas -- this preview graph fixes seed=42 for a
+                    # stable layout but doesn't otherwise space nodes for
+                    # a compact half-width column. Rather than reach into
+                    # correlate.py's layout internals, spread every
+                    # trace's coordinates outward from the plot's own
+                    # centroid -- preserves the graph's shape (who's
+                    # connected to whom still reads the same way) while
+                    # giving every node and its label more room from its
+                    # neighbours.
+                    def _corr_spread(fig, factor=1.55):
+                        _xs = [v for tr in fig.data for v in (tr.x or []) if v is not None]
+                        _ys = [v for tr in fig.data for v in (tr.y or []) if v is not None]
+                        if not _xs or not _ys:
+                            return
+                        _cx, _cy = sum(_xs) / len(_xs), sum(_ys) / len(_ys)
+                        for tr in fig.data:
+                            if tr.x is not None:
+                                tr.x = [(_cx + (v - _cx) * factor) if v is not None else v for v in tr.x]
+                            if tr.y is not None:
+                                tr.y = [(_cy + (v - _cy) * factor) if v is not None else v for v in tr.y]
+                        if fig.layout.annotations:
+                            for _ann in fig.layout.annotations:
+                                _upd = {}
+                                if _ann.x is not None:
+                                    _upd["x"] = _cx + (_ann.x - _cx) * factor
+                                if _ann.y is not None:
+                                    _upd["y"] = _cy + (_ann.y - _cy) * factor
+                                if _upd:
+                                    _ann.update(**_upd)
+
+                    _corr_spread(_corr_fig)
+                    _corr_fig.update_layout(margin=dict(l=34, r=34, t=10, b=10))
+                    st.plotly_chart(_corr_fig, width="stretch")
                     if G.graph.get("sampled"):
                         st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
                     else:
                         st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
 
-        # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
-        # In CSV mode this section already rendered earlier (between the Deep
-        # Dive selector and the message content box) — don't show it twice.
-        if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
-            _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
+            # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
+            # In CSV mode this section already rendered earlier (between the Deep
+            # Dive selector and the message content box) — don't show it twice.
+            #
+            # Deliberately still inside col_center (not full-width below both
+            # columns) -- the right-hand THREAT SUMMARY dock is sticky and
+            # runs taller than the map/graph card next to it, so anything
+            # rendered full-width below used to leave a large blank gap in
+            # the center column while the dock kept going. Keeping this here
+            # fills that space instead, and only the Analyst Feedback section
+            # (added after the panel() call below) stays full-width beneath
+            # both columns.
+            if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
+                _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
 
     if _csv_awaiting_scan:
         st.info("The threat summary, origin map, and correlation graph will appear here once you run a scan above.")
@@ -4431,6 +4628,7 @@ if active_panel == "AI Threat Analysis":
                 if b_res.get("ok"):
                     st.markdown(f"#### Full Campaign Summary ({saved_batch.get('count')} Emails Assessed)")
                     cleaned_summary = _clean_ai_display(b_res.get("analysis", ""))
+                    cleaned_summary = _annotate_email_labels(cleaned_summary, st.session_state.get("qwen_batch_items") or [])
                     st.markdown(
                         f"""<div class="ai-report-frame">
                             <div class="ai-report-bar">
@@ -4444,21 +4642,91 @@ if active_panel == "AI Threat Analysis":
 
                     st.markdown("#### Download Multi-Email Forensic Intelligence")
 
-                    batch_markdown_report = (
+                    # BUG FIX: this used to offer only one download -- the AI
+                    # campaign summary -- with a caption redirecting anyone
+                    # who wanted an actual AI + machine combined report to go
+                    # open a different email one at a time in the Forensic
+                    # Report module. That's not what "combined report" means
+                    # for a batch of 10 or 20 emails someone just scanned
+                    # together. Every batch item already carries its full
+                    # analyze_bytes() result and raw bytes (see batch_items
+                    # above), so the same build_report() the single-email
+                    # Forensic Report module uses can build a real per-email
+                    # machine section for every email in this batch here too
+                    # -- no separate module trip required.
+                    _batch_items_for_dl = st.session_state.get("qwen_batch_items") or []
+                    _batch_machine_sections = []
+                    for _bi in _batch_items_for_dl:
+                        _bi_result = _bi.get("result")
+                        _bi_header = f"### Email #{_bi.get('position')} (CSV Row {_bi.get('row')})"
+                        if not _bi_result or "error" in _bi_result:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n_Machine report unavailable for this email "
+                                f"({_bi_result.get('error') if _bi_result else 'no result'})._"
+                            )
+                            continue
+                        try:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n"
+                                + build_report(_bi_result, _bi.get("_raw"), analyst="SIH26106 automated triage")
+                            )
+                        except Exception as e:
+                            _batch_machine_sections.append(
+                                f"{_bi_header}\n\n_Machine report could not be generated ({e})._"
+                            )
+                    _batch_machine_body = "\n\n---\n\n".join(_batch_machine_sections) or \
+                        "_No per-email machine results available for this batch._"
+
+                    ai_only_batch_md = (
                         f"# SIH26106 - MULTI-EMAIL CAMPAIGN ASSESSMENT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
                         f"## AI Campaign Summary\n\n{cleaned_summary}"
                     )
-
-                    st.download_button(
-                        label="Download Campaign Summary (.md)",
-                        data=batch_markdown_report.encode("utf-8"),
-                        file_name=f"ai_campaign_summary_{saved_batch.get('count')}_emails.md",
-                        mime="text/markdown",
-                        use_container_width=True,
-                        key="dl_ai_campaign_md",
+                    machine_only_batch_md = (
+                        f"# SIH26106 - MULTI-EMAIL MACHINE FORENSIC REPORT\n\n"
+                        f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n---\n\n"
+                        f"{_batch_machine_body}"
                     )
-                    st.caption("For a per-email combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
+                    combined_batch_md = (
+                        f"# SIH26106 - MULTI-EMAIL COMBINED FORENSIC + AI REPORT\n\n"
+                        f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
+                        f"## AI Campaign Summary\n\n{cleaned_summary}\n\n---\n\n"
+                        f"## Per-Email Machine Forensic Reports\n\n{_batch_machine_body}"
+                    )
+
+                    _count_tag = saved_batch.get('count')
+                    bdl1, bdl2, bdl3 = st.columns(3)
+                    with bdl1:
+                        st.download_button(
+                            label="AI Summary Only (.md)",
+                            data=ai_only_batch_md.encode("utf-8"),
+                            file_name=f"ai_campaign_summary_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_ai_campaign_md",
+                        )
+                    with bdl2:
+                        st.download_button(
+                            label="Machine Results Only (.md)",
+                            data=machine_only_batch_md.encode("utf-8"),
+                            file_name=f"machine_report_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_machine_campaign_md",
+                        )
+                    with bdl3:
+                        st.download_button(
+                            label="Combined Report (.md)",
+                            data=combined_batch_md.encode("utf-8"),
+                            file_name=f"combined_forensic_report_{_count_tag}_emails.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                            key="dl_combined_campaign_md",
+                        )
+                    st.caption(
+                        f"Combined Report and Machine Results Only include a full forensic "
+                        f"breakdown for all {_count_tag} emails in this batch, not just the AI summary."
+                    )
                 else:
                     st.error(f"AI Batch Analysis Error: {b_res.get('error', 'Unknown Error')}")
         else:
@@ -5141,19 +5409,20 @@ if active_panel == "Origin & Route":
         st.markdown("---")
         st.subheader("Semantic Origin Correlation (Nomic Embeddings)")
         st.caption(
-            "Uses the local nomic-embed-text model, served by Ollama, to compare this "
-            "message's origin/routing profile against previously analyzed emails by "
-            "MEANING rather than exact match - so differently-hosted infrastructure "
-            "that behaves the same way can still surface as related, even with no "
-            "shared IP or domain."
+            "Compares this message's origin/routing profile against previously "
+            "analyzed emails by MEANING rather than exact match - so differently-hosted "
+            "infrastructure that behaves the same way can still surface as related, "
+            "even with no shared IP or domain. Uses the local nomic-embed-text model "
+            "via Ollama when available, falling back to Cohere's cloud embeddings "
+            "otherwise."
         )
 
-        if not nomic_available():
+        if not _nomic_ready():
             st.warning(
-                "Nomic embeddings unavailable right now: either Ollama isn't running, "
-                "or the `nomic-embed-text` model hasn't been pulled yet. Run "
-                "`ollama pull nomic-embed-text`, make sure Ollama is running, then "
-                "reopen this panel."
+                "Semantic embeddings unavailable right now: locally, either Ollama isn't "
+                "running or `nomic-embed-text` hasn't been pulled; run `ollama pull "
+                "nomic-embed-text` and make sure Ollama is running. For the cloud "
+                "fallback, set SIH26106_COHERE_API_KEY. Then reopen this panel."
             )
             return
 
@@ -5578,14 +5847,19 @@ if active_panel == "Antivirus":
     def _antivirus():
         st.subheader("Antivirus (ClamAV)")
         av_up = _clamd_up_cached()
-        if av_up:
+        _av_backend = _antivirus_backend_cached()
+        if av_up and _av_backend == "cloud":
+            st.success("Antivirus scanning available via VirusTotal (cloud fallback) - local ClamAV daemon not reachable.")
+            st.caption("Every attachment below was hashed and checked/scanned against VirusTotal's multi-engine service.")
+        elif av_up:
             st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
             st.caption("Every attachment below was streamed to your local clamd daemon in memory (zINSTREAM) - a real signature scan, not a heuristic.")
         else:
             st.warning(
-                "Could not reach the clamd daemon at the configured host/port - falling back to the "
-                "app's own risky-extension check. Confirm clamd is running, or set "
-                "SIH26106_CLAMD_HOST / SIH26106_CLAMD_PORT if it isn't on 127.0.0.1:3310."
+                "Could not reach the clamd daemon at the configured host/port, and no "
+                "SIH26106_VT_API_KEY is set for the cloud fallback - falling back to the "
+                "app's own risky-extension check. Confirm clamd is running (or set "
+                "SIH26106_CLAMD_HOST / SIH26106_CLAMD_PORT), or set SIH26106_VT_API_KEY."
             )
 
         cases = list(_corr_cases.values()) + [result]
@@ -5694,6 +5968,24 @@ if active_panel == "Forensic Report":
             st.stop()
 
         if pipeline_active:
+            st.markdown('<div id="joint-report-anchor"></div>', unsafe_allow_html=True)
+            if st.session_state.pop("_scroll_to_joint_report", False):
+                # Lands the user on the report itself instead of wherever the
+                # page happened to be scrolled to (e.g. this same panel's
+                # per-email dossier section further down) right after a
+                # fresh Full Report run. Streamlit components render in an
+                # iframe, so we reach the parent document to scroll it.
+                components.html(
+                    """
+                    <script>
+                    setTimeout(function() {
+                        var el = window.parent.document.getElementById('joint-report-anchor');
+                        if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+                    }, 250);
+                    </script>
+                    """,
+                    height=0,
+                )
             st.markdown("---")
             st.markdown(f"#### Joint Report — {pipeline_result.get('count', len(report_items))} Emails ({pipeline_result.get('source', '')})")
             st.caption("Machine analysis + AI threat analysis + semantic origin correlation, combined across the batch. Drill into any single email below, or grab everything at once.")
@@ -5702,6 +5994,7 @@ if active_panel == "Forensic Report":
             _joint_ai_text = ""
             if _ai_res.get("ok"):
                 _joint_ai_text = _clean_ai_display(_ai_res.get("analysis", ""))
+                _joint_ai_text = _annotate_email_labels(_joint_ai_text, report_items)
                 st.markdown(
                     f"""<div class="ai-report-frame">
                         <div class="ai-report-bar">
