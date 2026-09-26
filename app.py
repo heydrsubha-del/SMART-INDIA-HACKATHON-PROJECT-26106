@@ -1369,30 +1369,58 @@ st.markdown(
        clean two-column card row. Targeted by the container `key=` Streamlit
        emits as a `st-key-*` class, since these need to actually wrap the
        widgets inside them (a markdown div can't nest around a widget). */
+    /* One shared card shell for every provider box -- same neutral border,
+       background and padding across all of them, so the row reads as one
+       consistent set of options rather than four differently-colored,
+       differently-weighted boxes competing for attention. Each provider's
+       identity now comes from a single thin top accent stripe (below) and
+       its icon/label, not from tinting the whole card -- the same pattern
+       integration-picker rows use in most professional dashboards. */
     .st-key-auth_password_box, .st-key-auth_google_box,
     .st-key-auth_password_box_ms, .st-key-auth_microsoft_box,
     .st-key-auth_password_box_yh, .st-key-auth_yahoo_box {
         border-radius:var(--r-md) !important;
         background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
-        padding:14px 14px 16px !important;
+        border:1px solid #1c3247 !important;
+        border-top:3px solid #1c3247 !important;
+        padding:14px 15px 16px !important;
         box-shadow:var(--shadow-sm) !important;
         height:100% !important;
+        transition:border-color .15s var(--ease), transform .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
+    .st-key-auth_password_box:hover, .st-key-auth_google_box:hover,
+    .st-key-auth_password_box_ms:hover, .st-key-auth_microsoft_box:hover,
+    .st-key-auth_password_box_yh:hover, .st-key-auth_yahoo_box:hover {
+        transform:translateY(-2px) !important;
+        box-shadow:0 8px 20px rgba(0,0,0,.28) !important;
+    }
+    /* Header row inside each card: a small brand-colored dot + uppercase
+       label side by side, instead of a bare label floating on its own --
+       gives each card a consistent anchor point at the top before the
+       button/status content starts. */
     .auth-option-label {
-        font-size:10.5px !important; font-weight:800 !important; letter-spacing:1.4px !important;
-        text-transform:uppercase !important; margin-bottom:9px !important;
+        display:flex !important; align-items:center !important; gap:7px !important;
+        font-size:11px !important; font-weight:800 !important; letter-spacing:1.3px !important;
+        text-transform:uppercase !important; margin-bottom:12px !important;
+        padding-bottom:10px !important; border-bottom:1px solid rgba(255,255,255,.06) !important;
     }
-    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border:1px solid rgba(140,123,240,.35) !important;}
+    .auth-option-label::before {
+        content:"" !important; width:7px !important; height:7px !important; border-radius:50% !important;
+        flex:0 0 7px !important; box-shadow:0 0 8px currentColor !important;
+    }
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#8c7bf0 !important;}
     .auth-option-label-violet {color:#c9bdff !important;}
-    .st-key-auth_google_box {border:1px solid rgba(18,224,171,.35) !important;}
+    .st-key-auth_google_box:hover {border-color:rgba(18,224,171,.5) !important;}
+    .st-key-auth_google_box {border-top-color:#12e0ab !important;}
     .auth-option-label-cyan {color:#7fe9cf !important;}
-    /* Microsoft's brand blue and Yahoo's brand purple for their own
-       sign-in boxes/buttons, so each provider still reads as itself next
-       to Google's cyan and the app-password violet, instead of every
-       OAuth option looking identical apart from a label. */
-    .st-key-auth_microsoft_box {border:1px solid rgba(0,120,212,.4) !important;}
+    /* Microsoft's brand blue and Yahoo's brand purple carried on the top
+       accent stripe only, so each provider still reads as itself next to
+       Google's teal and the app-password violet. */
+    .st-key-auth_microsoft_box:hover {border-color:rgba(0,148,255,.5) !important;}
+    .st-key-auth_microsoft_box {border-top-color:#0094ff !important;}
     .auth-option-label-msblue {color:#7fc4ff !important;}
-    .st-key-auth_yahoo_box {border:1px solid rgba(112,0,182,.4) !important;}
+    .st-key-auth_yahoo_box:hover {border-color:rgba(178,91,240,.5) !important;}
+    .st-key-auth_yahoo_box {border-top-color:#b25bf0 !important;}
     .auth-option-label-yahoo {color:#d6a3ff !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
@@ -3938,7 +3966,7 @@ if active_panel == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
 
-            _b1, _b2, _b3, _b4 = st.columns(4)
+            _b1, _b2, _b3 = st.columns(3)
 
             with _b1:
                 with st.container(border=True, key="auth_google_box"):
@@ -4066,12 +4094,8 @@ if active_panel == "Dashboard":
                                 if _r.strip():
                                     os.environ["SIH26106_YAHOO_REDIRECT_URI"] = _r.strip().rstrip("/")
 
-            with _b4:
-                with st.container(border=True, key="auth_custom_box"):
-                    st.markdown('<div class="auth-option-label auth-option-label-violet">CUSTOM</div>', unsafe_allow_html=True)
-                    st.caption("Uses the email and password above, against the server set in \"Custom IMAP server\" above.")
-                    if _detected_key:
-                        st.caption(f"Auto-detected as {provider} right now -- override the server above if that's wrong.")
+            if _detected_key:
+                st.caption(f"Using another provider? The email/password fields above are auto-detected as {provider} -- override the server if that's wrong.")
 
             st.markdown("""
             <div class="stage-card stage-card-scope">
