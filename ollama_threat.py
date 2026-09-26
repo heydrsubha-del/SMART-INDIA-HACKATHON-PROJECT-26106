@@ -27,6 +27,11 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 # so num_predict/max_tokens needs enough headroom or the visible answer
 # comes back empty. _groq_payload() below gives it a floor for this.
 GROQ_MODEL = "openai/gpt-oss-20b"
+# Local Ollama's 16K context comfortably takes a full 10-20 email batch in
+# one request; Groq's cloud API enforces a much stricter request-body size
+# limit and 413s well before that. Chunk cloud batch requests to stay
+# under it -- see _analyze_batch_chunked().
+CLOUD_BATCH_CHUNK_SIZE = 3
 
 
 def _ollama_available(timeout=2):
@@ -664,26 +669,52 @@ or reformat the JSON. Write your answer now, starting with the
 
 
 def analyze_batch_with_ollama(batch_items, timeout=OLLAMA_TIMEOUT, progress_callback=None):
-    """Analyze a small recent-email batch in one local Qwen request."""
+    """Analyze a small recent-email batch in one local Qwen request, or
+    (on the cloud backend) several smaller chunked Groq requests stitched
+    back into one combined report.
+
+    Local Ollama's 16K context window comfortably takes all N emails in a
+    single request; Groq's cloud API enforces a much stricter request-body
+    size limit and 413s on a full 10-20 email batch. So on cloud we split
+    into chunks of CLOUD_BATCH_CHUNK_SIZE emails, run _batch_prompt/
+    _request per chunk (each chunk is itself a valid, self-contained
+    "N INDEPENDENT emails" batch prompt -- the numbering logic in
+    _batch_prompt already works on any subset), and concatenate their
+    PER-EMAIL SUMMARY entries into one final answer with a single heading.
+    """
     if not batch_items:
         return {"ok": False, "error": "No emails were supplied for Qwen analysis."}
     try:
         if progress_callback:
             progress_callback(5, "Preparing batch evidence...")
-        payload = _base_payload(_batch_prompt(batch_items))
-        # Each entry is now capped at 3 short lines (~25-30 tokens), so even
-        # an un-grouped 20-email batch fits well under 1,000 tokens. Keeping
-        # this modest also makes CPU generation noticeably faster than the
-        # old multi-section report.
-        payload["options"]["num_predict"] = min(1400, 350 + 45 * len(batch_items))
-        if progress_callback:
-            progress_callback(25, "Qwen is analyzing the selected emails...")
-        answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=progress_callback)
+
+        try:
+            backend, _ = resolve_backend(
+                local_available=_ollama_available(),
+                env_var=GROQ_API_KEY_VAR,
+                service_label="AI threat analysis",
+            )
+        except BackendError as exc:
+            return {"ok": False, "error": str(exc)}
+
+        if backend == "cloud" and len(batch_items) > CLOUD_BATCH_CHUNK_SIZE:
+            answer = _analyze_batch_chunked(batch_items, timeout=timeout, progress_callback=progress_callback)
+        else:
+            payload = _base_payload(_batch_prompt(batch_items))
+            # Each entry is now capped at 3 short lines (~25-30 tokens), so even
+            # an un-grouped 20-email batch fits well under 1,000 tokens. Keeping
+            # this modest also makes CPU generation noticeably faster than the
+            # old multi-section report.
+            payload["options"]["num_predict"] = min(1400, 350 + 45 * len(batch_items))
+            if progress_callback:
+                progress_callback(25, "Qwen is analyzing the selected emails...")
+            answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=progress_callback)
+
         if progress_callback:
             progress_callback(100, "Qwen batch analysis complete")
         return {
             "ok": True,
-            "model": OLLAMA_MODEL,
+            "model": OLLAMA_MODEL if backend == "local" else GROQ_MODEL,
             "analysis": answer,
             "count": len(batch_items),
         }
@@ -695,3 +726,42 @@ def analyze_batch_with_ollama(batch_items, timeout=OLLAMA_TIMEOUT, progress_call
         return {"ok": False, "error": f"Ollama HTTP error: {exc}"}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+
+
+def _split_per_email_summary(answer, required_heading="PER-EMAIL SUMMARY"):
+    """Return just the entry lines under the heading, dropping the
+    heading itself and anything before/after -- used when stitching
+    several chunk answers into one combined report."""
+    lower = answer.lower()
+    idx = lower.find(required_heading.lower())
+    if idx == -1:
+        return answer.strip()
+    body = answer[idx + len(required_heading):]
+    return body.lstrip(":").strip()
+
+
+def _analyze_batch_chunked(batch_items, timeout, progress_callback):
+    """Cloud-only path: run the batch in CLOUD_BATCH_CHUNK_SIZE-sized
+    chunks (each a normal, self-contained _batch_prompt/_request call)
+    and stitch the PER-EMAIL SUMMARY entries back into one answer."""
+    chunks = [
+        batch_items[i:i + CLOUD_BATCH_CHUNK_SIZE]
+        for i in range(0, len(batch_items), CLOUD_BATCH_CHUNK_SIZE)
+    ]
+    total = len(chunks)
+    sections = []
+    for i, chunk in enumerate(chunks):
+        chunk_start_pct = int(20 + 70 * i / total)
+        chunk_end_pct = int(20 + 70 * (i + 1) / total)
+
+        def _chunk_cb(pct, message, _start=chunk_start_pct, _end=chunk_end_pct, _i=i, _total=total):
+            if progress_callback:
+                scaled = _start + (pct / 100.0) * (_end - _start)
+                progress_callback(int(scaled), f"Qwen (part {_i + 1}/{_total}): {message}")
+
+        payload = _base_payload(_batch_prompt(chunk))
+        payload["options"]["num_predict"] = min(1400, 350 + 45 * len(chunk))
+        answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=_chunk_cb)
+        sections.append(_split_per_email_summary(answer))
+
+    return "PER-EMAIL SUMMARY:\n" + "\n\n".join(sections)
