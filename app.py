@@ -4026,66 +4026,76 @@ if active_panel == "Dashboard":
                 st.caption("Dataset-wide forensic scan. The selected email still receives the complete forensic workflow below.")
                 st.info(f" **{len(data):,}** email records loaded from **{uploaded.name}**")
 
-                if st.button(
-                    "Analyze 10 Most Recent Emails — Full Report",
-                    type="primary", use_container_width=True, key="csv_pipeline_btn",
-                ):
-                    _pipeline_items = _collect_recent_csv_items(data, uploaded.name, 10)
-                    _run_batch_pipeline(_pipeline_items, uploaded.name)
-                st.caption("Runs machine analysis, AI threat analysis and semantic origin correlation on the 10 newest rows, then opens the Forensic Report ready to download.")
+                # These two used to be stacked full-width bars, one above
+                # the other, for what are really two alternative actions
+                # (a quick 10-email report vs. a full dataset scan) --
+                # side by side instead, each with its own explanation
+                # directly underneath it, so the choice reads as "pick
+                # one of these two" instead of "do this, then also maybe
+                # do this other thing".
+                _bulk_a_col, _bulk_b_col = st.columns(2)
+                with _bulk_a_col:
+                    if st.button(
+                        "Analyze 10 Most Recent — Full Report",
+                        type="primary", use_container_width=True, key="csv_pipeline_btn",
+                    ):
+                        _pipeline_items = _collect_recent_csv_items(data, uploaded.name, 10)
+                        _run_batch_pipeline(_pipeline_items, uploaded.name)
+                    st.caption("Machine + AI analysis and semantic origin correlation on the 10 newest rows, then opens the Forensic Report ready to download.")
+                with _bulk_b_col:
+                    if st.button("Run Bulk Threat Scan", key="run_global_ip_scan", use_container_width=True, type="primary"):
+                        progress_bar = st.progress(0, text="Initializing forensic scan... 0%")
+                        bulk_results = []
+                        bulk_case_results = []
+                        update_every = max(1, min(25, max(1, len(data) // 25)))
 
-                if st.button("Run Bulk Threat Scan", key="run_global_ip_scan", use_container_width=True, type="primary"):
-                    progress_bar = st.progress(0, text="Initializing forensic scan... 0%")
-                    bulk_results = []
-                    bulk_case_results = []
-                    update_every = max(1, min(25, max(1, len(data) // 25)))
+                        for i, text in enumerate(data):
+                            row_raw = text.replace("\\n", "\n").encode("utf-8")
+                            res = analyze_bytes(row_raw, f"Row {i}")
+                            res["_evidence_hash"] = hashlib.sha256(row_raw).hexdigest()
+                            bulk_case_results.append(res)
 
-                    for i, text in enumerate(data):
-                        row_raw = text.replace("\\n", "\n").encode("utf-8")
-                        res = analyze_bytes(row_raw, f"Row {i}")
-                        res["_evidence_hash"] = hashlib.sha256(row_raw).hexdigest()
-                        bulk_case_results.append(res)
+                            origin = res.get("geo", {}).get("origin", {}) or {}
+                            ip = origin.get("ip") or "Unknown"
+                            country = origin.get("country") or "Unknown"
+                            score = float(res.get("score", 0) or 0)
+                            verdict = str(res.get("level", "unknown")).upper()
 
-                        origin = res.get("geo", {}).get("origin", {}) or {}
-                        ip = origin.get("ip") or "Unknown"
-                        country = origin.get("country") or "Unknown"
-                        score = float(res.get("score", 0) or 0)
-                        verdict = str(res.get("level", "unknown")).upper()
+                            bulk_results.append({
+                                "Row #": i,
+                                "Email": (res.get("parsed", {}) or {}).get("from_addr") or "Unknown",
+                                "Origin IP": ip,
+                                "Country": country,
+                                "Threat Score": round(score, 1),
+                                "Verdict": verdict,
+                                "Subject": res.get("parsed", {}).get("subject", "No Subject")[:45]
+                            })
 
-                        bulk_results.append({
-                            "Row #": i,
-                            "Email": (res.get("parsed", {}) or {}).get("from_addr") or "Unknown",
-                            "Origin IP": ip,
-                            "Country": country,
-                            "Threat Score": round(score, 1),
-                            "Verdict": verdict,
-                            "Subject": res.get("parsed", {}).get("subject", "No Subject")[:45]
-                        })
+                            if (i + 1) % update_every == 0 or i + 1 == len(data):
+                                pct = int(((i + 1) / len(data)) * 100)
+                                progress_bar.progress((i + 1) / len(data), text=f"Analyzing evidence... {pct}% ({i + 1:,}/{len(data):,})")
 
-                        if (i + 1) % update_every == 0 or i + 1 == len(data):
-                            pct = int(((i + 1) / len(data)) * 100)
-                            progress_bar.progress((i + 1) / len(data), text=f"Analyzing evidence... {pct}% ({i + 1:,}/{len(data):,})")
+                        # Full-width bar only exists while the scan is actually
+                        # running -- once it's done, drop it rather than leaving a
+                        # static 100% bar sitting on screen.
+                        progress_bar.empty()
 
-                    # Full-width bar only exists while the scan is actually
-                    # running -- once it's done, drop it rather than leaving a
-                    # static 100% bar sitting on screen.
-                    progress_bar.empty()
+                        st.session_state["bulk_scan_results"] = bulk_results
+                        st.session_state["bulk_scan_cases"] = bulk_case_results
+                        st.session_state["bulk_scan_cases_hash"] = csv_scan_key
+                        for _case in bulk_case_results:
+                            _eh = _case.get("_evidence_hash")
+                            if _eh:
+                                _corr_cases[_eh] = _case
+                        while len(_corr_cases) > 60:
+                            _corr_cases.pop(next(iter(_corr_cases)))
 
-                    st.session_state["bulk_scan_results"] = bulk_results
-                    st.session_state["bulk_scan_cases"] = bulk_case_results
-                    st.session_state["bulk_scan_cases_hash"] = csv_scan_key
-                    for _case in bulk_case_results:
-                        _eh = _case.get("_evidence_hash")
-                        if _eh:
-                            _corr_cases[_eh] = _case
-                    while len(_corr_cases) > 60:
-                        _corr_cases.pop(next(iter(_corr_cases)))
-
-                    # Rerun immediately so this intro collapses into the
-                    # compact status row on the very screen that shows the
-                    # results, instead of lingering above them for one extra
-                    # render.
-                    st.rerun()
+                        # Rerun immediately so this intro collapses into the
+                        # compact status row on the very screen that shows the
+                        # results, instead of lingering above them for one extra
+                        # render.
+                        st.rerun()
+                    st.caption("Scans every row for its own verdict and flags high-risk origins across the whole dataset.")
 
                 saved_bulk_results = st.session_state.get("bulk_scan_results")
 
