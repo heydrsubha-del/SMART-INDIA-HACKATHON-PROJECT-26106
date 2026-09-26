@@ -21,7 +21,7 @@ import time
 
 import requests
 
-from cloud_backend import BackendError, resolve_backend
+from cloud_backend import BackendError, is_usable, resolve_backend
 
 CLAMD_HOST = os.getenv("SIH26106_CLAMD_HOST", "127.0.0.1")
 CLAMD_PORT = int(os.getenv("SIH26106_CLAMD_PORT", "3310"))
@@ -46,7 +46,9 @@ def _connect(timeout=CLAMD_TIMEOUT):
 
 
 def clamd_available(timeout=2):
-    """True only when the clamd daemon answers PING with PONG."""
+    """True only when the clamd daemon answers PING with PONG.
+    Local-only probe -- for UI gates, use antivirus_usable() instead,
+    which also accounts for the cloud fallback."""
     try:
         sock = _connect(timeout=timeout)
         sock.sendall(b"PING\0")
@@ -55,6 +57,26 @@ def clamd_available(timeout=2):
         return b"PONG" in response
     except Exception:
         return False
+
+
+def antivirus_usable():
+    """True if scan_bytes() would actually be able to scan right now,
+    whether via local clamd or the VirusTotal cloud fallback. Use this
+    (not the local-only clamd_available()) for any UI gate that decides
+    whether to run a live scan or fall back to the risky-extension
+    heuristic -- otherwise a deployment with no local clamd can never
+    reach the cloud fallback at all."""
+    return is_usable(clamd_available(), VT_API_KEY_VAR)
+
+
+def antivirus_backend():
+    """Which backend scan_bytes() would use right now: 'local', 'cloud',
+    or None if neither is usable. For UI status messages only."""
+    try:
+        backend, _ = resolve_backend(clamd_available(), VT_API_KEY_VAR, "antivirus scanning")
+        return backend
+    except BackendError:
+        return None
 
 
 def clamd_version():
