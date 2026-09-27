@@ -1241,6 +1241,37 @@ st.markdown(
     .login-plain-heading {
         color:#eef5ff; font-size:15px; font-weight:750; margin:4px 0 2px 0;
     }
+    /* Professional centered sign-in card: wraps the whole email/password +
+       one-click-provider flow in a single bordered panel instead of loose
+       widgets sitting directly on the dark dashboard background -- same
+       idea as a typical consumer login screen (logo, title, fields,
+       primary button, divider, provider row), just themed to match the
+       rest of this app instead of any one brand. */
+    .st-key-imap_signin_card {
+        max-width:420px !important; margin:18px auto 6px auto !important;
+        background:linear-gradient(180deg,#0d1c2e,#09141f) !important;
+        border:1px solid #1e3853 !important; border-radius:20px !important;
+        box-shadow:0 18px 40px rgba(0,0,0,.45) !important;
+        padding:30px 28px 24px 28px !important;
+    }
+    .auth-card-header {text-align:center !important; margin-bottom:18px !important;}
+    .auth-card-logo {
+        width:44px; height:44px; margin:0 auto 12px auto;
+        border-radius:12px; background:#e60023;
+        color:#fff; font-weight:800; font-size:20px;
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 6px 16px rgba(230,0,35,.35);
+    }
+    .auth-card-title {color:#f2f7fc; font-size:19px; font-weight:750; margin-bottom:4px;}
+    .auth-card-subtitle {color:#8fa5bd; font-size:13px; font-weight:500;}
+    .auth-divider {
+        display:flex !important; align-items:center !important; gap:12px !important;
+        margin:22px 0 14px 0 !important; color:#7c93aa !important;
+        font-size:12px !important; font-weight:650 !important; text-transform:uppercase !important; letter-spacing:.4px !important;
+    }
+    .auth-divider::before, .auth-divider::after {
+        content:"" !important; flex:1 1 auto !important; height:1px !important; background:var(--line) !important;
+    }
     /* Primary "Log in" button for the manual email/password path -- a bold
        red pill, matching the classic red-and-white login-page look (think
        Pinterest's "Log in"), so it reads as the one obvious next action
@@ -3956,222 +3987,232 @@ if active_panel == "Dashboard":
             browse_count = st.session_state.get("imap_browse_count", 10)
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
         else:
-            st.markdown('<div class="login-plain-heading">Sign in</div>', unsafe_allow_html=True)
-            st.caption("Type your email (and password if you're not using one-click sign-in). Server settings are filled in automatically once we recognise the provider.")
+            with st.container(key="imap_signin_card"):
+                st.markdown(
+                    """<div class="auth-card-header">
+                        <div class="auth-card-logo">A</div>
+                        <div class="auth-card-title">Sign in to Algorithmistic</div>
+                        <div class="auth-card-subtitle">Connect a mailbox for read-only threat analysis</div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
 
-            # Autofill from an already-signed-in provider's cached token --
-            # runs BEFORE the Email address widget below is created (same
-            # ordering the original per-provider version relied on) so the
-            # field opens already filled in rather than needing an extra
-            # rerun. Checks all three providers now, since there's no
-            # provider dropdown left to gate this on.
-            if not st.session_state.get("imap_user"):
-                if GOOGLE_OAUTH_READY and oauth_available():
-                    _auto_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
-                    if _auto_tok and not st.session_state.get("_google_email_autofill_tried"):
-                        st.session_state["_google_email_autofill_tried"] = True
-                        _auto_email = _load_cached_google_email() or _fetch_google_email_from_token(_auto_tok)
-                        if _auto_email:
-                            st.session_state["imap_user"] = _auto_email
-                            _save_cached_google_email(_auto_email)
-                if not st.session_state.get("imap_user") and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
-                    _auto_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
-                    if _auto_tok and not st.session_state.get("_microsoft_email_autofill_tried"):
-                        st.session_state["_microsoft_email_autofill_tried"] = True
-                        _auto_email = _load_cached_provider_email("microsoft") or microsoft_oauth.fetch_email(_auto_tok)
-                        if _auto_email:
-                            st.session_state["imap_user"] = _auto_email
-                            _save_cached_provider_email("microsoft", _auto_email)
-                if not st.session_state.get("imap_user") and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
-                    _auto_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
-                    if _auto_tok and not st.session_state.get("_yahoo_email_autofill_tried"):
-                        st.session_state["_yahoo_email_autofill_tried"] = True
-                        _auto_email = _load_cached_provider_email("yahoo") or yahoo_oauth.fetch_email(_auto_tok)
-                        if _auto_email:
-                            st.session_state["imap_user"] = _auto_email
-                            _save_cached_provider_email("yahoo", _auto_email)
+                # Autofill from an already-signed-in provider's cached token --
+                # runs BEFORE the Email address widget below is created (same
+                # ordering the original per-provider version relied on) so the
+                # field opens already filled in rather than needing an extra
+                # rerun. Checks all three providers now, since there's no
+                # provider dropdown left to gate this on.
+                if not st.session_state.get("imap_user"):
+                    if GOOGLE_OAUTH_READY and oauth_available():
+                        _auto_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                        if _auto_tok and not st.session_state.get("_google_email_autofill_tried"):
+                            st.session_state["_google_email_autofill_tried"] = True
+                            _auto_email = _load_cached_google_email() or _fetch_google_email_from_token(_auto_tok)
+                            if _auto_email:
+                                st.session_state["imap_user"] = _auto_email
+                                _save_cached_google_email(_auto_email)
+                    if not st.session_state.get("imap_user") and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
+                        _auto_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                        if _auto_tok and not st.session_state.get("_microsoft_email_autofill_tried"):
+                            st.session_state["_microsoft_email_autofill_tried"] = True
+                            _auto_email = _load_cached_provider_email("microsoft") or microsoft_oauth.fetch_email(_auto_tok)
+                            if _auto_email:
+                                st.session_state["imap_user"] = _auto_email
+                                _save_cached_provider_email("microsoft", _auto_email)
+                    if not st.session_state.get("imap_user") and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
+                        _auto_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+                        if _auto_tok and not st.session_state.get("_yahoo_email_autofill_tried"):
+                            st.session_state["_yahoo_email_autofill_tried"] = True
+                            _auto_email = _load_cached_provider_email("yahoo") or yahoo_oauth.fetch_email(_auto_tok)
+                            if _auto_email:
+                                st.session_state["imap_user"] = _auto_email
+                                _save_cached_provider_email("yahoo", _auto_email)
 
-            imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
-            manual_password = st.text_input(
-                "Password / App password", type="password", key="imap_manual_password",
-                placeholder="Only if not using one-click sign-in",
-            )
-            with st.container(key="manual_login_btn"):
-                _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
-            if _manual_login_clicked:
-                if not imap_user or not manual_password:
-                    st.error("Enter both your email address and password/app password first.")
+                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+                manual_password = st.text_input(
+                    "Password / App password", type="password", key="imap_manual_password",
+                    placeholder="Only if not using one-click sign-in",
+                )
+                with st.container(key="manual_login_btn"):
+                    _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
+                if _manual_login_clicked:
+                    if not imap_user or not manual_password:
+                        st.error("Enter both your email address and password/app password first.")
+                    else:
+                        st.session_state["manual_login_submitted"] = True
+
+                # Detect provider from the typed email's domain -- same loose,
+                # case-insensitive matching PROVIDERS' keys already used
+                # elsewhere in this file, just driven by the domain instead of
+                # a dropdown pick.
+                def _find_provider_key(*needles):
+                    for _name in PROVIDERS.keys():
+                        _n = _name.lower()
+                        if any(_needle in _n for _needle in needles):
+                            return _name
+                    return None
+
+                _gmail_key = _find_provider_key("gmail")
+                _outlook_key = _find_provider_key("outlook", "microsoft", "office 365", "office365")
+                _yahoo_key = _find_provider_key("yahoo")
+
+                _domain = imap_user.split("@")[-1].lower() if "@" in imap_user else ""
+                if _domain and ("gmail" in _domain or "googlemail" in _domain):
+                    _detected_key = _gmail_key
+                elif _domain and any(_d in _domain for _d in ("outlook.", "hotmail.", "live.", "msn.", "office365.")):
+                    _detected_key = _outlook_key
+                elif _domain and "yahoo" in _domain:
+                    _detected_key = _yahoo_key
                 else:
-                    st.session_state["manual_login_submitted"] = True
+                    _detected_key = None
 
-            # Detect provider from the typed email's domain -- same loose,
-            # case-insensitive matching PROVIDERS' keys already used
-            # elsewhere in this file, just driven by the domain instead of
-            # a dropdown pick.
-            def _find_provider_key(*needles):
-                for _name in PROVIDERS.keys():
-                    _n = _name.lower()
-                    if any(_needle in _n for _needle in needles):
-                        return _name
-                return None
+                provider = _detected_key or next(iter(PROVIDERS.keys()))
+                provider_defaults = PROVIDERS[provider]
+                _is_gmail = _detected_key == _gmail_key and _gmail_key is not None
+                _is_outlook = _detected_key == _outlook_key and _outlook_key is not None
+                _is_yahoo = _detected_key == _yahoo_key and _yahoo_key is not None
 
-            _gmail_key = _find_provider_key("gmail")
-            _outlook_key = _find_provider_key("outlook", "microsoft", "office 365", "office365")
-            _yahoo_key = _find_provider_key("yahoo")
+                # One-click sign-in row: all three providers shown together,
+                # always, instead of nested one-at-a-time behind a provider
+                # dropdown. Each box is exactly the original per-provider OAuth
+                # logic (redirect-URL setup, cached-token/sign-out state, the
+                # real <a>-tag sign-in link that navigates in one click) --
+                # just always rendered side by side rather than gated behind
+                # `_is_gmail`/`_is_outlook`/`_is_yahoo`.
+                st.markdown(
+                    """<div class="auth-divider"><span>or continue with</span></div>""",
+                    unsafe_allow_html=True,
+                )
+                st.caption("Opens the provider's own sign-in page. Your password never passes through this app for these three.")
 
-            _domain = imap_user.split("@")[-1].lower() if "@" in imap_user else ""
-            if _domain and ("gmail" in _domain or "googlemail" in _domain):
-                _detected_key = _gmail_key
-            elif _domain and any(_d in _domain for _d in ("outlook.", "hotmail.", "live.", "msn.", "office365.")):
-                _detected_key = _outlook_key
-            elif _domain and "yahoo" in _domain:
-                _detected_key = _yahoo_key
-            else:
-                _detected_key = None
+                _b1, _b2, _b3 = st.columns(3)
 
-            provider = _detected_key or next(iter(PROVIDERS.keys()))
-            provider_defaults = PROVIDERS[provider]
-            _is_gmail = _detected_key == _gmail_key and _gmail_key is not None
-            _is_outlook = _detected_key == _outlook_key and _outlook_key is not None
-            _is_yahoo = _detected_key == _yahoo_key and _yahoo_key is not None
-
-            # One-click sign-in row: all three providers shown together,
-            # always, instead of nested one-at-a-time behind a provider
-            # dropdown. Each box is exactly the original per-provider OAuth
-            # logic (redirect-URL setup, cached-token/sign-out state, the
-            # real <a>-tag sign-in link that navigates in one click) --
-            # just always rendered side by side rather than gated behind
-            # `_is_gmail`/`_is_outlook`/`_is_yahoo`.
-            st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Or connect an account directly</div>', unsafe_allow_html=True)
-            st.caption("Opens the provider's own sign-in page. Your password never passes through this app for these three.")
-
-            _b1, _b2, _b3 = st.columns(3)
-
-            with _b1:
-                with st.container(border=True, key="auth_google_box"):
-                    st.markdown('<div class="auth-option-label auth-option-label-cyan">GMAIL</div>', unsafe_allow_html=True)
-                    if not GOOGLE_OAUTH_READY:
-                        st.caption("Not available: google_Oauth.py failed to import.")
-                    elif not oauth_available():
-                        st.caption(f"Needs setup: {client_secret_issue()}")
-                    else:
-                        _cached_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
-                        _pending_err = st.session_state.pop("_google_oauth_error", None)
-                        if _pending_err:
-                            st.caption(f"Sign-in didn't complete: {_pending_err}")
-                        if _cached_tok:
-                            st.success("Signed in.")
-                            if st.button("Sign out", key="google_signout_btn", use_container_width=True):
-                                clear_saved_token()
-                                st.session_state.pop("google_oauth_token", None)
-                                st.session_state.pop("imap_user", None)
-                                st.session_state.pop("_google_email_autofill_tried", None)
-                                st.session_state.pop("_google_email_cache", None)
-                                if not MULTIUSER:
-                                    try:
-                                        os.remove(_GOOGLE_EMAIL_CACHE_PATH)
-                                    except OSError:
-                                        pass
-                                st.rerun()
+                with _b1:
+                    with st.container(border=True, key="auth_google_box"):
+                        st.markdown('<div class="auth-option-label auth-option-label-cyan">GMAIL</div>', unsafe_allow_html=True)
+                        if not GOOGLE_OAUTH_READY:
+                            st.caption("Not available: google_Oauth.py failed to import.")
+                        elif not oauth_available():
+                            st.caption(f"Needs setup: {client_secret_issue()}")
                         else:
-                            try:
-                                auth_url, _state = get_authorization_url(email_hint=imap_user)
-                                st.markdown(
-                                    f'<a href="{html.escape(auth_url)}" target="_self" class="google-signin-btn">Sign in with Gmail</a>',
-                                    unsafe_allow_html=True,
-                                )
-                            except Exception as e:
-                                st.caption(f"Couldn't start sign-in: {e}")
-                        if not MULTIUSER:
-                            with st.expander("Redirect URL setup"):
-                                st.caption("Must match a redirect URI registered on the Google OAuth client.")
-                                _r = st.text_input("App URL", value=google_redirect_uri(), key="google_redirect_uri_input", label_visibility="collapsed")
-                                if _r.strip():
-                                    os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = _r.strip().rstrip("/")
+                            _cached_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                            _pending_err = st.session_state.pop("_google_oauth_error", None)
+                            if _pending_err:
+                                st.caption(f"Sign-in didn't complete: {_pending_err}")
+                            if _cached_tok:
+                                st.success("Signed in.")
+                                if st.button("Sign out", key="google_signout_btn", use_container_width=True):
+                                    clear_saved_token()
+                                    st.session_state.pop("google_oauth_token", None)
+                                    st.session_state.pop("imap_user", None)
+                                    st.session_state.pop("_google_email_autofill_tried", None)
+                                    st.session_state.pop("_google_email_cache", None)
+                                    if not MULTIUSER:
+                                        try:
+                                            os.remove(_GOOGLE_EMAIL_CACHE_PATH)
+                                        except OSError:
+                                            pass
+                                    st.rerun()
+                            else:
+                                try:
+                                    auth_url, _state = get_authorization_url(email_hint=imap_user)
+                                    st.markdown(
+                                        f'<a href="{html.escape(auth_url)}" target="_self" class="google-signin-btn">Sign in with Gmail</a>',
+                                        unsafe_allow_html=True,
+                                    )
+                                except Exception as e:
+                                    st.caption(f"Couldn't start sign-in: {e}")
+                            if not MULTIUSER:
+                                with st.expander("Redirect URL setup"):
+                                    st.caption("Must match a redirect URI registered on the Google OAuth client.")
+                                    _r = st.text_input("App URL", value=google_redirect_uri(), key="google_redirect_uri_input", label_visibility="collapsed")
+                                    if _r.strip():
+                                        os.environ["SIH26106_GOOGLE_REDIRECT_URI"] = _r.strip().rstrip("/")
 
-            with _b2:
-                with st.container(border=True, key="auth_microsoft_box"):
-                    st.markdown('<div class="auth-option-label auth-option-label-msblue">OUTLOOK</div>', unsafe_allow_html=True)
-                    if not MICROSOFT_OAUTH_READY:
-                        st.caption("Not available: microsoft_oauth.py failed to import.")
-                    elif not microsoft_oauth.oauth_available():
-                        st.caption(f"Needs setup: {microsoft_oauth.client_secret_issue()}")
-                    else:
-                        _cached_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
-                        _pending_err = st.session_state.pop("_microsoft_oauth_error", None)
-                        if _pending_err:
-                            st.caption(f"Sign-in didn't complete: {_pending_err}")
-                        if _cached_tok:
-                            st.success("Signed in.")
-                            if st.button("Sign out", key="microsoft_signout_btn", use_container_width=True):
-                                microsoft_oauth.clear_saved_token()
-                                st.session_state.pop("microsoft_oauth_token", None)
-                                st.session_state.pop("imap_user", None)
-                                st.session_state.pop("_microsoft_email_autofill_tried", None)
-                                st.session_state.pop("_microsoft_email_cache", None)
-                                if not MULTIUSER:
-                                    try:
-                                        os.remove(_PROVIDER_EMAIL_CACHE_PATHS["microsoft"])
-                                    except OSError:
-                                        pass
-                                st.rerun()
+                with _b2:
+                    with st.container(border=True, key="auth_microsoft_box"):
+                        st.markdown('<div class="auth-option-label auth-option-label-msblue">OUTLOOK</div>', unsafe_allow_html=True)
+                        if not MICROSOFT_OAUTH_READY:
+                            st.caption("Not available: microsoft_oauth.py failed to import.")
+                        elif not microsoft_oauth.oauth_available():
+                            st.caption(f"Needs setup: {microsoft_oauth.client_secret_issue()}")
                         else:
-                            try:
-                                auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
-                                st.markdown(
-                                    f'<a href="{html.escape(auth_url)}" target="_self" class="microsoft-signin-btn">Sign in with Outlook</a>',
-                                    unsafe_allow_html=True,
-                                )
-                            except Exception as e:
-                                st.caption(f"Couldn't start sign-in: {e}")
-                        if not MULTIUSER:
-                            with st.expander("Redirect URL setup"):
-                                st.caption("Must match a redirect URI registered on the Azure app registration.")
-                                _r = st.text_input("App URL", value=microsoft_oauth.redirect_uri(), key="microsoft_redirect_uri_input", label_visibility="collapsed")
-                                if _r.strip():
-                                    os.environ["SIH26106_MS_REDIRECT_URI"] = _r.strip().rstrip("/")
+                            _cached_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                            _pending_err = st.session_state.pop("_microsoft_oauth_error", None)
+                            if _pending_err:
+                                st.caption(f"Sign-in didn't complete: {_pending_err}")
+                            if _cached_tok:
+                                st.success("Signed in.")
+                                if st.button("Sign out", key="microsoft_signout_btn", use_container_width=True):
+                                    microsoft_oauth.clear_saved_token()
+                                    st.session_state.pop("microsoft_oauth_token", None)
+                                    st.session_state.pop("imap_user", None)
+                                    st.session_state.pop("_microsoft_email_autofill_tried", None)
+                                    st.session_state.pop("_microsoft_email_cache", None)
+                                    if not MULTIUSER:
+                                        try:
+                                            os.remove(_PROVIDER_EMAIL_CACHE_PATHS["microsoft"])
+                                        except OSError:
+                                            pass
+                                    st.rerun()
+                            else:
+                                try:
+                                    auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
+                                    st.markdown(
+                                        f'<a href="{html.escape(auth_url)}" target="_self" class="microsoft-signin-btn">Sign in with Outlook</a>',
+                                        unsafe_allow_html=True,
+                                    )
+                                except Exception as e:
+                                    st.caption(f"Couldn't start sign-in: {e}")
+                            if not MULTIUSER:
+                                with st.expander("Redirect URL setup"):
+                                    st.caption("Must match a redirect URI registered on the Azure app registration.")
+                                    _r = st.text_input("App URL", value=microsoft_oauth.redirect_uri(), key="microsoft_redirect_uri_input", label_visibility="collapsed")
+                                    if _r.strip():
+                                        os.environ["SIH26106_MS_REDIRECT_URI"] = _r.strip().rstrip("/")
 
-            with _b3:
-                with st.container(border=True, key="auth_yahoo_box"):
-                    st.markdown('<div class="auth-option-label auth-option-label-yahoo">YAHOO</div>', unsafe_allow_html=True)
-                    if not YAHOO_OAUTH_READY:
-                        st.caption("Not available: yahoo_oauth.py failed to import.")
-                    elif not yahoo_oauth.oauth_available():
-                        st.caption(f"Needs setup: {yahoo_oauth.client_secret_issue()}")
-                    else:
-                        _cached_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
-                        _pending_err = st.session_state.pop("_yahoo_oauth_error", None)
-                        if _pending_err:
-                            st.caption(f"Sign-in didn't complete: {_pending_err}")
-                        if _cached_tok:
-                            st.success("Signed in.")
-                            if st.button("Sign out", key="yahoo_signout_btn", use_container_width=True):
-                                yahoo_oauth.clear_saved_token()
-                                st.session_state.pop("yahoo_oauth_token", None)
-                                st.session_state.pop("_yahoo_email_autofill_tried", None)
-                                st.session_state.pop("imap_user", None)
-                                st.session_state.pop("_yahoo_email_cache", None)
-                                if not MULTIUSER:
-                                    try:
-                                        os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yahoo"])
-                                    except OSError:
-                                        pass
-                                st.rerun()
+                with _b3:
+                    with st.container(border=True, key="auth_yahoo_box"):
+                        st.markdown('<div class="auth-option-label auth-option-label-yahoo">YAHOO</div>', unsafe_allow_html=True)
+                        if not YAHOO_OAUTH_READY:
+                            st.caption("Not available: yahoo_oauth.py failed to import.")
+                        elif not yahoo_oauth.oauth_available():
+                            st.caption(f"Needs setup: {yahoo_oauth.client_secret_issue()}")
                         else:
-                            try:
-                                auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
-                                st.markdown(
-                                    f'<a href="{html.escape(auth_url)}" target="_self" class="yahoo-signin-btn">Sign in with Yahoo</a>',
-                                    unsafe_allow_html=True,
-                                )
-                            except Exception as e:
-                                st.caption(f"Couldn't start sign-in: {e}")
-                        if not MULTIUSER:
-                            with st.expander("Redirect URL setup"):
-                                st.caption("Must match a redirect URI registered on the Yahoo app.")
-                                _r = st.text_input("App URL", value=yahoo_oauth.redirect_uri(), key="yahoo_redirect_uri_input", label_visibility="collapsed")
-                                if _r.strip():
-                                    os.environ["SIH26106_YAHOO_REDIRECT_URI"] = _r.strip().rstrip("/")
+                            _cached_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+                            _pending_err = st.session_state.pop("_yahoo_oauth_error", None)
+                            if _pending_err:
+                                st.caption(f"Sign-in didn't complete: {_pending_err}")
+                            if _cached_tok:
+                                st.success("Signed in.")
+                                if st.button("Sign out", key="yahoo_signout_btn", use_container_width=True):
+                                    yahoo_oauth.clear_saved_token()
+                                    st.session_state.pop("yahoo_oauth_token", None)
+                                    st.session_state.pop("_yahoo_email_autofill_tried", None)
+                                    st.session_state.pop("imap_user", None)
+                                    st.session_state.pop("_yahoo_email_cache", None)
+                                    if not MULTIUSER:
+                                        try:
+                                            os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yahoo"])
+                                        except OSError:
+                                            pass
+                                    st.rerun()
+                            else:
+                                try:
+                                    auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
+                                    st.markdown(
+                                        f'<a href="{html.escape(auth_url)}" target="_self" class="yahoo-signin-btn">Sign in with Yahoo</a>',
+                                        unsafe_allow_html=True,
+                                    )
+                                except Exception as e:
+                                    st.caption(f"Couldn't start sign-in: {e}")
+                            if not MULTIUSER:
+                                with st.expander("Redirect URL setup"):
+                                    st.caption("Must match a redirect URI registered on the Yahoo app.")
+                                    _r = st.text_input("App URL", value=yahoo_oauth.redirect_uri(), key="yahoo_redirect_uri_input", label_visibility="collapsed")
+                                    if _r.strip():
+                                        os.environ["SIH26106_YAHOO_REDIRECT_URI"] = _r.strip().rstrip("/")
 
             if _detected_key:
                 st.caption(f"Using another provider? The email/password fields above are auto-detected as {provider} -- override the server if that's wrong.")
