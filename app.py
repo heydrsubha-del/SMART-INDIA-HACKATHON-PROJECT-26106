@@ -833,7 +833,7 @@ st.markdown(
     .stApp [role="combobox"]:focus,
     .stApp [role="combobox"][aria-expanded="true"] > div {
         border-color: var(--cyan) !important;
-        box-shadow: 0 0 0 3px rgba(18,224,171,.14) !important;
+        box-shadow: 0 0 0 3px rgba(107,157,194,.14) !important;
         outline: none !important;
     }
     .stApp input:invalid, .stApp select:invalid, .stApp textarea:invalid,
@@ -913,12 +913,12 @@ st.markdown(
         position:fixed !important; top:14px !important; left:14px !important; z-index:999999 !important;
         background:#0c1929 !important; border:1px solid var(--cyan) !important; border-radius:8px !important;
         padding:9px 14px 9px 11px !important;
-        box-shadow:0 0 0 1px rgba(18,224,171,.25), 0 8px 22px rgba(0,0,0,.4) !important;
+        box-shadow:0 0 0 1px rgba(107,157,194,.25), 0 8px 22px rgba(0,0,0,.4) !important;
         transition:transform .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
     [data-testid="collapsedControl"]:hover {
         transform:scale(1.04) !important;
-        box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 10px 26px rgba(0,0,0,.45) !important;
+        box-shadow:0 0 0 1px rgba(107,157,194,.4), 0 10px 26px rgba(0,0,0,.45) !important;
     }
     /* The native arrow only ever means "open the nav" -- spell that out so
        it isn't mistaken for decoration and missed on a dark, busy header. */
@@ -937,9 +937,9 @@ st.markdown(
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {
         background:
-            radial-gradient(circle at 12% -8%, rgba(18,224,171,.05), transparent 28%),
+            radial-gradient(circle at 12% -8%, rgba(107,157,194,.05), transparent 28%),
             radial-gradient(circle at 92% 0%, rgba(19,139,181,.045), transparent 26%),
-            radial-gradient(circle at 55% 105%, rgba(18,224,171,.025), transparent 32%),
+            radial-gradient(circle at 55% 105%, rgba(107,157,194,.025), transparent 32%),
             var(--bg) !important;
         color: var(--text) !important;
     }
@@ -1038,7 +1038,7 @@ st.markdown(
         display:inline-flex !important; align-items:center !important;
         color:var(--cyan) !important; font-size:10px !important; font-weight:800 !important;
         letter-spacing:1.5px !important; text-transform:uppercase !important;
-        background:rgba(18,224,171,.08) !important; border:1px solid rgba(18,224,171,.22) !important;
+        background:rgba(107,157,194,.08) !important; border:1px solid rgba(107,157,194,.22) !important;
         border-radius:20px !important; padding:3px 10px !important;
     }
     .stage-card-success .stage-label {color:var(--green) !important; background:rgba(47,206,135,.10) !important; border-color:rgba(47,206,135,.28) !important;}
@@ -1052,10 +1052,10 @@ st.markdown(
        (connect), violet (authenticate), amber (scope) -- carried through
        the spine, the corner glow and the step pill, so the steps are
        visually distinct while still reading as one family of card. */
-    .stage-card {background:linear-gradient(135deg, rgba(18,224,171,.05), var(--panel) 55%) !important;}
-    .stage-card-auth {border-left-color:#8c7bf0 !important; background:linear-gradient(135deg, rgba(140,123,240,.06), var(--panel) 55%) !important;}
-    .stage-card-auth:hover {border-color:rgba(140,123,240,.55) !important;}
-    .stage-card-auth .stage-label {color:#c9bdff !important; background:rgba(140,123,240,.12) !important; border-color:rgba(140,123,240,.32) !important;}
+    .stage-card {background:linear-gradient(135deg, rgba(107,157,194,.05), var(--panel) 55%) !important;}
+    .stage-card-auth {border-left-color:#8b7fb8 !important; background:linear-gradient(135deg, rgba(139,127,184,.06), var(--panel) 55%) !important;}
+    .stage-card-auth:hover {border-color:rgba(139,127,184,.55) !important;}
+    .stage-card-auth .stage-label {color:#c9bdff !important; background:rgba(139,127,184,.12) !important; border-color:rgba(139,127,184,.32) !important;}
     .stage-card-scope {border-left-color:#f4b23d !important; background:linear-gradient(135deg, rgba(244,178,61,.06), var(--panel) 55%) !important;}
     .stage-card-scope:hover {border-color:rgba(244,178,61,.55) !important;}
     .stage-card-scope .stage-label {color:#ffd98a !important; background:rgba(244,178,61,.12) !important; border-color:rgba(244,178,61,.32) !important;}
@@ -1093,13 +1093,13 @@ st.markdown(
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         color:var(--act-1-text) !important;
         border:1px solid var(--act-1-border) !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(84,112,255,.25), inset 0 1px 0 rgba(255,255,255,.22) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(139,127,184,.25), inset 0 1px 0 rgba(255,255,255,.22) !important;
     }
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"]:hover {
         background:linear-gradient(135deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
         border-color:var(--act-1-border-hover) !important;
         color:var(--act-1-text) !important;
-        box-shadow:0 0 0 1px rgba(140,123,240,.30), 0 10px 26px rgba(140,123,240,.4), inset 0 1px 0 rgba(255,255,255,.28) !important;
+        box-shadow:0 0 0 1px rgba(139,127,184,.30), 0 10px 26px rgba(139,127,184,.4), inset 0 1px 0 rgba(255,255,255,.28) !important;
     }
     /* Disabled keys: dimmed and inert, so they never look clickable. */
     :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:disabled {opacity:.4 !important; filter:saturate(.55) !important; pointer-events:none !important; box-shadow:none !important;}
@@ -1117,27 +1117,27 @@ st.markdown(
        inside it change per email, so this survives switching emails. */
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button {
         background:linear-gradient(180deg,#241a3d,#160f28) !important;
-        border:1px solid rgba(140,123,240,.55) !important;
+        border:1px solid rgba(139,127,184,.55) !important;
         color:#f1ecff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(140,123,240,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,127,184,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button:hover {
-        box-shadow:0 0 0 1px rgba(140,123,240,.35), 0 10px 26px rgba(140,123,240,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
+        box-shadow:0 0 0 1px rgba(139,127,184,.35), 0 10px 26px rgba(139,127,184,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button {
         background:linear-gradient(180deg,#0f3350,#0a2032) !important;
-        border:1px solid rgba(84,112,255,.5) !important;
+        border:1px solid rgba(139,127,184,.5) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(84,112,255,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,127,184,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button:hover {
-        box-shadow:0 0 0 1px rgba(84,112,255,.32), 0 10px 26px rgba(84,112,255,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+        box-shadow:0 0 0 1px rgba(139,127,184,.32), 0 10px 26px rgba(139,127,184,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         color:var(--act-1-text) !important;
         border:1px solid var(--act-1-border) !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(84,112,255,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,127,184,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
         font-weight:800 !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button:hover {
@@ -1216,12 +1216,12 @@ st.markdown(
     }
     .st-key-imap_reload_folder_btn .stButton > button {
         background:transparent !important;
-        border:1px solid rgba(18,224,171,.4) !important;
+        border:1px solid rgba(107,157,194,.4) !important;
         color:#8fe9cf !important;
     }
     .st-key-imap_reload_folder_btn .stButton > button:hover {
-        background:rgba(18,224,171,.1) !important;
-        border-color:rgba(18,224,171,.75) !important;
+        background:rgba(107,157,194,.1) !important;
+        border-color:rgba(107,157,194,.75) !important;
         color:#d4fbef !important;
     }
 
@@ -1305,7 +1305,7 @@ st.markdown(
     .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d8a6f !important;}
     .stTextInput input:focus, .stNumberInput input:focus, textarea:focus {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(107,157,194,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     /* Number input stepper (+/-) buttons -- previously unstyled and left on
        Streamlit's stock grey/red-focus default, which read as a jarring,
@@ -1358,7 +1358,7 @@ st.markdown(
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(18,224,171,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(107,157,194,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     .stSelectbox svg, .stMultiSelect svg {color:var(--cyan) !important;}
     div[data-baseweb="popover"] ul[role="listbox"] {
@@ -1370,7 +1370,7 @@ st.markdown(
     }
     div[data-baseweb="popover"] li[role="option"] {color:#dfeaf4 !important; border-radius:7px !important;}
     div[data-baseweb="popover"] li[role="option"]:hover,
-    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(18,224,171,.14) !important; color:#ffffff !important;}
+    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(107,157,194,.14) !important; color:#ffffff !important;}
     /* Widget labels ("Mail provider", "IMAP server", "Port"...) previously
        rode on Streamlit's plain default text -- a touch brighter, a firm
        weight and tighter line-height reads as deliberate field labelling
@@ -1414,8 +1414,8 @@ st.markdown(
     .signin-card-icon {
         flex:0 0 44px !important; width:44px !important; height:44px !important; border-radius:12px !important;
         display:flex !important; align-items:center !important; justify-content:center !important;
-        background:linear-gradient(145deg, rgba(18,224,171,.24), rgba(18,224,171,.06)) !important;
-        border:1px solid rgba(18,224,171,.38) !important; font-size:19px !important;
+        background:linear-gradient(145deg, rgba(107,157,194,.24), rgba(107,157,194,.06)) !important;
+        border:1px solid rgba(107,157,194,.38) !important; font-size:19px !important;
         box-shadow:inset 0 0 0 1px rgba(255,255,255,.04) !important;
     }
     .signin-card-title {color:#f2f8ff !important; font-size:18px !important; font-weight:800 !important; line-height:1.3 !important;}
@@ -1434,16 +1434,16 @@ st.markdown(
        rounded-rectangle shape rather than a full pill. */
     .st-key-manual_login_btn {margin:14px 0 6px 0 !important;}
     .st-key-manual_login_btn button {
-        background:#12e0ab !important; border:1px solid #12e0ab !important;
-        color:#04231b !important; font-weight:800 !important; font-size:15px !important;
+        background:#6b9dc2 !important; border:1px solid #6b9dc2 !important;
+        color:#0d1a24 !important; font-weight:800 !important; font-size:15px !important;
         border-radius:12px !important; min-height:46px !important;
-        box-shadow:0 6px 16px rgba(18,224,171,.28) !important;
+        box-shadow:0 6px 16px rgba(107,157,194,.28) !important;
         transition:background .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease) !important;
     }
     .st-key-manual_login_btn button:hover {
-        background:#0fc99a !important; border-color:#0fc99a !important;
-        box-shadow:0 8px 20px rgba(18,224,171,.4) !important; transform:translateY(-1px) !important;
-        color:#04231b !important;
+        background:#7ba9cc !important; border-color:#7ba9cc !important;
+        box-shadow:0 8px 20px rgba(107,157,194,.4) !important; transform:translateY(-1px) !important;
+        color:#0d1a24 !important;
     }
     /* "Custom" toggle -- an advanced/escape-hatch option almost nobody
        needs (their provider auto-detects above), so it should read as a
@@ -1489,7 +1489,7 @@ st.markdown(
                    box-shadow .22s var(--ease), transform .16s var(--ease), color .18s var(--ease) !important;
     }
     .stRadio label:hover {
-        background:rgba(18,224,171,.08) !important;
+        background:rgba(107,157,194,.08) !important;
         border-color:#20402f !important;
         transform:translateY(-1px) !important;
     }
@@ -1518,7 +1518,7 @@ st.markdown(
     .stRadio div[role="radiogroup"] label:has(input:checked) {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
-        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
+        box-shadow:0 2px 8px rgba(139,127,184,.35) !important;
         transform:translateY(-1px) !important;
     }
     .stRadio label:has(input:checked):hover {transform:translateY(-1px) !important;}
@@ -1565,8 +1565,8 @@ st.markdown(
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:before {
         background:linear-gradient(90deg, var(--green), transparent 95%) !important;
     }
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:hover {border-color:rgba(18,224,171,.45) !important;}
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:hover {border-color:rgba(140,123,240,.5) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:hover {border-color:rgba(107,157,194,.45) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:hover {border-color:rgba(139,127,184,.5) !important;}
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+3) div[data-testid="stMetric"]:hover {border-color:rgba(244,178,61,.5) !important;}
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:hover {border-color:rgba(47,206,135,.5) !important;}
     div[data-testid="stMetricLabel"] {color:#7d94ad !important;}
@@ -1684,20 +1684,21 @@ st.markdown(
         content:"" !important; width:7px !important; height:7px !important; border-radius:50% !important;
         flex:0 0 7px !important; box-shadow:0 0 8px currentColor !important;
     }
-    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#8c7bf0 !important;}
-    .auth-option-label-violet {color:#c9bdff !important;}
-    .st-key-auth_google_box:hover {border-color:rgba(18,224,171,.5) !important;}
-    .st-key-auth_google_box {border-top-color:#12e0ab !important;}
-    .auth-option-label-cyan {color:#7fe9cf !important;}
-    /* Microsoft's brand blue and Yahoo's brand purple carried on the top
-       accent stripe only, so each provider still reads as itself next to
-       Google's teal and the app-password violet. */
-    .st-key-auth_microsoft_box:hover {border-color:rgba(0,148,255,.5) !important;}
-    .st-key-auth_microsoft_box {border-top-color:#0094ff !important;}
-    .auth-option-label-msblue {color:#7fc4ff !important;}
-    .st-key-auth_yahoo_box:hover {border-color:rgba(178,91,240,.5) !important;}
-    .st-key-auth_yahoo_box {border-top-color:#b25bf0 !important;}
-    .auth-option-label-yahoo {color:#d6a3ff !important;}
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#8b7fb8 !important;}
+    .auth-option-label-violet {color:#b3a8cc !important;}
+    .st-key-auth_google_box:hover {border-color:rgba(107,157,194,.4) !important;}
+    .st-key-auth_google_box {border-top-color:#6b9dc2 !important;}
+    .auth-option-label-cyan {color:#8fc2b8 !important;}
+    /* Each provider keeps a faint tint of its own brand hue on the top
+       accent stripe only (muted, not saturated) so it still reads as
+       itself next to Google's teal and the app-password violet, without
+       any one card popping as a bright neon outline. */
+    .st-key-auth_microsoft_box:hover {border-color:rgba(111,155,209,.4) !important;}
+    .st-key-auth_microsoft_box {border-top-color:#6f9bd1 !important;}
+    .auth-option-label-msblue {color:#8fb3d9 !important;}
+    .st-key-auth_yahoo_box:hover {border-color:rgba(160,139,194,.4) !important;}
+    .st-key-auth_yahoo_box {border-top-color:#a08bc2 !important;}
+    .auth-option-label-yahoo {color:#b8a3d1 !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
        tabs (with the theme's raw red underline) no matter how this was
@@ -1743,7 +1744,7 @@ st.markdown(
         font-weight:750;
         letter-spacing:.55px;
         text-transform:uppercase;
-        border-bottom:2px solid rgba(18,224,171,.35);
+        border-bottom:2px solid rgba(107,157,194,.35);
         white-space:nowrap;
     }
     table.polished-table tbody td {
@@ -1755,7 +1756,7 @@ st.markdown(
     table.polished-table tbody tr:last-child td {border-bottom:none;}
     table.polished-table tbody tr:nth-child(even) {background:rgba(255,255,255,.014);}
     table.polished-table tbody tr {transition:background .12s var(--ease);}
-    table.polished-table tbody tr:hover {background:rgba(18,224,171,.10);}
+    table.polished-table tbody tr:hover {background:rgba(107,157,194,.10);}
     table.polished-table tbody td:first-child {color:#cfe3f5; font-weight:600;}
     .polished-table-empty {
         padding:16px; text-align:center; color:var(--muted); font-size:13px;
@@ -1769,8 +1770,8 @@ st.markdown(
        polished SaaS console rather than an industrial SCADA panel. */
     .stApp {
         background:
-            radial-gradient(circle at 15% 0%, rgba(18,224,171,.035), transparent 26%),
-            radial-gradient(circle at 100% 15%, rgba(18,224,171,.03), transparent 30%),
+            radial-gradient(circle at 15% 0%, rgba(107,157,194,.035), transparent 26%),
+            radial-gradient(circle at 100% 15%, rgba(107,157,194,.03), transparent 30%),
             var(--bg) !important;
         background-size: auto !important;
     }
@@ -2042,7 +2043,7 @@ st.markdown(
     .st-key-input_mode_radio label:has(input:checked) {
         border-color:var(--cyan) !important;
         background:linear-gradient(180deg,#122b46,#0e1f34) !important;
-        box-shadow:0 0 0 3px rgba(18,224,171,.14) !important;
+        box-shadow:0 0 0 3px rgba(107,157,194,.14) !important;
     }
     .st-key-input_mode_radio label:has(input:checked) p {color:#eef5ff !important;}
 
@@ -2070,7 +2071,7 @@ st.markdown(
        floating in it. */
     .mode-card::before {
         content:""; position:absolute; inset:0; pointer-events:none;
-        background:radial-gradient(160px 110px at -10px -30px, var(--mode-glow, rgba(18,224,171,.16)), transparent 72%);
+        background:radial-gradient(160px 110px at -10px -30px, var(--mode-glow, rgba(107,157,194,.16)), transparent 72%);
         opacity:.9;
     }
     .mode-card-live {--mode-accent:rgba(147,167,255,.55); --mode-glow:rgba(147,167,255,.22);}
@@ -2106,9 +2107,9 @@ st.markdown(
         transform:translateY(-2px); box-shadow:0 14px 30px rgba(0,0,0,.26);
     }
     @keyframes modeCardSelect {
-        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(18,224,171,.0);}
+        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(107,157,194,.0);}
         55%  {transform:scale(1.012);}
-        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 14px 32px rgba(18,224,171,.10);}
+        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(107,157,194,.4), 0 14px 32px rgba(107,157,194,.10);}
     }
     @keyframes modeCardIconPop {
         0%   {transform:scale(.75) rotate(-6deg);}
@@ -2118,8 +2119,8 @@ st.markdown(
     .mode-card-active {
         border-left-color:var(--cyan) !important;
         border-color:var(--cyan) !important;
-        background:linear-gradient(155deg, rgba(18,224,171,.14), var(--panel-2) 62%) !important;
-        box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 14px 32px rgba(18,224,171,.10) !important;
+        background:linear-gradient(155deg, rgba(107,157,194,.14), var(--panel-2) 62%) !important;
+        box-shadow:0 0 0 1px rgba(107,157,194,.4), 0 14px 32px rgba(107,157,194,.10) !important;
         animation:modeCardSelect .4s var(--ease);
         padding-right:20px !important;
     }
@@ -2173,7 +2174,7 @@ st.markdown(
         font-family:"Consolas","Cascadia Code",monospace !important;
         font-size:13px !important;
         letter-spacing:.15px !important;
-        box-shadow:inset 0 0 18px rgba(18,224,171,.03) !important;
+        box-shadow:inset 0 0 18px rgba(107,157,194,.03) !important;
     }
     .feedback-icon { font-weight:900 !important; margin-right:9px !important; }
     .feedback-cursor { animation:feedbackBlink .8s steps(1) infinite; }
@@ -2183,7 +2184,7 @@ st.markdown(
         position:relative; overflow:hidden; margin:6px 0 14px 0; padding:18px 20px 16px;
         border:1px solid #3d3168; border-left:3px solid var(--violet); border-radius:var(--r-lg);
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
-        box-shadow:inset 0 0 26px rgba(18,224,171,.05),0 14px 34px rgba(0,0,0,.20);
+        box-shadow:inset 0 0 26px rgba(107,157,194,.05),0 14px 34px rgba(0,0,0,.20);
     }
     .ai-console-status {font:800 9px/1.3 monospace; letter-spacing:1.4px; color:#9584b8; text-transform:uppercase;}
     .ai-pulse {display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(47,206,135,.8);margin-right:7px;}
@@ -2192,7 +2193,7 @@ st.markdown(
     .ai-console-track {margin-top:13px;height:2px;background:#241c3c;position:relative;overflow:hidden;}
     .ai-console-track span {display:block;width:36%;height:100%;background:linear-gradient(90deg,transparent,var(--violet),transparent);animation:aiSweep 2.8s linear infinite;}
     @keyframes aiSweep {0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
-    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(18,224,171,.05),0 12px 28px rgba(0,0,0,.2);}
+    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(107,157,194,.05),0 12px 28px rgba(0,0,0,.2);}
     .ai-report-bar {display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-bottom:1px solid #2a2140;background:#150f24;color:#c9a8ff;font:900 10px/1.2 monospace;letter-spacing:1px;}
     .ai-report-chip {padding:4px 9px;border:1px solid #4a3a7a;background:#1c1530;color:#c9a8ff;border-radius:999px;}
     .ai-report-body {padding:18px 20px;color:#e2dcf0;font-size:14px;line-height:1.78;white-space:normal;}
@@ -2228,7 +2229,7 @@ st.markdown(
     .st-key-topnav, .st-key-topnav [data-testid="stRadio"] {min-width:0 !important;}
     .st-key-topnav::after {
         content:""; position:absolute; left:12px; right:12px; bottom:0; height:2px;
-        background:linear-gradient(90deg,#12e0ab 0%,rgba(18,224,171,.12) 60%,transparent 100%);
+        background:linear-gradient(90deg,#6b9dc2 0%,rgba(107,157,194,.12) 60%,transparent 100%);
         border-radius:2px; pointer-events:none;
     }
     .st-key-topnav .stRadio > div {
@@ -2251,7 +2252,7 @@ st.markdown(
         scroll-padding-inline:12px !important;
         -webkit-overflow-scrolling:touch !important;
         scrollbar-width:thin !important;
-        scrollbar-color:rgba(18,224,171,.4) transparent !important;
+        scrollbar-color:rgba(107,157,194,.4) transparent !important;
         /* Scroll-shadow trick: the two "cover" gradients scroll with the
            content (background-attachment:local) and cancel themselves
            out at the true start/end, while the two dark gradients stay
@@ -2270,10 +2271,10 @@ st.markdown(
     .st-key-topnav .stRadio > div::-webkit-scrollbar {height:5px !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-track {background:transparent !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb {
-        background:rgba(18,224,171,.4) !important; border-radius:6px !important;
+        background:rgba(107,157,194,.4) !important; border-radius:6px !important;
         transition:background .25s ease !important;
     }
-    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(18,224,171,.7) !important;}
+    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(107,157,194,.7) !important;}
 
     /* Roomier pills with no leading radio dot -- this bar behaves like a
        tab strip, not a checklist, so each item is one clean text chip. */
@@ -2299,7 +2300,7 @@ st.markdown(
     .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
-        box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
+        box-shadow:0 2px 8px rgba(139,127,184,.35) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
@@ -2395,8 +2396,8 @@ st.markdown(
        there's one prominent header, not two stacked bars. */
     .topbar-logo {
         width:64px; height:64px; flex:0 0 64px; border-radius:16px;
-        background:radial-gradient(circle at 35% 30%, rgba(84,112,255,.22), transparent 70%);
-        box-shadow:0 0 0 1px rgba(84,112,255,.28), 0 8px 20px rgba(0,0,0,.3);
+        background:radial-gradient(circle at 35% 30%, rgba(139,127,184,.22), transparent 70%);
+        box-shadow:0 0 0 1px rgba(139,127,184,.28), 0 8px 20px rgba(0,0,0,.3);
         display:flex; align-items:center; justify-content:center; padding:8px;
     }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
@@ -2490,8 +2491,8 @@ st.markdown(
        (rose, a distinct warning-adjacent hue not used elsewhere in the
        sidebar), System (neutral slate -- settings/about, deliberately
        the quietest one). */
-    .sidebar-group-teal .grp-index {color:var(--teal) !important; border-color:rgba(18,224,171,.4) !important;}
-    .sidebar-group-teal:after {background:linear-gradient(90deg,rgba(18,224,171,.4),transparent) !important;}
+    .sidebar-group-teal .grp-index {color:var(--teal) !important; border-color:rgba(107,157,194,.4) !important;}
+    .sidebar-group-teal:after {background:linear-gradient(90deg,rgba(107,157,194,.4),transparent) !important;}
     .sidebar-group-green .grp-index {color:#7be0a8 !important; border-color:rgba(47,206,135,.4) !important;}
     .sidebar-group-green:after {background:linear-gradient(90deg,rgba(47,206,135,.4),transparent) !important;}
     .sidebar-group-violet .grp-index {color:#d9c7ff !important; border-color:rgba(178,91,240,.4) !important;}
@@ -2562,10 +2563,10 @@ st.markdown(
     .sidebar-status-card-v2 {
         margin-top:16px; padding:13px 13px 11px; border:1px solid #1b465a; position:relative; overflow:hidden;
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%); border-radius:var(--r-lg);
-        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(18,224,171,.02);
+        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(107,157,194,.02);
         transition:border-color .2s var(--ease), box-shadow .2s var(--ease);
     }
-    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(18,224,171,.04);}
+    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(107,157,194,.04);}
     .sidebar-status-card-v2:before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--green),transparent 80%);}
     .ssc-head {display:flex; align-items:center; gap:7px; margin-bottom:10px;}
     .ssc-pulse {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px rgba(47,206,135,.8); animation:sbPulse 2.2s ease-in-out infinite; flex:0 0 7px;}
@@ -2762,12 +2763,12 @@ st.markdown(
        copy-paste twin of the other view's. */
     .st-key-run_vpn_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#123a5c,#0c283f) !important;
-        border:1px solid rgba(18,224,171,.55) !important;
+        border:1px solid rgba(107,157,194,.55) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(18,224,171,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(107,157,194,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_vpn_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(18,224,171,.35), 0 10px 26px rgba(18,224,171,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(107,157,194,.35), 0 10px 26px rgba(107,157,194,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#291c47,#190f2b) !important;
@@ -2840,7 +2841,7 @@ st.markdown(
     .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
     .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
     .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(18,224,171,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(107,157,194,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
     .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
 
     /* ------------------------------------------------------------------
@@ -2861,7 +2862,7 @@ st.markdown(
     }
     .dash-section-title .dash-section-dot {
         width:7px; height:7px; border-radius:50%; background:var(--cyan);
-        box-shadow:0 0 10px rgba(18,224,171,.75); flex:0 0 7px;
+        box-shadow:0 0 10px rgba(107,157,194,.75); flex:0 0 7px;
     }
     .dash-section-title .dash-section-sub {
         color:#6f8aa3; font-weight:600; letter-spacing:.3px; text-transform:none; font-size:11px;
@@ -3841,7 +3842,7 @@ def _render_email_results_table(df, height=300):
                     score = float(v)
                 except (TypeError, ValueError):
                     score = 0.0
-                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#12e0ab")
+                bar_color = _LEVEL_MARKER_COLORS.get(verdict_key, "#6b9dc2")
                 pct = max(0.0, min(100.0, score))
                 tds.append(
                     '<td><div class="email-score-cell">'
