@@ -1233,6 +1233,14 @@ st.markdown(
         color:#a9c1d8 !important; font-size:12.5px !important; font-weight:650 !important;
         letter-spacing:.15px !important; margin-bottom:2px !important;
     }
+    /* Plain section headings for the login form -- replaces the old
+       colored "stage card" boxes (01/02/03) with normal software-login
+       typography: a thin divider, then a simple bold label. No borders,
+       no background tint, no accent spine. */
+    .login-plain-divider {border-top:1px solid var(--line); margin:22px 0 16px 0;}
+    .login-plain-heading {
+        color:#eef5ff; font-size:15px; font-weight:750; margin:4px 0 2px 0;
+    }
     /* "Custom" toggle button that reveals the host/port form -- a plain
        secondary-style pill rather than a full-width primary button, so it
        doesn't compete with the one-click provider buttons above it. */
@@ -3930,13 +3938,8 @@ if active_panel == "Dashboard":
             browse_count = st.session_state.get("imap_browse_count", 10)
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
         else:
-            st.markdown("""
-            <div class="stage-card">
-              <div class="stage-label">01 &middot; Sign in</div>
-              <div class="stage-title">Enter your mailbox address</div>
-              <div class="stage-help">Type your email (and password if you're not using one-click sign-in). Server settings are filled in automatically once we recognise the provider.</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="login-plain-heading">Sign in</div>', unsafe_allow_html=True)
+            st.caption("Type your email (and password if you're not using one-click sign-in). Server settings are filled in automatically once we recognise the provider.")
 
             # Autofill from an already-signed-in provider's cached token --
             # runs BEFORE the Email address widget below is created (same
@@ -4017,13 +4020,8 @@ if active_panel == "Dashboard":
             # real <a>-tag sign-in link that navigates in one click) --
             # just always rendered side by side rather than gated behind
             # `_is_gmail`/`_is_outlook`/`_is_yahoo`.
-            st.markdown("""
-            <div class="stage-card stage-card-auth">
-              <div class="stage-label">02 &middot; One-click sign-in</div>
-              <div class="stage-title">Or connect an account directly</div>
-              <div class="stage-help">Opens the provider's own sign-in page. Your password never passes through this app for these three.</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Or connect an account directly</div>', unsafe_allow_html=True)
+            st.caption("Opens the provider's own sign-in page. Your password never passes through this app for these three.")
 
             _b1, _b2, _b3 = st.columns(3)
 
@@ -4225,13 +4223,9 @@ if active_panel == "Dashboard":
             if _is_outlook and auth_mode == "App Password / Password":
                 st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Use \"Sign in with Outlook\" below if password authentication is rejected.")
 
-            st.markdown("""
-            <div class="stage-card stage-card-scope">
-              <div class="stage-label">03 · Mail scope</div>
-              <div class="stage-title">Define the folder and browsing window</div>
-              <div class="stage-help">Only headers are loaded during browsing. The complete raw message is fetched after selection.</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the folder and browsing window</div>', unsafe_allow_html=True)
+            st.caption("Only headers are loaded during browsing. The complete raw message is fetched after selection.")
+
             # Mailbox folder used to be a bare text box defaulting to "INBOX"
             # -- functional, but it made you already know (and correctly
             # spell) a folder name like "[Gmail]/Important" before you could
