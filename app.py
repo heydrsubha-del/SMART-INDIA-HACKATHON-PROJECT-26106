@@ -3976,37 +3976,49 @@ if active_panel == "Dashboard":
 
         # Browser/password-manager autofill sets input.value directly via the
         # DOM, which never fires the "input" event Streamlit's frontend
-        # listens on -- so a filled-looking field can still be seen as empty
-        # by Streamlit until the user clicks in and types something. This
-        # polls briefly after render and dispatches a real "input" event on
-        # any autofilled field, so Streamlit picks it up on its own instead
-        # of requiring a manual click-then-type-then-delete.
+        # listens on -- so a filled-looking field reads as empty to Streamlit
+        # until the user clicks in and types something. A polling loop is
+        # unreliable (races Streamlit's own render/rerun cycle). The robust
+        # fix: Chrome/Edge/Safari all trigger a CSS animation the instant a
+        # field is autofilled, so we attach an invisible animation to every
+        # input and listen for it firing -- that listener is attached once
+        # to the parent document (not re-added on every Streamlit rerun) and
+        # keeps working for the life of the page, including after "Change
+        # mailbox / Reconnect" redraws the form.
         components.html(
             """
             <script>
             (function () {
-                function nudgeAutofilled(root) {
-                    const inputs = root.querySelectorAll('input');
-                    inputs.forEach((el) => {
-                        try {
-                            if (el.matches(':-webkit-autofill') || el.value) {
-                                const nativeSetter = Object.getOwnPropertyDescriptor(
-                                    window.HTMLInputElement.prototype, 'value'
-                                ).set;
-                                nativeSetter.call(el, el.value);
-                                el.dispatchEvent(new Event('input', { bubbles: true }));
-                                el.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        } catch (e) { /* ignore cross-origin/style-lookup failures */ }
-                    });
-                }
-                let tries = 0;
                 const parentDoc = window.parent.document;
-                const timer = setInterval(() => {
-                    tries += 1;
-                    nudgeAutofilled(parentDoc);
-                    if (tries > 10) clearInterval(timer);
-                }, 300);
+
+                if (!parentDoc.getElementById('imap-autofill-detect-style')) {
+                    const style = parentDoc.createElement('style');
+                    style.id = 'imap-autofill-detect-style';
+                    style.textContent = `
+                        @keyframes imapAutofillDetected { from {opacity: 1;} to {opacity: 1;} }
+                        input:-webkit-autofill {
+                            animation-name: imapAutofillDetected;
+                            animation-duration: 0.001s;
+                        }
+                    `;
+                    parentDoc.head.appendChild(style);
+                }
+
+                if (!parentDoc.__imapAutofillListenerAttached) {
+                    parentDoc.__imapAutofillListenerAttached = true;
+                    parentDoc.addEventListener('animationstart', function (e) {
+                        if (e.animationName !== 'imapAutofillDetected') return;
+                        const el = e.target;
+                        try {
+                            const nativeSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value'
+                            ).set;
+                            nativeSetter.call(el, el.value);
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        } catch (err) { /* ignore */ }
+                    }, true);
+                }
             })();
             </script>
             """,
@@ -4525,14 +4537,6 @@ if active_panel == "Dashboard":
 
         mailbox_messages = st.session_state.get("live_mailbox_messages", [])
         if mailbox_messages:
-            st.markdown("""
-            <div class="stage-card">
-              <div class="stage-label">04 · Message selection</div>
-              <div class="stage-title">Review metadata and select the evidence item</div>
-              <div class="stage-help">Keep the mailbox lightweight: raw RFC-5322 content is not fetched until you load one message.</div>
-            </div>
-            """, unsafe_allow_html=True)
-
             display_rows = []
             for item in mailbox_messages:
                 dt = item.get("date_dt")
