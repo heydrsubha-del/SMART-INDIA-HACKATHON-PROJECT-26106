@@ -4037,6 +4037,77 @@ def _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash):
 if active_panel == "Dashboard":
     st.write("")
 
+    # ------------------------------------------------------------------
+    # KPI STRIP + ACTION CENTER -- a dense, at-a-glance summary of the
+    # local threat_memory.db (attackers table), reusing the exact query
+    # already trusted by the "Threat History" panel below. Wrapped in
+    # st.fragment so the "Auto-refresh" toggle can re-pull these numbers
+    # every few seconds without rerunning email acquisition/analysis.
+    # Fails soft to an empty state on a fresh install (no DB rows yet).
+    # ------------------------------------------------------------------
+    @st.fragment(run_every="10s" if st.session_state.get("_dash_auto_refresh") else None)
+    def _dashboard_kpi_strip():
+        try:
+            _kpi_conn = get_connection()
+            _kpi_df = pd.read_sql_query(
+                "SELECT date, ip, country, score, verdict FROM attackers ORDER BY date DESC LIMIT 500",
+                _kpi_conn,
+            )
+            _kpi_conn.close()
+        except Exception:
+            _kpi_df = pd.DataFrame(columns=["date", "ip", "country", "score", "verdict"])
+
+        _top = st.columns([1, 1, 1, 1, 0.9])
+        _total = len(_kpi_df)
+        _crit_high = int(_kpi_df["verdict"].isin(["CRITICAL", "HIGH"]).sum()) if _total else 0
+        _avg_score = float(_kpi_df["score"].mean()) if _total else 0.0
+        _uniq_ips = int(_kpi_df["ip"].nunique()) if _total else 0
+
+        with _top[0]:
+            st.metric("Total Logged", f"{_total:,}")
+        with _top[1]:
+            st.metric("Critical / High", _crit_high,
+                       delta=(f"{_crit_high/_total:.0%} of total" if _total else None),
+                       delta_color="inverse")
+        with _top[2]:
+            st.metric("Avg Threat Score", f"{_avg_score:.1f}" if _total else "—")
+        with _top[3]:
+            st.metric("Unique Origin IPs", f"{_uniq_ips:,}")
+        with _top[4]:
+            st.toggle("Auto-refresh", key="_dash_auto_refresh", help="Refresh these four numbers every 10s.")
+
+        if _total:
+            _spark = (
+                _kpi_df.assign(_d=pd.to_datetime(_kpi_df["date"], errors="coerce").dt.date)
+                .groupby("_d").size()
+            )
+            if len(_spark) > 1:
+                _fig = go.Figure(go.Scatter(
+                    x=_spark.index, y=_spark.values, mode="lines", fill="tozeroy",
+                    line=dict(width=2, color="#2fd8ff"),
+                ))
+                _fig.update_layout(
+                    height=70, margin=dict(t=0, b=0, l=0, r=0),
+                    xaxis=dict(visible=False), yaxis=dict(visible=False), showlegend=False,
+                )
+                st.plotly_chart(_fig, use_container_width=True, config={"displayModeBar": False},
+                                  key="dash_kpi_sparkline")
+
+            _recent_high = _kpi_df[_kpi_df["verdict"].isin(["CRITICAL", "HIGH"])].head(4)
+            if not _recent_high.empty:
+                with st.expander(f"⚠ Action Center — {len(_recent_high)} recent high-severity entries", expanded=False):
+                    for _, _r in _recent_high.iterrows():
+                        _color = "#ff4757" if _r["verdict"] == "CRITICAL" else "#ff9f43"
+                        st.markdown(
+                            f'<div style="border-left:3px solid {_color};padding:4px 10px;margin-bottom:6px;">'
+                            f'<b>{html.escape(str(_r["verdict"]))}</b> · score {_r["score"]:.0f} · '
+                            f'`{html.escape(str(_r["ip"]))}` ({html.escape(str(_r["country"]))}) · {_r["date"]}</div>',
+                            unsafe_allow_html=True,
+                        )
+        st.divider()
+
+    panel(_dashboard_kpi_strip, "Dashboard KPI Strip")
+
     _MODE_OPTIONS = ["Live IMAP Mailbox Interceptor", "Evidence File Upload (.eml, .txt, .csv)"]
     _LIVE_OPT, _UPLOAD_OPT = _MODE_OPTIONS
     input_mode = st.session_state.get("input_mode_radio", _LIVE_OPT)
