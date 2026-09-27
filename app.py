@@ -3975,22 +3975,48 @@ if active_panel == "Dashboard":
         st.caption("Read-only mailbox access. Complete the workflow from top to bottom: connect → browse → select → acquire evidence.")
 
         # Browser/password-manager autofill sets input.value directly via the
-        # DOM, which never fires the "input" event Streamlit's frontend
-        # listens on -- so a filled-looking field reads as empty to Streamlit
-        # until the user clicks in and types something. A polling loop is
-        # unreliable (races Streamlit's own render/rerun cycle). The robust
-        # fix: Chrome/Edge/Safari all trigger a CSS animation the instant a
-        # field is autofilled, so we attach an invisible animation to every
-        # input and listen for it firing -- that listener is attached once
-        # to the parent document (not re-added on every Streamlit rerun) and
-        # keeps working for the life of the page, including after "Change
-        # mailbox / Reconnect" redraws the form.
+        # DOM without firing the "input" event Streamlit's frontend (React)
+        # listens on -- so a filled-looking field still reads as empty to
+        # Streamlit until something dispatches that event. Two failure modes
+        # were possible with the animation-only approach: (1) the browser
+        # can autofill the fields before this script's listener attaches, in
+        # which case the animation already fired and we'd never see it, and
+        # (2) some browsers don't reliably re-fire the animation on repeat
+        # Streamlit reruns. This version does both: an immediate sweep of
+        # whatever is already in the fields right now (covers case 1, with a
+        # few retries since the fields may not exist in the DOM the instant
+        # this script runs), plus the persistent animation listener for
+        # anything filled after that (covers new autofills later, e.g. after
+        # "Change mailbox / Reconnect").
         components.html(
             """
             <script>
             (function () {
                 const parentDoc = window.parent.document;
 
+                function forceSync(el) {
+                    try {
+                        const nativeSetter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value'
+                        ).set;
+                        nativeSetter.call(el, el.value);
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        el.dispatchEvent(new Event('blur', { bubbles: true }));
+                    } catch (err) { /* ignore */ }
+                }
+
+                // Case 1: sweep whatever is already filled right now.
+                let tries = 0;
+                const sweepTimer = setInterval(() => {
+                    tries += 1;
+                    parentDoc.querySelectorAll('input[type="text"], input[type="password"]').forEach((el) => {
+                        if (el.value) forceSync(el);
+                    });
+                    if (tries > 15) clearInterval(sweepTimer);
+                }, 200);
+
+                // Case 2: catch autofill that happens after this point.
                 if (!parentDoc.getElementById('imap-autofill-detect-style')) {
                     const style = parentDoc.createElement('style');
                     style.id = 'imap-autofill-detect-style';
@@ -4003,20 +4029,10 @@ if active_panel == "Dashboard":
                     `;
                     parentDoc.head.appendChild(style);
                 }
-
                 if (!parentDoc.__imapAutofillListenerAttached) {
                     parentDoc.__imapAutofillListenerAttached = true;
                     parentDoc.addEventListener('animationstart', function (e) {
-                        if (e.animationName !== 'imapAutofillDetected') return;
-                        const el = e.target;
-                        try {
-                            const nativeSetter = Object.getOwnPropertyDescriptor(
-                                window.HTMLInputElement.prototype, 'value'
-                            ).set;
-                            nativeSetter.call(el, el.value);
-                            el.dispatchEvent(new Event('input', { bubbles: true }));
-                            el.dispatchEvent(new Event('change', { bubbles: true }));
-                        } catch (err) { /* ignore */ }
+                        if (e.animationName === 'imapAutofillDetected') forceSync(e.target);
                     }, true);
                 }
             })();
@@ -4559,17 +4575,33 @@ if active_panel == "Dashboard":
                 for i, x in enumerate(mailbox_messages)
             ]
 
-            # This used to be a click-to-select st.dataframe (canvas-rendered,
-            # so it never picked up the app's theme -- the exact "lifeless
-            # grid" problem every other table in the app had). Row-click
-            # selection can't be reproduced in real themed HTML, so the
-            # table below is now display-only and the "Message to
-            # investigate" dropdown underneath is the one control that
-            # picks the message -- same underlying selection state, one
-            # obvious place to make it instead of two controls that used
-            # to shadow each other.
-            _render_polished_table(pd.DataFrame(display_rows), max_height=360)
-            st.caption("Pick the message to investigate from the dropdown below.")
+            # Real click-to-select, via st.dataframe's native row-selection
+            # (on_select="rerun"). This is canvas-rendered so it won't fully
+            # match the app's theme the way the plain HTML table did -- that
+            # trade-off is intentional here because clicking a row to select
+            # it was the actual ask. The "Message to investigate" dropdown
+            # stays underneath, in sync with whatever row you click, so
+            # keyboard/manual selection still works too.
+            _table_event = st.dataframe(
+                pd.DataFrame(display_rows),
+                use_container_width=True,
+                hide_index=True,
+                height=360,
+                on_select="rerun",
+                selection_mode="single-row",
+                key="imap_message_table",
+            )
+            st.caption("Click a row to select it, or use the dropdown below.")
+
+            _clicked_rows = []
+            try:
+                _clicked_rows = list(_table_event.selection.rows)
+            except Exception:
+                _clicked_rows = []
+
+            if _clicked_rows and _clicked_rows != st.session_state.get("_imap_last_click_rows"):
+                st.session_state["_imap_last_click_rows"] = _clicked_rows
+                st.session_state["imap_message_selector"] = labels[_clicked_rows[0]]
 
             selected_label = st.selectbox("Message to investigate", labels, key="imap_message_selector")
             selected_index = labels.index(selected_label)
