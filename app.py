@@ -1247,14 +1247,6 @@ st.markdown(
        idea as a typical consumer login screen (logo, title, fields,
        primary button, divider, provider row), just themed to match the
        rest of this app instead of any one brand. */
-    /* Full-page treatment: the card is the only thing on screen while
-       signed out (mode-select cards and the section heading are skipped
-       above), so it's centered in the full viewport height rather than
-       just sitting narrow-and-top like an embedded widget. */
-    .stMainBlockContainer:has(.st-key-imap_signin_card) {
-        min-height:92vh !important; display:flex !important;
-        align-items:center !important; justify-content:center !important;
-    }
     .st-key-imap_signin_card {
         max-width:100% !important; width:100% !important; margin:18px 0 !important;
         background:linear-gradient(180deg,#0d1c2e,#09141f) !important;
