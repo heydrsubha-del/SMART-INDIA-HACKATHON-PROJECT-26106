@@ -1233,35 +1233,15 @@ st.markdown(
         color:#a9c1d8 !important; font-size:12.5px !important; font-weight:650 !important;
         letter-spacing:.15px !important; margin-bottom:2px !important;
     }
-
-    /* Production-style login/field panel -- used to group the mailbox
-       credential fields and the mail-scope (folder/window) fields into one
-       clean, spacious card instead of loose inputs sitting directly on the
-       page background. Bigger fields, bigger labels, more breathing room
-       between rows -- the same shape as a real sign-in form. */
-    .st-key-mail_login_credentials, .st-key-mail_scope_panel {
-        background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
-        border:1px solid var(--line) !important; border-radius:var(--r-lg) !important;
-        padding:22px 24px 20px 24px !important; margin:4px 0 16px 0 !important;
-        box-shadow:0 10px 26px rgba(0,0,0,.2) !important;
+    /* "Custom" toggle button that reveals the host/port form -- a plain
+       secondary-style pill rather than a full-width primary button, so it
+       doesn't compete with the one-click provider buttons above it. */
+    .st-key-imap_custom_toggle_btn button {
+        background:transparent !important; border:1px dashed var(--line-strong) !important;
+        color:#9fb4c9 !important; font-weight:700 !important;
     }
-    .st-key-mail_login_credentials [data-testid="stWidgetLabel"] p,
-    .st-key-mail_scope_panel [data-testid="stWidgetLabel"] p {
-        color:#dbe8f5 !important; font-size:13.5px !important; font-weight:700 !important;
-        margin-bottom:6px !important;
-    }
-    .st-key-mail_login_credentials .stTextInput input,
-    .st-key-mail_scope_panel .stTextInput input,
-    .st-key-mail_scope_panel .stSelectbox [data-baseweb="select"] > div,
-    .st-key-mail_scope_panel .stNumberInput input {
-        height:48px !important; font-size:14.5px !important; padding:0 16px !important;
-        border-radius:12px !important;
-    }
-    .st-key-mail_login_credentials [data-testid="stVerticalBlock"],
-    .st-key-mail_scope_panel [data-testid="stVerticalBlock"] {gap:0.6rem !important;}
-    .st-key-mail_scope_panel .stButton button[kind="primary"] {
-        height:50px !important; font-size:14.5px !important; font-weight:800 !important;
-        letter-spacing:.4px !important; border-radius:12px !important; margin-top:8px !important;
+    .st-key-imap_custom_toggle_btn button:hover {
+        border-color:var(--cyan) !important; color:#eaf6ff !important;
     }
     .stRadio > div {background:#081522 !important; border:1px solid #1b344e !important; border-radius:11px !important; padding:5px !important; gap:4px !important;}
     /* Every st.radio in this app renders horizontal=True and is used as a
@@ -3990,15 +3970,14 @@ if active_panel == "Dashboard":
                             st.session_state["imap_user"] = _auto_email
                             _save_cached_provider_email("yahoo", _auto_email)
 
-            with st.container(key="mail_login_credentials"):
-                _cred_col1, _cred_col2 = st.columns(2)
-                with _cred_col1:
-                    imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
-                with _cred_col2:
-                    manual_password = st.text_input(
-                        "Password / App password", type="password", key="imap_manual_password",
-                        placeholder="Only if not using one-click sign-in",
-                    )
+            _cred_col1, _cred_col2 = st.columns(2)
+            with _cred_col1:
+                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+            with _cred_col2:
+                manual_password = st.text_input(
+                    "Password / App password", type="password", key="imap_manual_password",
+                    placeholder="Only if not using one-click sign-in",
+                )
 
             # Detect provider from the typed email's domain -- same loose,
             # case-insensitive matching PROVIDERS' keys already used
@@ -4030,52 +4009,6 @@ if active_panel == "Dashboard":
             _is_gmail = _detected_key == _gmail_key and _gmail_key is not None
             _is_outlook = _detected_key == _outlook_key and _outlook_key is not None
             _is_yahoo = _detected_key == _yahoo_key and _yahoo_key is not None
-
-            with st.container(key="imap_custom_server_wrap"):
-                with st.expander("Custom IMAP server (host / port)", expanded=(_detected_key is None and bool(imap_user))):
-                    if _detected_key is None and imap_user:
-                        st.caption("Provider not recognised from the email domain -- set the server manually below.")
-                    _cc1, _cc2 = st.columns([2, 1])
-                    with _cc1:
-                        imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
-                    with _cc2:
-                        imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
-                    if _detected_key is None:
-                        custom_auth_mode = st.selectbox("Authentication", ["App Password / Password", "OAuth2 Access Token"], key="imap_auth_mode")
-                    else:
-                        custom_auth_mode = "App Password / Password"
-
-            # Resolve the credential actually used by "Connect & Load
-            # Mailbox" below: a cached OAuth token for the DETECTED
-            # provider wins (same precedence the original per-provider
-            # code used -- cached token beats a manually-typed password);
-            # otherwise fall back to the password field above, in whichever
-            # auth mode the custom-server section specifies for an
-            # unrecognised domain.
-            imap_credential = manual_password
-            auth_mode = custom_auth_mode
-
-            if _is_gmail and GOOGLE_OAUTH_READY and oauth_available():
-                _tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
-                if _tok:
-                    st.session_state["google_oauth_token"] = _tok
-                    imap_credential = _tok
-                    auth_mode = "OAuth2 Access Token"
-            elif _is_outlook and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
-                _tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
-                if _tok:
-                    st.session_state["microsoft_oauth_token"] = _tok
-                    imap_credential = _tok
-                    auth_mode = "OAuth2 Access Token"
-            elif _is_yahoo and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
-                _tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
-                if _tok:
-                    st.session_state["yahoo_oauth_token"] = _tok
-                    imap_credential = _tok
-                    auth_mode = "OAuth2 Access Token"
-
-            if _is_outlook and auth_mode == "App Password / Password":
-                st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Use \"Sign in with Outlook\" below if password authentication is rejected.")
 
             # One-click sign-in row: all three providers shown together,
             # always, instead of nested one-at-a-time behind a provider
@@ -4223,6 +4156,75 @@ if active_panel == "Dashboard":
             if _detected_key:
                 st.caption(f"Using another provider? The email/password fields above are auto-detected as {provider} -- override the server if that's wrong.")
 
+            # "Custom" acts exactly like the old always-visible expander did
+            # -- same host/port/auth-mode fields, same behavior -- just
+            # tucked behind one click instead of always taking up space,
+            # since most people never need it (their provider auto-detects
+            # above). It still opens itself automatically the moment an
+            # unrecognised domain is typed, so nobody has to know to click
+            # it in that case.
+            st.session_state.setdefault("show_custom_imap_form", False)
+            if _detected_key is None and imap_user:
+                st.session_state["show_custom_imap_form"] = True
+
+            with st.container(key="imap_custom_toggle_btn"):
+                if st.button(
+                    "Custom (set IMAP server / port manually)",
+                    key="imap_custom_toggle",
+                    use_container_width=True,
+                ):
+                    st.session_state["show_custom_imap_form"] = not st.session_state["show_custom_imap_form"]
+
+            if st.session_state["show_custom_imap_form"]:
+                with st.container(key="imap_custom_server_wrap"):
+                    if _detected_key is None and imap_user:
+                        st.caption("Provider not recognised from the email domain -- set the server manually below.")
+                    _cc1, _cc2 = st.columns([2, 1])
+                    with _cc1:
+                        imap_host = st.text_input("IMAP server", provider_defaults["host"], key=f"imap_host_{provider}")
+                    with _cc2:
+                        imap_port = st.number_input("Port", min_value=1, max_value=65535, value=int(provider_defaults["port"]), step=1, key=f"imap_port_{provider}")
+                    if _detected_key is None:
+                        custom_auth_mode = st.selectbox("Authentication", ["App Password / Password", "OAuth2 Access Token"], key="imap_auth_mode")
+                    else:
+                        custom_auth_mode = "App Password / Password"
+            else:
+                imap_host = st.session_state.get(f"imap_host_{provider}", provider_defaults["host"])
+                imap_port = st.session_state.get(f"imap_port_{provider}", provider_defaults["port"])
+                custom_auth_mode = "App Password / Password"
+
+            # Resolve the credential actually used by "Connect & Load
+            # Mailbox" below: a cached OAuth token for the DETECTED
+            # provider wins (same precedence the original per-provider
+            # code used -- cached token beats a manually-typed password);
+            # otherwise fall back to the password field above, in whichever
+            # auth mode the custom-server section specifies for an
+            # unrecognised domain.
+            imap_credential = manual_password
+            auth_mode = custom_auth_mode
+
+            if _is_gmail and GOOGLE_OAUTH_READY and oauth_available():
+                _tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                if _tok:
+                    st.session_state["google_oauth_token"] = _tok
+                    imap_credential = _tok
+                    auth_mode = "OAuth2 Access Token"
+            elif _is_outlook and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
+                _tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                if _tok:
+                    st.session_state["microsoft_oauth_token"] = _tok
+                    imap_credential = _tok
+                    auth_mode = "OAuth2 Access Token"
+            elif _is_yahoo and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
+                _tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+                if _tok:
+                    st.session_state["yahoo_oauth_token"] = _tok
+                    imap_credential = _tok
+                    auth_mode = "OAuth2 Access Token"
+
+            if _is_outlook and auth_mode == "App Password / Password":
+                st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Use \"Sign in with Outlook\" below if password authentication is rejected.")
+
             st.markdown("""
             <div class="stage-card stage-card-scope">
               <div class="stage-label">03 · Mail scope</div>
@@ -4242,21 +4244,20 @@ if active_panel == "Dashboard":
                 "INBOX", "Sent", "Drafts", "Important", "Starred",
                 "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
             ]
-            with st.container(key="mail_scope_panel"):
-                _sc1, _sc2 = st.columns([2, 1])
-                with _sc1:
-                    folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
-                    if folder_choice == "Custom folder...":
-                        folder = st.text_input(
-                            "Custom folder name",
-                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
-                            key="imap_folder_custom",
-                        )
-                    else:
-                        folder = folder_choice
-                with _sc2:
-                    browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
-                connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
+            _sc1, _sc2 = st.columns([2, 1])
+            with _sc1:
+                folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
+                if folder_choice == "Custom folder...":
+                    folder = st.text_input(
+                        "Custom folder name",
+                        placeholder="e.g. [Gmail]/Important or Projects/Client-A",
+                        key="imap_folder_custom",
+                    )
+                else:
+                    folder = folder_choice
+            with _sc2:
+                browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
+            connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
 
             if connect_clicked:
                 if not imap_user or not imap_credential or not imap_host:
