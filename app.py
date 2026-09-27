@@ -4012,6 +4012,8 @@ if active_panel == "Dashboard":
             with _cc2:
                 if st.button("Change mailbox / Reconnect", use_container_width=True, key="imap_show_form_btn"):
                     st.session_state["show_imap_connection_form"] = True
+                    st.session_state["_imap_auto_connected"] = False
+                    st.session_state["manual_login_submitted"] = False
                     st.rerun()
             with _cc3:
                 if st.button("Disconnect mailbox", use_container_width=True, key="imap_disconnect_btn"):
@@ -4022,6 +4024,8 @@ if active_panel == "Dashboard":
                     ]:
                         st.session_state.pop(_k, None)
                     st.session_state["show_imap_connection_form"] = True
+                    st.session_state["_imap_auto_connected"] = False
+                    st.session_state["manual_login_submitted"] = False
                     st.rerun()
             st.caption(
                 "The Full Report button runs machine analysis, AI threat analysis and semantic "
@@ -4079,7 +4083,12 @@ if active_panel == "Dashboard":
                     _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
                 if _manual_login_clicked:
                     if not imap_user or not manual_password:
-                        st.error("Enter both your email address and password/app password first.")
+                        st.error(
+                            "Enter both your email address and password/app password first. "
+                            "If you used a saved password and both fields look filled in already, "
+                            "click into either field and press a key (even just a space, then "
+                            "delete it) so the page notices it -- then hit Log in again."
+                        )
                     else:
                         st.session_state["manual_login_submitted"] = True
 
@@ -4368,6 +4377,15 @@ if active_panel == "Dashboard":
                 with _sc2:
                     browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
                 connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
+
+                # Auto-scan right after a fresh login instead of making the
+                # person click "Connect & Load Mailbox" separately -- the
+                # folder/count picker above still lets them change either
+                # before the (one-time) auto-load, or afterwards via
+                # "Change mailbox / Reconnect", which resets this flag.
+                if not st.session_state.get("_imap_auto_connected", False) and not mailbox_loaded:
+                    connect_clicked = True
+                st.session_state["_imap_auto_connected"] = True
             else:
                 st.markdown('<div class="login-plain-divider"></div>', unsafe_allow_html=True)
                 st.caption("Click \"Log in\" above with your email + password, or use a one-click provider, to choose a folder and load your mailbox.")
