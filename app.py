@@ -757,26 +757,26 @@ st.markdown(
            left alone -- they carry meaning and must stay universally
            recognizable (red = bad, green = fine) regardless of re-skinning.
            ------------------------------------------------------------- */
-        --bg: #060911;
-        --panel: #101828;
-        --panel-2: #15202f;
-        --panel-3: #0b0f17;
-        --line: #212c3d;
-        --line-strong: #33445c;
-        --text: #eef3fb;
-        --muted: #97a5bc;
-        --cyan: #2fb8f0;
+        --bg: #0a0d12;
+        --panel: #131922;
+        --panel-2: #171e28;
+        --panel-3: #0e131a;
+        --line: #232b37;
+        --line-strong: #313c4b;
+        --text: #dde3ea;
+        --muted: #8b96a5;
+        --cyan: #6b9dc2;
         /* Secondary accent family -- gives AI/assistant surfaces (the Qwen
            dossiers, the AI console, the copilot panel) their own color
            identity instead of reusing the primary action blue everywhere. */
-        --violet: #8b6bf0;
+        --violet: #8b7fb8;
         /* Tertiary accent family -- reserved for brand/navigation chrome
            (sidebar, masthead) so the app reads as deliberately multi-toned
            rather than one blue skin repeated on every surface. */
-        --teal: #2dd4bf;
-        --green: #34d399;
-        --amber: #f5a524;
-        --red: #f2495c;
+        --teal: #6ba89c;
+        --green: #6fae8c;
+        --amber: #c99a5b;
+        --red: #c26868;
         /* Severity scale — reserved strictly for threat-level meaning, never
            used decoratively elsewhere, so color always carries information. */
         --sev-critical: #ef4444;
@@ -791,21 +791,21 @@ st.markdown(
         /* Calm, single-tone focus shadow for primary actions -- a soft
            blue lift instead of a saturated violet halo, so it reads as a
            clean product accent rather than a neon glow. */
-        --glow-violet: 0 0 0 1px rgba(47,184,240,.30), 0 6px 16px rgba(0,0,0,.24);
-        /* Signature brand accent: blue-to-violet gradient for every
-           primary action / active state, so the app reads as one
-           deliberate two-tone identity rather than a single flat color. */
-        --brand-gradient: linear-gradient(90deg,#2fb8f0,#8b6bf0);
+        --glow-violet: 0 0 0 1px rgba(107,157,194,.25), 0 6px 16px rgba(0,0,0,.24);
+        /* Signature brand accent: a quiet slate-blue to muted violet
+           gradient for every primary action / active state -- enough
+           contrast to read as "the" accent without glowing. */
+        --brand-gradient: linear-gradient(90deg,#6b9dc2,#8b7fb8);
         /* Action-button tokens -- the whole button family (primary = brand
            cyan-to-violet gradient key, secondary = graphite key) is tinted
            from here, so the look can be re-colored in one place without
            touching any rule. Was a flat teal; now the same punchier
            cyan-to-violet gradient the Synapse Copilot button used, applied
            app-wide so every primary button matches instead of just one. */
-        --act-1-top:#3d8bff; --act-1-bot:#8b6bf0; --act-1-border:rgba(139,107,240,.55); --act-1-text:#ffffff;
-        --act-1-top-hover:#5299ff; --act-1-bot-hover:#9b7ef5; --act-1-border-hover:rgba(139,107,240,.85);
+        --act-1-top:#5b85a3; --act-1-bot:#8b7fb8; --act-1-border:rgba(139,127,184,.45); --act-1-text:#f2f5f8;
+        --act-1-top-hover:#688fac; --act-1-bot-hover:#9689c2; --act-1-border-hover:rgba(139,127,184,.7);
         --act-2-top:#161d2a; --act-2-bot:#0e141e; --act-2-border:#2a3444; --act-2-text:#dbe4ef;
-        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(47,184,240,.65);
+        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(107,157,194,.5);
         --ease: cubic-bezier(.4,0,.2,1);
         /* Streamlit's own stock theme color (a coral red, #FF4B4B by
            default) still drives focus/selected states on any BaseWeb
@@ -2363,8 +2363,8 @@ st.markdown(
     /* ================= NEW DASHBOARD-STYLE UI SHELL ================= */
     .topbar-shell {
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
-        background:linear-gradient(180deg,#101d33 0%,#080f1c 100%);
-        border:1px solid #223a56; border-radius:var(--r-lg);
+        background:linear-gradient(180deg,#161c26 0%,#0d1219 100%);
+        border:1px solid #263140; border-radius:var(--r-lg);
         padding:28px 34px; margin-top:8px; margin-bottom:18px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
@@ -2427,16 +2427,16 @@ st.markdown(
     .topbar-account-chevron {color:#5b7690; flex:0 0 13px; margin-left:2px; transition:color .18s var(--ease), transform .18s var(--ease);}
     .topbar-account-chip:hover .topbar-account-chevron {color:#9fb4cc;}
     .topbar-kicker {font-size:11.5px; font-weight:800; letter-spacing:1.8px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
-    .topbar-title {font-size:34px; font-weight:900; letter-spacing:.2px; color:#f6fbff; line-height:1.2; text-shadow:0 2px 18px rgba(84,112,255,.25);}
+    .topbar-title {font-size:34px; font-weight:900; letter-spacing:.2px; color:#eef1f5; line-height:1.2; text-shadow:0 2px 14px rgba(0,0,0,.35);}
     .topbar-subtitle {font-size:12.5px; color:#93abc3; line-height:1.5; margin-top:6px;}
     .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:9px;}
     .topbar-status-pill {
-        display:flex; align-items:center; gap:8px; font-size:11.5px; color:#c9f5df; white-space:nowrap;
-        background:rgba(52,211,153,.10); border:1px solid rgba(52,211,153,.30); border-radius:999px;
+        display:flex; align-items:center; gap:8px; font-size:11.5px; color:#b9d2c3; white-space:nowrap;
+        background:rgba(111,174,140,.09); border:1px solid rgba(111,174,140,.25); border-radius:999px;
         padding:6px 14px; order:-1;
     }
-    .topbar-status-dot {width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(47,206,135,.8);display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
-    .topbar-status-online {color:#c9f5df; font-weight:650;}
+    .topbar-status-dot {width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(111,174,140,.6);display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
+    .topbar-status-online {color:#b9d2c3; font-weight:650;}
     .topbar-status-time {font-size:10.5px; color:#5b7690; letter-spacing:.3px; white-space:nowrap;}
 
     /* ============ SIDEBAR — full redesign ============
