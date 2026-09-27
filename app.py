@@ -1241,6 +1241,24 @@ st.markdown(
     .login-plain-heading {
         color:#eef5ff; font-size:15px; font-weight:750; margin:4px 0 2px 0;
     }
+    /* Primary "Log in" button for the manual email/password path -- a bold
+       red pill, matching the classic red-and-white login-page look (think
+       Pinterest's "Log in"), so it reads as the one obvious next action
+       right under the two fields instead of blending into the rest of the
+       dark UI. */
+    .st-key-manual_login_btn {margin:14px 0 6px 0 !important;}
+    .st-key-manual_login_btn button {
+        background:#e60023 !important; border:1px solid #e60023 !important;
+        color:#ffffff !important; font-weight:800 !important; font-size:15px !important;
+        border-radius:999px !important; min-height:46px !important;
+        box-shadow:0 6px 16px rgba(230,0,35,.28) !important;
+        transition:background .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease) !important;
+    }
+    .st-key-manual_login_btn button:hover {
+        background:#c8001f !important; border-color:#c8001f !important;
+        box-shadow:0 8px 20px rgba(230,0,35,.4) !important; transform:translateY(-1px) !important;
+        color:#ffffff !important;
+    }
     /* "Custom" toggle button that reveals the host/port form -- a plain
        secondary-style pill rather than a full-width primary button, so it
        doesn't compete with the one-click provider buttons above it. */
@@ -3978,6 +3996,13 @@ if active_panel == "Dashboard":
                 "Password / App password", type="password", key="imap_manual_password",
                 placeholder="Only if not using one-click sign-in",
             )
+            with st.container(key="manual_login_btn"):
+                _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
+            if _manual_login_clicked:
+                if not imap_user or not manual_password:
+                    st.error("Enter both your email address and password/app password first.")
+                else:
+                    st.session_state["manual_login_submitted"] = True
 
             # Detect provider from the typed email's domain -- same loose,
             # case-insensitive matching PROVIDERS' keys already used
@@ -4220,16 +4245,21 @@ if active_panel == "Dashboard":
             if _is_outlook and auth_mode == "App Password / Password":
                 st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Use \"Sign in with Outlook\" below if password authentication is rejected.")
 
-            # Folder/browsing-window picker only shows up once there's an
-            # actual credential to connect with -- whether that came from
-            # typing an email + password above, or from a completed
-            # one-click sign-in (Gmail/Outlook/Yahoo). Nothing to browse
-            # yet, so no point showing the "choose a folder" step.
+            _is_oauth_signed_in = auth_mode == "OAuth2 Access Token" and bool(imap_credential)
+            _is_logged_in = bool(imap_user) and bool(imap_credential) and (
+                st.session_state.get("manual_login_submitted", False) or _is_oauth_signed_in
+            )
+
+            # Folder/browsing-window picker only shows up once you've
+            # actually logged in -- clicked "Log in" with a valid email +
+            # password, or completed a one-click sign-in (Gmail/Outlook/
+            # Yahoo). Nothing to browse yet, so no point showing the
+            # "choose a folder" step before that.
             _COMMON_FOLDERS = [
                 "INBOX", "Sent", "Drafts", "Important", "Starred",
                 "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
             ]
-            if imap_user and imap_credential:
+            if _is_logged_in:
                 st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the folder and browsing window</div>', unsafe_allow_html=True)
                 st.caption("Only headers are loaded during browsing. The complete raw message is fetched after selection.")
 
@@ -4258,7 +4288,7 @@ if active_panel == "Dashboard":
                 connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
             else:
                 st.markdown('<div class="login-plain-divider"></div>', unsafe_allow_html=True)
-                st.caption("Sign in above (email + password, or a one-click provider) to choose a folder and load your mailbox.")
+                st.caption("Click \"Log in\" above with your email + password, or use a one-click provider, to choose a folder and load your mailbox.")
                 folder = st.session_state.get("imap_folder_choice", "INBOX")
                 browse_count = st.session_state.get("imap_browse_count", 10)
                 connect_clicked = False
