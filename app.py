@@ -1167,6 +1167,42 @@ st.markdown(
         color:#ffbcbc !important;
     }
 
+    /* Secondary actions on the two acquisition-mode cards get their own
+       accent instead of the plain graphite default -- each one tied back
+       to the color of the mode it belongs to (indigo for Live IMAP,
+       teal-green for Upload), so a user tracks "which flow am I in" by
+       color the same way they did when picking the mode card itself. */
+    .st-key-imap_show_form_btn .stButton > button {
+        background:transparent !important;
+        border:1px solid rgba(147,167,255,.45) !important;
+        color:#c3ccff !important;
+    }
+    .st-key-imap_show_form_btn .stButton > button:hover {
+        background:rgba(147,167,255,.10) !important;
+        border-color:rgba(147,167,255,.8) !important;
+        color:#e4e8ff !important;
+    }
+    .st-key-evidence_show_form_btn .stButton > button {
+        background:transparent !important;
+        border:1px solid rgba(34,224,180,.45) !important;
+        color:#8ff0d8 !important;
+    }
+    .st-key-evidence_show_form_btn .stButton > button:hover {
+        background:rgba(34,224,180,.10) !important;
+        border-color:rgba(34,224,180,.8) !important;
+        color:#d4fbef !important;
+    }
+    .st-key-imap_reload_folder_btn .stButton > button {
+        background:transparent !important;
+        border:1px solid rgba(18,224,171,.4) !important;
+        color:#8fe9cf !important;
+    }
+    .st-key-imap_reload_folder_btn .stButton > button:hover {
+        background:rgba(18,224,171,.1) !important;
+        border-color:rgba(18,224,171,.75) !important;
+        color:#d4fbef !important;
+    }
+
     /* Google-branded "Sign in with Google" link-button. Plain HTML/CSS
        (not a Streamlit widget) so it renders identically across Streamlit
        versions -- it needs to be a real <a> so clicking it navigates the
@@ -4195,7 +4231,7 @@ if active_panel == "Dashboard":
                 _cc1, _cc2, _cc3 = st.columns([3, 1.6, 1.3])
                 with _cc1:
                     if st.button(
-                        "⚡ Synapse Copilot — Full Report (10 Emails)",
+                        "Synapse Copilot — Full Report (10 Emails)",
                         type="primary", use_container_width=True, key="mailbox_quick_full_report_btn",
                     ):
                         with st.spinner("Fetching the 10 most recent messages..."):
@@ -4207,7 +4243,7 @@ if active_panel == "Dashboard":
                         else:
                             _run_batch_pipeline(_quick_items, "Live IMAP")
                 with _cc2:
-                    if st.button("⇄ Change mailbox", use_container_width=True, key="imap_show_form_btn"):
+                    if st.button("Change mailbox", use_container_width=True, key="imap_show_form_btn"):
                         st.session_state["show_imap_connection_form"] = True
                         st.session_state["_imap_auto_connected"] = False
                         st.session_state["manual_login_submitted"] = False
@@ -4268,7 +4304,7 @@ if active_panel == "Dashboard":
             with st.container(key="imap_signin_card"):
                 st.markdown(
                     """<div class="signin-card-header">
-                        <div class="signin-card-icon">✉️</div>
+                        <div class="signin-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
                         <div>
                             <div class="signin-card-title">Connect your mailbox</div>
                             <div class="signin-card-sub">Read-only IMAP access &mdash; sign in to start pulling message headers for analysis.</div>
@@ -4324,7 +4360,7 @@ if active_panel == "Dashboard":
                         placeholder="Enter your password or app password",
                     )
                     _manual_login_clicked = st.form_submit_button(
-                        "🔒 Log in", use_container_width=True, key="manual_login_btn"
+                        "Log in", use_container_width=True, key="manual_login_btn"
                     )
                 if _manual_login_clicked:
                     if not imap_user or not manual_password:
@@ -4522,7 +4558,7 @@ if active_panel == "Dashboard":
 
             with st.container(key="imap_custom_toggle_btn"):
                 if st.button(
-                    "⚙ Set IMAP server / port manually",
+                    "Set IMAP server / port manually",
                     key="imap_custom_toggle",
                 ):
                     st.session_state["show_custom_imap_form"] = not st.session_state["show_custom_imap_form"]
