@@ -580,6 +580,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --------------------------------------------------------------------------
+# Browser-autofill / saved-password fix for st.text_input widgets.
+#
+# When a browser or password manager autofills a field (e.g. the sign-in
+# form's Email address / Password fields), it sets the underlying <input>
+# element's .value directly via the DOM, bypassing the synthetic "input"
+# event React relies on to notice the change. Streamlit's Python side never
+# hears about it, so session_state["imap_user"] / ["imap_manual_password"]
+# stay empty even though the field looks filled on screen -- which is why
+# clicking "Log in" right after autofill used to fail with "Enter both your
+# email address and password/app password first", but worked fine the
+# moment you typed anything by hand (a real keystroke DOES fire the event).
+#
+# Fix: poll every input/textarea in the parent document for value changes,
+# and for anything that changed WITHOUT a matching keystroke, reset React's
+# internal value tracker and re-dispatch a real "input" event so React (and
+# therefore Streamlit) picks up the autofilled value immediately -- no
+# extra click or retyping required. Runs in an invisible 0-height component,
+# app-wide, since any text/password field could be autofilled, not just the
+# sign-in form.
+components.html(
+    """
+    <script>
+    (function() {
+        const doc = window.parent.document;
+        const seen = new WeakMap();
+        function sync() {
+            const fields = doc.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], textarea');
+            fields.forEach(function(el) {
+                const prev = seen.get(el);
+                if (prev === undefined) {
+                    seen.set(el, el.value);
+                    return;
+                }
+                if (el.value !== prev) {
+                    seen.set(el, el.value);
+                    try {
+                        const tracker = el._valueTracker;
+                        if (tracker) { tracker.setValue(prev); }
+                    } catch (e) {}
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+        setInterval(sync, 400);
+    })();
+    </script>
+    """,
+    height=0,
+    width=0,
+)
+
 # Correlation case store and AI dossier store
 _corr_cases = st.session_state.setdefault("correlation_cases", {})
 st.session_state.setdefault("single_ai_reports", {})
