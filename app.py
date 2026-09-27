@@ -4103,36 +4103,12 @@ if active_panel == "Dashboard":
             imap_port = _cfg_summary.get("port", 993)
             imap_user = _cfg_summary.get("user", "")
             imap_credential = _cfg_summary.get("credential", "")
-            folder = _cfg_summary.get("folder", "INBOX")
+            folder = "INBOX"
             browse_count = st.session_state.get("imap_browse_count", 10)
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
 
-            # Folder switcher for the already-connected mailbox -- lets you
-            # change folder/browse count without going through "Change
-            # mailbox / Reconnect" and re-entering credentials each time.
-            _COMMON_FOLDERS_LOADED = [
-                "INBOX", "Sent", "Drafts", "Important", "Starred",
-                "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
-            ]
             with st.container(key="imap_loaded_folder_bar"):
-                _fc1, _fc2, _fc3 = st.columns([2, 1, 1])
-                with _fc1:
-                    _default_idx = (
-                        _COMMON_FOLDERS_LOADED.index(folder)
-                        if folder in _COMMON_FOLDERS_LOADED else len(_COMMON_FOLDERS_LOADED) - 1
-                    )
-                    _folder_pick = st.selectbox(
-                        "Mailbox folder", _COMMON_FOLDERS_LOADED, index=_default_idx,
-                        key="imap_loaded_folder_choice",
-                    )
-                    if _folder_pick == "Custom folder...":
-                        _new_folder = st.text_input(
-                            "Custom folder name", value=folder if folder not in _COMMON_FOLDERS_LOADED else "",
-                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
-                            key="imap_loaded_folder_custom",
-                        )
-                    else:
-                        _new_folder = _folder_pick
+                _fc2, _fc3 = st.columns([3, 1])
                 with _fc2:
                     _new_browse_count = st.selectbox(
                         "Messages to browse", [10, 25, 50, 100],
@@ -4141,31 +4117,28 @@ if active_panel == "Dashboard":
                     )
                 with _fc3:
                     st.markdown("<div style='height: 1.8rem'></div>", unsafe_allow_html=True)
-                    _reload_clicked = st.button("Reload folder", use_container_width=True, key="imap_reload_folder_btn")
+                    _reload_clicked = st.button("Reload", use_container_width=True, key="imap_reload_folder_btn")
                 if _reload_clicked:
-                    if not _new_folder:
-                        st.error("Enter a custom folder name, or pick one of the listed folders.")
-                    else:
-                        try:
-                            with st.spinner(f"Loading '{_new_folder}'..."):
-                                _reloaded_messages = fetch_mailbox_messages(
-                                    imap_host, imap_user, imap_credential,
-                                    max_messages=_new_browse_count, folder=_new_folder,
-                                    port=int(imap_port), auth_mode=auth_mode,
-                                )
-                            st.session_state["live_mailbox_messages"] = _reloaded_messages
-                            st.session_state["live_mailbox_config"] = {
-                                "host": imap_host, "port": int(imap_port), "user": imap_user,
-                                "folder": _new_folder, "auth_mode": auth_mode, "credential": imap_credential,
-                            }
-                            st.session_state["imap_browse_count"] = _new_browse_count
-                            st.session_state["live_selected_uid"] = None
-                            st.session_state["live_selected_raw"] = None
-                            st.session_state["live_rescan_nonce"] = 0
-                            st.success(f"Loaded {len(_reloaded_messages)} message headers from '{_new_folder}'.")
-                            st.rerun()
-                        except Exception as _e:
-                            st.error(f"Couldn't load that folder: {_e}")
+                    try:
+                        with st.spinner("Reloading inbox..."):
+                            _reloaded_messages = fetch_mailbox_messages(
+                                imap_host, imap_user, imap_credential,
+                                max_messages=_new_browse_count, folder=folder,
+                                port=int(imap_port), auth_mode=auth_mode,
+                            )
+                        st.session_state["live_mailbox_messages"] = _reloaded_messages
+                        st.session_state["live_mailbox_config"] = {
+                            "host": imap_host, "port": int(imap_port), "user": imap_user,
+                            "folder": folder, "auth_mode": auth_mode, "credential": imap_credential,
+                        }
+                        st.session_state["imap_browse_count"] = _new_browse_count
+                        st.session_state["live_selected_uid"] = None
+                        st.session_state["live_selected_raw"] = None
+                        st.session_state["live_rescan_nonce"] = 0
+                        st.success(f"Loaded {len(_reloaded_messages)} message headers.")
+                        st.rerun()
+                    except Exception as _e:
+                        st.error(f"Couldn't reload the inbox: {_e}")
         else:
             with st.container(key="imap_signin_card"):
 
@@ -4473,55 +4446,30 @@ if active_panel == "Dashboard":
                 st.session_state.get("manual_login_submitted", False) or _is_oauth_signed_in
             )
 
-            # Folder/browsing-window picker only shows up once you've
-            # actually logged in -- clicked "Log in" with a valid email +
-            # password, or completed a one-click sign-in (Gmail/Outlook/
-            # Yahoo). Nothing to browse yet, so no point showing the
-            # "choose a folder" step before that.
-            _COMMON_FOLDERS = [
-                "INBOX", "Sent", "Drafts", "Important", "Starred",
-                "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
-            ]
+            # Browsing-window picker only shows up once you've actually
+            # logged in -- clicked "Log in" with a valid email + password,
+            # or completed a one-click sign-in (Gmail/Outlook/Yahoo).
+            # Nothing to browse yet, so no point showing this before then.
+            # Folder is always INBOX -- no picker needed for that.
+            folder = "INBOX"
             if _is_logged_in:
-                st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the folder and browsing window</div>', unsafe_allow_html=True)
+                st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the browsing window</div>', unsafe_allow_html=True)
                 st.caption("Only headers are loaded during browsing. The complete raw message is fetched after selection.")
 
-                # Mailbox folder used to be a bare text box defaulting to
-                # "INBOX" -- functional, but it made you already know (and
-                # correctly spell) a folder name like "[Gmail]/Important"
-                # before you could browse anything else. Now it's a dropdown
-                # of the common IMAP folders across Gmail/Yahoo/Outlook,
-                # plus a "Custom folder..." escape hatch that reveals a text
-                # box for anything not listed (a nested label, a shared
-                # mailbox folder, etc.) -- so the common case is one click,
-                # and the rare case is still typable.
-                _sc1, _sc2 = st.columns([2, 1])
-                with _sc1:
-                    folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
-                    if folder_choice == "Custom folder...":
-                        folder = st.text_input(
-                            "Custom folder name",
-                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
-                            key="imap_folder_custom",
-                        )
-                    else:
-                        folder = folder_choice
-                with _sc2:
-                    browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
+                browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
                 connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
 
                 # Auto-scan right after a fresh login instead of making the
                 # person click "Connect & Load Mailbox" separately -- the
-                # folder/count picker above still lets them change either
-                # before the (one-time) auto-load, or afterwards via
-                # "Change mailbox / Reconnect", which resets this flag.
+                # count picker above still lets them change it before the
+                # (one-time) auto-load, or afterwards via "Change mailbox /
+                # Reconnect", which resets this flag.
                 if not st.session_state.get("_imap_auto_connected", False) and not mailbox_loaded:
                     connect_clicked = True
                 st.session_state["_imap_auto_connected"] = True
             else:
                 st.markdown('<div class="login-plain-divider"></div>', unsafe_allow_html=True)
-                st.caption("Click \"Log in\" above with your email + password, or use a one-click provider, to choose a folder and load your mailbox.")
-                folder = st.session_state.get("imap_folder_choice", "INBOX")
+                st.caption("Click \"Log in\" above with your email + password, or use a one-click provider, to load your mailbox.")
                 browse_count = st.session_state.get("imap_browse_count", 10)
                 connect_clicked = False
 
