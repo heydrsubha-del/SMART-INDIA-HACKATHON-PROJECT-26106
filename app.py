@@ -4613,19 +4613,25 @@ if active_panel == "Dashboard":
             selected_meta = mailbox_messages[selected_index]
             selected_uid = str(selected_meta.get("uid", ""))
 
-            st.markdown("""
-            <div class="stage-card">
-              <div class="stage-label">05 · Evidence acquisition</div>
-              <div class="stage-title">Fetch the full message and begin forensic analysis</div>
-              <div class="stage-help">The selected UID is retrieved and passed to the same forensic pipeline used for uploaded evidence.</div>
-            </div>
-            """, unsafe_allow_html=True)
+            already_loaded = (
+                st.session_state.get("live_selected_uid") == selected_uid
+                and isinstance(st.session_state.get("live_selected_raw"), (bytes, bytearray))
+                and bool(st.session_state.get("live_selected_raw"))
+            )
 
-            _load_col, _rescan_col = st.columns(2)
-            with _load_col:
+            if already_loaded:
+                # Nothing new to fetch for this message -- keep this state
+                # minimal instead of repeating the same big action row.
+                _loaded_col, _rescan_col = st.columns([3, 1])
+                with _loaded_col:
+                    st.caption(f"Loaded · UID {selected_uid} · {len(st.session_state['live_selected_raw']):,} raw bytes")
+                with _rescan_col:
+                    rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
+                load_clicked = False
+            else:
+                st.caption("Fetch the full message and begin forensic analysis on it.")
                 load_clicked = st.button("Load & Scan", type="primary", use_container_width=True, key="load_imap_message")
-            with _rescan_col:
-                rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
+                rescan_clicked = False
 
             if load_clicked or rescan_clicked:
                 cfg = st.session_state.get("live_mailbox_config", {})
@@ -4699,7 +4705,6 @@ if active_panel == "Dashboard":
                 if isinstance(candidate_raw, (bytes, bytearray)) and candidate_raw:
                     raw = bytes(candidate_raw)
                     case_name = f"Live IMAP: {selected_meta.get('subject') or 'No Subject'}"
-                    st.info(f"Selected evidence: {selected_meta.get('subject') or 'No Subject'} · UID {selected_uid} · {len(raw):,} raw bytes")
                 elif pipeline_ready:
                     raw, case_name = _use_pipeline_fallback_message()
                 else:
