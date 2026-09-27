@@ -1093,7 +1093,7 @@ st.markdown(
         background:#ffffff !important;
         color:#3c4043 !important;
         border:1px solid #dadce0 !important;
-        border-radius:8px !important;
+        border-radius:999px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important;
         font-weight:600 !important;
         font-size:14px !important;
@@ -1121,7 +1121,7 @@ st.markdown(
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#2f2f2f !important; color:#ffffff !important;
-        border:1px solid #505050 !important; border-radius:8px !important;
+        border:1px solid #505050 !important; border-radius:999px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:600 !important; font-size:14px !important;
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
@@ -1136,7 +1136,7 @@ st.markdown(
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#6001d2 !important; color:#ffffff !important;
-        border:1px solid #7a1fe0 !important; border-radius:8px !important;
+        border:1px solid #7a1fe0 !important; border-radius:999px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:700 !important; font-size:14px !important;
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
@@ -3973,14 +3973,11 @@ if active_panel == "Dashboard":
                             st.session_state["imap_user"] = _auto_email
                             _save_cached_provider_email("yahoo", _auto_email)
 
-            _cred_col1, _cred_col2 = st.columns(2)
-            with _cred_col1:
-                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
-            with _cred_col2:
-                manual_password = st.text_input(
-                    "Password / App password", type="password", key="imap_manual_password",
-                    placeholder="Only if not using one-click sign-in",
-                )
+            imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+            manual_password = st.text_input(
+                "Password / App password", type="password", key="imap_manual_password",
+                placeholder="Only if not using one-click sign-in",
+            )
 
             # Detect provider from the typed email's domain -- same loose,
             # case-insensitive matching PROVIDERS' keys already used
@@ -4223,35 +4220,48 @@ if active_panel == "Dashboard":
             if _is_outlook and auth_mode == "App Password / Password":
                 st.warning("Microsoft 365 commonly requires OAuth2 for IMAP. Use \"Sign in with Outlook\" below if password authentication is rejected.")
 
-            st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the folder and browsing window</div>', unsafe_allow_html=True)
-            st.caption("Only headers are loaded during browsing. The complete raw message is fetched after selection.")
-
-            # Mailbox folder used to be a bare text box defaulting to "INBOX"
-            # -- functional, but it made you already know (and correctly
-            # spell) a folder name like "[Gmail]/Important" before you could
-            # browse anything else. Now it's a dropdown of the common IMAP
-            # folders across Gmail/Yahoo/Outlook, plus a "Custom folder..."
-            # escape hatch that reveals a text box for anything not listed
-            # (a nested label, a shared mailbox folder, etc.) -- so the
-            # common case is one click, and the rare case is still typable.
+            # Folder/browsing-window picker only shows up once there's an
+            # actual credential to connect with -- whether that came from
+            # typing an email + password above, or from a completed
+            # one-click sign-in (Gmail/Outlook/Yahoo). Nothing to browse
+            # yet, so no point showing the "choose a folder" step.
             _COMMON_FOLDERS = [
                 "INBOX", "Sent", "Drafts", "Important", "Starred",
                 "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
             ]
-            _sc1, _sc2 = st.columns([2, 1])
-            with _sc1:
-                folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
-                if folder_choice == "Custom folder...":
-                    folder = st.text_input(
-                        "Custom folder name",
-                        placeholder="e.g. [Gmail]/Important or Projects/Client-A",
-                        key="imap_folder_custom",
-                    )
-                else:
-                    folder = folder_choice
-            with _sc2:
-                browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
-            connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
+            if imap_user and imap_credential:
+                st.markdown('<div class="login-plain-divider"></div><div class="login-plain-heading">Define the folder and browsing window</div>', unsafe_allow_html=True)
+                st.caption("Only headers are loaded during browsing. The complete raw message is fetched after selection.")
+
+                # Mailbox folder used to be a bare text box defaulting to
+                # "INBOX" -- functional, but it made you already know (and
+                # correctly spell) a folder name like "[Gmail]/Important"
+                # before you could browse anything else. Now it's a dropdown
+                # of the common IMAP folders across Gmail/Yahoo/Outlook,
+                # plus a "Custom folder..." escape hatch that reveals a text
+                # box for anything not listed (a nested label, a shared
+                # mailbox folder, etc.) -- so the common case is one click,
+                # and the rare case is still typable.
+                _sc1, _sc2 = st.columns([2, 1])
+                with _sc1:
+                    folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
+                    if folder_choice == "Custom folder...":
+                        folder = st.text_input(
+                            "Custom folder name",
+                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
+                            key="imap_folder_custom",
+                        )
+                    else:
+                        folder = folder_choice
+                with _sc2:
+                    browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
+                connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
+            else:
+                st.markdown('<div class="login-plain-divider"></div>', unsafe_allow_html=True)
+                st.caption("Sign in above (email + password, or a one-click provider) to choose a folder and load your mailbox.")
+                folder = st.session_state.get("imap_folder_choice", "INBOX")
+                browse_count = st.session_state.get("imap_browse_count", 10)
+                connect_clicked = False
 
             if connect_clicked:
                 if not imap_user or not imap_credential or not imap_host:
