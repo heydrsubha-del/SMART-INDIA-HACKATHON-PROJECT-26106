@@ -609,11 +609,12 @@ components.html(
         function sync() {
             const fields = doc.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], textarea');
             fields.forEach(function(el) {
-                const prev = seen.get(el);
-                if (prev === undefined) {
-                    seen.set(el, el.value);
-                    return;
-                }
+                // Treat an element we haven't checked before as having started
+                // empty, NOT as "whatever it currently holds" -- otherwise a
+                // value that's already autofilled by the time of our very
+                // first check gets silently adopted as the baseline and never
+                // actually synced to React/Streamlit.
+                const prev = seen.has(el) ? seen.get(el) : '';
                 if (el.value !== prev) {
                     seen.set(el, el.value);
                     try {
@@ -622,10 +623,13 @@ components.html(
                     } catch (e) {}
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    seen.set(el, el.value);
                 }
             });
         }
-        setInterval(sync, 400);
+        sync();
+        setInterval(sync, 300);
     })();
     </script>
     """,
