@@ -1970,8 +1970,8 @@ st.markdown(
     .mode-card {
         position:relative; overflow:hidden; flex:1 1 300px; display:flex; align-items:center; gap:16px;
         background:linear-gradient(155deg, rgba(147,167,255,.05), var(--panel) 60%);
-        border:1px solid var(--line); border-radius:var(--r-lg);
-        padding:19px 20px; box-shadow:0 10px 24px rgba(0,0,0,.18);
+        border:1px solid var(--line); border-left:3px solid var(--mode-accent, var(--line-strong)); border-radius:var(--r-lg);
+        padding:18px 44px 18px 20px; box-shadow:0 10px 24px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.03);
         transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
     }
     /* Soft color wash bleeding from the icon corner, so each card reads as
@@ -1979,23 +1979,34 @@ st.markdown(
        floating in it. */
     .mode-card::before {
         content:""; position:absolute; inset:0; pointer-events:none;
-        background:radial-gradient(120px 90px at -10px -20px, var(--mode-glow, rgba(18,224,171,.16)), transparent 70%);
+        background:radial-gradient(160px 110px at -10px -30px, var(--mode-glow, rgba(18,224,171,.16)), transparent 72%);
         opacity:.9;
     }
-    .mode-card-live::before {--mode-glow:rgba(147,167,255,.22);}
-    .mode-card-upload::before {--mode-glow:rgba(34,224,180,.22);}
+    .mode-card-live {--mode-accent:rgba(147,167,255,.55); --mode-glow:rgba(147,167,255,.22);}
+    .mode-card-upload {--mode-accent:rgba(34,224,180,.55); --mode-glow:rgba(34,224,180,.22);}
+    /* Unselected-state indicator: an empty ring sitting where the
+       "SELECTED" pill goes once active, so an idle card still visibly
+       reads as "pick me" instead of looking like inert static text. It
+       cross-fades into the checkmark/pill via .mode-card-active below. */
+    .mode-card::after {
+        content:""; position:absolute; z-index:1; top:16px; right:16px; width:20px; height:20px;
+        border-radius:50%; border:1.5px solid var(--line-strong);
+        background:rgba(255,255,255,.02);
+        transition:border-color .18s var(--ease), background .18s var(--ease);
+    }
+    .mode-card:hover::after {border-color:#4a6a86;}
     .mode-card-icon {
         position:relative; z-index:1; flex:0 0 46px; width:46px; height:46px; border-radius:var(--r-md);
         display:flex; align-items:center; justify-content:center; font-size:19px;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), 0 4px 10px rgba(0,0,0,.22);
     }
     .mode-card-icon-blue {
-        background:linear-gradient(145deg, rgba(147,167,255,.28), rgba(147,167,255,.08));
-        border:1px solid rgba(147,167,255,.42); color:#b7c3ff;
+        background:linear-gradient(145deg, rgba(147,167,255,.30), rgba(147,167,255,.09));
+        border:1px solid rgba(147,167,255,.45); color:#c3ccff;
     }
     .mode-card-icon-neutral {
-        background:linear-gradient(145deg, rgba(34,224,180,.28), rgba(34,224,180,.08));
-        border:1px solid rgba(34,224,180,.42); color:#7fe8cf;
+        background:linear-gradient(145deg, rgba(34,224,180,.30), rgba(34,224,180,.09));
+        border:1px solid rgba(34,224,180,.45); color:#8ff0d8;
     }
     .mode-card-title {position:relative; z-index:1; color:#f4f9ff; font-size:14.5px; font-weight:800; line-height:1.3;}
     .mode-card-sub {position:relative; z-index:1; color:#93a7bf; font-size:12px; margin-top:3px; line-height:1.4;}
@@ -2014,26 +2025,29 @@ st.markdown(
         100% {transform:scale(1) rotate(0deg);}
     }
     .mode-card-active {
+        border-left-color:var(--cyan) !important;
         border-color:var(--cyan) !important;
         background:linear-gradient(155deg, rgba(18,224,171,.14), var(--panel-2) 62%) !important;
         box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 14px 32px rgba(18,224,171,.10) !important;
         animation:modeCardSelect .4s var(--ease);
+        padding-right:20px !important;
     }
     .mode-card-active::after {
-        content:"SELECTED"; position:absolute; z-index:1; top:10px; right:12px;
-        font:900 9px/1 monospace; letter-spacing:1.2px; color:var(--green);
+        content:"✓ SELECTED"; width:auto; height:auto; border-radius:20px;
+        top:12px; right:14px; padding:3px 10px;
+        font:900 9px/1.6 monospace; letter-spacing:1.2px; color:var(--green);
         background:rgba(47,206,135,.12); border:1px solid rgba(47,206,135,.32);
-        border-radius:20px; padding:3px 8px;
+        display:flex; align-items:center;
     }
     .mode-card-active .mode-card-icon {animation:modeCardIconPop .45s var(--ease);}
     @media (prefers-reduced-motion: reduce) {
         .mode-card-active, .mode-card-active .mode-card-icon {animation:none !important;}
     }
     .st-key-acq_pick_live, .st-key-acq_pick_upload {
-        margin-top:-78px !important; position:relative !important; z-index:5 !important;
+        margin-top:-82px !important; position:relative !important; z-index:5 !important;
     }
     .st-key-acq_pick_live button, .st-key-acq_pick_upload button {
-        height:78px !important; width:100% !important; min-height:0 !important;
+        height:82px !important; width:100% !important; min-height:0 !important;
         background:transparent !important; border:none !important; box-shadow:none !important;
         color:transparent !important; cursor:pointer !important; outline:none !important;
     }
