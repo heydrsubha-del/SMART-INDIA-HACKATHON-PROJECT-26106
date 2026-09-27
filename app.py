@@ -897,20 +897,22 @@ st.markdown(
     ::-webkit-scrollbar {width:10px; height:10px;}
     ::-webkit-scrollbar-track {background:#081420;}
     ::-webkit-scrollbar-thumb {background:linear-gradient(180deg, var(--cyan), var(--violet)); border-radius:8px; border:2px solid #081420;}
-    ::-webkit-scrollbar-thumb:hover {background:linear-gradient(180deg, #35f0c2, #c48cff);}
+    ::-webkit-scrollbar-thumb:hover {background:linear-gradient(180deg, #5cae99, #a98cd4);}
     * {scrollbar-color:#2c5877 #081420; scrollbar-width:thin;}
 
 
     #MainMenu, footer {display:none !important;}
     /* The native Streamlit deploy toolbar (Share / star / rename / GitHub
-       icons) rendered inside stHeader used to float directly over the top
-       of our own banner -- MainMenu/footer were already hidden above, but
-       this toolbar wasn't, so it visually collided with the bell + account
-       chip in the top-right of .topbar-shell. Hidden for the same reason
-       MainMenu/footer are: this app has its own branded header, account
-       chip and status indicator, so the stock toolbar is pure redundant
-       chrome, not lost functionality. */
-    [data-testid="stToolbar"] {display:none !important;}
+       icons) used to float directly over our own banner's bell + account
+       chip. `display:none` on the whole toolbar fixed the overlap but
+       also silently killed the sidebar collapse/expand arrow, which lives
+       in this same header region in this Streamlit build -- so instead of
+       removing the toolbar, it's just dimmed to near-invisible until
+       hovered. That keeps every native control (sidebar toggle included)
+       fully clickable while no longer visually competing with the banner
+       below it (which also got its own top margin -- see .topbar-shell). */
+    [data-testid="stToolbar"] {opacity:.35 !important; transition:opacity .15s var(--ease) !important;}
+    [data-testid="stToolbar"]:hover {opacity:1 !important;}
     [data-testid="stHeader"] {
     background:transparent !important;
     height:2.75rem !important;
@@ -1692,8 +1694,11 @@ st.markdown(
         content:"" !important; width:7px !important; height:7px !important; border-radius:50% !important;
         flex:0 0 7px !important; box-shadow:0 0 8px currentColor !important;
     }
-    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#7a8699 !important;}
-    .auth-option-label-violet {color:#aab4c2 !important;}
+    /* Warm neutral (sand/taupe) instead of a desaturated blue-grey, so the
+       manual app-password option doesn't quietly reintroduce blue into a
+       row that's otherwise teal / terracotta / plum. */
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#a6947c !important;}
+    .auth-option-label-violet {color:#c2b29a !important;}
     .st-key-auth_google_box:hover {border-color:rgba(79,157,138,.4) !important;}
     .st-key-auth_google_box {border-top-color:#4f9d8a !important;}
     .auth-option-label-cyan {color:#8fc2b8 !important;}
