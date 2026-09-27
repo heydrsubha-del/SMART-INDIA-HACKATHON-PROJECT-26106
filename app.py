@@ -5396,20 +5396,18 @@ if active_panel == "Dashboard":
                 else:
                     st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
 
-            # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
-            # In CSV mode this section already rendered earlier (between the Deep
-            # Dive selector and the message content box) — don't show it twice.
-            #
-            # Deliberately still inside col_center (not full-width below both
-            # columns) -- the right-hand THREAT SUMMARY dock is sticky and
-            # runs taller than the map/graph card next to it, so anything
-            # rendered full-width below used to leave a large blank gap in
-            # the center column while the dock kept going. Keeping this here
-            # fills that space instead, and only the Analyst Feedback section
-            # (added after the panel() call below) stays full-width beneath
-            # both columns.
-            if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
-                _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
+        # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
+        # In CSV mode this section already rendered earlier (between the Deep
+        # Dive selector and the message content box) — don't show it twice.
+        #
+        # Full-width below BOTH columns (not confined to col_center's ~68%)
+        # -- by this point the THREAT SUMMARY dock has already finished
+        # rendering above, so there's no more "blank gap" risk from the dock
+        # running taller than this section; keeping it width-capped to
+        # col_center just wasted the space to the right where the dock had
+        # already ended, which is what this table needs to stretch into.
+        if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
+            _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
 
     if _csv_awaiting_scan:
         st.info("The threat summary, origin map, and correlation graph will appear here once you run a scan above.")
