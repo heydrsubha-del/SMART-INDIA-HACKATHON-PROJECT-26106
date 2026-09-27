@@ -4201,20 +4201,25 @@ if active_panel == "Dashboard":
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_provider_email("yahoo", _auto_email)
 
-                imap_user = st.text_input("Email address", placeholder="Enter your email address", key="imap_user")
-                manual_password = st.text_input(
-                    "Password / App password", type="password", key="imap_manual_password",
-                    placeholder="Enter your password or app password",
-                )
-                with st.container(key="manual_login_btn"):
-                    _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
+                # Wrapped in a form: Streamlit only sends the fields' current
+                # values when the submit button is clicked (a single batched
+                # read of the live DOM), rather than relying on each
+                # keystroke's own debounced update. That's what makes this
+                # work reliably with autofill -- including the Windows/Chrome
+                # "suggestion" autofill that inserts a value without
+                # necessarily firing the events a plain st.text_input expects
+                # before you click away. No JS/event hacking needed.
+                with st.form("imap_manual_login_form", clear_on_submit=False, border=False):
+                    imap_user = st.text_input("Email address", placeholder="Enter your email address", key="imap_user")
+                    manual_password = st.text_input(
+                        "Password / App password", type="password", key="imap_manual_password",
+                        placeholder="Enter your password or app password",
+                    )
+                    _manual_login_clicked = st.form_submit_button("Log in", use_container_width=True)
                 if _manual_login_clicked:
                     if not imap_user or not manual_password:
                         st.error(
-                            "Enter both your email address and password/app password first. "
-                            "If you used a saved password and both fields look filled in already, "
-                            "click into either field and press a key (even just a space, then "
-                            "delete it) so the page notices it -- then hit Log in again."
+                            "Enter both your email address and password/app password first."
                         )
                     else:
                         st.session_state["manual_login_submitted"] = True
