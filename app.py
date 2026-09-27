@@ -1093,7 +1093,7 @@ st.markdown(
         background:#ffffff !important;
         color:#3c4043 !important;
         border:1px solid #dadce0 !important;
-        border-radius:999px !important;
+        border-radius:12px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important;
         font-weight:600 !important;
         font-size:14px !important;
@@ -1121,7 +1121,7 @@ st.markdown(
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#2f2f2f !important; color:#ffffff !important;
-        border:1px solid #505050 !important; border-radius:999px !important;
+        border:1px solid #505050 !important; border-radius:12px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:600 !important; font-size:14px !important;
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
@@ -1136,7 +1136,7 @@ st.markdown(
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#6001d2 !important; color:#ffffff !important;
-        border:1px solid #7a1fe0 !important; border-radius:999px !important;
+        border:1px solid #7a1fe0 !important; border-radius:12px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:700 !important; font-size:14px !important;
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
@@ -1262,33 +1262,35 @@ st.markdown(
     .auth-divider::before, .auth-divider::after {
         content:"" !important; flex:1 1 auto !important; height:1px !important; background:var(--line) !important;
     }
-    /* Primary "Log in" button for the manual email/password path -- a bold
-       red pill, matching the classic red-and-white login-page look (think
-       Pinterest's "Log in"), so it reads as the one obvious next action
-       right under the two fields instead of blending into the rest of the
-       dark UI. */
+    /* Primary "Log in" button for the manual email/password path -- uses
+       the app's own teal accent (matches the Gmail box's top stripe and
+       the rest of the dashboard) instead of a red pill, with a soft
+       rounded-rectangle shape rather than a full pill. */
     .st-key-manual_login_btn {margin:14px 0 6px 0 !important;}
     .st-key-manual_login_btn button {
-        background:#e60023 !important; border:1px solid #e60023 !important;
-        color:#ffffff !important; font-weight:800 !important; font-size:15px !important;
-        border-radius:999px !important; min-height:46px !important;
-        box-shadow:0 6px 16px rgba(230,0,35,.28) !important;
+        background:#12e0ab !important; border:1px solid #12e0ab !important;
+        color:#04231b !important; font-weight:800 !important; font-size:15px !important;
+        border-radius:12px !important; min-height:46px !important;
+        box-shadow:0 6px 16px rgba(18,224,171,.28) !important;
         transition:background .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease) !important;
     }
     .st-key-manual_login_btn button:hover {
-        background:#c8001f !important; border-color:#c8001f !important;
-        box-shadow:0 8px 20px rgba(230,0,35,.4) !important; transform:translateY(-1px) !important;
-        color:#ffffff !important;
+        background:#0fc99a !important; border-color:#0fc99a !important;
+        box-shadow:0 8px 20px rgba(18,224,171,.4) !important; transform:translateY(-1px) !important;
+        color:#04231b !important;
     }
-    /* "Custom" toggle button that reveals the host/port form -- a plain
-       secondary-style pill rather than a full-width primary button, so it
-       doesn't compete with the one-click provider buttons above it. */
+    /* "Custom" toggle button that reveals the host/port form -- styled like
+       the provider boxes above it (bordered rounded box with an accent
+       color) instead of a plain dashed outline, so it reads as one more
+       option in the same visual family as the rest of the card. */
     .st-key-imap_custom_toggle_btn button {
-        background:transparent !important; border:1px dashed var(--line-strong) !important;
-        color:#9fb4c9 !important; font-weight:700 !important;
+        background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
+        border:1px solid #2b6b9c !important; border-radius:12px !important;
+        color:#8fd4ff !important; font-weight:700 !important;
     }
     .st-key-imap_custom_toggle_btn button:hover {
-        border-color:var(--cyan) !important; color:#eaf6ff !important;
+        border-color:#4fb3ff !important; color:#eaf6ff !important;
+        box-shadow:0 6px 16px rgba(79,179,255,.25) !important;
     }
     .stRadio > div {background:#081522 !important; border:1px solid #1b344e !important; border-radius:11px !important; padding:5px !important; gap:4px !important;}
     /* Every st.radio in this app renders horizontal=True and is used as a
@@ -4027,10 +4029,10 @@ if active_panel == "Dashboard":
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_provider_email("yahoo", _auto_email)
 
-                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+                imap_user = st.text_input("Email address", placeholder="Enter your email address", key="imap_user")
                 manual_password = st.text_input(
                     "Password / App password", type="password", key="imap_manual_password",
-                    placeholder="Only if not using one-click sign-in",
+                    placeholder="Enter your password or app password",
                 )
                 with st.container(key="manual_login_btn"):
                     _manual_login_clicked = st.button("Log in", use_container_width=True, key="manual_login_submit")
