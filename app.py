@@ -980,6 +980,37 @@ st.markdown(
         background:rgba(47,206,135,.16); border:1px solid rgba(47,206,135,.4);
         color:var(--green); font:900 12px/1 sans-serif;
     }
+    /* "Attached" variant: used when a stage-card is immediately followed by
+       its own action bar (e.g. the mailbox-connected card + its Full
+       Report/Change/Disconnect buttons) so the two read as one continuous
+       panel instead of a card with three loose buttons floating under it. */
+    .stage-card-attached {
+        margin-bottom:0 !important;
+        border-bottom-left-radius:0 !important;
+        border-bottom-right-radius:0 !important;
+    }
+    .st-key-imap_connected_actions {
+        position:relative;
+        background:var(--panel) !important;
+        border:1px solid var(--line) !important;
+        border-top:1px solid rgba(47,206,135,.22) !important;
+        border-left:3px solid var(--green) !important;
+        border-bottom-left-radius:var(--r-lg) !important;
+        border-bottom-right-radius:var(--r-lg) !important;
+        padding:14px 18px 16px 20px !important;
+        margin-top:0 !important;
+        margin-bottom:10px !important;
+    }
+    .st-key-imap_connected_actions .stCaption {
+        margin-bottom:10px !important;
+    }
+    .st-key-imap_connected_actions .stCaption p {
+        font-size:11.5px !important; color:#7993a8 !important; line-height:1.5 !important;
+    }
+    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(2) .stButton > button,
+    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(3) .stButton > button {
+        font-size:12.5px !important;
+    }
     .stage-label {
         position:relative; z-index:1;
         display:inline-flex !important; align-items:center !important;
@@ -4058,7 +4089,7 @@ if active_panel == "Dashboard":
         if mailbox_loaded and not show_connection_form:
             _cfg_summary = st.session_state.get("live_mailbox_config", {}) or {}
             st.markdown(f"""
-            <div class="stage-card stage-card-success">
+            <div class="stage-card stage-card-success stage-card-attached">
               <div class="stage-label">MAILBOX CONNECTED</div>
               <div class="stage-title">{html.escape(str(_cfg_summary.get("user", "")))} &middot; folder: {html.escape(str(_cfg_summary.get("folder", "INBOX")))}</div>
               <div class="stage-help">{len(st.session_state.get("live_mailbox_messages", []))} message headers loaded from {html.escape(str(_cfg_summary.get("host", "")))}. Connection details are hidden while you work &mdash; use the buttons below to change them.</div>
@@ -4070,44 +4101,48 @@ if active_panel == "Dashboard":
             # shortcuts, history, or text box) sitting right here beside the
             # mailbox controls -- so it's visible the moment the mailbox
             # connects, with nothing to scroll to, select, or open in the
-            # sidebar first.
-            _cc1, _cc2, _cc3 = st.columns([2, 1, 1])
-            with _cc1:
-                if st.button(
-                    "Synapse Copilot — Full Report (10 Emails)",
-                    type="primary", use_container_width=True, key="mailbox_quick_full_report_btn",
-                ):
-                    with st.spinner("Fetching the 10 most recent messages..."):
-                        _quick_items, _quick_err = _collect_recent_live_imap_items(10)
-                    if _quick_err:
-                        st.error(_quick_err)
-                    elif not _quick_items:
-                        st.warning("No messages were available to analyze.")
-                    else:
-                        _run_batch_pipeline(_quick_items, "Live IMAP")
-            with _cc2:
-                if st.button("Change mailbox / Reconnect", use_container_width=True, key="imap_show_form_btn"):
-                    st.session_state["show_imap_connection_form"] = True
-                    st.session_state["_imap_auto_connected"] = False
-                    st.session_state["manual_login_submitted"] = False
-                    st.rerun()
-            with _cc3:
-                if st.button("Disconnect mailbox", use_container_width=True, key="imap_disconnect_btn"):
-                    for _k in [
-                        "live_mailbox_messages", "live_mailbox_config", "live_selected_uid",
-                        "live_selected_raw", "live_rescan_nonce", "forensic_report_source",
-                        "pipeline_batch_result", "pipeline_batch_items",
-                    ]:
-                        st.session_state.pop(_k, None)
-                    st.session_state["show_imap_connection_form"] = True
-                    st.session_state["_imap_auto_connected"] = False
-                    st.session_state["manual_login_submitted"] = False
-                    st.rerun()
-            st.caption(
-                "The Full Report button runs machine analysis, AI threat analysis and semantic "
-                "origin correlation on the 10 newest messages, then opens the Forensic Report "
-                "ready to download — no need to pick a message below."
-            )
+            # sidebar first. Sits in its own bordered container that visually
+            # continues the "MAILBOX CONNECTED" card above it (attached top
+            # edge, same accent spine) so the card + its actions read as one
+            # panel instead of a card with three loose buttons drifting below.
+            with st.container(key="imap_connected_actions"):
+                st.caption(
+                    "Full Report runs machine analysis, AI threat analysis and semantic origin "
+                    "correlation on the 10 newest messages, then opens the Forensic Report ready "
+                    "to download — no need to pick a message below."
+                )
+                _cc1, _cc2, _cc3 = st.columns([3, 1.6, 1.3])
+                with _cc1:
+                    if st.button(
+                        "⚡ Synapse Copilot — Full Report (10 Emails)",
+                        type="primary", use_container_width=True, key="mailbox_quick_full_report_btn",
+                    ):
+                        with st.spinner("Fetching the 10 most recent messages..."):
+                            _quick_items, _quick_err = _collect_recent_live_imap_items(10)
+                        if _quick_err:
+                            st.error(_quick_err)
+                        elif not _quick_items:
+                            st.warning("No messages were available to analyze.")
+                        else:
+                            _run_batch_pipeline(_quick_items, "Live IMAP")
+                with _cc2:
+                    if st.button("⇄ Change mailbox", use_container_width=True, key="imap_show_form_btn"):
+                        st.session_state["show_imap_connection_form"] = True
+                        st.session_state["_imap_auto_connected"] = False
+                        st.session_state["manual_login_submitted"] = False
+                        st.rerun()
+                with _cc3:
+                    if st.button("Disconnect", use_container_width=True, key="imap_disconnect_btn"):
+                        for _k in [
+                            "live_mailbox_messages", "live_mailbox_config", "live_selected_uid",
+                            "live_selected_raw", "live_rescan_nonce", "forensic_report_source",
+                            "pipeline_batch_result", "pipeline_batch_items",
+                        ]:
+                            st.session_state.pop(_k, None)
+                        st.session_state["show_imap_connection_form"] = True
+                        st.session_state["_imap_auto_connected"] = False
+                        st.session_state["manual_login_submitted"] = False
+                        st.rerun()
             imap_host = _cfg_summary.get("host", "")
             imap_port = _cfg_summary.get("port", 993)
             imap_user = _cfg_summary.get("user", "")
