@@ -911,8 +911,18 @@ st.markdown(
         border-color:var(--line-strong) !important;
         background:var(--panel-2) !important;
     }
-    .stage-card-success {border-left-color:var(--green) !important;}
-    .stage-card-success:hover {border-color:#22453a !important;}
+    .stage-card-success {
+        border-left-color:var(--green) !important;
+        background:linear-gradient(135deg, rgba(47,206,135,.09), var(--panel) 60%) !important;
+        box-shadow:0 10px 26px rgba(0,0,0,.2), inset 0 0 30px rgba(47,206,135,.04) !important;
+    }
+    .stage-card-success:hover {border-color:#2c5a45 !important; box-shadow:0 14px 30px rgba(0,0,0,.26), inset 0 0 30px rgba(47,206,135,.06) !important;}
+    .stage-card-success::after {
+        content:"✓"; position:absolute; z-index:1; top:12px; right:14px; width:22px; height:22px;
+        display:flex; align-items:center; justify-content:center; border-radius:50%;
+        background:rgba(47,206,135,.16); border:1px solid rgba(47,206,135,.4);
+        color:var(--green); font:900 12px/1 sans-serif;
+    }
     .stage-label {
         position:relative; z-index:1;
         display:inline-flex !important; align-items:center !important;
@@ -1811,28 +1821,45 @@ st.markdown(
     }
     .mode-card-row {display:flex !important; flex-wrap:wrap !important; gap:14px !important; margin-bottom:2px !important;}
     .mode-card {
-        position:relative; flex:1 1 300px; display:flex; align-items:center; gap:16px;
-        background:var(--panel); border:1px solid var(--line); border-radius:var(--r-lg);
-        padding:19px 20px; box-shadow:none;
+        position:relative; overflow:hidden; flex:1 1 300px; display:flex; align-items:center; gap:16px;
+        background:linear-gradient(155deg, rgba(147,167,255,.05), var(--panel) 60%);
+        border:1px solid var(--line); border-radius:var(--r-lg);
+        padding:19px 20px; box-shadow:0 10px 24px rgba(0,0,0,.18);
         transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
     }
+    /* Soft color wash bleeding from the icon corner, so each card reads as
+       genuinely colored rather than a gray box with a small colored icon
+       floating in it. */
+    .mode-card::before {
+        content:""; position:absolute; inset:0; pointer-events:none;
+        background:radial-gradient(120px 90px at -10px -20px, var(--mode-glow, rgba(18,224,171,.16)), transparent 70%);
+        opacity:.9;
+    }
+    .mode-card-live::before {--mode-glow:rgba(147,167,255,.22);}
+    .mode-card-upload::before {--mode-glow:rgba(34,224,180,.22);}
     .mode-card-icon {
-        flex:0 0 44px; width:44px; height:44px; border-radius:var(--r-md);
+        position:relative; z-index:1; flex:0 0 46px; width:46px; height:46px; border-radius:var(--r-md);
         display:flex; align-items:center; justify-content:center; font-size:19px;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
     }
     .mode-card-icon-blue {
-        background:rgba(18,224,171,.14); border:1px solid rgba(18,224,171,.34); color:#93a7ff;
+        background:linear-gradient(145deg, rgba(147,167,255,.28), rgba(147,167,255,.08));
+        border:1px solid rgba(147,167,255,.42); color:#b7c3ff;
     }
     .mode-card-icon-neutral {
-        background:rgba(34,199,172,.14); border:1px solid rgba(34,199,172,.34); color:#7fd8c4;
+        background:linear-gradient(145deg, rgba(34,224,180,.28), rgba(34,224,180,.08));
+        border:1px solid rgba(34,224,180,.42); color:#7fe8cf;
     }
-    .mode-card-title {color:#eef5ff; font-size:14.5px; font-weight:750; line-height:1.3;}
-    .mode-card-sub {color:#8299b2; font-size:12px; margin-top:2px; line-height:1.4;}
-    .mode-card:hover {border-color:var(--line-strong); background:var(--panel-2); transform:translateY(-1px);}
+    .mode-card-title {position:relative; z-index:1; color:#f4f9ff; font-size:14.5px; font-weight:800; line-height:1.3;}
+    .mode-card-sub {position:relative; z-index:1; color:#93a7bf; font-size:12px; margin-top:3px; line-height:1.4;}
+    .mode-card:hover {
+        border-color:var(--line-strong); background:linear-gradient(155deg, rgba(147,167,255,.08), var(--panel-2) 60%);
+        transform:translateY(-2px); box-shadow:0 14px 30px rgba(0,0,0,.26);
+    }
     @keyframes modeCardSelect {
         0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(18,224,171,.0);}
         55%  {transform:scale(1.012);}
-        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(18,224,171,.34);}
+        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 14px 32px rgba(18,224,171,.10);}
     }
     @keyframes modeCardIconPop {
         0%   {transform:scale(.75) rotate(-6deg);}
@@ -1840,9 +1867,16 @@ st.markdown(
         100% {transform:scale(1) rotate(0deg);}
     }
     .mode-card-active {
-        border-color:var(--cyan) !important; background:var(--panel-2) !important;
-        box-shadow:0 0 0 1px rgba(18,224,171,.34) !important;
+        border-color:var(--cyan) !important;
+        background:linear-gradient(155deg, rgba(18,224,171,.14), var(--panel-2) 62%) !important;
+        box-shadow:0 0 0 1px rgba(18,224,171,.4), 0 14px 32px rgba(18,224,171,.10) !important;
         animation:modeCardSelect .4s var(--ease);
+    }
+    .mode-card-active::after {
+        content:"SELECTED"; position:absolute; z-index:1; top:10px; right:12px;
+        font:900 9px/1 monospace; letter-spacing:1.2px; color:var(--green);
+        background:rgba(47,206,135,.12); border:1px solid rgba(47,206,135,.32);
+        border-radius:20px; padding:3px 8px;
     }
     .mode-card-active .mode-card-icon {animation:modeCardIconPop .45s var(--ease);}
     @media (prefers-reduced-motion: reduce) {
@@ -2386,7 +2420,16 @@ st.markdown(
        small "new upload" action instead of leaving a static 100% bar on
        screen (mirrors the single-line confirmation the Live IMAP flow
        already uses). */
-    .scan-compact-status {display:flex; align-items:center; gap:8px; font:700 12px/1.4 monospace; color:#c9d8e7; padding:6px 2px;}
+    .st-key-scan_status_bar {
+        position:relative; overflow:hidden;
+        background:linear-gradient(135deg, rgba(47,206,135,.08), var(--panel) 65%) !important;
+        border:1px solid rgba(47,206,135,.28) !important; border-left:3px solid var(--green) !important;
+        border-radius:var(--r-lg) !important; padding:12px 18px !important; margin:6px 0 14px 0 !important;
+        box-shadow:0 10px 24px rgba(0,0,0,.18) !important;
+    }
+    .st-key-scan_status_bar [data-testid="stHorizontalBlock"] {align-items:center !important;}
+    .scan-compact-status {display:flex; align-items:center; gap:9px; font:700 13px/1.4 "Inter","Segoe UI",sans-serif; color:#e4f3ea;}
+    .scan-compact-status b {color:#eef5ff;}
 
     /* Copilot panel container -- a real st.container(border=True, key=...)
        styled to match the .copilot-header/.copilot-msg family above it, so
@@ -3731,7 +3774,7 @@ if active_panel == "Dashboard":
     _mc_live, _mc_upload = st.columns(2)
     with _mc_live:
         st.markdown(
-            f"""<div class="mode-card {'mode-card-active' if input_mode == _LIVE_OPT else ''}">
+            f"""<div class="mode-card mode-card-live {'mode-card-active' if input_mode == _LIVE_OPT else ''}">
                 <div class="mode-card-icon mode-card-icon-blue"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
                 <div>
                     <div class="mode-card-title">Live IMAP mailbox interceptor</div>
@@ -3745,7 +3788,7 @@ if active_panel == "Dashboard":
             st.rerun()
     with _mc_upload:
         st.markdown(
-            f"""<div class="mode-card {'mode-card-active' if input_mode == _UPLOAD_OPT else ''}">
+            f"""<div class="mode-card mode-card-upload {'mode-card-active' if input_mode == _UPLOAD_OPT else ''}">
                 <div class="mode-card-icon mode-card-icon-neutral"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg></div>
                 <div>
                     <div class="mode-card-title">Evidence file upload</div>
@@ -4557,31 +4600,32 @@ if active_panel == "Dashboard":
                 # lingering progress bar + separate success banner, paired
                 # with compact secondary actions instead of the full intro
                 # block once there's something to show.
-                _status_col, _ai_col, _reset_col = st.columns([3, 1.5, 1.5])
-                with _status_col:
-                    st.markdown(
-                        f'<div class="scan-compact-status"><span class="ai-pulse"></span>'
-                        f'Scan complete — <b>{len(saved_bulk_results):,}</b> emails analyzed</div>',
-                        unsafe_allow_html=True,
-                    )
-                with _ai_col:
-                    if st.button(
-                        "Full AI Report", key="csv_pipeline_btn_compact", use_container_width=True,
-                        help="Machine + AI + semantic analysis on the 10 newest rows, then open the Forensic Report.",
-                    ):
-                        _pipeline_items = _collect_recent_csv_items(data, uploaded.name, 10)
-                        _run_batch_pipeline(_pipeline_items, uploaded.name)
-                with _reset_col:
-                    if st.button(
-                        "Rescan Dataset", key="reset_bulk_scan", use_container_width=True,
-                        help="Clear these results and run the classifier scan again on the same file.",
-                    ):
-                        st.session_state["bulk_scan_results"] = None
-                        st.session_state["bulk_scan_cases"] = None
-                        st.session_state["bulk_scan_cases_hash"] = None
-                        st.session_state["unified_email_table"] = None
-                        st.session_state.pop("forensic_report_source", None)
-                        st.rerun()
+                with st.container(key="scan_status_bar"):
+                    _status_col, _ai_col, _reset_col = st.columns([3, 1.5, 1.5])
+                    with _status_col:
+                        st.markdown(
+                            f'<div class="scan-compact-status"><span class="ai-pulse"></span>'
+                            f'Scan complete — <b>{len(saved_bulk_results):,}</b> emails analyzed</div>',
+                            unsafe_allow_html=True,
+                        )
+                    with _ai_col:
+                        if st.button(
+                            "Full AI Report", key="csv_pipeline_btn_compact", use_container_width=True,
+                            help="Machine + AI + semantic analysis on the 10 newest rows, then open the Forensic Report.",
+                        ):
+                            _pipeline_items = _collect_recent_csv_items(data, uploaded.name, 10)
+                            _run_batch_pipeline(_pipeline_items, uploaded.name)
+                    with _reset_col:
+                        if st.button(
+                            "Rescan Dataset", key="reset_bulk_scan", use_container_width=True,
+                            help="Clear these results and run the classifier scan again on the same file.",
+                        ):
+                            st.session_state["bulk_scan_results"] = None
+                            st.session_state["bulk_scan_cases"] = None
+                            st.session_state["bulk_scan_cases_hash"] = None
+                            st.session_state["unified_email_table"] = None
+                            st.session_state.pop("forensic_report_source", None)
+                            st.rerun()
 
                 df_bulk = pd.DataFrame(saved_bulk_results)
 
