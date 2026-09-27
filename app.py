@@ -1336,12 +1336,32 @@ st.markdown(
        primary button, divider, provider row), just themed to match the
        rest of this app instead of any one brand. */
     .st-key-imap_signin_card {
-        max-width:100% !important; width:100% !important; margin:18px 0 !important;
+        max-width:640px !important; width:100% !important; margin:18px auto !important;
         background:linear-gradient(180deg,#0d1c2e,#09141f) !important;
         border:1px solid #1e3853 !important; border-radius:20px !important;
-        box-shadow:0 24px 60px rgba(0,0,0,.55) !important;
-        padding:34px 48px 26px 48px !important;
+        box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03) !important;
+        padding:36px 40px 30px 40px !important;
     }
+    @media (max-width: 720px) {
+        .st-key-imap_signin_card {padding:28px 22px 24px 22px !important; border-radius:16px !important;}
+    }
+    /* Card header: icon badge + title + subtitle, so the sign-in card opens
+       with real product framing ("what is this, why am I here") instead of
+       jumping straight into a bare "Email address" label with no context --
+       the same pattern any production login screen uses above its fields. */
+    .signin-card-header {
+        display:flex !important; align-items:flex-start !important; gap:14px !important;
+        margin-bottom:24px !important;
+    }
+    .signin-card-icon {
+        flex:0 0 44px !important; width:44px !important; height:44px !important; border-radius:12px !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        background:linear-gradient(145deg, rgba(18,224,171,.24), rgba(18,224,171,.06)) !important;
+        border:1px solid rgba(18,224,171,.38) !important; font-size:19px !important;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.04) !important;
+    }
+    .signin-card-title {color:#f2f8ff !important; font-size:18px !important; font-weight:800 !important; line-height:1.3 !important;}
+    .signin-card-sub {color:#87a0b8 !important; font-size:12.5px !important; margin-top:3px !important; line-height:1.45 !important;}
     .auth-divider {
         display:flex !important; align-items:center !important; gap:12px !important;
         margin:22px 0 14px 0 !important; color:#7c93aa !important;
@@ -1367,18 +1387,31 @@ st.markdown(
         box-shadow:0 8px 20px rgba(18,224,171,.4) !important; transform:translateY(-1px) !important;
         color:#04231b !important;
     }
-    /* "Custom" toggle button that reveals the host/port form -- styled like
-       the provider boxes above it (bordered rounded box with an accent
-       color) instead of a plain dashed outline, so it reads as one more
-       option in the same visual family as the rest of the card. */
-    .st-key-imap_custom_toggle_btn button {
-        background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
-        border:1px solid #2b6b9c !important; border-radius:12px !important;
-        color:#8fd4ff !important; font-weight:700 !important;
+    /* "Custom" toggle -- an advanced/escape-hatch option almost nobody
+       needs (their provider auto-detects above), so it should read as a
+       quiet secondary link, not another bordered card competing for
+       attention right under the sign-in card's primary flow. Rendered as
+       a centered, borderless text link with a settings glyph; the
+       generic .stButton hover/focus glow is explicitly zeroed out below
+       so it stays a plain link on every interactive state, not a button
+       that flashes into a box on click. */
+    .st-key-imap_custom_toggle_btn {
+        display:flex !important; justify-content:center !important;
+        margin:4px 0 20px 0 !important;
     }
-    .st-key-imap_custom_toggle_btn button:hover {
-        border-color:#4fb3ff !important; color:#eaf6ff !important;
-        box-shadow:0 6px 16px rgba(79,179,255,.25) !important;
+    .st-key-imap_custom_toggle_btn .stButton {width:auto !important;}
+    .st-key-imap_custom_toggle_btn button {
+        background:transparent !important; border:none !important; box-shadow:none !important;
+        color:#7a9ab5 !important; font-weight:650 !important; font-size:12.5px !important;
+        letter-spacing:.15px !important; min-height:0 !important; height:auto !important;
+        width:auto !important; padding:6px 8px !important;
+    }
+    .st-key-imap_custom_toggle_btn button:hover,
+    .st-key-imap_custom_toggle_btn button:focus,
+    .st-key-imap_custom_toggle_btn button:focus-visible,
+    .st-key-imap_custom_toggle_btn button:active {
+        background:transparent !important; border:none !important; box-shadow:none !important;
+        color:#bfe3ff !important; text-decoration:underline !important; transform:none !important;
     }
     .stRadio > div {background:#081522 !important; border:1px solid #1b344e !important; border-radius:11px !important; padding:5px !important; gap:4px !important;}
     /* Every st.radio in this app renders horizontal=True and is used as a
@@ -4233,6 +4266,16 @@ if active_panel == "Dashboard":
                         st.error(f"Couldn't reload the inbox: {_e}")
         else:
             with st.container(key="imap_signin_card"):
+                st.markdown(
+                    """<div class="signin-card-header">
+                        <div class="signin-card-icon">✉️</div>
+                        <div>
+                            <div class="signin-card-title">Connect your mailbox</div>
+                            <div class="signin-card-sub">Read-only IMAP access &mdash; sign in to start pulling message headers for analysis.</div>
+                        </div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
 
                 # Autofill from an already-signed-in provider's cached token --
                 # runs BEFORE the Email address widget below is created (same
@@ -4280,7 +4323,9 @@ if active_panel == "Dashboard":
                         "Password / App password", type="password", key="imap_manual_password",
                         placeholder="Enter your password or app password",
                     )
-                    _manual_login_clicked = st.form_submit_button("Log in", use_container_width=True)
+                    _manual_login_clicked = st.form_submit_button(
+                        "🔒 Log in", use_container_width=True, key="manual_login_btn"
+                    )
                 if _manual_login_clicked:
                     if not imap_user or not manual_password:
                         st.error(
@@ -4477,9 +4522,8 @@ if active_panel == "Dashboard":
 
             with st.container(key="imap_custom_toggle_btn"):
                 if st.button(
-                    "Custom (set IMAP server / port manually)",
+                    "⚙ Set IMAP server / port manually",
                     key="imap_custom_toggle",
-                    use_container_width=True,
                 ):
                     st.session_state["show_custom_imap_form"] = not st.session_state["show_custom_imap_form"]
 
