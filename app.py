@@ -1233,6 +1233,36 @@ st.markdown(
         color:#a9c1d8 !important; font-size:12.5px !important; font-weight:650 !important;
         letter-spacing:.15px !important; margin-bottom:2px !important;
     }
+
+    /* Production-style login/field panel -- used to group the mailbox
+       credential fields and the mail-scope (folder/window) fields into one
+       clean, spacious card instead of loose inputs sitting directly on the
+       page background. Bigger fields, bigger labels, more breathing room
+       between rows -- the same shape as a real sign-in form. */
+    .st-key-mail_login_credentials, .st-key-mail_scope_panel {
+        background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        border:1px solid var(--line) !important; border-radius:var(--r-lg) !important;
+        padding:22px 24px 20px 24px !important; margin:4px 0 16px 0 !important;
+        box-shadow:0 10px 26px rgba(0,0,0,.2) !important;
+    }
+    .st-key-mail_login_credentials [data-testid="stWidgetLabel"] p,
+    .st-key-mail_scope_panel [data-testid="stWidgetLabel"] p {
+        color:#dbe8f5 !important; font-size:13.5px !important; font-weight:700 !important;
+        margin-bottom:6px !important;
+    }
+    .st-key-mail_login_credentials .stTextInput input,
+    .st-key-mail_scope_panel .stTextInput input,
+    .st-key-mail_scope_panel .stSelectbox [data-baseweb="select"] > div,
+    .st-key-mail_scope_panel .stNumberInput input {
+        height:48px !important; font-size:14.5px !important; padding:0 16px !important;
+        border-radius:12px !important;
+    }
+    .st-key-mail_login_credentials [data-testid="stVerticalBlock"],
+    .st-key-mail_scope_panel [data-testid="stVerticalBlock"] {gap:0.6rem !important;}
+    .st-key-mail_scope_panel .stButton button[kind="primary"] {
+        height:50px !important; font-size:14.5px !important; font-weight:800 !important;
+        letter-spacing:.4px !important; border-radius:12px !important; margin-top:8px !important;
+    }
     .stRadio > div {background:#081522 !important; border:1px solid #1b344e !important; border-radius:11px !important; padding:5px !important; gap:4px !important;}
     /* Every st.radio in this app renders horizontal=True and is used as a
        tab/segmented control (main workflow nav, acquisition mode, severity
@@ -3960,14 +3990,15 @@ if active_panel == "Dashboard":
                             st.session_state["imap_user"] = _auto_email
                             _save_cached_provider_email("yahoo", _auto_email)
 
-            _cred_col1, _cred_col2 = st.columns(2)
-            with _cred_col1:
-                imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
-            with _cred_col2:
-                manual_password = st.text_input(
-                    "Password / App password", type="password", key="imap_manual_password",
-                    placeholder="Only if not using one-click sign-in",
-                )
+            with st.container(key="mail_login_credentials"):
+                _cred_col1, _cred_col2 = st.columns(2)
+                with _cred_col1:
+                    imap_user = st.text_input("Email address", placeholder="you@example.com", key="imap_user")
+                with _cred_col2:
+                    manual_password = st.text_input(
+                        "Password / App password", type="password", key="imap_manual_password",
+                        placeholder="Only if not using one-click sign-in",
+                    )
 
             # Detect provider from the typed email's domain -- same loose,
             # case-insensitive matching PROVIDERS' keys already used
@@ -4211,20 +4242,21 @@ if active_panel == "Dashboard":
                 "INBOX", "Sent", "Drafts", "Important", "Starred",
                 "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
             ]
-            _sc1, _sc2 = st.columns([2, 1])
-            with _sc1:
-                folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
-                if folder_choice == "Custom folder...":
-                    folder = st.text_input(
-                        "Custom folder name",
-                        placeholder="e.g. [Gmail]/Important or Projects/Client-A",
-                        key="imap_folder_custom",
-                    )
-                else:
-                    folder = folder_choice
-            with _sc2:
-                browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
-            connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
+            with st.container(key="mail_scope_panel"):
+                _sc1, _sc2 = st.columns([2, 1])
+                with _sc1:
+                    folder_choice = st.selectbox("Mailbox folder", _COMMON_FOLDERS, index=0, key="imap_folder_choice")
+                    if folder_choice == "Custom folder...":
+                        folder = st.text_input(
+                            "Custom folder name",
+                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
+                            key="imap_folder_custom",
+                        )
+                    else:
+                        folder = folder_choice
+                with _sc2:
+                    browse_count = st.selectbox("Messages to browse", [10, 25, 50, 100], index=0, key="imap_browse_count")
+                connect_clicked = st.button("Connect & Load Mailbox", type="primary", use_container_width=True, key="connect_imap")
 
             if connect_clicked:
                 if not imap_user or not imap_credential or not imap_host:
