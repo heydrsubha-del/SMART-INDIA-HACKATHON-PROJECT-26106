@@ -2160,14 +2160,14 @@ st.markdown(
        instead of two different ones that happen to sit near each other. */
     .st-key-topnav .stRadio label:has(input:checked),
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) {
+    .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
         box-shadow:0 2px 8px rgba(84,112,255,.35) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label:has(input:checked) p {
+    .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {
         color:#ffffff !important; font-weight:700 !important; letter-spacing:.15px !important;
     }
 
@@ -2659,7 +2659,16 @@ st.markdown(
        pattern as the top nav and the bulk infra scan above. Plain text
        pills, no per-option colour dot (dropped along with bulk infra
        scan's, for the same reason: minimal, one consistent look, and one
-       less thing colliding with the native radio circle). */
+       less thing colliding with the native radio circle).
+       Scoped to [role="radiogroup"] specifically -- the earlier bare
+       "label" selector also matched the widget's own group label (the
+       hidden "Technical Logs & Antivirus view" text from
+       label_visibility="collapsed"), and its `display:flex !important`
+       was overriding Streamlit's own hiding rule, re-displaying that
+       label as its own bordered box above the two real pills. */
+    .st-key-tech_logs_tabs [data-testid="stWidgetLabel"] {
+        display:none !important;
+    }
     .st-key-tech_logs_tabs [data-testid="stRadio"] > div {
         display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
         background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
@@ -2667,7 +2676,7 @@ st.markdown(
         padding:6px !important;
         border-radius:var(--r-md) !important;
     }
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label {
+    .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label {
         text-align:center !important;
         text-transform:none !important;
         display:flex !important; align-items:center !important; justify-content:center !important;
@@ -2680,7 +2689,7 @@ st.markdown(
         border:1px solid transparent !important;
         transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
     }
-    .st-key-tech_logs_tabs [data-testid="stRadio"] label p {
+    .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label p {
         font-size:13.5px !important; font-weight:700 !important; white-space:nowrap !important;
     }
 
@@ -4683,7 +4692,6 @@ if active_panel == "Dashboard":
         dossier dock in _dashboard()) via the shared _render_copilot_panel()
         so the command vocabulary is identical either way."""
 
-        st.write("")
         st.markdown("#### Technical Logs & Antivirus")
         _tech_logs_container = st.container(key="tech_logs_tabs")
         with _tech_logs_container:
