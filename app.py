@@ -744,26 +744,39 @@ st.markdown(
     r"""
     <style>
     :root {
-        --bg: #05070a;
-        --panel: #0d121c;
-        --panel-2: #111826;
-        --panel-3: #0a0e15;
-        --line: #1c2431;
-        --line-strong: #2a3444;
-        --text: #eef2f8;
-        --muted: #93a0b3;
-        --cyan: #12e0ab;
+        /* -------------------------------------------------------------
+           REDESIGNED PALETTE (color-only retint — every token name below
+           is unchanged, so every rule in this file that already reads
+           var(--cyan)/var(--violet)/etc. picks up the new look for free,
+           with zero risk to layout or logic). Moved off the old
+           teal-green-dominant scheme onto a cooler electric-blue + violet
+           primary family, which reads as a more deliberate, modern
+           "SOC console" identity and gives the brand gradient / active
+           states more contrast against the near-black background. Severity
+           colors (critical/high/medium/low, further down) are intentionally
+           left alone -- they carry meaning and must stay universally
+           recognizable (red = bad, green = fine) regardless of re-skinning.
+           ------------------------------------------------------------- */
+        --bg: #060911;
+        --panel: #101828;
+        --panel-2: #15202f;
+        --panel-3: #0b0f17;
+        --line: #212c3d;
+        --line-strong: #33445c;
+        --text: #eef3fb;
+        --muted: #97a5bc;
+        --cyan: #2fb8f0;
         /* Secondary accent family -- gives AI/assistant surfaces (the Qwen
            dossiers, the AI console, the copilot panel) their own color
            identity instead of reusing the primary action blue everywhere. */
-        --violet: #b25bf0;
+        --violet: #8b6bf0;
         /* Tertiary accent family -- reserved for brand/navigation chrome
            (sidebar, masthead) so the app reads as deliberately multi-toned
            rather than one blue skin repeated on every surface. */
-        --teal: #22c7ac;
-        --green: #2fce87;
-        --amber: #f2a93c;
-        --red: #ef5a5a;
+        --teal: #2dd4bf;
+        --green: #34d399;
+        --amber: #f5a524;
+        --red: #f2495c;
         /* Severity scale — reserved strictly for threat-level meaning, never
            used decoratively elsewhere, so color always carries information. */
         --sev-critical: #ef4444;
@@ -778,21 +791,21 @@ st.markdown(
         /* Calm, single-tone focus shadow for primary actions -- a soft
            blue lift instead of a saturated violet halo, so it reads as a
            clean product accent rather than a neon glow. */
-        --glow-violet: 0 0 0 1px rgba(18,224,171,.30), 0 6px 16px rgba(0,0,0,.24);
-        /* Signature brand accent: one flat, professional blue for every
-           primary action / active state, instead of a two-hue gradient --
-           gives the app a single deliberate identity color. */
-        --brand-gradient: linear-gradient(90deg,#12e0ab,#b25bf0);
+        --glow-violet: 0 0 0 1px rgba(47,184,240,.30), 0 6px 16px rgba(0,0,0,.24);
+        /* Signature brand accent: blue-to-violet gradient for every
+           primary action / active state, so the app reads as one
+           deliberate two-tone identity rather than a single flat color. */
+        --brand-gradient: linear-gradient(90deg,#2fb8f0,#8b6bf0);
         /* Action-button tokens -- the whole button family (primary = brand
            cyan-to-violet gradient key, secondary = graphite key) is tinted
            from here, so the look can be re-colored in one place without
            touching any rule. Was a flat teal; now the same punchier
            cyan-to-violet gradient the Synapse Copilot button used, applied
            app-wide so every primary button matches instead of just one. */
-        --act-1-top:#5470ff; --act-1-bot:#8c7bf0; --act-1-border:rgba(140,123,240,.55); --act-1-text:#ffffff;
-        --act-1-top-hover:#647eff; --act-1-bot-hover:#9c8cf5; --act-1-border-hover:rgba(140,123,240,.85);
+        --act-1-top:#3d8bff; --act-1-bot:#8b6bf0; --act-1-border:rgba(139,107,240,.55); --act-1-text:#ffffff;
+        --act-1-top-hover:#5299ff; --act-1-bot-hover:#9b7ef5; --act-1-border-hover:rgba(139,107,240,.85);
         --act-2-top:#161d2a; --act-2-bot:#0e141e; --act-2-border:#2a3444; --act-2-text:#dbe4ef;
-        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(34,199,172,.65);
+        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(47,184,240,.65);
         --ease: cubic-bezier(.4,0,.2,1);
         /* Streamlit's own stock theme color (a coral red, #FF4B4B by
            default) still drives focus/selected states on any BaseWeb
@@ -881,6 +894,15 @@ st.markdown(
 
 
     #MainMenu, footer {display:none !important;}
+    /* The native Streamlit deploy toolbar (Share / star / rename / GitHub
+       icons) rendered inside stHeader used to float directly over the top
+       of our own banner -- MainMenu/footer were already hidden above, but
+       this toolbar wasn't, so it visually collided with the bell + account
+       chip in the top-right of .topbar-shell. Hidden for the same reason
+       MainMenu/footer are: this app has its own branded header, account
+       chip and status indicator, so the stock toolbar is pure redundant
+       chrome, not lost functionality. */
+    [data-testid="stToolbar"] {display:none !important;}
     [data-testid="stHeader"] {
     background:transparent !important;
     height:2.75rem !important;
@@ -2341,9 +2363,9 @@ st.markdown(
     /* ================= NEW DASHBOARD-STYLE UI SHELL ================= */
     .topbar-shell {
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
-        background:linear-gradient(180deg,#122744 0%,#0a1826 100%);
-        border:1px solid #2c5a78; border-radius:var(--r-lg);
-        padding:26px 32px; margin-bottom:14px;
+        background:linear-gradient(180deg,#101d33 0%,#080f1c 100%);
+        border:1px solid #223a56; border-radius:var(--r-lg);
+        padding:28px 34px; margin-top:8px; margin-bottom:18px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
     }
@@ -2396,7 +2418,7 @@ st.markdown(
     .topbar-account-avatar {
         width:26px; height:26px; border-radius:50%; flex:0 0 26px;
         display:flex; align-items:center; justify-content:center;
-        background:var(--cyan); color:#fff; font-weight:800; font-size:12px;
+        background:var(--brand-gradient); color:#fff; font-weight:800; font-size:12px;
     }
     .topbar-account-email {
         font-size:12.5px; color:var(--text); font-weight:600;
@@ -2407,11 +2429,11 @@ st.markdown(
     .topbar-kicker {font-size:11.5px; font-weight:800; letter-spacing:1.8px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
     .topbar-title {font-size:34px; font-weight:900; letter-spacing:.2px; color:#f6fbff; line-height:1.2; text-shadow:0 2px 18px rgba(84,112,255,.25);}
     .topbar-subtitle {font-size:12.5px; color:#93abc3; line-height:1.5; margin-top:6px;}
-    .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:7px;}
+    .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:9px;}
     .topbar-status-pill {
         display:flex; align-items:center; gap:8px; font-size:11.5px; color:#c9f5df; white-space:nowrap;
-        background:rgba(47,206,135,.09); border:1px solid rgba(47,206,135,.28); border-radius:999px;
-        padding:5px 13px;
+        background:rgba(52,211,153,.10); border:1px solid rgba(52,211,153,.30); border-radius:999px;
+        padding:6px 14px; order:-1;
     }
     .topbar-status-dot {width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(47,206,135,.8);display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
     .topbar-status-online {color:#c9f5df; font-weight:650;}
@@ -4036,77 +4058,6 @@ def _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash):
 
 if active_panel == "Dashboard":
     st.write("")
-
-    # ------------------------------------------------------------------
-    # KPI STRIP + ACTION CENTER -- a dense, at-a-glance summary of the
-    # local threat_memory.db (attackers table), reusing the exact query
-    # already trusted by the "Threat History" panel below. Wrapped in
-    # st.fragment so the "Auto-refresh" toggle can re-pull these numbers
-    # every few seconds without rerunning email acquisition/analysis.
-    # Fails soft to an empty state on a fresh install (no DB rows yet).
-    # ------------------------------------------------------------------
-    @st.fragment(run_every="10s" if st.session_state.get("_dash_auto_refresh") else None)
-    def _dashboard_kpi_strip():
-        try:
-            _kpi_conn = get_connection()
-            _kpi_df = pd.read_sql_query(
-                "SELECT date, ip, country, score, verdict FROM attackers ORDER BY date DESC LIMIT 500",
-                _kpi_conn,
-            )
-            _kpi_conn.close()
-        except Exception:
-            _kpi_df = pd.DataFrame(columns=["date", "ip", "country", "score", "verdict"])
-
-        _top = st.columns([1, 1, 1, 1, 0.9])
-        _total = len(_kpi_df)
-        _crit_high = int(_kpi_df["verdict"].isin(["CRITICAL", "HIGH"]).sum()) if _total else 0
-        _avg_score = float(_kpi_df["score"].mean()) if _total else 0.0
-        _uniq_ips = int(_kpi_df["ip"].nunique()) if _total else 0
-
-        with _top[0]:
-            st.metric("Total Logged", f"{_total:,}")
-        with _top[1]:
-            st.metric("Critical / High", _crit_high,
-                       delta=(f"{_crit_high/_total:.0%} of total" if _total else None),
-                       delta_color="inverse")
-        with _top[2]:
-            st.metric("Avg Threat Score", f"{_avg_score:.1f}" if _total else "—")
-        with _top[3]:
-            st.metric("Unique Origin IPs", f"{_uniq_ips:,}")
-        with _top[4]:
-            st.toggle("Auto-refresh", key="_dash_auto_refresh", help="Refresh these four numbers every 10s.")
-
-        if _total:
-            _spark = (
-                _kpi_df.assign(_d=pd.to_datetime(_kpi_df["date"], errors="coerce").dt.date)
-                .groupby("_d").size()
-            )
-            if len(_spark) > 1:
-                _fig = go.Figure(go.Scatter(
-                    x=_spark.index, y=_spark.values, mode="lines", fill="tozeroy",
-                    line=dict(width=2, color="#2fd8ff"),
-                ))
-                _fig.update_layout(
-                    height=70, margin=dict(t=0, b=0, l=0, r=0),
-                    xaxis=dict(visible=False), yaxis=dict(visible=False), showlegend=False,
-                )
-                st.plotly_chart(_fig, use_container_width=True, config={"displayModeBar": False},
-                                  key="dash_kpi_sparkline")
-
-            _recent_high = _kpi_df[_kpi_df["verdict"].isin(["CRITICAL", "HIGH"])].head(4)
-            if not _recent_high.empty:
-                with st.expander(f"⚠ Action Center — {len(_recent_high)} recent high-severity entries", expanded=False):
-                    for _, _r in _recent_high.iterrows():
-                        _color = "#ff4757" if _r["verdict"] == "CRITICAL" else "#ff9f43"
-                        st.markdown(
-                            f'<div style="border-left:3px solid {_color};padding:4px 10px;margin-bottom:6px;">'
-                            f'<b>{html.escape(str(_r["verdict"]))}</b> · score {_r["score"]:.0f} · '
-                            f'`{html.escape(str(_r["ip"]))}` ({html.escape(str(_r["country"]))}) · {_r["date"]}</div>',
-                            unsafe_allow_html=True,
-                        )
-        st.divider()
-
-    panel(_dashboard_kpi_strip, "Dashboard KPI Strip")
 
     _MODE_OPTIONS = ["Live IMAP Mailbox Interceptor", "Evidence File Upload (.eml, .txt, .csv)"]
     _LIVE_OPT, _UPLOAD_OPT = _MODE_OPTIONS
