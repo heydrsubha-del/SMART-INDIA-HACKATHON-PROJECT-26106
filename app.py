@@ -3974,6 +3974,45 @@ if active_panel == "Dashboard":
         st.markdown("### Live Mailbox Interceptor")
         st.caption("Read-only mailbox access. Complete the workflow from top to bottom: connect → browse → select → acquire evidence.")
 
+        # Browser/password-manager autofill sets input.value directly via the
+        # DOM, which never fires the "input" event Streamlit's frontend
+        # listens on -- so a filled-looking field can still be seen as empty
+        # by Streamlit until the user clicks in and types something. This
+        # polls briefly after render and dispatches a real "input" event on
+        # any autofilled field, so Streamlit picks it up on its own instead
+        # of requiring a manual click-then-type-then-delete.
+        components.html(
+            """
+            <script>
+            (function () {
+                function nudgeAutofilled(root) {
+                    const inputs = root.querySelectorAll('input');
+                    inputs.forEach((el) => {
+                        try {
+                            if (el.matches(':-webkit-autofill') || el.value) {
+                                const nativeSetter = Object.getOwnPropertyDescriptor(
+                                    window.HTMLInputElement.prototype, 'value'
+                                ).set;
+                                nativeSetter.call(el, el.value);
+                                el.dispatchEvent(new Event('input', { bubbles: true }));
+                                el.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        } catch (e) { /* ignore cross-origin/style-lookup failures */ }
+                    });
+                }
+                let tries = 0;
+                const parentDoc = window.parent.document;
+                const timer = setInterval(() => {
+                    tries += 1;
+                    nudgeAutofilled(parentDoc);
+                    if (tries > 10) clearInterval(timer);
+                }, 300);
+            })();
+            </script>
+            """,
+            height=0,
+        )
+
         mailbox_loaded = bool(st.session_state.get("live_mailbox_messages"))
         if "show_imap_connection_form" not in st.session_state:
             st.session_state["show_imap_connection_form"] = not mailbox_loaded
@@ -4039,6 +4078,66 @@ if active_panel == "Dashboard":
             folder = _cfg_summary.get("folder", "INBOX")
             browse_count = st.session_state.get("imap_browse_count", 10)
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
+
+            # Folder switcher for the already-connected mailbox -- lets you
+            # change folder/browse count without going through "Change
+            # mailbox / Reconnect" and re-entering credentials each time.
+            _COMMON_FOLDERS_LOADED = [
+                "INBOX", "Sent", "Drafts", "Important", "Starred",
+                "All Mail", "Spam / Junk", "Trash", "Archive", "Custom folder...",
+            ]
+            with st.container(key="imap_loaded_folder_bar"):
+                _fc1, _fc2, _fc3 = st.columns([2, 1, 1])
+                with _fc1:
+                    _default_idx = (
+                        _COMMON_FOLDERS_LOADED.index(folder)
+                        if folder in _COMMON_FOLDERS_LOADED else len(_COMMON_FOLDERS_LOADED) - 1
+                    )
+                    _folder_pick = st.selectbox(
+                        "Mailbox folder", _COMMON_FOLDERS_LOADED, index=_default_idx,
+                        key="imap_loaded_folder_choice",
+                    )
+                    if _folder_pick == "Custom folder...":
+                        _new_folder = st.text_input(
+                            "Custom folder name", value=folder if folder not in _COMMON_FOLDERS_LOADED else "",
+                            placeholder="e.g. [Gmail]/Important or Projects/Client-A",
+                            key="imap_loaded_folder_custom",
+                        )
+                    else:
+                        _new_folder = _folder_pick
+                with _fc2:
+                    _new_browse_count = st.selectbox(
+                        "Messages to browse", [10, 25, 50, 100],
+                        index=[10, 25, 50, 100].index(browse_count) if browse_count in [10, 25, 50, 100] else 0,
+                        key="imap_loaded_browse_count",
+                    )
+                with _fc3:
+                    st.markdown("<div style='height: 1.8rem'></div>", unsafe_allow_html=True)
+                    _reload_clicked = st.button("Reload folder", use_container_width=True, key="imap_reload_folder_btn")
+                if _reload_clicked:
+                    if not _new_folder:
+                        st.error("Enter a custom folder name, or pick one of the listed folders.")
+                    else:
+                        try:
+                            with st.spinner(f"Loading '{_new_folder}'..."):
+                                _reloaded_messages = fetch_mailbox_messages(
+                                    imap_host, imap_user, imap_credential,
+                                    max_messages=_new_browse_count, folder=_new_folder,
+                                    port=int(imap_port), auth_mode=auth_mode,
+                                )
+                            st.session_state["live_mailbox_messages"] = _reloaded_messages
+                            st.session_state["live_mailbox_config"] = {
+                                "host": imap_host, "port": int(imap_port), "user": imap_user,
+                                "folder": _new_folder, "auth_mode": auth_mode, "credential": imap_credential,
+                            }
+                            st.session_state["imap_browse_count"] = _new_browse_count
+                            st.session_state["live_selected_uid"] = None
+                            st.session_state["live_selected_raw"] = None
+                            st.session_state["live_rescan_nonce"] = 0
+                            st.success(f"Loaded {len(_reloaded_messages)} message headers from '{_new_folder}'.")
+                            st.rerun()
+                        except Exception as _e:
+                            st.error(f"Couldn't load that folder: {_e}")
         else:
             with st.container(key="imap_signin_card"):
 
