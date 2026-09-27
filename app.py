@@ -2866,6 +2866,16 @@ _MODE_OPTIONS = ["Live IMAP Mailbox Interceptor", "Evidence File Upload (.eml, .
 if st.session_state.get("nav_force_mode") in _MODE_OPTIONS:
     st.session_state["input_mode_radio"] = st.session_state.pop("nav_force_mode")
 
+# Computed once, up here, so both the sidebar (which renders first) and the
+# top workflow nav further down agree on it in the same run. Before any
+# mailbox is connected or file uploaded there's no evidence for the analysis
+# panels to show, so both navs collapse down to just Dashboard (to acquire
+# evidence) + Settings/About instead of a full list of panels that would
+# each just render their own "nothing to analyze yet" placeholder.
+_has_evidence_loaded = bool(st.session_state.get("live_mailbox_messages")) or bool(
+    st.session_state.get("stored_evidence_file")
+)
+
 with st.sidebar:
     st.markdown(
         f"""<div class="sidebar-brand-v2">
@@ -2946,29 +2956,38 @@ with st.sidebar:
         "Live Email Scan (IMAP)", "Dashboard", force_mode=_LIVE_MODE, key="nav_live",
         active_when=_on_dashboard and _mode_now == _LIVE_MODE,
     )
-    _nav_button("AI Copilot", "AI Threat Analysis", key="nav_ai_copilot_side")
-    _nav_button(
-        "Nomic AI", "Origin & Route", key="nav_nomic_side",
-        active_when=_on_origin_route and _origin_focus == "nomic",
-        on_click_set={"origin_route_focus": "nomic"},
-    )
 
-    _nav_group("Visualization", accent="green")
-    _nav_button(
-        "Global Threat Map", "Origin & Route", key="nav_map_side",
-        active_when=_on_origin_route and _origin_focus == "map",
-        on_click_set={"origin_route_focus": "map"},
-    )
-    _nav_button("Correlation Graph", "Correlation", key="nav_graph_side")
-    _nav_button("Analytics", "Classification", key="nav_analytics_side")
+    # Everything below jumps to an analysis panel (AI Copilot, Nomic AI,
+    # the map, correlation graph, analytics, history, IOC lookup, feed) --
+    # all of them need evidence to already be loaded to show anything but a
+    # placeholder. Keeping them out of the sidebar too, not just the top
+    # nav, until a mailbox is connected or a file is uploaded means the
+    # very first screen only offers what's actually usable right now:
+    # acquire evidence (above), or Settings/About (below).
+    if _has_evidence_loaded:
+        _nav_button("AI Copilot", "AI Threat Analysis", key="nav_ai_copilot_side")
+        _nav_button(
+            "Nomic AI", "Origin & Route", key="nav_nomic_side",
+            active_when=_on_origin_route and _origin_focus == "nomic",
+            on_click_set={"origin_route_focus": "nomic"},
+        )
 
-    _nav_group("Intelligence", accent="violet")
-    _nav_button("Threat History", "Threat History", key="nav_history_side")
-    _nav_button("IOC Lookup", "Indicators", key="nav_ioc_side")
-    _nav_button("URLHaus Feed", "URLHaus Feed", key="nav_urlhaus_side")
+        _nav_group("Visualization", accent="green")
+        _nav_button(
+            "Global Threat Map", "Origin & Route", key="nav_map_side",
+            active_when=_on_origin_route and _origin_focus == "map",
+            on_click_set={"origin_route_focus": "map"},
+        )
+        _nav_button("Correlation Graph", "Correlation", key="nav_graph_side")
+        _nav_button("Analytics", "Classification", key="nav_analytics_side")
 
-    _nav_group("Security", accent="rose")
-    _nav_button("Antivirus (ClamAV)", "Antivirus", key="nav_av_side")
+        _nav_group("Intelligence", accent="violet")
+        _nav_button("Threat History", "Threat History", key="nav_history_side")
+        _nav_button("IOC Lookup", "Indicators", key="nav_ioc_side")
+        _nav_button("URLHaus Feed", "URLHaus Feed", key="nav_urlhaus_side")
+
+        _nav_group("Security", accent="rose")
+        _nav_button("Antivirus (ClamAV)", "Antivirus", key="nav_av_side")
 
     _nav_group("System", accent="slate")
     _nav_button("Settings", "Settings", key="nav_settings_side")
@@ -3068,21 +3087,36 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-NAV_OPTIONS = [
-    "Dashboard",
-    "AI Threat Analysis",
-    "Forensic Report",
-    "Classification",
-    "Headers & Auth",
-    "Origin & Route",
-    "Indicators",
-    "Correlation",
-    "Threat History",
-    "URLHaus Feed",
-    "Antivirus",
-    "Settings",
-    "About",
-]
+# Before any evidence exists (no live mailbox connected, no file uploaded)
+# there is nothing yet for the analysis panels to show -- AI Threat
+# Analysis, Forensic Report, Classification, Headers & Auth, Origin &
+# Route, Indicators, Correlation and Threat History would all just render
+# their own "please acquire evidence first" placeholder. Keeping them out
+# of the nav (and out of NAV_OPTIONS, so their panel bodies further down
+# never even evaluate) until there's something to analyze keeps the first
+# screen to the two things that are actually usable pre-evidence --
+# Dashboard (to acquire evidence) and Settings/About -- instead of a full
+# workflow bar of dead links. The moment a mailbox connects or a file is
+# loaded, the rest of the workflow reappears automatically on the next run.
+# (_has_evidence_loaded is computed once, up near the sidebar, and reused here.)
+if _has_evidence_loaded:
+    NAV_OPTIONS = [
+        "Dashboard",
+        "AI Threat Analysis",
+        "Forensic Report",
+        "Classification",
+        "Headers & Auth",
+        "Origin & Route",
+        "Indicators",
+        "Correlation",
+        "Threat History",
+        "URLHaus Feed",
+        "Antivirus",
+        "Settings",
+        "About",
+    ]
+else:
+    NAV_OPTIONS = ["Dashboard", "Settings", "About"]
 # Bind the radio directly to the "active_panel" session_state key instead of
 # re-deriving `index=` from that same key on every run. Computing index from
 # session_state and then writing session_state back from the widget's return
