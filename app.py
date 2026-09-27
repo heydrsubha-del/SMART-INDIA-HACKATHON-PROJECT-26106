@@ -1247,23 +1247,21 @@ st.markdown(
        idea as a typical consumer login screen (logo, title, fields,
        primary button, divider, provider row), just themed to match the
        rest of this app instead of any one brand. */
+    /* Full-page treatment: the card is the only thing on screen while
+       signed out (mode-select cards and the section heading are skipped
+       above), so it's centered in the full viewport height rather than
+       just sitting narrow-and-top like an embedded widget. */
+    .stMainBlockContainer:has(.st-key-imap_signin_card) {
+        min-height:92vh !important; display:flex !important;
+        align-items:center !important; justify-content:center !important;
+    }
     .st-key-imap_signin_card {
-        max-width:420px !important; margin:18px auto 6px auto !important;
+        max-width:440px !important; width:100% !important; margin:18px auto !important;
         background:linear-gradient(180deg,#0d1c2e,#09141f) !important;
         border:1px solid #1e3853 !important; border-radius:20px !important;
-        box-shadow:0 18px 40px rgba(0,0,0,.45) !important;
-        padding:30px 28px 24px 28px !important;
+        box-shadow:0 24px 60px rgba(0,0,0,.55) !important;
+        padding:34px 30px 26px 30px !important;
     }
-    .auth-card-header {text-align:center !important; margin-bottom:18px !important;}
-    .auth-card-logo {
-        width:44px; height:44px; margin:0 auto 12px auto;
-        border-radius:12px; background:#e60023;
-        color:#fff; font-weight:800; font-size:20px;
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:0 6px 16px rgba(230,0,35,.35);
-    }
-    .auth-card-title {color:#f2f7fc; font-size:19px; font-weight:750; margin-bottom:4px;}
-    .auth-card-subtitle {color:#8fa5bd; font-size:13px; font-weight:500;}
     .auth-divider {
         display:flex !important; align-items:center !important; gap:12px !important;
         margin:22px 0 14px 0 !important; color:#7c93aa !important;
@@ -3837,37 +3835,52 @@ if active_panel == "Dashboard":
     if input_mode not in _MODE_OPTIONS:
         input_mode = _LIVE_OPT
 
-    st.markdown('<div class="mode-select-heading">Select threat acquisition mode</div>', unsafe_allow_html=True)
-    _mc_live, _mc_upload = st.columns(2)
-    with _mc_live:
-        st.markdown(
-            f"""<div class="mode-card mode-card-live {'mode-card-active' if input_mode == _LIVE_OPT else ''}">
-                <div class="mode-card-icon mode-card-icon-blue"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
-                <div>
-                    <div class="mode-card-title">Live IMAP mailbox interceptor</div>
-                    <div class="mode-card-sub">Read-only, connects directly to the mailbox</div>
-                </div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
-        if st.button("Use live IMAP mailbox interceptor", key="acq_pick_live", use_container_width=True):
-            st.session_state["input_mode_radio"] = _LIVE_OPT
-            st.rerun()
-    with _mc_upload:
-        st.markdown(
-            f"""<div class="mode-card mode-card-upload {'mode-card-active' if input_mode == _UPLOAD_OPT else ''}">
-                <div class="mode-card-icon mode-card-icon-neutral"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg></div>
-                <div>
-                    <div class="mode-card-title">Evidence file upload</div>
-                    <div class="mode-card-sub">.eml, .txt, .csv batch import</div>
-                </div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
-        if st.button("Use evidence file upload", key="acq_pick_upload", use_container_width=True):
-            st.session_state["input_mode_radio"] = _UPLOAD_OPT
-            st.rerun()
-    st.write("")
+    # Full-page sign-in: when we're about to show the live-IMAP connection
+    # form (no mailbox loaded yet, or the user asked to reconnect), skip the
+    # mode-select cards and the "Live Mailbox Interceptor" heading entirely
+    # so the sign-in card is the only thing on screen -- same as a dedicated
+    # login page -- instead of a card sitting underneath other dashboard
+    # chrome. Mirrors the same loaded/show-form check the Live IMAP branch
+    # itself uses further down.
+    _mailbox_loaded_now = bool(st.session_state.get("live_mailbox_messages"))
+    _show_signin_fullpage = (
+        input_mode == _LIVE_OPT
+        and st.session_state.get("show_imap_connection_form", not _mailbox_loaded_now)
+        and not _mailbox_loaded_now
+    )
+
+    if not _show_signin_fullpage:
+        st.markdown('<div class="mode-select-heading">Select threat acquisition mode</div>', unsafe_allow_html=True)
+        _mc_live, _mc_upload = st.columns(2)
+        with _mc_live:
+            st.markdown(
+                f"""<div class="mode-card mode-card-live {'mode-card-active' if input_mode == _LIVE_OPT else ''}">
+                    <div class="mode-card-icon mode-card-icon-blue"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+                    <div>
+                        <div class="mode-card-title">Live IMAP mailbox interceptor</div>
+                        <div class="mode-card-sub">Read-only, connects directly to the mailbox</div>
+                    </div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+            if st.button("Use live IMAP mailbox interceptor", key="acq_pick_live", use_container_width=True):
+                st.session_state["input_mode_radio"] = _LIVE_OPT
+                st.rerun()
+        with _mc_upload:
+            st.markdown(
+                f"""<div class="mode-card mode-card-upload {'mode-card-active' if input_mode == _UPLOAD_OPT else ''}">
+                    <div class="mode-card-icon mode-card-icon-neutral"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg></div>
+                    <div>
+                        <div class="mode-card-title">Evidence file upload</div>
+                        <div class="mode-card-sub">.eml, .txt, .csv batch import</div>
+                    </div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+            if st.button("Use evidence file upload", key="acq_pick_upload", use_container_width=True):
+                st.session_state["input_mode_radio"] = _UPLOAD_OPT
+                st.rerun()
+        st.write("")
 
     if "Evidence File Upload" in input_mode:
         _stored_evidence = st.session_state.get("stored_evidence_file")
@@ -3922,8 +3935,9 @@ if active_panel == "Dashboard":
                 st.info("SYSTEM READY · Awaiting evidence acquisition. Supported: EML / TXT / CSV · Maximum 200 MB per file.")
                 st.stop()
     elif "Live IMAP Mailbox Interceptor" in input_mode:
-        st.markdown("### Live Mailbox Interceptor")
-        st.caption("Read-only mailbox access. Complete the workflow from top to bottom: connect → browse → select → acquire evidence.")
+        if not _show_signin_fullpage:
+            st.markdown("### Live Mailbox Interceptor")
+            st.caption("Read-only mailbox access. Complete the workflow from top to bottom: connect → browse → select → acquire evidence.")
 
         mailbox_loaded = bool(st.session_state.get("live_mailbox_messages"))
         if "show_imap_connection_form" not in st.session_state:
@@ -3988,14 +4002,6 @@ if active_panel == "Dashboard":
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
         else:
             with st.container(key="imap_signin_card"):
-                st.markdown(
-                    """<div class="auth-card-header">
-                        <div class="auth-card-logo">A</div>
-                        <div class="auth-card-title">Sign in to Algorithmistic</div>
-                        <div class="auth-card-subtitle">Connect a mailbox for read-only threat analysis</div>
-                    </div>""",
-                    unsafe_allow_html=True,
-                )
 
                 # Autofill from an already-signed-in provider's cached token --
                 # runs BEFORE the Email address widget below is created (same
