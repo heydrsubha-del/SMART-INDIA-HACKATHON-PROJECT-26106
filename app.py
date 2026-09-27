@@ -1256,7 +1256,7 @@ st.markdown(
         align-items:center !important; justify-content:center !important;
     }
     .st-key-imap_signin_card {
-        max-width:880px !important; width:100% !important; margin:18px auto !important;
+        max-width:100% !important; width:100% !important; margin:18px 0 !important;
         background:linear-gradient(180deg,#0d1c2e,#09141f) !important;
         border:1px solid #1e3853 !important; border-radius:20px !important;
         box-shadow:0 24px 60px rgba(0,0,0,.55) !important;
