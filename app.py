@@ -5297,120 +5297,104 @@ if active_panel == "Dashboard":
                 </div>""",
                 unsafe_allow_html=True,
             )
-            # Map and correlation graph render side by side in one row
-            # instead of stacked or behind a tab switch -- both are visible
-            # at once, no extra click needed either way.
-            with st.container(border=True, key="dash_map_graph_card"):
-                map_col, graph_col = st.columns(2, gap="large")
-                with map_col:
-                    _dash_map_mode = st.radio(
-                        "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True,
-                        key="dash_map_mode", label_visibility="collapsed",
-                    )
-                    if _dash_map_mode == _MAP_MODE_ALL:
-                        st.markdown("""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
-                            <span>All senders</span></div>""", unsafe_allow_html=True)
-                        _render_all_senders_map(cases, key_prefix="dash", height=430)
+            # Map and correlation graph each render full-width, stacked --
+            # side-by-side columns were squeezing both into half-width
+            # panels, which is what forced aggressive label truncation and
+            # made the correlation graph's nodes/labels crowd together.
+            # Full width on every device (including narrow windows, where
+            # Streamlit's columns used to squash rather than reflow) with
+            # room for labels to read cleanly.
+            with st.container(border=True, key="dash_map_card"):
+                _dash_map_mode = st.radio(
+                    "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True,
+                    key="dash_map_mode", label_visibility="collapsed",
+                )
+                if _dash_map_mode == _MAP_MODE_ALL:
+                    st.markdown("""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
+                        <span>All senders</span></div>""", unsafe_allow_html=True)
+                    _render_all_senders_map(cases, key_prefix="dash", height=420)
+                else:
+                    _dash_sel_case = _pick_case_for_map(cases, result, case_name, key="dash_map_email_pick", source_rows=data)
+                    _dash_sel_geo = _dash_sel_case.get("geo", {}) or {}
+                    _dash_sel_origin = _dash_sel_geo.get("origin", {}) or {}
+                    st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
+                        <span>{_dash_sel_origin.get('ip','Unknown')}</span></div>""", unsafe_allow_html=True)
+                    hops = [h for h in _dash_sel_geo.get("hops", []) if h.get("lat") is not None]
+                    if hops:
+                        dash_map = folium.Map(location=[hops[0]["lat"], hops[0]["lon"]], zoom_start=2, tiles=None)
+                        _add_base_tiles(dash_map)
+                        for i, h in enumerate(hops, 1):
+                            is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(hops))
+                            folium.CircleMarker(
+                                location=[h["lat"], h["lon"]], radius=7,
+                                color="#ff4757" if is_origin else "#2fd8ff",
+                                fill=True, fill_opacity=0.85,
+                                popup=f"{h['ip']} · {h.get('city','')} {h.get('country','')}",
+                            ).add_to(dash_map)
+                        folium.LayerControl(collapsed=False).add_to(dash_map)
+                        st_folium(dash_map, width="stretch", height=420, returned_objects=[], key="dash_single_map")
                     else:
-                        _dash_sel_case = _pick_case_for_map(cases, result, case_name, key="dash_map_email_pick", source_rows=data)
-                        _dash_sel_geo = _dash_sel_case.get("geo", {}) or {}
-                        _dash_sel_origin = _dash_sel_geo.get("origin", {}) or {}
-                        st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
-                            <span>{_dash_sel_origin.get('ip','Unknown')}</span></div>""", unsafe_allow_html=True)
-                        hops = [h for h in _dash_sel_geo.get("hops", []) if h.get("lat") is not None]
-                        if hops:
-                            dash_map = folium.Map(location=[hops[0]["lat"], hops[0]["lon"]], zoom_start=2, tiles=None)
-                            _add_base_tiles(dash_map)
-                            for i, h in enumerate(hops, 1):
-                                is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(hops))
-                                folium.CircleMarker(
-                                    location=[h["lat"], h["lon"]], radius=7,
-                                    color="#ff4757" if is_origin else "#2fd8ff",
-                                    fill=True, fill_opacity=0.85,
-                                    popup=f"{h['ip']} · {h.get('city','')} {h.get('country','')}",
-                                ).add_to(dash_map)
-                            folium.LayerControl(collapsed=False).add_to(dash_map)
-                            st_folium(dash_map, width="stretch", height=430, returned_objects=[], key="dash_single_map")
+                        st.info("No geolocatable hop for this email yet.")
+
+            with st.container(border=True, key="dash_graph_card"):
+                st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
+                    <span>{len(cases)} CASES</span></div>""", unsafe_allow_html=True)
+                # A fixed seed here keeps this small preview stable between
+                # reruns; the full, shuffleable, interactive version lives
+                # on the dedicated Correlation panel.
+                G = _build_correlation_graph(cases, max_cases=20, seed=42)
+                _corr_fig = correlate.graph_figure(G, height=560)
+                # Full-width now (not squeezed into a half-width column), so
+                # labels can run longer before needing to be cut off.
+                _CORR_LABEL_MAX = 40
+
+                def _corr_truncate(s):
+                    s = "" if s is None else str(s)
+                    return s if len(s) <= _CORR_LABEL_MAX else s[: _CORR_LABEL_MAX - 1].rstrip() + "…"
+
+                def _corr_shrink_trace(tr):
+                    if "text" in (tr.mode or "") and tr.text is not None:
+                        if isinstance(tr.text, (list, tuple)):
+                            tr.text = [_corr_truncate(t) for t in tr.text]
                         else:
-                            st.info("No geolocatable hop for this email yet.")
+                            tr.text = _corr_truncate(tr.text)
+                        tr.update(cliponaxis=False, textfont=dict(size=11))
 
-                with graph_col:
-                    st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
-                        <span>{len(cases)} CASES</span></div>""", unsafe_allow_html=True)
-                    # A fixed seed here keeps this small preview stable between
-                    # reruns; the full, shuffleable, interactive version lives
-                    # on the dedicated Correlation panel.
-                    G = _build_correlation_graph(cases, max_cases=20, seed=42)
-                    _corr_fig = correlate.graph_figure(G, height=430)
-                    # Truncating margins alone didn't fix this (confirmed
-                    # against a live screenshot) -- the real cause is much
-                    # simpler: several node/edge labels here are full
-                    # sentences ("Live IMAP: You shared some Google
-                    # Account data with Claude") or full email addresses,
-                    # and no amount of margin makes a fixed-width plot area
-                    # wide enough to fit a sentence next to a node without
-                    # running off the canvas edge. Truncate what's actually
-                    # drawn ON the chart (not hover text, which can stay
-                    # full length since it isn't space-constrained) to a
-                    # length that fits the preview's half-width column.
-                    _CORR_LABEL_MAX = 22
+                _corr_fig.for_each_trace(_corr_shrink_trace)
+                _corr_fig.for_each_annotation(lambda a: a.update(text=_corr_truncate(a.text)) if a.text else None)
 
-                    def _corr_truncate(s):
-                        s = "" if s is None else str(s)
-                        return s if len(s) <= _CORR_LABEL_MAX else s[: _CORR_LABEL_MAX - 1].rstrip() + "…"
+                # Spreads nodes outward from the plot's centroid so labels
+                # and severity halos don't crowd into each other -- now with
+                # a lighter factor since full width already gives everything
+                # more room than the old half-width column did.
+                def _corr_spread(fig, factor=1.25):
+                    _xs = [v for tr in fig.data for v in (tr.x or []) if v is not None]
+                    _ys = [v for tr in fig.data for v in (tr.y or []) if v is not None]
+                    if not _xs or not _ys:
+                        return
+                    _cx, _cy = sum(_xs) / len(_xs), sum(_ys) / len(_ys)
+                    for tr in fig.data:
+                        if tr.x is not None:
+                            tr.x = [(_cx + (v - _cx) * factor) if v is not None else v for v in tr.x]
+                        if tr.y is not None:
+                            tr.y = [(_cy + (v - _cy) * factor) if v is not None else v for v in tr.y]
+                    if fig.layout.annotations:
+                        for _ann in fig.layout.annotations:
+                            _upd = {}
+                            if _ann.x is not None:
+                                _upd["x"] = _cx + (_ann.x - _cx) * factor
+                            if _ann.y is not None:
+                                _upd["y"] = _cy + (_ann.y - _cy) * factor
+                            if _upd:
+                                _ann.update(**_upd)
 
-                    def _corr_shrink_trace(tr):
-                        if "text" in (tr.mode or "") and tr.text is not None:
-                            if isinstance(tr.text, (list, tuple)):
-                                tr.text = [_corr_truncate(t) for t in tr.text]
-                            else:
-                                tr.text = _corr_truncate(tr.text)
-                            tr.update(cliponaxis=False, textfont=dict(size=10))
-
-                    _corr_fig.for_each_trace(_corr_shrink_trace)
-                    _corr_fig.for_each_annotation(lambda a: a.update(text=_corr_truncate(a.text)) if a.text else None)
-
-                    # The two "Case" star nodes (and their translucent
-                    # severity halos) were landing close enough together
-                    # that the halos overlapped and both "Live IMAP: You
-                    # shared…" labels crowded into the same patch of
-                    # canvas -- this preview graph fixes seed=42 for a
-                    # stable layout but doesn't otherwise space nodes for
-                    # a compact half-width column. Rather than reach into
-                    # correlate.py's layout internals, spread every
-                    # trace's coordinates outward from the plot's own
-                    # centroid -- preserves the graph's shape (who's
-                    # connected to whom still reads the same way) while
-                    # giving every node and its label more room from its
-                    # neighbours.
-                    def _corr_spread(fig, factor=1.55):
-                        _xs = [v for tr in fig.data for v in (tr.x or []) if v is not None]
-                        _ys = [v for tr in fig.data for v in (tr.y or []) if v is not None]
-                        if not _xs or not _ys:
-                            return
-                        _cx, _cy = sum(_xs) / len(_xs), sum(_ys) / len(_ys)
-                        for tr in fig.data:
-                            if tr.x is not None:
-                                tr.x = [(_cx + (v - _cx) * factor) if v is not None else v for v in tr.x]
-                            if tr.y is not None:
-                                tr.y = [(_cy + (v - _cy) * factor) if v is not None else v for v in tr.y]
-                        if fig.layout.annotations:
-                            for _ann in fig.layout.annotations:
-                                _upd = {}
-                                if _ann.x is not None:
-                                    _upd["x"] = _cx + (_ann.x - _cx) * factor
-                                if _ann.y is not None:
-                                    _upd["y"] = _cy + (_ann.y - _cy) * factor
-                                if _upd:
-                                    _ann.update(**_upd)
-
-                    _corr_spread(_corr_fig)
-                    _corr_fig.update_layout(margin=dict(l=34, r=34, t=10, b=10))
-                    st.plotly_chart(_corr_fig, width="stretch")
-                    if G.graph.get("sampled"):
-                        st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
-                    else:
-                        st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
+                _corr_spread(_corr_fig)
+                _corr_fig.update_layout(margin=dict(l=24, r=24, t=10, b=10))
+                st.plotly_chart(_corr_fig, width="stretch")
+                if G.graph.get("sampled"):
+                    st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
+                else:
+                    st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
 
             # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
             # In CSV mode this section already rendered earlier (between the Deep
