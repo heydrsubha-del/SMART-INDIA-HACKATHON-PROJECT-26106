@@ -4500,8 +4500,17 @@ if active_panel == "Dashboard":
                             else:
                                 try:
                                     auth_url, _state = get_authorization_url(email_hint=imap_user)
+                                    # target="_top" (not "_self"): Streamlit can render this
+                                    # markdown inside its own frame depending on how the app is
+                                    # embedded/hosted, and "_self" only navigates within
+                                    # whatever frame the link lives in. Google refuses to render
+                                    # its login page inside any iframe at all (for security),
+                                    # so a framed "_self" link silently produced a blank
+                                    # "403 - you do not have access to this page" with the
+                                    # browser's address bar never leaving the Streamlit app.
+                                    # "_top" always breaks out to the real top-level window.
                                     st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_self" class="google-signin-btn">Sign in with Gmail</a>',
+                                        f'<a href="{html.escape(auth_url)}" target="_top" class="google-signin-btn">Sign in with Gmail</a>',
                                         unsafe_allow_html=True,
                                     )
                                 except Exception as e:
@@ -4543,7 +4552,7 @@ if active_panel == "Dashboard":
                                 try:
                                     auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
                                     st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_self" class="microsoft-signin-btn">Sign in with Outlook</a>',
+                                        f'<a href="{html.escape(auth_url)}" target="_top" class="microsoft-signin-btn">Sign in with Outlook</a>',
                                         unsafe_allow_html=True,
                                     )
                                 except Exception as e:
@@ -4585,7 +4594,7 @@ if active_panel == "Dashboard":
                                 try:
                                     auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
                                     st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_self" class="yahoo-signin-btn">Sign in with Yahoo</a>',
+                                        f'<a href="{html.escape(auth_url)}" target="_top" class="yahoo-signin-btn">Sign in with Yahoo</a>',
                                         unsafe_allow_html=True,
                                     )
                                 except Exception as e:
