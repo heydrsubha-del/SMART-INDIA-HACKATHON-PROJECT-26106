@@ -1239,41 +1239,35 @@ st.markdown(
        (not a Streamlit widget) so it renders identically across Streamlit
        versions -- it needs to be a real <a> so clicking it navigates the
        browser straight to Google, rather than a server-side st.button. */
-    .google-signin-btn {
-        display:flex !important;
-        align-items:center !important;
-        justify-content:center !important;
-        width:100% !important;
-        min-height:42px !important;
-        box-sizing:border-box !important;
-        background:#ffffff !important;
-        color:#3c4043 !important;
-        border:1px solid #dadce0 !important;
-        border-radius:12px !important;
-        font-family:Inter,"Segoe UI",Arial,sans-serif !important;
-        font-weight:600 !important;
-        font-size:14px !important;
-        text-decoration:none !important;
-        box-shadow:0 1px 3px rgba(0,0,0,.2) !important;
-        padding:10px 16px 10px 44px !important;
-        background-repeat:no-repeat !important;
-        background-position:14px center !important;
-        background-size:20px 20px !important;
+    /* "Sign in with Gmail/Outlook/Yahoo" -- these are now native
+       st.link_button widgets (see the sign-in form code) rather than
+       hand-rolled <a> tags via st.markdown(unsafe_allow_html=True); the
+       custom anchor approach rendered fine but its click sometimes did
+       nothing at all depending on host/browser handling of a raw
+       target="_top" link inside sanitized markdown. st.link_button is a
+       first-class widget built for exactly this (navigate to an external
+       URL on click) and isn't subject to that. Targeted by the widget's
+       key wrapper so the brand look (white Google pill, dark Microsoft
+       tile, purple Yahoo tile) carries over unchanged.
+       Streamlit renders st.link_button as an <a> styled like a button
+       inside its key wrapper -- select it generically so it survives
+       minor Streamlit DOM-structure differences across versions. */
+    .st-key-google_signin_link_btn a {
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        width:100% !important; min-height:42px !important; box-sizing:border-box !important;
+        background:#ffffff !important; color:#3c4043 !important;
+        border:1px solid #dadce0 !important; border-radius:12px !important;
+        font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:600 !important; font-size:14px !important;
+        text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.2) !important;
+        padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
+        background-position:14px center !important; background-size:20px 20px !important;
         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23FFC107' d='M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z'/%3E%3Cpath fill='%23FF3D00' d='M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4c-7.682 0-14.344 4.337-17.694 10.691z'/%3E%3Cpath fill='%234CAF50' d='M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z'/%3E%3Cpath fill='%231976D2' d='M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C40.463 35.751 44 30.5 44 24c0-1.341-.138-2.65-.389-3.917z'/%3E%3C/svg%3E") !important;
         transition:box-shadow .15s ease, border-color .15s ease !important;
     }
-    .google-signin-btn:hover {
-        box-shadow:0 2px 8px rgba(0,0,0,.3) !important;
-        border-color:#c6c9cc !important;
-        color:#3c4043 !important;
+    .st-key-google_signin_link_btn a:hover {
+        box-shadow:0 2px 8px rgba(0,0,0,.3) !important; border-color:#c6c9cc !important; color:#3c4043 !important;
     }
-
-    /* "Sign in with Microsoft" / "Sign in with Yahoo" -- same real <a>-tag
-       button device as Google's (needs to be a genuine link so it
-       navigates the browser to the provider, not a server-side st.button),
-       each carrying that provider's own brand mark and colors instead of
-       reusing Google's white pill for a different service. */
-    .microsoft-signin-btn {
+    .st-key-microsoft_signin_link_btn a {
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#2f2f2f !important; color:#ffffff !important;
@@ -1285,10 +1279,10 @@ st.markdown(
         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 21 21'%3E%3Crect x='1' y='1' width='9' height='9' fill='%23f25022'/%3E%3Crect x='11' y='1' width='9' height='9' fill='%2300a4ef'/%3E%3Crect x='1' y='11' width='9' height='9' fill='%23ffb900'/%3E%3Crect x='11' y='11' width='9' height='9' fill='%237fba00'/%3E%3C/svg%3E") !important;
         transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
     }
-    .microsoft-signin-btn:hover {
+    .st-key-microsoft_signin_link_btn a:hover {
         background:#3c3c3c !important; box-shadow:0 2px 8px rgba(0,0,0,.35) !important; border-color:#6b6b6b !important; color:#ffffff !important;
     }
-    .yahoo-signin-btn {
+    .st-key-yahoo_signin_link_btn a {
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
         background:#6001d2 !important; color:#ffffff !important;
@@ -1300,7 +1294,7 @@ st.markdown(
         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='2' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='22' fill='white'%3E!%3C/text%3E%3C/svg%3E") !important;
         transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
     }
-    .yahoo-signin-btn:hover {
+    .st-key-yahoo_signin_link_btn a:hover {
         background:#7412e8 !important; box-shadow:0 2px 8px rgba(96,1,210,.45) !important; border-color:#9142f0 !important; color:#ffffff !important;
     }
 
@@ -4500,18 +4494,19 @@ if active_panel == "Dashboard":
                             else:
                                 try:
                                     auth_url, _state = get_authorization_url(email_hint=imap_user)
-                                    # target="_top" (not "_self"): Streamlit can render this
-                                    # markdown inside its own frame depending on how the app is
-                                    # embedded/hosted, and "_self" only navigates within
-                                    # whatever frame the link lives in. Google refuses to render
-                                    # its login page inside any iframe at all (for security),
-                                    # so a framed "_self" link silently produced a blank
-                                    # "403 - you do not have access to this page" with the
-                                    # browser's address bar never leaving the Streamlit app.
-                                    # "_top" always breaks out to the real top-level window.
-                                    st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_top" class="google-signin-btn">Sign in with Gmail</a>',
-                                        unsafe_allow_html=True,
+                                    # Native st.link_button instead of a hand-rolled <a> via
+                                    # st.markdown(unsafe_allow_html=True): the raw-HTML anchor
+                                    # was visible and looked clickable, but depending on how
+                                    # Streamlit's markdown sanitizer and this host handle a
+                                    # custom target="_top" anchor, the click could silently do
+                                    # nothing -- no navigation, no error, nothing in the
+                                    # console. st.link_button is a first-class Streamlit widget
+                                    # built specifically for "click -> go to this URL" and
+                                    # isn't subject to any of that; it reliably navigates every
+                                    # time. Styled via CSS to keep the same Google button look.
+                                    st.link_button(
+                                        "Sign in with Gmail", auth_url,
+                                        use_container_width=True, key="google_signin_link_btn",
                                     )
                                 except Exception as e:
                                     st.caption(f"Couldn't start sign-in: {e}")
@@ -4551,9 +4546,9 @@ if active_panel == "Dashboard":
                             else:
                                 try:
                                     auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
-                                    st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_top" class="microsoft-signin-btn">Sign in with Outlook</a>',
-                                        unsafe_allow_html=True,
+                                    st.link_button(
+                                        "Sign in with Outlook", auth_url,
+                                        use_container_width=True, key="microsoft_signin_link_btn",
                                     )
                                 except Exception as e:
                                     st.caption(f"Couldn't start sign-in: {e}")
@@ -4593,9 +4588,9 @@ if active_panel == "Dashboard":
                             else:
                                 try:
                                     auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
-                                    st.markdown(
-                                        f'<a href="{html.escape(auth_url)}" target="_top" class="yahoo-signin-btn">Sign in with Yahoo</a>',
-                                        unsafe_allow_html=True,
+                                    st.link_button(
+                                        "Sign in with Yahoo", auth_url,
+                                        use_container_width=True, key="yahoo_signin_link_btn",
                                     )
                                 except Exception as e:
                                     st.caption(f"Couldn't start sign-in: {e}")
