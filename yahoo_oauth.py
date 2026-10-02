@@ -47,7 +47,18 @@ _CLIENT_CONFIG_ENV = "SIH26106_YAHOO_CLIENT_CONFIG"
 _AUTH_ENDPOINT = "https://api.login.yahoo.com/oauth2/request_auth"
 _TOKEN_ENDPOINT = "https://api.login.yahoo.com/oauth2/get_token"
 _USERINFO_ENDPOINT = "https://api.login.yahoo.com/openid/v1/userinfo"
-_SCOPES = "openid email mail-r"
+_SCOPES = "openid email"
+# TEMPORARY DIAGNOSTIC CHANGE: "mail-r" (Mail Read) dropped from the
+# requested scopes to test whether Yahoo's "invalid request" error is
+# caused by the app not being authorized for Mail API access (Yahoo
+# restricts this separately from normal app registration/approval). If
+# sign-in works with just openid+email but failed with mail-r included,
+# that confirms it -- and IMPORTANTLY, this means mail-r access still
+# isn't actually granted, so Yahoo IMAP won't work via OAuth even though
+# sign-in itself succeeds. Put "mail-r" back once that's resolved on
+# Yahoo's side (or drop Yahoo OAuth in favor of the manual email + app
+# password IMAP path, which doesn't need Yahoo Mail API approval at all).
+# _SCOPES = "openid email mail-r"
 
 # Same idea as microsoft_oauth.STATE_PREFIX: lets a shared callback handler
 # tell Yahoo's redirect apart from Google's/Microsoft's on the same URL.
@@ -82,6 +93,17 @@ def client_secret_issue():
             f"secret / env var holding `{{\"client_id\": ..., \"client_secret\": ...}}` "
             f"as JSON text) or add a `{_CLIENT_SECRET_PATH}` file locally. Register an "
             "app at developer.yahoo.com/apps to get these values."
+        )
+    # _load_client_secret() only checks the fields are non-empty, so the
+    # placeholder template (client_secret_yahoo.example-style text) passes
+    # that check and would otherwise get sent to Yahoo as a literal,
+    # non-existent client_id -- which is exactly what produced "Please
+    # specify a valid client" on Yahoo's side instead of a clear local error.
+    if "PASTE_YOUR_YAHOO" in str(data.get("client_id", "")) or "PASTE_YOUR_YAHOO" in str(data.get("client_secret", "")):
+        return (
+            "Yahoo client config still contains the placeholder values from the "
+            "template. Register an app at developer.yahoo.com/apps and put its real "
+            f"client_id/client_secret in `{_CLIENT_CONFIG_ENV}`."
         )
     return None
 
