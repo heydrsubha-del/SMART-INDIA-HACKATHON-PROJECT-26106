@@ -3147,7 +3147,23 @@ with st.sidebar:
 # anything -- that box is gone (see the redesign note by .topbar-logo), and
 # the bell + account chip now render as plain markup inside the banner
 # itself (below), so there's one header, not two stacked bars.
-_acct_email = st.session_state.get("imap_user") or ""
+_acct_email = (
+    st.session_state.get("imap_user")
+    # Google's OAuth redirect lands the browser back as a fresh page
+    # load, which can land in a brand-new Streamlit session separate
+    # from the one that clicked "Sign in with Gmail" -- the token
+    # exchange block above still runs and still saves the resolved
+    # email to the on-disk/session cache correctly, but a *different*
+    # session's st.session_state["imap_user"] was empty, so the chip
+    # kept showing "Not signed in" even right after a successful
+    # sign-in. Falling back to the same caches the manual-login
+    # auto-fill logic already trusts (further down this file) fixes
+    # that without touching the OAuth flow itself.
+    or _load_cached_google_email()
+    or _load_cached_provider_email("microsoft")
+    or _load_cached_provider_email("yahoo")
+    or ""
+)
 _acct_initial = html.escape(_acct_email[:1].upper()) if _acct_email else "?"
 _acct_label = html.escape(_acct_email) if _acct_email else "Not signed in"
 
@@ -3173,13 +3189,9 @@ st.markdown(
       </div>
       <div class="topbar-status-wrap">
         <div class="topbar-actions">
-            <button class="topbar-icon-btn" title="Notifications" type="button">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </button>
             <div class="topbar-account-chip" title="{_acct_label}">
                 <span class="topbar-account-avatar">{_acct_initial}</span>
                 <span class="topbar-account-email">{_acct_label}</span>
-                <svg class="topbar-account-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </div>
         </div>
         <div class="topbar-status-pill">
