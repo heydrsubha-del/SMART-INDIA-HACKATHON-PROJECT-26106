@@ -3148,17 +3148,24 @@ with st.sidebar:
 # the bell + account chip now render as plain markup inside the banner
 # itself (below), so there's one header, not two stacked bars.
 _acct_email = (
-    st.session_state.get("imap_user")
-    # Google's OAuth redirect lands the browser back as a fresh page
-    # load, which can land in a brand-new Streamlit session separate
-    # from the one that clicked "Sign in with Gmail" -- the token
-    # exchange block above still runs and still saves the resolved
-    # email to the on-disk/session cache correctly, but a *different*
-    # session's st.session_state["imap_user"] was empty, so the chip
-    # kept showing "Not signed in" even right after a successful
-    # sign-in. Falling back to the same caches the manual-login
-    # auto-fill logic already trusts (further down this file) fixes
-    # that without touching the OAuth flow itself.
+    # live_mailbox_config is the real source of truth once a mailbox is
+    # actually connected: it's a plain dict set exactly once, on a
+    # successful connect (see the "Synapse Copilot" / reload paths below),
+    # and it's never bound to any widget -- unlike session_state["imap_user"],
+    # which doubles as the live st.text_input(key="imap_user") field's own
+    # value. That dual role is what caused the chip to show correctly for
+    # one run right after OAuth sign-in and then revert to "Not signed in"
+    # on the very next interaction: once that text_input re-renders on a
+    # later rerun (e.g. after switching tabs) with nothing explicitly
+    # re-filling it, Streamlit's widget binding can overwrite the session
+    # value the OAuth handler had set. Checking the connected mailbox's own
+    # config first sidesteps that entirely for anyone actually connected.
+    (st.session_state.get("live_mailbox_config") or {}).get("user")
+    or st.session_state.get("imap_user")
+    # Covers the brief window right after OAuth success but before a full
+    # mailbox connection object exists yet, and the case where the OAuth
+    # redirect landed in a different Streamlit session than the one that
+    # started sign-in (see _save_cached_google_email / _load_cached_*).
     or _load_cached_google_email()
     or _load_cached_provider_email("microsoft")
     or _load_cached_provider_email("yahoo")
