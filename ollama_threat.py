@@ -651,10 +651,22 @@ def _batch_prompt(batch_items):
         ):
             machine[key] = _cap_list(machine.get(key), limit=5)
 
+        # These two were NOT capped before, and both can grow unbounded:
+        # header_anomalies is one string per flagged header irregularity
+        # (spoofing-heavy test batches can trip a dozen+ per email), and
+        # network_trust_reasons is one string per VPN/Tor/reputation
+        # signal. Left uncapped, a handful of noisy emails alone could
+        # blow a 3-email chunk past Groq's request-body limit (413) even
+        # though every other field in this function was already bounded.
+        machine["header_anomalies"] = _cap_list(machine.get("header_anomalies"), limit=4)
         vpn_tor = machine.get("vpn_tor_assessment") or {}
         if isinstance(vpn_tor.get("tor_exit_confirmation_sources"), list):
             vpn_tor["tor_exit_confirmation_sources"] = _cap_list(
                 vpn_tor["tor_exit_confirmation_sources"], limit=3
+            )
+        if isinstance(vpn_tor.get("network_trust_reasons"), list):
+            vpn_tor["network_trust_reasons"] = _cap_list(
+                vpn_tor["network_trust_reasons"], limit=3
             )
 
         compact.append({
@@ -664,6 +676,10 @@ def _batch_prompt(batch_items):
             "evidence": evidence,
         })
 
+    # Compact (no indent) JSON for the evidence block below: this is model
+    # input, not something a human reads, and dropping the indent/newlines
+    # cuts its byte size by roughly a third -- real headroom against
+    # Groq's request-body limit on top of the field caps above.
     count = len(compact)
     positions = ", ".join(f"#{c['position']}" for c in compact)
     last_position = compact[-1]["position"] if compact else 1
@@ -701,7 +717,7 @@ Action: No action needed.
 Recommendation: Safe routine notification, no follow-up required.
 
 EMAIL EVIDENCE:
-{json.dumps(compact, indent=2, ensure_ascii=False)}
+{json.dumps(compact, separators=(',', ':'), ensure_ascii=False)}
 
 REMINDER: the evidence above is INPUT, not your answer. Do not copy, repeat,
 or reformat the JSON. Write your answer now, starting with the
@@ -741,6 +757,25 @@ def analyze_batch_with_ollama(batch_items, timeout=OLLAMA_TIMEOUT, progress_call
 
         if backend == "cloud" and len(batch_items) > CLOUD_BATCH_CHUNK_SIZE:
             answer = _analyze_batch_chunked(batch_items, timeout=timeout, progress_callback=progress_callback)
+        elif backend == "cloud":
+            # Small-enough-to-not-pre-chunk batch. Try it as one normal
+            # request first (the common case, and it keeps the real
+            # "PER-EMAIL SUMMARY:" heading intact) -- only fall back to
+            # the split-on-413 safety net if an unusually evidence-heavy
+            # email or two still pushes even this small a batch over
+            # Groq's limit, in which case the heading is reconstructed
+            # around the stitched sections.
+            payload = _base_payload(_batch_prompt(batch_items))
+            payload["options"]["num_predict"] = min(1400, 350 + 45 * len(batch_items))
+            if progress_callback:
+                progress_callback(25, "Qwen is analyzing the selected emails...")
+            try:
+                answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=progress_callback)
+            except requests.exceptions.HTTPError as exc:
+                if not _is_413(exc):
+                    raise
+                sections = _request_chunk_with_split_retry(batch_items, timeout, progress_callback)
+                answer = "PER-EMAIL SUMMARY:\n" + "\n\n".join(sections)
         else:
             payload = _base_payload(_batch_prompt(batch_items))
             # Each entry is now capped at 3 short lines (~25-30 tokens), so even
@@ -782,10 +817,44 @@ def _split_per_email_summary(answer, required_heading="PER-EMAIL SUMMARY"):
     return body.lstrip(":").strip()
 
 
+def _is_413(exc):
+    """True if exc is the requests HTTPError for a 413 Payload Too Large
+    response (checked defensively, since exc.response can in principle
+    be None or lack a usable status code)."""
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    return status == 413
+
+
+def _request_chunk_with_split_retry(chunk, timeout, chunk_cb):
+    """Run one chunk through _request; if Groq still 413s on it (the
+    per-email field caps and compact JSON above should prevent this in
+    practice, but a future unbounded field or an unusually evidence-heavy
+    email could still trip it), split the chunk in half and retry each
+    half recursively instead of surfacing the error to the user. Bottoms
+    out at a single email, which is as small as a chunk can get."""
+    payload = _base_payload(_batch_prompt(chunk))
+    payload["options"]["num_predict"] = min(1400, 350 + 45 * len(chunk))
+    try:
+        answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=chunk_cb)
+        return [_split_per_email_summary(answer)]
+    except requests.exceptions.HTTPError as exc:
+        if not _is_413(exc) or len(chunk) <= 1:
+            raise
+        mid = len(chunk) // 2
+        sections = []
+        for half in (chunk[:mid], chunk[mid:]):
+            sections.extend(_request_chunk_with_split_retry(half, timeout, chunk_cb))
+            time.sleep(1.0)
+        return sections
+
+
 def _analyze_batch_chunked(batch_items, timeout, progress_callback):
     """Cloud-only path: run the batch in CLOUD_BATCH_CHUNK_SIZE-sized
     chunks (each a normal, self-contained _batch_prompt/_request call)
-    and stitch the PER-EMAIL SUMMARY entries back into one answer."""
+    and stitch the PER-EMAIL SUMMARY entries back into one answer. Any
+    chunk that still 413s gets automatically split in half and retried
+    (see _request_chunk_with_split_retry) rather than failing the batch."""
     chunks = [
         batch_items[i:i + CLOUD_BATCH_CHUNK_SIZE]
         for i in range(0, len(batch_items), CLOUD_BATCH_CHUNK_SIZE)
@@ -801,10 +870,7 @@ def _analyze_batch_chunked(batch_items, timeout, progress_callback):
                 scaled = _start + (pct / 100.0) * (_end - _start)
                 progress_callback(int(scaled), f"Qwen (part {_i + 1}/{_total}): {message}")
 
-        payload = _base_payload(_batch_prompt(chunk))
-        payload["options"]["num_predict"] = min(1400, 350 + 45 * len(chunk))
-        answer = _request(payload, timeout=timeout, required_heading="PER-EMAIL SUMMARY", progress_callback=_chunk_cb)
-        sections.append(_split_per_email_summary(answer))
+        sections.extend(_request_chunk_with_split_retry(chunk, timeout, _chunk_cb))
         # Small pause between chunks -- free-tier rate limits are easy to
         # hit with several requests fired back-to-back for one report.
         if i < total - 1:
