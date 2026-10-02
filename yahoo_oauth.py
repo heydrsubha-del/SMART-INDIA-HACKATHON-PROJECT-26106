@@ -35,6 +35,15 @@ import urllib.error
 _CLIENT_SECRET_PATH = "client_secret_yahoo.json"
 _TOKEN_CACHE_PATH = ".yahoo_oauth_token_cache.json"
 
+# On a host where you can't/shouldn't commit a client_secret_yahoo.json file
+# (e.g. Streamlit Community Cloud -- and committing it at all risks exactly
+# the kind of secret-exposure GitHub's push protection caught for the
+# Google client earlier), put {"client_id": "...", "client_secret": "..."}
+# as JSON text in this environment variable / Streamlit secret instead.
+# Mirrors google_Oauth.py's SIH26106_GOOGLE_CLIENT_CONFIG. Checked first;
+# the local file below is still supported as a fallback for local dev.
+_CLIENT_CONFIG_ENV = "SIH26106_YAHOO_CLIENT_CONFIG"
+
 _AUTH_ENDPOINT = "https://api.login.yahoo.com/oauth2/request_auth"
 _TOKEN_ENDPOINT = "https://api.login.yahoo.com/oauth2/get_token"
 _USERINFO_ENDPOINT = "https://api.login.yahoo.com/openid/v1/userinfo"
@@ -46,6 +55,15 @@ STATE_PREFIX = "yhoauth:"
 
 
 def _load_client_secret():
+    raw = os.environ.get(_CLIENT_CONFIG_ENV, "").strip()
+    if raw:
+        try:
+            data = json.loads(raw) or {}
+        except Exception:
+            return None
+        if not data.get("client_id") or not data.get("client_secret"):
+            return None
+        return data
     try:
         with open(_CLIENT_SECRET_PATH, "r", encoding="utf-8") as f:
             data = json.load(f) or {}
@@ -60,9 +78,10 @@ def client_secret_issue():
     data = _load_client_secret()
     if data is None:
         return (
-            f"No `{_CLIENT_SECRET_PATH}` found (or it's missing `client_id`/"
-            "`client_secret`). Register an app at developer.yahoo.com/apps "
-            "and save its credentials there."
+            f"No Yahoo client config found. Set `{_CLIENT_CONFIG_ENV}` (a Streamlit "
+            f"secret / env var holding `{{\"client_id\": ..., \"client_secret\": ...}}` "
+            f"as JSON text) or add a `{_CLIENT_SECRET_PATH}` file locally. Register an "
+            "app at developer.yahoo.com/apps to get these values."
         )
     return None
 
