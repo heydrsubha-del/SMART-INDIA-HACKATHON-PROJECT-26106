@@ -3607,7 +3607,7 @@ _LEVEL_MARKER_COLORS = {
 
 def _add_base_tiles(m):
     for tiles, attr, name in _TILE_LAYERS:
-        folium.TileLayer(tiles=tiles, attr=attr, name=name, control=False).add_to(m)
+        folium.TileLayer(tiles=tiles, attr=attr, name=name, control=False, no_wrap=True).add_to(m)
 
 
 def _case_label(case, fallback):
@@ -3708,27 +3708,66 @@ def _case_hop_points(case):
     return []
 
 
+_MAP_CSS = """<style>
+.leaflet-container{background:#0a1322 !important;font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;border-radius:12px;}
+.leaflet-control-attribution{display:none !important;}
+.leaflet-bar{border:none !important;box-shadow:0 4px 14px rgba(0,0,0,.45) !important;border-radius:10px !important;overflow:hidden;}
+.leaflet-bar a{background:rgba(15,27,45,.94) !important;color:#cfe3ff !important;border-bottom:1px solid rgba(255,255,255,.08) !important;width:34px !important;height:34px !important;line-height:34px !important;}
+.leaflet-bar a:hover{background:#1b2d4a !important;color:#fff !important;}
+.leaflet-popup-content-wrapper{background:rgba(12,22,38,.97);color:#e6eefc;border:1px solid rgba(110,170,255,.28);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.6);}
+.leaflet-popup-tip{background:rgba(12,22,38,.97);border:1px solid rgba(110,170,255,.18);}
+.leaflet-popup-content{margin:12px 14px;font-size:12px;line-height:1.5;}
+.leaflet-container a.leaflet-popup-close-button{color:#8fb4e8;}
+.leaflet-tooltip{background:rgba(12,22,38,.96);color:#e6eefc;border:1px solid rgba(110,170,255,.32);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.5);font-size:11px;padding:4px 9px;}
+.leaflet-tooltip-top:before{border-top-color:rgba(12,22,38,.96);}
+.ps-pin{background:none !important;border:none !important;}
+.ps-pin > div{filter:drop-shadow(0 3px 3px rgba(0,0,0,.65));transition:transform .15s ease;transform-origin:50% 100%;}
+.ps-pin:hover > div{transform:scale(1.16);}
+.ps-pop .ps-h{font-size:13px;font-weight:700;color:#fff;}
+.ps-pop .ps-sub{color:#8fb4e8;margin-top:1px;}
+.ps-pop .ps-row{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);}
+</style>"""
+
+
+def _new_map(location, zoom_start=2):
+    """Satellite-only map with a dark, branded look: no attribution box,
+    no repeated world copies, restyled controls and popups."""
+    try:
+        m = folium.Map(
+            location=location, zoom_start=zoom_start, tiles=None, min_zoom=2,
+            max_bounds=True, zoom_snap=0.5, attribution_control=False,
+        )
+    except Exception:
+        m = folium.Map(location=location, zoom_start=zoom_start, tiles=None)
+    _add_base_tiles(m)
+    m.get_root().header.add_child(folium.Element(_MAP_CSS))
+    return m
+
+
 def _pin_marker(lat, lon, color, text, popup_html, tooltip=None, big=False):
     """A map-pin marker (teardrop with a number/label inside) in any hex
     colour. Easier to spot and click than a plain dot, and the label says
     which email / hop it is."""
-    w, h = (34, 46) if big else (26, 36)
+    w, h = (36, 48) if big else (28, 38)
     fs = 13 if big else 11
-    top = 7 if big else 5
+    top = round(h * 0.375 - fs / 2, 1)
     svg = (
         f'<svg viewBox="0 0 24 32" width="{w}" height="{h}" xmlns="http://www.w3.org/2000/svg">'
         f'<path d="M12 1C5.9 1 1 5.9 1 12c0 8.5 11 19 11 19s11-10.5 11-19C23 5.9 18.1 1 12 1z" '
-        f'fill="{color}" stroke="#ffffff" stroke-width="1.6"/></svg>'
+        f'fill="{color}" stroke="#ffffff" stroke-width="1.5"/>'
+        f'<circle cx="12" cy="12" r="8.2" fill="rgba(0,0,0,0.30)"/>'
+        f'<path d="M5 8.5C6.5 4.5 10.5 2.6 14 3.2" stroke="rgba(255,255,255,0.45)" stroke-width="1.3" '
+        f'fill="none" stroke-linecap="round"/></svg>'
     )
     label = (
         f'<span style="position:absolute;left:0;right:0;top:{top}px;text-align:center;color:#fff;'
-        f'font:700 {fs}px/1.1 sans-serif;text-shadow:0 0 3px #000,0 0 3px #000;">{html.escape(str(text))}</span>'
+        f'font:700 {fs}px/1.1 Inter,Segoe UI,sans-serif;letter-spacing:.2px;">{html.escape(str(text))}</span>'
     )
     icon = folium.DivIcon(
         html=f'<div style="position:relative;width:{w}px;height:{h}px;">{svg}{label}</div>',
         icon_size=(w, h), icon_anchor=(w // 2, h), class_name="ps-pin",
     )
-    mk = folium.Marker(location=[lat, lon], icon=icon, popup=folium.Popup(popup_html, max_width=340))
+    mk = folium.Marker(location=[lat, lon], icon=icon, popup=folium.Popup(popup_html, max_width=360))
     if tooltip:
         mk.add_child(folium.Tooltip(tooltip))
     return mk
@@ -3738,7 +3777,7 @@ def _loc_key(h):
     return (round(float(h["lat"]), 3), round(float(h["lon"]), 3))
 
 
-def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_rows=None):
+def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_rows=None):
     """Hop route of up to max_emails emails (most recent first) on one map.
     Each hop is a numbered pin in its email's colour. When several emails
     (or hops) land on the same location/IP they share ONE pin labelled
@@ -3758,8 +3797,7 @@ def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_ro
         st.info("No geolocatable hops across the loaded emails yet.")
         return
     all_coords = [[h["lat"], h["lon"]] for _, pts in routed for h in pts]
-    m = folium.Map(location=all_coords[0], zoom_start=2, tiles=None)
-    _add_base_tiles(m)
+    m = _new_map(all_coords[0], zoom_start=2)
 
     spots = {}
     legend = []
@@ -3770,7 +3808,8 @@ def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_ro
         legend.append((n, color, short))
         coords = [[h["lat"], h["lon"]] for h in pts]
         if len(coords) > 1:
-            folium.PolyLine(coords, color=color, weight=3, opacity=0.8, dash_array="6 8").add_to(m)
+            folium.PolyLine(coords, color=color, weight=8, opacity=0.14).add_to(m)
+            folium.PolyLine(coords, color=color, weight=2.5, opacity=0.9, dash_array="7 9").add_to(m)
         for i, h in enumerate(pts, start=1):
             spot = spots.setdefault(_loc_key(h), {"lat": h["lat"], "lon": h["lon"], "ips": set(), "rows": [], "last": False})
             if h.get("ip"):
@@ -3785,14 +3824,15 @@ def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_ro
         color = "#7c3aed" if multi else spot["rows"][0][1]
         text = f"x{len(emails_here)}" if multi else str(emails_here[0])
         ips = ", ".join(sorted(spot["ips"])) or "Unknown"
-        lines = "".join(
-            f'<li><span style="color:{c};font-weight:700;">&#9679;</span> '
-            f'<b>Email {n}</b>: {html.escape(lab)} &middot; hop {i} of {tot}</li>'
+        rows_html = "".join(
+            f'<div class="ps-row"><span style="color:{c};font-size:14px;">&#9679;</span> '
+            f'<b>Email {n}</b> &middot; hop {i} of {tot}<br>'
+            f'<span style="color:#aab9d0;">{html.escape(lab)}</span></div>'
             for n, c, lab, i, tot in spot["rows"]
         )
         popup = (
-            f"<b>{len(emails_here)} email(s) at this spot</b><br>IP: {html.escape(ips)}<br>"
-            f"{html.escape(spot.get('city', ''))}<ul style='padding-left:16px;margin:6px 0 0;'>{lines}</ul>"
+            f'<div class="ps-pop"><div class="ps-h">{len(emails_here)} email(s) at this spot</div>'
+            f'<div class="ps-sub">IP {html.escape(ips)} &middot; {html.escape(spot.get("city", ""))}</div>{rows_html}</div>'
         )
         tip = f"{ips} · " + (f"{len(emails_here)} emails" if multi else f"Email {emails_here[0]}")
         _pin_marker(spot["lat"], spot["lon"], color, text, popup, tooltip=tip, big=spot["last"]).add_to(m)
@@ -3816,7 +3856,7 @@ def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_ro
     st.caption(
         f"Showing the hop route of {len(routed)} of {total_routed} emails with geolocatable hops "
         f"(most recent {max_emails} max). Pin number = email number; the large pin is the last traced hop. "
-        "Click a pin to see which emails and hops are there."
+        "Click a pin to see which emails and hops are there. Imagery © Esri."
     )
 
 
@@ -5840,8 +5880,7 @@ if active_panel == "Dashboard":
                 _dash_pts = _case_hop_points(result)
                 if _dash_pts:
                     _dash_coords = [[h["lat"], h["lon"]] for h in _dash_pts]
-                    dash_map = folium.Map(location=_dash_coords[-1], zoom_start=4, tiles=None)
-                    _add_base_tiles(dash_map)
+                    dash_map = _new_map(_dash_coords[-1], zoom_start=4)
                     _dash_spots = {}
                     for i, h in enumerate(_dash_pts, 1):
                         is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(_dash_pts))
@@ -5852,9 +5891,10 @@ if active_panel == "Dashboard":
                         h = sp["h"]
                         hop_txt = ", ".join(str(x) for x in sp["hops"])
                         _pop = (
-                            f"<b>Hop {hop_txt}</b><br>IP: {html.escape(str(h.get('ip', '')))}<br>"
-                            f"{html.escape(str(h.get('city', '')))} {html.escape(str(h.get('country', '')))}<br>"
-                            f"Infra: {html.escape(str(h.get('infra_label', '')))}"
+                            f'<div class="ps-pop"><div class="ps-h">Hop {hop_txt}</div>'
+                            f'<div class="ps-sub">IP {html.escape(str(h.get("ip", "")))}</div>'
+                            f'<div class="ps-row">{html.escape(str(h.get("city", "")))} {html.escape(str(h.get("country", "")))}<br>'
+                            f'<span style="color:#aab9d0;">{html.escape(str(h.get("infra_label", "")))}</span></div></div>'
                         )
                         _pin_marker(
                             h["lat"], h["lon"], "#ff4757" if sp["origin"] else "#2fd8ff",
@@ -5862,20 +5902,21 @@ if active_panel == "Dashboard":
                             _pop, tooltip=f"Hop {hop_txt} · {h.get('ip', '')}", big=sp["origin"],
                         ).add_to(dash_map)
                     if len(_dash_coords) > 1:
-                        folium.PolyLine(_dash_coords, color="#2fd8ff", weight=2, opacity=0.7, dash_array="6 8").add_to(dash_map)
+                        folium.PolyLine(_dash_coords, color="#2fd8ff", weight=8, opacity=0.14).add_to(dash_map)
+                        folium.PolyLine(_dash_coords, color="#2fd8ff", weight=2.5, opacity=0.9, dash_array="7 9").add_to(dash_map)
                         try:
                             dash_map.fit_bounds(_dash_coords, max_zoom=6)
                         except Exception:
                             pass
                     st_folium(
-                        dash_map, width="stretch", height=420, returned_objects=[],
+                        dash_map, width="stretch", height=540, returned_objects=[],
                         key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
                     )
                     _dash_loc = ", ".join(p for p in [_dash_origin.get("city"), _dash_origin.get("country")] if p)
                     st.caption(
                         f"Current email origin: {_dash_loc or 'location unknown'}"
                         + (f" · {_dash_origin.get('infra_label')}" if _dash_origin.get("infra_label") else "")
-                        + ". See Origin & Route to compare up to 10 emails or pick another one."
+                        + ". See Origin & Route to compare up to 10 emails or pick another one. Imagery © Esri."
                     )
                 else:
                     st.info("No geolocatable hop for this email yet.")
@@ -6553,7 +6594,7 @@ if active_panel == "Origin & Route":
 
         _table_geo = _active_geo
         if _geo_map_mode == _MAP_MODE_ALL:
-            _render_all_hops_map(cases, key_prefix="geo", height=500, source_rows=data)
+            _render_all_hops_map(cases, key_prefix="geo", height=640, source_rows=data)
         else:
             hops = [h for h in _table_geo.get("hops", []) if h.get("lat") is not None]
 
@@ -6561,27 +6602,39 @@ if active_panel == "Origin & Route":
                 start_lat = hops[0]["lat"] if hops else 20.0
                 start_lon = hops[0]["lon"] if hops else 0.0
 
-                m = folium.Map(location=[start_lat, start_lon], zoom_start=2, tiles=None)
-                _add_base_tiles(m)
+                m = _new_map([start_lat, start_lon], zoom_start=2)
                 coordinates = []
 
+                _spots = {}
                 for i, h in enumerate(hops, 1):
-                    lat, lon = h["lat"], h["lon"]
-                    coords = [lat, lon]
-                    coordinates.append(coords)
-
+                    coordinates.append([h["lat"], h["lon"]])
                     is_origin = (h["infra"] in ("tor", "vpn", "proxy")) or (i == len(hops))
-                    color = "red" if is_origin else "blue"
-                    popup_text = f"<b>Hop {i}</b><br>IP: {h['ip']}<br>Loc: {h.get('city', '')}, {h.get('country', '')}<br>Infra: {h.get('infra_label', '')}"
-
-                    folium.Marker(
-                        location=coords, popup=folium.Popup(popup_text, max_width=300), icon=folium.Icon(color=color, icon="info-sign")
+                    sp = _spots.setdefault(_loc_key(h), {"h": h, "hops": [], "origin": False})
+                    sp["hops"].append(i)
+                    sp["origin"] = sp["origin"] or is_origin
+                for sp in _spots.values():
+                    h = sp["h"]
+                    hop_txt = ", ".join(str(x) for x in sp["hops"])
+                    _pop = (
+                        f'<div class="ps-pop"><div class="ps-h">Hop {hop_txt}</div>'
+                        f'<div class="ps-sub">IP {html.escape(str(h.get("ip", "")))}</div>'
+                        f'<div class="ps-row">{html.escape(str(h.get("city", "")))}, {html.escape(str(h.get("country", "")))}<br>'
+                        f'<span style="color:#aab9d0;">{html.escape(str(h.get("infra_label", "")))}</span></div></div>'
+                    )
+                    _pin_marker(
+                        h["lat"], h["lon"], "#ff4757" if sp["origin"] else "#2fd8ff",
+                        str(sp["hops"][0]) if len(sp["hops"]) == 1 else f"x{len(sp['hops'])}",
+                        _pop, tooltip=f"Hop {hop_txt} · {h.get('ip', '')}", big=sp["origin"],
                     ).add_to(m)
 
                 if len(coordinates) == 1:
                     hq_coords = [22.5726, 88.3639]
                     coordinates.append(hq_coords)
-                    folium.CircleMarker(location=hq_coords, radius=5, color="#35d399", fill=True, fill_color="#35d399", fill_opacity=0.9, popup="Target Datacenter (HQ)").add_to(m)
+                    _pin_marker(
+                        hq_coords[0], hq_coords[1], "#35d399", "HQ",
+                        '<div class="ps-pop"><div class="ps-h">Target datacenter (HQ)</div></div>',
+                        tooltip="Target datacenter (HQ)",
+                    ).add_to(m)
 
                 if len(coordinates) > 1:
                     from folium.plugins import AntPath
@@ -6603,10 +6656,16 @@ if active_panel == "Origin & Route":
 
                         AntPath(locations=arc_points, color="#ff4757", pulse_color="#ffffff", weight=3, opacity=0.8, delay=800, dash_array=[15, 30]).add_to(m)
 
-                left, center, right = st.columns([1, 8, 1])
-                with center:
-                    st_folium(m, width="stretch", height=500, returned_objects=[], key="geo_single_map")
-                st.caption("Hop 1 is the earliest external sender. Red markers indicate origin or anonymizing infrastructure. Arcs jump dynamically to the HQ target. Use the layer control (top-right of the map) to switch between satellite and terrain view.")
+                if len(coordinates) > 1:
+                    try:
+                        m.fit_bounds(coordinates, max_zoom=6)
+                    except Exception:
+                        pass
+                st_folium(m, width="stretch", height=640, returned_objects=[], key="geo_single_map")
+                st.caption(
+                    "Pins are numbered by hop (hop 1 = earliest external sender). Red = origin or anonymising "
+                    "infrastructure; hops that share a location are merged into one 'xN' pin. Imagery © Esri."
+                )
             else:
                 st.warning("No hop in this email could be geolocated, so there is nothing to plot. Recorded as unresolved rather than guessed.")
 
