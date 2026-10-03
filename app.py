@@ -6028,7 +6028,7 @@ if active_panel == "Dashboard":
                 _dash_pts = _case_hop_points(result)
                 if _dash_pts:
                     _dash_coords = [[h["lat"], h["lon"]] for h in _dash_pts]
-                    dash_map = _new_map(_dash_coords[-1], zoom_start=4)
+                    dash_map = _new_map(_dash_coords[-1], zoom_start=2)
                     _dash_spots = {}
                     for i, h in enumerate(_dash_pts, 1):
                         is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(_dash_pts))
@@ -6055,11 +6055,11 @@ if active_panel == "Dashboard":
                         folium.PolyLine(_dash_coords, color="#2fd8ff", weight=8, opacity=0.14).add_to(dash_map)
                         folium.PolyLine(_dash_coords, color="#2fd8ff", weight=2.5, opacity=0.9, dash_array="7 9").add_to(dash_map)
                         try:
-                            dash_map.fit_bounds(_dash_coords, max_zoom=6)
+                            dash_map.fit_bounds(_dash_coords, max_zoom=4)
                         except Exception:
                             pass
                     st_folium(
-                        dash_map, width="stretch", height=540, returned_objects=[],
+                        dash_map, width="stretch", height=380, returned_objects=[],
                         key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
                     )
                     _dash_loc = ", ".join(p for p in [_dash_origin.get("city"), _dash_origin.get("country")] if p)
