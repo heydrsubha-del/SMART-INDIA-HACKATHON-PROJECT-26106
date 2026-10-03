@@ -47,18 +47,11 @@ _CLIENT_CONFIG_ENV = "SIH26106_YAHOO_CLIENT_CONFIG"
 _AUTH_ENDPOINT = "https://api.login.yahoo.com/oauth2/request_auth"
 _TOKEN_ENDPOINT = "https://api.login.yahoo.com/oauth2/get_token"
 _USERINFO_ENDPOINT = "https://api.login.yahoo.com/openid/v1/userinfo"
-_SCOPES = "openid email"
-# TEMPORARY DIAGNOSTIC CHANGE: "mail-r" (Mail Read) dropped from the
-# requested scopes to test whether Yahoo's "invalid request" error is
-# caused by the app not being authorized for Mail API access (Yahoo
-# restricts this separately from normal app registration/approval). If
-# sign-in works with just openid+email but failed with mail-r included,
-# that confirms it -- and IMPORTANTLY, this means mail-r access still
-# isn't actually granted, so Yahoo IMAP won't work via OAuth even though
-# sign-in itself succeeds. Put "mail-r" back once that's resolved on
-# Yahoo's side (or drop Yahoo OAuth in favor of the manual email + app
-# password IMAP path, which doesn't need Yahoo Mail API approval at all).
-# _SCOPES = "openid email mail-r"
+_SCOPES = "openid email mail-r"
+# The earlier "invalid request" error turned out to be the redirect_uri
+# mismatch (wrong/old Yahoo app), not a missing Mail-scope grant -- the
+# diagnostic test with mail-r dropped failed identically, which ruled that
+# out. Restored to the real scope set now that sign-in works end-to-end.
 
 # Same idea as microsoft_oauth.STATE_PREFIX: lets a shared callback handler
 # tell Yahoo's redirect apart from Google's/Microsoft's on the same URL.
