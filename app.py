@@ -3228,6 +3228,44 @@ st.markdown(
     }
     [data-testid="stToast"] {border-radius:var(--r-md) !important; border:1px solid var(--line-strong) !important; background:var(--panel-2) !important;}
 
+    /* Forensic Report: unmistakable split between the batch report and the
+       single-email deep dive. */
+    .part-banner {
+        display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+        padding:18px 22px; margin:6px 0 16px 0; border-radius:var(--r-lg);
+        border:1px solid var(--line-strong); box-shadow:var(--shadow-md);
+    }
+    .part-banner .pb-title {font:800 21px/1.25 Inter,"Segoe UI",sans-serif; color:#ffffff;}
+    .part-banner .pb-sub {color:var(--muted); font-size:13px; margin-top:3px;}
+    .part-banner .pb-step {
+        font:800 11px/1 ui-monospace,Consolas,monospace; letter-spacing:1.6px;
+        padding:8px 13px; border-radius:999px; white-space:nowrap; color:#fff;
+    }
+    .part-banner .pb-scope {
+        margin-left:auto; font:800 10px/1 ui-monospace,Consolas,monospace; letter-spacing:1.4px;
+        padding:7px 12px; border-radius:999px; border:1px solid var(--line-strong); color:#cbd5e1;
+    }
+    .part-banner-batch {background:linear-gradient(135deg, rgba(59,130,246,.18), var(--panel) 62%); border-left:5px solid var(--cyan);}
+    .part-banner-batch .pb-step {background:var(--brand-gradient);}
+    .part-banner-single {background:linear-gradient(135deg, rgba(201,138,92,.20), var(--panel) 62%); border-left:5px solid var(--teal);}
+    .part-banner-single .pb-step {background:linear-gradient(90deg,#c98a5c,#d9a35f);}
+    .part-sep {display:flex; align-items:center; gap:14px; margin:64px 0 22px 0;}
+    .part-sep::before, .part-sep::after {content:""; flex:1; height:2px; background:linear-gradient(90deg, transparent, var(--teal), transparent);}
+    .part-sep span {font:800 11px/1 ui-monospace,Consolas,monospace; letter-spacing:2.2px; color:var(--teal); white-space:nowrap;}
+    .st-key-single_email_select {
+        background:var(--panel); border:1px solid var(--line-strong); border-left:4px solid var(--teal);
+        border-radius:var(--r-lg); padding:14px 18px 16px 18px; margin:0 0 26px 0;
+    }
+    .dossier-head {
+        display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+        padding:14px 20px; margin:6px 0 20px 0; border-radius:var(--r-lg);
+        background:linear-gradient(90deg, rgba(201,138,92,.16), transparent 70%);
+        border:1px solid var(--line-strong); border-left:5px solid var(--teal);
+    }
+    .dossier-head .dh-title {font:800 26px/1.2 Inter,"Segoe UI",sans-serif; color:#fff;}
+    .dossier-head .dh-of {font-size:14px; font-weight:600; color:var(--muted); margin-left:6px;}
+    .dossier-head .dh-pill {font:800 12px/1 ui-monospace,Consolas,monospace; letter-spacing:1.2px; padding:8px 14px; border-radius:999px; border:1px solid;}
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
@@ -7855,8 +7893,15 @@ if active_panel == "Forensic Report":
                     """,
                     height=0,
                 )
-            st.markdown("---")
-            st.markdown(f"#### Joint Report — {pipeline_result.get('count', len(report_items))} Emails ({pipeline_result.get('source', '')})")
+            _n_joint = pipeline_result.get('count', len(report_items))
+            st.markdown(
+                '<div class="part-banner part-banner-batch">'
+                '<span class="pb-step pb-step-batch">PART 1</span>'
+                '<div><div class="pb-title">Batch Report \u2014 All ' + str(_n_joint) + ' Emails</div>'
+                '<div class="pb-sub">Source: ' + html.escape(str(pipeline_result.get('source', ''))) + '</div></div>'
+                '<span class="pb-scope">COVERS ALL EMAILS</span></div>',
+                unsafe_allow_html=True,
+            )
             st.caption("Machine analysis + AI threat analysis + semantic origin correlation, combined across the batch. Drill into any single email below, or grab everything at once.")
 
             _ai_res = pipeline_result.get("result", {}) or {}
@@ -7980,10 +8025,20 @@ if active_panel == "Forensic Report":
                 type="primary",
                 key="dl_joint_pipeline_report",
             )
-            st.divider()
+
+        st.markdown(
+            '<div class="part-sep"><span>' + ('END OF BATCH REPORT' if pipeline_active else 'EMAIL DEEP DIVE') + '</span></div>'
+            '<div class="part-banner part-banner-single">'
+            '<span class="pb-step pb-step-single">' + ('PART 2' if pipeline_active else 'SINGLE EMAIL') + '</span>'
+            '<div><div class="pb-title">Single-Email Deep Dive</div>'
+            '<div class="pb-sub">Everything below this point is about ONE email only. Choose which one:</div></div>'
+            '<span class="pb-scope">ONE EMAIL</span></div>',
+            unsafe_allow_html=True,
+        )
 
         sel_pos = st.selectbox(
             "Select Email Number to Inspect",
+            key="single_email_select",
             options=list(range(1, len(report_items) + 1)),
             format_func=lambda num: f"Email #{num} | Row {report_items[num-1].get('row', 'Single File')} | {str(report_items[num-1]['result'].get('level','UNKNOWN')).upper()}"
         )
@@ -8001,7 +8056,14 @@ if active_panel == "Forensic Report":
         sel_lvl = str(sel_res.get("level", "UNKNOWN")).upper()
         sel_score = float(sel_res.get("score", 0))
 
-        st.markdown(f"### Dossier: Email #{sel_pos}")
+        _dh_col = _LEVEL_MARKER_COLORS.get(sel_lvl, "#8b96a5")
+        st.markdown(
+            '<div class="dossier-head"><div class="dh-title">Dossier: Email #' + str(sel_pos)
+            + ' <span class="dh-of">of ' + str(len(report_items)) + '</span></div>'
+            '<span class="dh-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
+            + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
+            unsafe_allow_html=True,
+        )
 
         # --- SHOW HIGHLY DETAILED MACHINE REPORT UI USING DATAFRAMES ---
         st.markdown("#### Machine Forensic Analysis")
