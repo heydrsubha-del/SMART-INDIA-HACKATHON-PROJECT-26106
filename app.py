@@ -74,10 +74,10 @@ except ImportError:
     MICROSOFT_OAUTH_READY = False
 
 try:
-    import yahoo_oauth
-    YAHOO_OAUTH_READY = True
+    import yandex_oauth
+    YANDEX_OAUTH_READY = True
 except ImportError:
-    YAHOO_OAUTH_READY = False
+    YANDEX_OAUTH_READY = False
 
 # google_Oauth.py caches the OAuth *token* across restarts, but not the
 # account email that goes with it -- so a restored session knew it was
@@ -134,12 +134,12 @@ def _fetch_google_email_from_token(access_token: str):
         return None
 
 
-# Same email-cache idea as Google's, generalized so Microsoft and Yahoo
+# Same email-cache idea as Google's, generalized so Microsoft and Yandex
 # sign-in get the same "don't make me retype my address after a restart"
 # behavior without three near-identical copies of the Google helpers above.
 _PROVIDER_EMAIL_CACHE_PATHS = {
     "microsoft": ".microsoft_email_cache.json",
-    "yahoo": ".yahoo_email_cache.json",
+    "yandex": ".yandex_email_cache.json",
 }
 
 
@@ -631,7 +631,7 @@ components.html(
         sync();
         setInterval(sync, 300);
 
-        // st.link_button (used for the Gmail/Outlook/Yahoo sign-in links --
+        // st.link_button (used for the Gmail/Outlook/Yandex sign-in links --
         // see the sign-in form code) always renders target="_blank",
         // hardcoded by Streamlit with no parameter to change it. That's
         // fine for an ordinary external link, but for an OAuth sign-in
@@ -644,7 +644,7 @@ components.html(
             doc.querySelectorAll(
                 '.st-key-google_signin_link_btn a, ' +
                 '.st-key-microsoft_signin_link_btn a, ' +
-                '.st-key-yahoo_signin_link_btn a'
+                '.st-key-yandex_signin_link_btn a'
             ).forEach(function (a) {
                 if (a.target !== '_self') a.target = '_self';
             });
@@ -683,17 +683,17 @@ st.session_state.setdefault("single_ai_reports", {})
 # widget is never created during *this* run at all, so there's nothing to
 # conflict with -- the very next run picks up st.session_state["imap_user"]
 # cleanly, exactly like any other pre-seeded default value.
-if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YAHOO_OAUTH_READY:
+if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
     _oauth_code = st.query_params.get("code")
     _oauth_state = st.query_params.get("state")
     _oauth_error = st.query_params.get("error")
     # The redirect URI is shared across every provider (it's the same
     # running app), so the same ?code=/?state= callback can belong to
-    # Google, Microsoft or Yahoo. Each provider's own get_authorization_url()
-    # prefixes its `state` value (msoauth:/yhoauth:) precisely so this one
+    # Google, Microsoft or Yandex. Each provider's own get_authorization_url()
+    # prefixes its `state` value (msoauth:/yaoauth:) precisely so this one
     # handler can tell them apart and call the right exchange function --
     # anything without a recognized prefix falls through to Google, exactly
-    # matching the original behavior from before Microsoft/Yahoo existed.
+    # matching the original behavior from before Microsoft/Yandex existed.
     if _oauth_state and MICROSOFT_OAUTH_READY and _oauth_state.startswith(microsoft_oauth.STATE_PREFIX):
         if _oauth_error:
             st.query_params.clear()
@@ -712,24 +712,24 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YAHOO_OAUTH_READY:
             except Exception as _ms_exc:
                 st.query_params.clear()
                 st.session_state["_microsoft_oauth_error"] = f"Microsoft sign-in failed while completing sign-in: {_ms_exc}"
-    elif _oauth_state and YAHOO_OAUTH_READY and _oauth_state.startswith(yahoo_oauth.STATE_PREFIX):
+    elif _oauth_state and YANDEX_OAUTH_READY and _oauth_state.startswith(yandex_oauth.STATE_PREFIX):
         if _oauth_error:
             st.query_params.clear()
-            st.session_state["_yahoo_oauth_error"] = _oauth_error
+            st.session_state["_yandex_oauth_error"] = _oauth_error
         elif _oauth_code:
             try:
-                _yh_token, _yh_email = yahoo_oauth.exchange_code_for_token(_oauth_code, state=_oauth_state)
+                _ya_token, _ya_email = yandex_oauth.exchange_code_for_token(_oauth_code, state=_oauth_state)
                 st.query_params.clear()
-                st.session_state["yahoo_oauth_token"] = _yh_token
-                if _yh_email:
-                    st.session_state["imap_user"] = _yh_email
-                    _save_cached_provider_email("yahoo", _yh_email)
-                st.session_state["imap_provider"] = "Yahoo"
+                st.session_state["yandex_oauth_token"] = _ya_token
+                if _ya_email:
+                    st.session_state["imap_user"] = _ya_email
+                    _save_cached_provider_email("yandex", _ya_email)
+                st.session_state["imap_provider"] = "Yandex"
                 st.session_state["show_imap_connection_form"] = True
                 st.rerun()
-            except Exception as _yh_exc:
+            except Exception as _ya_exc:
                 st.query_params.clear()
-                st.session_state["_yahoo_oauth_error"] = f"Yahoo sign-in failed while completing sign-in: {_yh_exc}"
+                st.session_state["_yandex_oauth_error"] = f"Yandex sign-in failed while completing sign-in: {_ya_exc}"
     elif GOOGLE_OAUTH_READY and _oauth_error:
         st.query_params.clear()
         st.session_state["_google_oauth_error"] = _oauth_error
@@ -1260,7 +1260,7 @@ st.markdown(
        (not a Streamlit widget) so it renders identically across Streamlit
        versions -- it needs to be a real <a> so clicking it navigates the
        browser straight to Google, rather than a server-side st.button. */
-    /* "Sign in with Gmail/Outlook/Yahoo" -- these are now native
+    /* "Sign in with Gmail/Outlook/Yandex" -- these are now native
        st.link_button widgets (see the sign-in form code) rather than
        hand-rolled <a> tags via st.markdown(unsafe_allow_html=True); the
        custom anchor approach rendered fine but its click sometimes did
@@ -1269,7 +1269,7 @@ st.markdown(
        first-class widget built for exactly this (navigate to an external
        URL on click) and isn't subject to that. Targeted by the widget's
        key wrapper so the brand look (white Google pill, dark Microsoft
-       tile, purple Yahoo tile) carries over unchanged.
+       tile, red Yandex tile) carries over unchanged.
        Streamlit renders st.link_button as an <a> styled like a button
        inside its key wrapper -- select it generically so it survives
        minor Streamlit DOM-structure differences across versions. */
@@ -1303,20 +1303,20 @@ st.markdown(
     .st-key-microsoft_signin_link_btn a:hover {
         background:#3c3c3c !important; box-shadow:0 2px 8px rgba(0,0,0,.35) !important; border-color:#6b6b6b !important; color:#ffffff !important;
     }
-    .st-key-yahoo_signin_link_btn a {
+    .st-key-yandex_signin_link_btn a {
         display:flex !important; align-items:center !important; justify-content:center !important;
         width:100% !important; min-height:42px !important; box-sizing:border-box !important;
-        background:#6001d2 !important; color:#ffffff !important;
-        border:1px solid #7a1fe0 !important; border-radius:12px !important;
+        background:#fc3f1d !important; color:#ffffff !important;
+        border:1px solid #ff5a3c !important; border-radius:12px !important;
         font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:700 !important; font-size:14px !important;
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
         background-position:16px center !important; background-size:16px 16px !important;
-        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='2' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='22' fill='white'%3E!%3C/text%3E%3C/svg%3E") !important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='4' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='20' fill='white'%3EЯ%3C/text%3E%3C/svg%3E") !important;
         transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
     }
-    .st-key-yahoo_signin_link_btn a:hover {
-        background:#7412e8 !important; box-shadow:0 2px 8px rgba(96,1,210,.45) !important; border-color:#9142f0 !important; color:#ffffff !important;
+    .st-key-yandex_signin_link_btn a:hover {
+        background:#ff5333 !important; box-shadow:0 2px 8px rgba(252,63,29,.45) !important; border-color:#ff7a5c !important; color:#ffffff !important;
     }
 
     .stTextInput input, .stNumberInput input, textarea {
@@ -1679,7 +1679,7 @@ st.markdown(
        integration-picker rows use in most professional dashboards. */
     .st-key-auth_password_box, .st-key-auth_google_box,
     .st-key-auth_password_box_ms, .st-key-auth_microsoft_box,
-    .st-key-auth_password_box_yh, .st-key-auth_yahoo_box {
+    .st-key-auth_password_box_ya, .st-key-auth_yandex_box {
         border-radius:var(--r-md) !important;
         background:linear-gradient(180deg,#0d1a2b,#0a1522) !important;
         border:1px solid #1c3247 !important;
@@ -1691,7 +1691,7 @@ st.markdown(
     }
     .st-key-auth_password_box:hover, .st-key-auth_google_box:hover,
     .st-key-auth_password_box_ms:hover, .st-key-auth_microsoft_box:hover,
-    .st-key-auth_password_box_yh:hover, .st-key-auth_yahoo_box:hover {
+    .st-key-auth_password_box_ya:hover, .st-key-auth_yandex_box:hover {
         transform:translateY(-2px) !important;
         box-shadow:0 8px 20px rgba(0,0,0,.28) !important;
     }
@@ -1712,21 +1712,21 @@ st.markdown(
     /* Warm neutral (sand/taupe) instead of a desaturated blue-grey, so the
        manual app-password option doesn't quietly reintroduce blue into a
        row that's otherwise teal / terracotta / plum. */
-    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_yh {border-top-color:#a6947c !important;}
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_ya {border-top-color:#a6947c !important;}
     .auth-option-label-violet {color:#c2b29a !important;}
     .st-key-auth_google_box:hover {border-color:rgba(79,157,138,.4) !important;}
     .st-key-auth_google_box {border-top-color:#4f9d8a !important;}
     .auth-option-label-cyan {color:#8fc2b8 !important;}
     /* Each provider gets a genuinely different hue from the app's own
-       three-color palette (not shades of one color), muted enough that
-       no single card pops as a bright outline: Gmail = teal-green,
-       Outlook = warm terracotta, Yahoo = dusty plum. */
+       palette, muted enough that no single card pops as a bright outline:
+       Gmail = teal-green, Outlook = warm terracotta, Yandex = red/orange
+       (matching Yandex's own brand red, desaturated to fit the dark UI). */
     .st-key-auth_microsoft_box:hover {border-color:rgba(201,138,92,.4) !important;}
     .st-key-auth_microsoft_box {border-top-color:#c98a5c !important;}
     .auth-option-label-msblue {color:#dba87e !important;}
-    .st-key-auth_yahoo_box:hover {border-color:rgba(155,127,199,.4) !important;}
-    .st-key-auth_yahoo_box {border-top-color:#9b7fc7 !important;}
-    .auth-option-label-yahoo {color:#c2aee0 !important;}
+    .st-key-auth_yandex_box:hover {border-color:rgba(214,95,69,.4) !important;}
+    .st-key-auth_yandex_box {border-top-color:#d65f45 !important;}
+    .auth-option-label-yandex {color:#e8a08c !important;}
     /* st.tabs() is gone from this app entirely now -- its BaseWeb tab-list/
        tab-highlight internals kept rendering as plain unstyled default
        tabs (with the theme's raw red underline) no matter how this was
@@ -3183,7 +3183,7 @@ _acct_email = (
     # started sign-in (see _save_cached_google_email / _load_cached_*).
     or _load_cached_google_email()
     or _load_cached_provider_email("microsoft")
-    or _load_cached_provider_email("yahoo")
+    or _load_cached_provider_email("yandex")
     or ""
 )
 _acct_initial = html.escape(_acct_email[:1].upper()) if _acct_email else "?"
@@ -4411,14 +4411,14 @@ if active_panel == "Dashboard":
                             if _auto_email:
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_provider_email("microsoft", _auto_email)
-                    if not st.session_state.get("imap_user") and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
-                        _auto_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
-                        if _auto_tok and not st.session_state.get("_yahoo_email_autofill_tried"):
-                            st.session_state["_yahoo_email_autofill_tried"] = True
-                            _auto_email = _load_cached_provider_email("yahoo") or yahoo_oauth.fetch_email(_auto_tok)
+                    if not st.session_state.get("imap_user") and YANDEX_OAUTH_READY and yandex_oauth.oauth_available():
+                        _auto_tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
+                        if _auto_tok and not st.session_state.get("_yandex_email_autofill_tried"):
+                            st.session_state["_yandex_email_autofill_tried"] = True
+                            _auto_email = _load_cached_provider_email("yandex") or yandex_oauth.fetch_email(_auto_tok)
                             if _auto_email:
                                 st.session_state["imap_user"] = _auto_email
-                                _save_cached_provider_email("yahoo", _auto_email)
+                                _save_cached_provider_email("yandex", _auto_email)
 
                 # Wrapped in a form: Streamlit only sends the fields' current
                 # values when the submit button is clicked (a single batched
@@ -4458,15 +4458,15 @@ if active_panel == "Dashboard":
 
                 _gmail_key = _find_provider_key("gmail")
                 _outlook_key = _find_provider_key("outlook", "microsoft", "office 365", "office365")
-                _yahoo_key = _find_provider_key("yahoo")
+                _yandex_key = _find_provider_key("yandex")
 
                 _domain = imap_user.split("@")[-1].lower() if "@" in imap_user else ""
                 if _domain and ("gmail" in _domain or "googlemail" in _domain):
                     _detected_key = _gmail_key
                 elif _domain and any(_d in _domain for _d in ("outlook.", "hotmail.", "live.", "msn.", "office365.")):
                     _detected_key = _outlook_key
-                elif _domain and "yahoo" in _domain:
-                    _detected_key = _yahoo_key
+                elif _domain and ("yandex" in _domain or _domain == "ya.ru"):
+                    _detected_key = _yandex_key
                 else:
                     _detected_key = None
 
@@ -4474,7 +4474,7 @@ if active_panel == "Dashboard":
                 provider_defaults = PROVIDERS[provider]
                 _is_gmail = _detected_key == _gmail_key and _gmail_key is not None
                 _is_outlook = _detected_key == _outlook_key and _outlook_key is not None
-                _is_yahoo = _detected_key == _yahoo_key and _yahoo_key is not None
+                _is_yandex = _detected_key == _yandex_key and _yandex_key is not None
 
                 # One-click sign-in row: all three providers shown together,
                 # always, instead of nested one-at-a-time behind a provider
@@ -4482,7 +4482,7 @@ if active_panel == "Dashboard":
                 # logic (redirect-URL setup, cached-token/sign-out state, the
                 # real <a>-tag sign-in link that navigates in one click) --
                 # just always rendered side by side rather than gated behind
-                # `_is_gmail`/`_is_outlook`/`_is_yahoo`.
+                # `_is_gmail`/`_is_outlook`/`_is_yandex`.
                 st.markdown(
                     """<div class="auth-divider"><span>or continue with</span></div>""",
                     unsafe_allow_html=True,
@@ -4586,28 +4586,57 @@ if active_panel == "Dashboard":
                                         os.environ["SIH26106_MS_REDIRECT_URI"] = _r.strip().rstrip("/")
 
                 with _b3:
-                    with st.container(border=True, key="auth_yahoo_box"):
-                        st.markdown('<div class="auth-option-label auth-option-label-yahoo">YAHOO</div>', unsafe_allow_html=True)
-                        # Yahoo's self-serve Developer Console no longer
-                        # offers a Mail API permission to grant on new apps
-                        # (confirmed: the API Permissions list only shows
-                        # Fantasy Sports / OpenID / TW Auction -- no Mail
-                        # option at all) -- so requesting the mail-r scope
-                        # always comes back invalid_scope, for every app,
-                        # with nothing to configure to fix it. One-click
-                        # Yahoo sign-in for mail access isn't available;
-                        # app password + IMAP (same manual-login form above)
-                        # is the real working path for Yahoo.
-                        st.caption(
-                            "One-click sign-in isn't available for Yahoo Mail -- Yahoo no "
-                            "longer grants mail API access to new apps. Use an app "
-                            "password instead:"
-                        )
-                        st.markdown(
-                            "1. [Generate an app password](https://login.yahoo.com/account/security/app-passwords) "
-                            "in your Yahoo account security settings.\n"
-                            "2. Enter your Yahoo email + that app password in the form above, then click Log in."
-                        )
+                    with st.container(border=True, key="auth_yandex_box"):
+                        st.markdown('<div class="auth-option-label auth-option-label-yandex">YANDEX</div>', unsafe_allow_html=True)
+                        # Replaces the retired Yahoo OAuth box -- Yahoo's
+                        # self-serve console no longer grants any Mail API
+                        # permission to new apps (confirmed: its API
+                        # Permissions list only offers Fantasy Sports /
+                        # OpenID / TW Auction, nothing mail-related), so that
+                        # integration was a dead end with nothing left to
+                        # configure. Yandex's own self-serve app console
+                        # still grants IMAP mail access (mail:imap_ro) to
+                        # ordinary third-party apps, so this is a real,
+                        # working one-click sign-in -- same pattern as the
+                        # Gmail/Outlook boxes beside it.
+                        if not YANDEX_OAUTH_READY:
+                            st.caption("Not available: yandex_oauth.py failed to import.")
+                        elif not yandex_oauth.oauth_available():
+                            st.caption(f"Needs setup: {yandex_oauth.client_secret_issue()}")
+                        else:
+                            _cached_tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
+                            _pending_err = st.session_state.pop("_yandex_oauth_error", None)
+                            if _pending_err:
+                                st.caption(f"Sign-in didn't complete: {_pending_err}")
+                            if _cached_tok:
+                                st.success("Signed in.")
+                                if st.button("Sign out", key="yandex_signout_btn", use_container_width=True):
+                                    yandex_oauth.clear_saved_token()
+                                    st.session_state.pop("yandex_oauth_token", None)
+                                    st.session_state.pop("_yandex_email_autofill_tried", None)
+                                    st.session_state.pop("imap_user", None)
+                                    st.session_state.pop("_yandex_email_cache", None)
+                                    if not MULTIUSER:
+                                        try:
+                                            os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yandex"])
+                                        except OSError:
+                                            pass
+                                    st.rerun()
+                            else:
+                                try:
+                                    auth_url, _state = yandex_oauth.get_authorization_url(email_hint=imap_user)
+                                    st.link_button(
+                                        "Sign in with Yandex", auth_url,
+                                        use_container_width=True, key="yandex_signin_link_btn",
+                                    )
+                                except Exception as e:
+                                    st.caption(f"Couldn't start sign-in: {e}")
+                            if not MULTIUSER:
+                                with st.expander("Redirect URL setup"):
+                                    st.caption("Must match a redirect URI registered on the Yandex app.")
+                                    _r = st.text_input("App URL", value=yandex_oauth.redirect_uri(), key="yandex_redirect_uri_input", label_visibility="collapsed")
+                                    if _r.strip():
+                                        os.environ["SIH26106_YANDEX_REDIRECT_URI"] = _r.strip().rstrip("/")
 
             if _detected_key:
                 st.caption(f"Using another provider? The email/password fields above are auto-detected as {provider} -- override the server if that's wrong.")
@@ -4670,10 +4699,10 @@ if active_panel == "Dashboard":
                     st.session_state["microsoft_oauth_token"] = _tok
                     imap_credential = _tok
                     auth_mode = "OAuth2 Access Token"
-            elif _is_yahoo and YAHOO_OAUTH_READY and yahoo_oauth.oauth_available():
-                _tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
+            elif _is_yandex and YANDEX_OAUTH_READY and yandex_oauth.oauth_available():
+                _tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
                 if _tok:
-                    st.session_state["yahoo_oauth_token"] = _tok
+                    st.session_state["yandex_oauth_token"] = _tok
                     imap_credential = _tok
                     auth_mode = "OAuth2 Access Token"
 
@@ -4687,7 +4716,7 @@ if active_panel == "Dashboard":
 
             # Browsing-window picker only shows up once you've actually
             # logged in -- clicked "Log in" with a valid email + password,
-            # or completed a one-click sign-in (Gmail/Outlook/Yahoo).
+            # or completed a one-click sign-in (Gmail/Outlook/Yandex).
             # Nothing to browse yet, so no point showing this before then.
             # Folder is always INBOX -- no picker needed for that.
             folder = "INBOX"
@@ -4903,7 +4932,7 @@ if active_panel == "Dashboard":
                 st.info("Choose a mailbox message and load it for forensic analysis.")
                 st.stop()
         else:
-            st.info("Connect to Gmail, Yahoo, Outlook/Microsoft 365, or a custom IMAP server to browse messages.")
+            st.info("Connect to Gmail, Yandex, Outlook/Microsoft 365, or a custom IMAP server to browse messages.")
             st.stop()
     else:
         st.info("Please select a threat acquisition mode.")
