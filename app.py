@@ -1228,7 +1228,7 @@ st.markdown(
     /* Origin & Route maps: tall, but not full-width -- centered and capped
        so the box is narrower without losing height. */
     [class*="st-key-"][class*="_map_frame"] iframe {
-        width:100% !important; max-width:900px !important;
+        width:100% !important; max-width:1000px !important;
         display:block !important; margin:0 auto !important;
     }
     .st-key-imap_connected_actions {
