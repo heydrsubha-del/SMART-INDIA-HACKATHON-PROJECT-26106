@@ -4198,8 +4198,13 @@ if active_panel == "Dashboard":
                 st.info("SYSTEM READY · Awaiting evidence acquisition. Supported: EML / TXT / CSV · Maximum 200 MB per file.")
                 st.stop()
     elif "Live IMAP Mailbox Interceptor" in input_mode:
-        st.markdown("### Live Mailbox Interceptor")
-        st.caption("Read-only mailbox access. Complete the workflow from top to bottom: connect → browse → select → acquire evidence.")
+        st.markdown(
+            """<div style="margin:2px 0 14px 0;">
+                <span style="font-size:22px;font-weight:800;color:#eef5ff;">Live Mailbox Interceptor</span>
+                <span style="color:#8fa5bd;font-size:13px;margin-left:10px;">Read-only · connect → browse → select → acquire evidence</span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
         # Browser/password-manager autofill sets input.value directly via the
         # DOM without firing the "input" event Streamlit's frontend (React)
@@ -4583,44 +4588,26 @@ if active_panel == "Dashboard":
                 with _b3:
                     with st.container(border=True, key="auth_yahoo_box"):
                         st.markdown('<div class="auth-option-label auth-option-label-yahoo">YAHOO</div>', unsafe_allow_html=True)
-                        if not YAHOO_OAUTH_READY:
-                            st.caption("Not available: yahoo_oauth.py failed to import.")
-                        elif not yahoo_oauth.oauth_available():
-                            st.caption(f"Needs setup: {yahoo_oauth.client_secret_issue()}")
-                        else:
-                            _cached_tok = st.session_state.get("yahoo_oauth_token") or yahoo_oauth.get_cached_access_token()
-                            _pending_err = st.session_state.pop("_yahoo_oauth_error", None)
-                            if _pending_err:
-                                st.caption(f"Sign-in didn't complete: {_pending_err}")
-                            if _cached_tok:
-                                st.success("Signed in.")
-                                if st.button("Sign out", key="yahoo_signout_btn", use_container_width=True):
-                                    yahoo_oauth.clear_saved_token()
-                                    st.session_state.pop("yahoo_oauth_token", None)
-                                    st.session_state.pop("_yahoo_email_autofill_tried", None)
-                                    st.session_state.pop("imap_user", None)
-                                    st.session_state.pop("_yahoo_email_cache", None)
-                                    if not MULTIUSER:
-                                        try:
-                                            os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yahoo"])
-                                        except OSError:
-                                            pass
-                                    st.rerun()
-                            else:
-                                try:
-                                    auth_url, _state = yahoo_oauth.get_authorization_url(email_hint=imap_user)
-                                    st.link_button(
-                                        "Sign in with Yahoo", auth_url,
-                                        use_container_width=True, key="yahoo_signin_link_btn",
-                                    )
-                                except Exception as e:
-                                    st.caption(f"Couldn't start sign-in: {e}")
-                            if not MULTIUSER:
-                                with st.expander("Redirect URL setup"):
-                                    st.caption("Must match a redirect URI registered on the Yahoo app.")
-                                    _r = st.text_input("App URL", value=yahoo_oauth.redirect_uri(), key="yahoo_redirect_uri_input", label_visibility="collapsed")
-                                    if _r.strip():
-                                        os.environ["SIH26106_YAHOO_REDIRECT_URI"] = _r.strip().rstrip("/")
+                        # Yahoo's self-serve Developer Console no longer
+                        # offers a Mail API permission to grant on new apps
+                        # (confirmed: the API Permissions list only shows
+                        # Fantasy Sports / OpenID / TW Auction -- no Mail
+                        # option at all) -- so requesting the mail-r scope
+                        # always comes back invalid_scope, for every app,
+                        # with nothing to configure to fix it. One-click
+                        # Yahoo sign-in for mail access isn't available;
+                        # app password + IMAP (same manual-login form above)
+                        # is the real working path for Yahoo.
+                        st.caption(
+                            "One-click sign-in isn't available for Yahoo Mail -- Yahoo no "
+                            "longer grants mail API access to new apps. Use an app "
+                            "password instead:"
+                        )
+                        st.markdown(
+                            "1. [Generate an app password](https://login.yahoo.com/account/security/app-passwords) "
+                            "in your Yahoo account security settings.\n"
+                            "2. Enter your Yahoo email + that app password in the form above, then click Log in."
+                        )
 
             if _detected_key:
                 st.caption(f"Using another provider? The email/password fields above are auto-detected as {provider} -- override the server if that's wrong.")
