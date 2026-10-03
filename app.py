@@ -3592,8 +3592,8 @@ def _about():
 # into one email's full hop chain picked from a dropdown -- instead of only
 # ever being able to see whichever single message happens to be loaded.
 # --------------------------------------------------------------------------
-_MAP_MODE_ALL = "All senders (up to 10)"
-_MAP_MODE_ONE = "By email"
+_MAP_MODE_ALL = "All emails (up to 10)"
+_MAP_MODE_ONE = "Single email"
 
 _TILE_LAYERS = (
     ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -3691,32 +3691,78 @@ def _pick_case_for_map(cases, result, case_name, key, source_rows=None):
     return ordered_cases[sel_idx]
 
 
-def _render_all_senders_map(cases, key_prefix, height=430, max_markers=10):
-    """One marker per email's origin, most-recent-first, capped at
-    max_markers so the map never turns into unreadable clutter."""
-    all_points = [pt for pt in (_case_origin_point(c) for c in cases) if pt]
-    points = all_points[-max_markers:]
-    if not points:
-        st.info("No geolocatable origins across the loaded emails yet.")
-        return
-    m = folium.Map(location=[points[0]["lat"], points[0]["lon"]], zoom_start=2, tiles=None)
-    _add_base_tiles(m)
-    for pt in points:
-        color = _LEVEL_MARKER_COLORS.get(pt["level"], "#2fd8ff")
-        popup = (
-            f"<b>{pt['sender']}</b><br>{pt['case_name']}<br>"
-            f"IP: {pt['ip']}<br>{pt['city']} {pt['country']}<br>"
-            f"Infra: {pt['infra_label']}<br>Verdict: {pt['level']}"
+_EMAIL_ROUTE_COLORS = (
+    "#ff4757", "#2fd8ff", "#f5c542", "#35d399", "#a389f4",
+    "#ff9f43", "#f47ab0", "#7bed9f", "#70a1ff", "#eccc68",
+)
+
+
+def _case_hop_points(case):
+    """Geolocatable hops of one case, in route order. Falls back to the
+    case's origin point when the hop list has no coordinates."""
+    g = case.get("geo", {}) or {}
+    hops = [h for h in (g.get("hops") or []) if h.get("lat") is not None and h.get("lon") is not None]
+    if hops:
+        return hops
+    o = g.get("origin", {}) or {}
+    if o.get("lat") is not None and o.get("lon") is not None:
+        return [dict(o, hop_index=1)]
+    return []
+
+
+def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_rows=None):
+    """Hop route of up to max_emails emails (most recent first) on one map,
+    one colour per email. Each email is its own layer in the layer control
+    so individual routes can be switched on and off."""
+    ordered = [
+        c for _, c in sorted(
+            enumerate(cases),
+            key=lambda pair: _case_recency_key(pair[1], pair[0], source_rows),
+            reverse=True,
         )
-        folium.CircleMarker(
-            location=[pt["lat"], pt["lon"]], radius=8, color=color,
-            fill=True, fill_opacity=0.85, popup=folium.Popup(popup, max_width=280),
-        ).add_to(m)
+    ]
+    routed = [(c, _case_hop_points(c)) for c in ordered]
+    routed = [(c, pts) for c, pts in routed if pts]
+    total_routed = len(routed)
+    routed = routed[:max_emails]
+    if not routed:
+        st.info("No geolocatable hops across the loaded emails yet.")
+        return
+    all_coords = [[h["lat"], h["lon"]] for _, pts in routed for h in pts]
+    m = folium.Map(location=all_coords[0], zoom_start=2, tiles=None)
+    _add_base_tiles(m)
+    for n, (case, pts) in enumerate(routed, start=1):
+        color = _EMAIL_ROUTE_COLORS[(n - 1) % len(_EMAIL_ROUTE_COLORS)]
+        label = _case_label(case, f"Email #{n}")
+        if len(label) > 48:
+            label = label[:47] + "…"
+        layer = folium.FeatureGroup(name=f"{n}. {label}", show=True)
+        coords = [[h["lat"], h["lon"]] for h in pts]
+        if len(coords) > 1:
+            folium.PolyLine(coords, color=color, weight=3, opacity=0.8, dash_array="6 8").add_to(layer)
+        for i, h in enumerate(pts, start=1):
+            is_last = (i == len(pts))
+            popup = (
+                f"<b>Email {n}: {label}</b><br>Hop {i} of {len(pts)}<br>IP: {h.get('ip', 'Unknown')}<br>"
+                f"{h.get('city', '')} {h.get('country', '')}<br>Infra: {h.get('infra_label', '')}"
+            )
+            folium.CircleMarker(
+                location=[h["lat"], h["lon"]], radius=9 if is_last else 5,
+                color=color, fill=True, fill_color=color, fill_opacity=0.9 if is_last else 0.6,
+                popup=folium.Popup(popup, max_width=300),
+            ).add_to(layer)
+        layer.add_to(m)
+    if len(all_coords) > 1:
+        try:
+            m.fit_bounds(all_coords, max_zoom=6)
+        except Exception:
+            pass
     folium.LayerControl(collapsed=False).add_to(m)
-    st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_senders_map")
+    st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
     st.caption(
-        f"Showing {len(points)} of {len(all_points)} geolocatable sender origins "
-        f"(most recent {max_markers} max). Marker color = verdict severity."
+        f"Showing the hop route of {len(routed)} of {total_routed} emails with geolocatable hops "
+        f"(most recent {max_emails} max). One colour per email; the large dot is the last traced hop. "
+        "Use the layer list to hide or show a single email."
     )
 
 
@@ -5731,36 +5777,44 @@ if active_panel == "Dashboard":
             # Streamlit's columns used to squash rather than reflow) with
             # room for labels to read cleanly.
             with st.container(border=True, key="dash_map_card"):
-                _dash_map_mode = st.radio(
-                    "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True,
-                    key="dash_map_mode", label_visibility="collapsed",
-                )
-                if _dash_map_mode == _MAP_MODE_ALL:
-                    st.markdown("""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
-                        <span>All senders</span></div>""", unsafe_allow_html=True)
-                    _render_all_senders_map(cases, key_prefix="dash", height=420)
+                # Always the email that is currently open -- no toggle here.
+                # The all-emails / single-email switch lives on Origin & Route.
+                _dash_geo = result.get("geo", {}) or {}
+                _dash_origin = _dash_geo.get("origin", {}) or {}
+                st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
+                    <span>{html.escape(str(_dash_origin.get('ip', 'Unknown')))}</span></div>""", unsafe_allow_html=True)
+                _dash_pts = _case_hop_points(result)
+                if _dash_pts:
+                    _dash_coords = [[h["lat"], h["lon"]] for h in _dash_pts]
+                    dash_map = folium.Map(location=_dash_coords[-1], zoom_start=4, tiles=None)
+                    _add_base_tiles(dash_map)
+                    for i, h in enumerate(_dash_pts, 1):
+                        is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(_dash_pts))
+                        folium.CircleMarker(
+                            location=[h["lat"], h["lon"]], radius=9 if is_origin else 6,
+                            color="#ff4757" if is_origin else "#2fd8ff",
+                            fill=True, fill_opacity=0.85,
+                            popup=f"{h.get('ip', '')} · {h.get('city', '')} {h.get('country', '')}",
+                        ).add_to(dash_map)
+                    if len(_dash_coords) > 1:
+                        folium.PolyLine(_dash_coords, color="#2fd8ff", weight=2, opacity=0.7, dash_array="6 8").add_to(dash_map)
+                        try:
+                            dash_map.fit_bounds(_dash_coords, max_zoom=6)
+                        except Exception:
+                            pass
+                    folium.LayerControl(collapsed=False).add_to(dash_map)
+                    st_folium(
+                        dash_map, width="stretch", height=420, returned_objects=[],
+                        key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
+                    )
+                    _dash_loc = ", ".join(p for p in [_dash_origin.get("city"), _dash_origin.get("country")] if p)
+                    st.caption(
+                        f"Current email origin: {_dash_loc or 'location unknown'}"
+                        + (f" · {_dash_origin.get('infra_label')}" if _dash_origin.get("infra_label") else "")
+                        + ". See Origin & Route to compare up to 10 emails or pick another one."
+                    )
                 else:
-                    _dash_sel_case = _pick_case_for_map(cases, result, case_name, key="dash_map_email_pick", source_rows=data)
-                    _dash_sel_geo = _dash_sel_case.get("geo", {}) or {}
-                    _dash_sel_origin = _dash_sel_geo.get("origin", {}) or {}
-                    st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
-                        <span>{_dash_sel_origin.get('ip','Unknown')}</span></div>""", unsafe_allow_html=True)
-                    hops = [h for h in _dash_sel_geo.get("hops", []) if h.get("lat") is not None]
-                    if hops:
-                        dash_map = folium.Map(location=[hops[0]["lat"], hops[0]["lon"]], zoom_start=2, tiles=None)
-                        _add_base_tiles(dash_map)
-                        for i, h in enumerate(hops, 1):
-                            is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(hops))
-                            folium.CircleMarker(
-                                location=[h["lat"], h["lon"]], radius=7,
-                                color="#ff4757" if is_origin else "#2fd8ff",
-                                fill=True, fill_opacity=0.85,
-                                popup=f"{h['ip']} · {h.get('city','')} {h.get('country','')}",
-                            ).add_to(dash_map)
-                        folium.LayerControl(collapsed=False).add_to(dash_map)
-                        st_folium(dash_map, width="stretch", height=420, returned_objects=[], key="dash_single_map")
-                    else:
-                        st.info("No geolocatable hop for this email yet.")
+                    st.info("No geolocatable hop for this email yet.")
 
             with st.container(border=True, key="dash_graph_card"):
                 st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
@@ -6342,7 +6396,7 @@ if active_panel == "Origin & Route":
 
         st.markdown("### Interactive Visual Hop Map (Folium)")
         _geo_map_mode = st.radio(
-            "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="geo_map_mode",
+            "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="geo_map_mode_v2",
         )
 
         # The summary strip below (Origin IP / Infrastructure / VPN Masking /
@@ -6436,7 +6490,7 @@ if active_panel == "Origin & Route":
 
         _table_geo = _active_geo
         if _geo_map_mode == _MAP_MODE_ALL:
-            _render_all_senders_map(cases, key_prefix="geo", height=500)
+            _render_all_hops_map(cases, key_prefix="geo", height=500, source_rows=data)
         else:
             hops = [h for h in _table_geo.get("hops", []) if h.get("lat") is not None]
 
