@@ -7107,26 +7107,18 @@ if active_panel == "Origin & Route":
         origin = geo.get("origin", {}) or {}
         description = _sem_describe_origin(geo)
 
-        # Plain-language strictness presets instead of a raw 0.30-0.95 slider --
-        # the slider let people drag it up to e.g. 90% without realizing that's
-        # ABOVE the "Strong" band ceiling (85%) defined by _sem_band(), which
-        # silently returns zero matches for almost any real data and looks like
-        # the feature is broken. These three options map directly onto the
-        # same Strong/Related/Weak bands the results table actually uses, so
-        # the number on screen always matches what you get.
-        _sem_preset = st.radio(
-            "How confident should a match be to show up?",
-            options=["weak", "related", "strong"],
-            format_func=lambda k: {
-                "weak": "Show everything, even weak leads (≥ 55%)",
-                "related": "Related matches only (≥ 70%) -- recommended",
-                "strong": "Strong matches only (≥ 85%)",
-            }[k],
-            index=1,
-            key="nomic_match_preset",
-            horizontal=False,
+        # Slider, capped at the "Strong" band ceiling (85%) instead of the
+        # original 95% -- dragging it above 85% is what silently produced
+        # zero matches for almost any real data (nothing scores "above
+        # Strong") and looked like the feature was broken. Capping the top
+        # end means wherever you drag it, it stays inside a range that can
+        # actually return something.
+        _sem_min = st.slider(
+            "Minimum match score", float(_SEM_MIN_SIMILARITY), float(_SEM_STRONG), _SEM_RELATED, 0.05,
+            format="%.2f", key="nomic_min_score_v2",
+            help=f"Matches scoring below this are hidden as noise. Weak \u2265 {_SEM_MIN_SIMILARITY:.0%}, "
+                 f"Related \u2265 {_SEM_RELATED:.0%}, Strong \u2265 {_SEM_STRONG:.0%}.",
         )
-        _sem_min = {"weak": _SEM_MIN_SIMILARITY, "related": _SEM_RELATED, "strong": _SEM_STRONG}[_sem_preset]
 
         _run_all = st.button(
             "Find Similar Origins", key="run_nomic_embed", use_container_width=True, type="primary",
