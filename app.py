@@ -395,6 +395,60 @@ def _start_prefetch(cfg, uids):
     except Exception:
         pass
 
+
+def _ensure_live_cases_from_prefetch(max_new=10):
+    """Lazily turn already-prefetched Live IMAP messages into _corr_cases
+    entries, so the Origin & Route map/picker and the Correlation graph
+    have ALL browsed messages to show -- not just whichever single one
+    the person happened to open -- without requiring a separate click on
+    "Synapse Copilot - Full Report" first.
+
+    Deliberately does MACHINE analysis only (analyze_bytes -- fast, local,
+    no network calls beyond the geolocation lookups analyze_bytes already
+    does), not the AI/Ollama campaign analysis or semantic-origin
+    indexing _run_batch_pipeline also does. Those stay behind the
+    explicit "Full Report" button because they're meaningfully slower
+    (LLM calls per email) -- auto-running them on every mailbox load
+    would make Origin & Route noticeably slow to open. If someone wants
+    the AI analysis and semantic correlation too, "Full Report" is still
+    the way to get that on top of this.
+
+    Only touches messages _start_prefetch has already fetched into
+    _raw_cache() (background thread, so this is instant/free when it's
+    caught up); any not yet prefetched are silently skipped this run and
+    picked up automatically on a later rerun once prefetch catches up --
+    never blocks waiting on IMAP itself.
+    """
+    cfg = st.session_state.get("live_mailbox_config")
+    headers = st.session_state.get("live_mailbox_messages") or []
+    if not cfg or not headers:
+        return
+    cache = _raw_cache()
+    added = 0
+    for h in headers:
+        if added >= max_new:
+            break
+        uid = h.get("uid")
+        if uid is None:
+            continue
+        raw = cache.get(_raw_cache_key(cfg, uid))
+        if not raw:
+            continue
+        ehash = hashlib.sha256(raw).hexdigest()
+        if ehash in _corr_cases:
+            continue
+        try:
+            res = analyze_bytes(raw, f"Live IMAP #{uid}")
+        except Exception:
+            continue
+        res["_evidence_hash"] = ehash
+        _corr_cases[ehash] = res
+        added += 1
+    if added:
+        while len(_corr_cases) > 60:
+            _corr_cases.pop(next(iter(_corr_cases)))
+
+
 from antivirus_scan import clamd_available, clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 # ALGORITHMISTIC brand mark, embedded as a base64 PNG so the app stays a
@@ -6584,6 +6638,13 @@ if active_panel == "Origin & Route":
     def _geo():
         st.subheader("Where the message actually came from")
 
+        # Pull in every other browsed-but-not-yet-opened Live IMAP message
+        # that's already been prefetched, so the map/picker below have all
+        # of them, not just whichever one is currently loaded -- see
+        # _ensure_live_cases_from_prefetch for why this is machine-analysis
+        # only (fast) rather than the full AI pipeline.
+        _ensure_live_cases_from_prefetch()
+
         # Every loaded email at a glance (capped so the map stays readable),
         # or one email's full hop chain picked from a dropdown -- same
         # toggle as the Dashboard preview map, so either view is a click
@@ -7251,6 +7312,10 @@ if active_panel == "Correlation":
         if saved_bulk_cases and current_csv_hash == saved_bulk_hash:
             cases = [r for r in saved_bulk_cases if "error" not in r]
         else:
+            # Same auto-index as Origin & Route: pulls in every other
+            # already-prefetched Live IMAP message, not just whichever one
+            # is currently loaded, without requiring "Full Report" first.
+            _ensure_live_cases_from_prefetch()
             cases = [r for r in _corr_cases.values() if "error" not in r]
 
         current_evidence_case = dict(result)
