@@ -154,8 +154,22 @@ def _post_form(url, fields, data):
             "Authorization": _basic_auth_header(data),
         },
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # Bare `raise` / letting urllib's HTTPError propagate as-is only
+        # ever surfaces "HTTP Error 400: Bad Request" -- the generic status
+        # line, not Yahoo's actual JSON error body (typically something
+        # like {"error":"invalid_grant","error_description":"..."}) which
+        # is what actually explains WHY (code already used, redirect_uri
+        # mismatch between the authorize and token calls, clock skew,
+        # etc). Read and surface that body instead of the opaque default.
+        try:
+            detail = e.read().decode("utf-8", errors="replace")
+        except Exception:
+            detail = ""
+        raise RuntimeError(f"Yahoo token endpoint returned HTTP {e.code}: {detail or e.reason}") from e
 
 
 def fetch_email(access_token):
