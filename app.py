@@ -1225,6 +1225,12 @@ st.markdown(
         border-bottom-left-radius:0 !important;
         border-bottom-right-radius:0 !important;
     }
+    /* Origin & Route maps: tall, but not full-width -- centered and capped
+       so the box is narrower without losing height. */
+    [class*="st-key-"][class*="_map_frame"] iframe {
+        width:100% !important; max-width:900px !important;
+        display:block !important; margin:0 auto !important;
+    }
     .st-key-imap_connected_actions {
         position:relative;
         background:var(--panel) !important;
@@ -3659,9 +3665,16 @@ _LEVEL_MARKER_COLORS = {
 }
 
 
+_MAP_MAX_ZOOM = 10  # Esri imagery is reliable worldwide up to here; deeper shows gray "Map data not yet available" tiles
+
+
 def _add_base_tiles(m):
     for tiles, attr, name in _TILE_LAYERS:
-        folium.TileLayer(tiles=tiles, attr=attr, name=name, control=False, no_wrap=True).add_to(m)
+        folium.TileLayer(
+            tiles=tiles, attr=attr, name=name, control=False, no_wrap=True,
+            max_zoom=_MAP_MAX_ZOOM, max_native_zoom=_MAP_MAX_ZOOM,
+            bounds=[[-85.0511, -180], [85.0511, 180]],
+        ).add_to(m)
 
 
 def _case_label(case, fallback):
@@ -3768,6 +3781,7 @@ _MAP_CSS = """<style>
 .leaflet-bar{border:none !important;box-shadow:0 4px 14px rgba(0,0,0,.45) !important;border-radius:10px !important;overflow:hidden;}
 .leaflet-bar a{background:rgba(15,27,45,.94) !important;color:#cfe3ff !important;border-bottom:1px solid rgba(255,255,255,.08) !important;width:34px !important;height:34px !important;line-height:34px !important;}
 .leaflet-bar a:hover{background:#1b2d4a !important;color:#fff !important;}
+.leaflet-bar a.leaflet-disabled{opacity:.3 !important;cursor:not-allowed !important;background:rgba(15,27,45,.94) !important;}
 .leaflet-popup-content-wrapper{background:rgba(12,22,38,.97);color:#e6eefc;border:1px solid rgba(110,170,255,.28);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.6);}
 .leaflet-popup-tip{background:rgba(12,22,38,.97);border:1px solid rgba(110,170,255,.18);}
 .leaflet-popup-content{margin:12px 14px;font-size:12px;line-height:1.5;}
@@ -3783,6 +3797,44 @@ _MAP_CSS = """<style>
 </style>"""
 
 
+from branca.element import MacroElement
+from jinja2 import Template
+
+
+class _KeepWorldInView(MacroElement):
+    """Stops the map ever showing anything outside the world imagery.
+
+    Works out, from the real pixel size of the map box, the smallest zoom at
+    which the world still covers the whole box, and makes that the minimum
+    zoom (so the zoom-out button greys out there). Also pins panning to the
+    world's edges. Re-runs when the box is resized."""
+    _template = Template("""
+        {% macro script(this, kwargs) %}
+        (function () {
+            var map = {{ this._parent.get_name() }};
+            var world = L.latLngBounds([[-85.0511, -180], [85.0511, 180]]);
+            var base = map.options.minZoom || 0;
+            map.options.maxBoundsViscosity = 1.0;
+            map.setMaxBounds(world);
+            function fit() {
+                var s = map.getSize();
+                if (!s.x || !s.y) { return; }
+                var need = Math.log(Math.max(s.x, s.y) / 256) / Math.LN2;
+                var mz = Math.max(base, Math.ceil(need * 2) / 2);
+                map.setMinZoom(mz);
+                if (map.getZoom() < mz) { map.setZoom(mz, {animate: false}); }
+                map.panInsideBounds(world, {animate: false});
+            }
+            map.whenReady(fit);
+            map.on('resize', fit);
+            setTimeout(fit, 60);
+            setTimeout(fit, 400);
+            setTimeout(fit, 1200);
+        })();
+        {% endmacro %}
+    """)
+
+
 def _new_map(location, zoom_start=3, min_zoom=3):
     """Satellite-only map with a dark, branded look: no attribution box,
     no repeated world copies, restyled controls and popups.
@@ -3791,16 +3843,20 @@ def _new_map(location, zoom_start=3, min_zoom=3):
     on a full-width panel the sides show gray "Map data not yet available"
     strips. At zoom 3 the world is 2048px wide, which covers the panel
     width, so those gray areas never appear."""
-    zoom_start = max(zoom_start, min_zoom)
+    zoom_start = min(max(zoom_start, min_zoom), _MAP_MAX_ZOOM)
     try:
         m = folium.Map(
             location=location, zoom_start=zoom_start, tiles=None, min_zoom=min_zoom,
-            max_bounds=True, zoom_snap=0.5, attribution_control=False,
+            max_zoom=_MAP_MAX_ZOOM, max_bounds=True, zoom_snap=0.5, attribution_control=False,
         )
     except Exception:
         m = folium.Map(location=location, zoom_start=zoom_start, tiles=None)
     _add_base_tiles(m)
     m.get_root().header.add_child(folium.Element(_MAP_CSS))
+    try:
+        m.add_child(_KeepWorldInView())
+    except Exception:
+        pass
     return m
 
 
@@ -3873,7 +3929,7 @@ def _loc_key(h):
     return (round(float(h["lat"]), 3), round(float(h["lon"]), 3))
 
 
-def _render_all_hops_map(cases, key_prefix, height=420, max_emails=10, source_rows=None):
+def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_rows=None):
     """Hop route of up to max_emails emails (most recent first) on one map.
 
     Every hop is a pin in its email's colour with the email number inside.
@@ -3962,7 +4018,8 @@ def _render_all_hops_map(cases, key_prefix, height=420, max_emails=10, source_ro
             m.fit_bounds(all_coords, max_zoom=5)
         except Exception:
             pass
-    st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
+    with st.container(key=f"{key_prefix}_all_hops_map_frame"):
+        st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
 
     # ---- details table under the map ----
     th = ("padding:9px 12px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.9px;"
@@ -6757,7 +6814,7 @@ if active_panel == "Origin & Route":
 
         _table_geo = _active_geo
         if _geo_map_mode == _MAP_MODE_ALL:
-            _render_all_hops_map(cases, key_prefix="geo", height=420, source_rows=data)
+            _render_all_hops_map(cases, key_prefix="geo", height=560, source_rows=data)
         else:
             hops = [h for h in _table_geo.get("hops", []) if h.get("lat") is not None]
 
@@ -6826,7 +6883,8 @@ if active_panel == "Origin & Route":
                         m.fit_bounds(coordinates, max_zoom=5)
                     except Exception:
                         pass
-                st_folium(m, width="stretch", height=420, returned_objects=[], key="geo_single_map")
+                with st.container(key="geo_single_map_frame"):
+                    st_folium(m, width="stretch", height=560, returned_objects=[], key="geo_single_map")
                 st.caption(
                     "Pins are numbered by hop (hop 1 = earliest external sender). Red = origin or anonymising "
                     "infrastructure; hops that share a location are merged into one pin whose pill lists those hop numbers. Imagery © Esri."
