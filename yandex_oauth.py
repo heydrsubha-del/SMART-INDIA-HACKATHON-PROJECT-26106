@@ -241,4 +241,3 @@ def clear_saved_token():
         os.remove(_TOKEN_CACHE_PATH)
     except OSError:
         pass
-    

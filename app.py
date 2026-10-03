@@ -74,7 +74,10 @@ except ImportError:
     MICROSOFT_OAUTH_READY = False
 
 try:
-    import yandex_oauth
+    try:
+        import yandex_oauth
+    except ModuleNotFoundError:
+        import yandex_Oauth as yandex_oauth
     YANDEX_OAUTH_READY = True
 except Exception as _yandex_import_exc:
     # TEMPORARY: widened from `except ImportError` to `except Exception` and
@@ -91,6 +94,27 @@ except Exception as _yandex_import_exc:
     YANDEX_IMPORT_ERROR = repr(_yandex_import_exc)
 else:
     YANDEX_IMPORT_ERROR = None
+
+def _fresh_token(session_key, cached_getter, keep_session_fallback=False):
+    """Return a valid OAuth access token, refreshing it if it has expired.
+
+    The cached getter checks expiry and uses the refresh token; the session
+    copy is only a convenience and goes stale after ~1 hour, so it must not
+    take priority over it.
+    """
+    tok = None
+    try:
+        tok = cached_getter()
+    except Exception:
+        tok = None
+    if tok:
+        st.session_state[session_key] = tok
+        return tok
+    if keep_session_fallback:
+        return st.session_state.get(session_key)
+    st.session_state.pop(session_key, None)
+    return None
+
 
 # google_Oauth.py caches the OAuth *token* across restarts, but not the
 # account email that goes with it -- so a restored session knew it was
@@ -659,7 +683,7 @@ components.html(
                 '.st-key-microsoft_signin_link_btn a, ' +
                 '.st-key-yandex_signin_link_btn a'
             ).forEach(function (a) {
-                if (a.target !== '_self') a.target = '_self';
+                if (a.target !== '_top') a.target = '_top';
             });
         }
         fixLinkTargets();
@@ -4409,7 +4433,7 @@ if active_panel == "Dashboard":
                 # provider dropdown left to gate this on.
                 if not st.session_state.get("imap_user"):
                     if GOOGLE_OAUTH_READY and oauth_available():
-                        _auto_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                        _auto_tok = _fresh_token("google_oauth_token", get_cached_access_token, True)
                         if _auto_tok and not st.session_state.get("_google_email_autofill_tried"):
                             st.session_state["_google_email_autofill_tried"] = True
                             _auto_email = _load_cached_google_email() or _fetch_google_email_from_token(_auto_tok)
@@ -4417,7 +4441,7 @@ if active_panel == "Dashboard":
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_google_email(_auto_email)
                     if not st.session_state.get("imap_user") and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
-                        _auto_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                        _auto_tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_access_token)
                         if _auto_tok and not st.session_state.get("_microsoft_email_autofill_tried"):
                             st.session_state["_microsoft_email_autofill_tried"] = True
                             _auto_email = _load_cached_provider_email("microsoft") or microsoft_oauth.fetch_email(_auto_tok)
@@ -4425,7 +4449,7 @@ if active_panel == "Dashboard":
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_provider_email("microsoft", _auto_email)
                     if not st.session_state.get("imap_user") and YANDEX_OAUTH_READY and yandex_oauth.oauth_available():
-                        _auto_tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
+                        _auto_tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_access_token)
                         if _auto_tok and not st.session_state.get("_yandex_email_autofill_tried"):
                             st.session_state["_yandex_email_autofill_tried"] = True
                             _auto_email = _load_cached_provider_email("yandex") or yandex_oauth.fetch_email(_auto_tok)
@@ -4512,7 +4536,7 @@ if active_panel == "Dashboard":
                         elif not oauth_available():
                             st.caption(f"Needs setup: {client_secret_issue()}")
                         else:
-                            _cached_tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                            _cached_tok = _fresh_token("google_oauth_token", get_cached_access_token, True)
                             _pending_err = st.session_state.pop("_google_oauth_error", None)
                             if _pending_err:
                                 st.caption(f"Sign-in didn't complete: {_pending_err}")
@@ -4564,11 +4588,11 @@ if active_panel == "Dashboard":
                         elif not microsoft_oauth.oauth_available():
                             st.caption(f"Needs setup: {microsoft_oauth.client_secret_issue()}")
                         else:
-                            _cached_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                            _cached_tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_access_token)
                             _pending_err = st.session_state.pop("_microsoft_oauth_error", None)
-                            _why = microsoft_oauth.last_error()
-                        if _why and not _cached_tok:
-                            st.caption(f"Session expired: {_why}")
+                            _why = microsoft_oauth.last_error() if hasattr(microsoft_oauth, "last_error") else None
+                            if _why and not _cached_tok:
+                                st.caption(f"Session expired: {_why}")
                             if _pending_err:
                                 st.caption(f"Sign-in didn't complete: {_pending_err}")
                             if _cached_tok:
@@ -4620,7 +4644,7 @@ if active_panel == "Dashboard":
                         elif not yandex_oauth.oauth_available():
                             st.caption(f"Needs setup: {yandex_oauth.client_secret_issue()}")
                         else:
-                            _cached_tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
+                            _cached_tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_access_token)
                             _pending_err = st.session_state.pop("_yandex_oauth_error", None)
                             if _pending_err:
                                 st.caption(f"Sign-in didn't complete: {_pending_err}")
@@ -4704,19 +4728,19 @@ if active_panel == "Dashboard":
             auth_mode = custom_auth_mode
 
             if _is_gmail and GOOGLE_OAUTH_READY and oauth_available():
-                _tok = st.session_state.get("google_oauth_token") or get_cached_access_token()
+                _tok = _fresh_token("google_oauth_token", get_cached_access_token, True)
                 if _tok:
                     st.session_state["google_oauth_token"] = _tok
                     imap_credential = _tok
                     auth_mode = "OAuth2 Access Token"
             elif _is_outlook and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
-                _tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
+                _tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_access_token)
                 if _tok:
                     st.session_state["microsoft_oauth_token"] = _tok
                     imap_credential = _tok
                     auth_mode = "OAuth2 Access Token"
             elif _is_yandex and YANDEX_OAUTH_READY and yandex_oauth.oauth_available():
-                _tok = st.session_state.get("yandex_oauth_token") or yandex_oauth.get_cached_access_token()
+                _tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_access_token)
                 if _tok:
                     st.session_state["yandex_oauth_token"] = _tok
                     imap_credential = _tok
