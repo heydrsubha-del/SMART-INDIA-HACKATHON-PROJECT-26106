@@ -219,8 +219,22 @@ def _ensure_table():
 
     Deliberately does not touch tracker.py's init_db() or any existing
     table -- this only ever adds a new, independent table.
+
+    Uses get_connection(shared=True): in SIH26106_MULTIUSER mode,
+    tracker.py's default (shared=False) gives every visitor session its
+    own throwaway database keyed to Streamlit's session_id, which is
+    exactly why semantic matches only ever included "this session" --
+    the whole table was discarded and restarted on every new session.
+    shared=True routes this into the same persistent, cross-session
+    database tracker.py already uses for the public URLhaus feed, so the
+    origin-embedding knowledge base actually accumulates over time
+    instead of resetting constantly. Tradeoff: in multiuser mode this
+    pools analyzed origin data across ALL visitors rather than keeping it
+    private per-session -- the right call for a single-operator/demo
+    deployment (matching knowledge base), not for a deployment where
+    different visitors' analyzed mail metadata must stay fully isolated.
     """
-    conn = get_connection()
+    conn = get_connection(shared=True)
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS origin_embeddings (
@@ -243,7 +257,7 @@ def save_origin_embedding(evidence_hash, description, embedding,
     if not evidence_hash or not embedding:
         return
     _ensure_table()
-    conn = get_connection()
+    conn = get_connection(shared=True)
     c = conn.cursor()
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("""
@@ -274,7 +288,7 @@ def find_similar_origins(evidence_hash, top_k=5):
     message itself. Returns [] if this message (or nothing else) is stored
     yet -- never raises."""
     _ensure_table()
-    conn = get_connection()
+    conn = get_connection(shared=True)
     c = conn.cursor()
     c.execute(
         "SELECT embedding FROM origin_embeddings WHERE evidence_hash = ?",
