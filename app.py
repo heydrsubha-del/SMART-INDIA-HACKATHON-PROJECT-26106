@@ -13,6 +13,7 @@ import random
 import urllib.request
 import urllib.error
 import time
+import threading
 import html
 import re
 import textwrap
@@ -313,6 +314,63 @@ except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
 from report import build_report, evidence_hash
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
+
+
+# --- Instant message opening ---------------------------------------------
+# Opening a message used to mean: new TLS connection + login + SELECT + FETCH
+# on every click. We now (a) prefetch the newest message bodies in ONE IMAP
+# session in a background thread as soon as the mailbox loads, and (b) keep
+# every body we fetch in a small per-session cache. A click on a cached
+# message is then just a dict lookup. (analyze_bytes is already cached on the
+# raw bytes, so re-opening a scanned message is instant too.)
+_PREFETCH_COUNT = 15
+_PREFETCH_MAX_BYTES = 4_000_000
+_RAW_CACHE_LIMIT = 40
+
+
+def _raw_cache():
+    return st.session_state.setdefault("_imap_raw_cache", {})
+
+
+def _raw_cache_key(cfg, uid):
+    return (str(cfg.get("user")), str(cfg.get("folder")), str(uid))
+
+
+def _store_raw(cfg, uid, raw):
+    cache = _raw_cache()
+    cache[_raw_cache_key(cfg, uid)] = bytes(raw)
+    try:
+        while len(cache) > _RAW_CACHE_LIMIT:
+            cache.pop(next(iter(cache)))
+    except Exception:
+        pass
+
+
+def _start_prefetch(cfg, uids):
+    """Fetch the newest message bodies in the background over one session."""
+    try:
+        cache = _raw_cache()
+        cfg = dict(cfg)
+        todo = [str(u) for u in uids if _raw_cache_key(cfg, u) not in cache][:_PREFETCH_COUNT]
+        if not todo:
+            return
+
+        def _work():
+            try:
+                got = fetch_messages_by_uids(
+                    cfg["host"], cfg["user"], cfg["credential"], todo,
+                    folder=cfg["folder"], port=cfg["port"], auth_mode=cfg["auth_mode"],
+                ) or {}
+                for uid, raw in got.items():
+                    if isinstance(raw, (bytes, bytearray)) and raw and len(raw) <= _PREFETCH_MAX_BYTES:
+                        cache[_raw_cache_key(cfg, uid)] = bytes(raw)
+            except Exception:
+                pass
+
+        threading.Thread(target=_work, daemon=True).start()
+    except Exception:
+        pass
+
 from antivirus_scan import clamd_available, clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 # ALGORITHMISTIC brand mark, embedded as a base64 PNG so the app stays a
@@ -4418,6 +4476,7 @@ if active_panel == "Dashboard":
                         st.session_state["live_selected_uid"] = None
                         st.session_state["live_selected_raw"] = None
                         st.session_state["live_rescan_nonce"] = 0
+                        _start_prefetch(st.session_state["live_mailbox_config"], [_m.get("uid") for _m in (st.session_state.get("live_mailbox_messages") or [])])
                         st.success(f"Loaded {len(_reloaded_messages)} message headers.")
                         st.rerun()
                     except Exception as _e:
@@ -4812,6 +4871,7 @@ if active_panel == "Dashboard":
                         st.session_state["live_selected_uid"] = None
                         st.session_state["live_selected_raw"] = None
                         st.session_state["live_rescan_nonce"] = 0
+                        _start_prefetch(st.session_state["live_mailbox_config"], [_m.get("uid") for _m in (st.session_state.get("live_mailbox_messages") or [])])
                         if mailbox_messages:
                             st.session_state["show_imap_connection_form"] = False
                             st.success(f"Mailbox connected. {len(mailbox_messages)} message headers loaded.")
@@ -4846,35 +4906,74 @@ if active_panel == "Dashboard":
                 for i, x in enumerate(mailbox_messages)
             ]
 
-            # Real click-to-select, via st.dataframe's native row-selection
-            # (on_select="rerun"). This is canvas-rendered so it won't fully
-            # match the app's theme the way the plain HTML table did -- that
-            # trade-off is intentional here because clicking a row to select
-            # it was the actual ask. The "Message to investigate" dropdown
-            # stays underneath, in sync with whatever row you click, so
-            # keyboard/manual selection still works too.
-            _table_event = st.dataframe(
-                pd.DataFrame(display_rows),
-                use_container_width=True,
-                hide_index=True,
-                height=360,
-                on_select="rerun",
-                selection_mode="single-row",
-                key="imap_message_table",
+            # Whole-row click-to-select. st.dataframe only ticks a row via its
+            # checkbox column, so we ALSO listen for single-cell selections (a
+            # click on any cell) and treat that as picking that row, then
+            # mirror the choice back into the table as a real row selection so
+            # the row highlights and its checkbox ticks. Picking a message --
+            # by table click or by the dropdown -- loads and scans it
+            # automatically (see the loading block below).
+            _TBL_KEY = "imap_message_table"
+
+            if st.session_state.get("imap_message_selector") not in labels:
+                st.session_state.pop("imap_message_selector", None)
+
+            def _table_selection():
+                try:
+                    _s = st.session_state.get(_TBL_KEY)
+                    _s = _s.get("selection", {}) if hasattr(_s, "get") else {}
+                    _r = [int(x) for x in (_s.get("rows") or [])]
+                    _c = [(int(x[0]), str(x[1])) for x in (_s.get("cells") or [])]
+                except Exception:
+                    _r, _c = [], []
+                return _r, _c
+
+            _rows_now, _cells_now = _table_selection()
+            _clicked_idx = None
+            if _rows_now and _rows_now != st.session_state.get("_imap_last_rows"):
+                _clicked_idx = _rows_now[0]
+            elif _cells_now and _cells_now != st.session_state.get("_imap_last_cells"):
+                _clicked_idx = _cells_now[0][0]
+
+            if _clicked_idx is not None and 0 <= _clicked_idx < len(labels):
+                st.session_state["imap_message_selector"] = labels[_clicked_idx]
+                st.session_state["_imap_want_load"] = True
+
+            _cur_label = st.session_state.get("imap_message_selector")
+            _cur_idx = labels.index(_cur_label) if _cur_label in labels else None
+            if _cur_idx is not None and _rows_now != [_cur_idx]:
+                try:
+                    st.session_state[_TBL_KEY] = {"selection": {"rows": [_cur_idx], "columns": [], "cells": []}}
+                    _rows_now, _cells_now = [_cur_idx], []
+                except Exception:
+                    pass
+            st.session_state["_imap_last_rows"] = list(_rows_now)
+            st.session_state["_imap_last_cells"] = list(_cells_now)
+
+            _tbl_df = pd.DataFrame(display_rows)
+            for _mode in (["single-row", "single-cell"], "single-row"):
+                _drawn = False
+                for _wkw in ({"width": "stretch"}, {"use_container_width": True}):
+                    try:
+                        st.dataframe(
+                            _tbl_df, hide_index=True, height=360, on_select="rerun",
+                            selection_mode=_mode, key=_TBL_KEY, **_wkw,
+                        )
+                        _drawn = True
+                        break
+                    except Exception:
+                        continue
+                if _drawn:
+                    break
+            st.caption("Click anywhere on a row to open and scan that email.")
+
+            def _flag_want_load():
+                st.session_state["_imap_want_load"] = True
+
+            selected_label = st.selectbox(
+                "Message to investigate", labels,
+                key="imap_message_selector", on_change=_flag_want_load,
             )
-            st.caption("Click a row to select it, or use the dropdown below.")
-
-            _clicked_rows = []
-            try:
-                _clicked_rows = list(_table_event.selection.rows)
-            except Exception:
-                _clicked_rows = []
-
-            if _clicked_rows and _clicked_rows != st.session_state.get("_imap_last_click_rows"):
-                st.session_state["_imap_last_click_rows"] = _clicked_rows
-                st.session_state["imap_message_selector"] = labels[_clicked_rows[0]]
-
-            selected_label = st.selectbox("Message to investigate", labels, key="imap_message_selector")
             selected_index = labels.index(selected_label)
             selected_meta = mailbox_messages[selected_index]
             selected_uid = str(selected_meta.get("uid", ""))
@@ -4884,54 +4983,56 @@ if active_panel == "Dashboard":
                 and isinstance(st.session_state.get("live_selected_raw"), (bytes, bytearray))
                 and bool(st.session_state.get("live_selected_raw"))
             )
+            want_load = bool(st.session_state.pop("_imap_want_load", False))
+            rescan_clicked = False
+            retry_clicked = False
 
             if already_loaded:
-                # Nothing new to fetch for this message -- keep this state
-                # minimal instead of repeating the same big action row.
                 _loaded_col, _rescan_col = st.columns([3, 1])
                 with _loaded_col:
                     st.caption(f"Loaded · UID {selected_uid} · {len(st.session_state['live_selected_raw']):,} raw bytes")
                 with _rescan_col:
                     rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
-                load_clicked = False
-            else:
-                st.caption("Fetch the full message and begin forensic analysis on it.")
-                load_clicked = st.button("Load & Scan", type="primary", use_container_width=True, key="load_imap_message")
-                rescan_clicked = False
+            elif st.session_state.get("_imap_fetch_failed_uid") == selected_uid and not want_load:
+                st.caption("This message could not be loaded.")
+                retry_clicked = st.button("Retry", type="primary", use_container_width=True, key="retry_imap_message")
+            elif not want_load:
+                st.caption("Click an email above and it is loaded and scanned automatically.")
 
-            if load_clicked or rescan_clicked:
+            if (want_load and not already_loaded) or rescan_clicked or retry_clicked:
                 cfg = st.session_state.get("live_mailbox_config", {})
                 credential = cfg.get("credential") or imap_credential
                 if not cfg or not credential:
                     st.error("Reconnect to the mailbox before selecting a message.")
                     st.stop()
                 try:
-                    with st.spinner("Fetching the complete RFC-5322 message securely..."):
-                        selected_raw = fetch_message_by_uid(
-                            cfg["host"], cfg["user"], credential, selected_uid,
-                            folder=cfg["folder"], port=cfg["port"], auth_mode=cfg["auth_mode"],
-                        )
-                    if not isinstance(selected_raw, bytes) or not selected_raw:
-                        raise RuntimeError("The server returned an empty raw message.")
+                    selected_raw = None
+                    if not rescan_clicked:
+                        selected_raw = _raw_cache().get(_raw_cache_key(cfg, selected_uid))
+                    if selected_raw is None:
+                        with st.spinner("Fetching message..."):
+                            selected_raw = fetch_message_by_uid(
+                                cfg["host"], cfg["user"], credential, selected_uid,
+                                folder=cfg["folder"], port=cfg["port"], auth_mode=cfg["auth_mode"],
+                            )
+                        if not isinstance(selected_raw, bytes) or not selected_raw:
+                            raise RuntimeError("The server returned an empty raw message.")
+                        _store_raw(cfg, selected_uid, selected_raw)
                     st.session_state["live_selected_uid"] = selected_uid
                     st.session_state["live_selected_raw"] = selected_raw
+                    st.session_state["_imap_fetch_failed_uid"] = None
                     if rescan_clicked:
                         st.session_state["live_rescan_nonce"] = int(st.session_state.get("live_rescan_nonce", 0)) + 1
-                    st.success("Message acquired.")
                     fetch_ok = True
                 except Exception as exc:
                     st.error(f"Could not retrieve the selected message: {exc}")
                     st.session_state["live_selected_raw"] = None
+                    st.session_state["_imap_fetch_failed_uid"] = selected_uid
                     fetch_ok = False
 
                 if fetch_ok:
-                    # Deliberately stay on Dashboard instead of jumping to
-                    # Forensic Report — this run falls straight through to the
-                    # same Dashboard rendering a plain file upload gets,
-                    # Threat Summary + Synapse Copilot sidebar included. A
-                    # full AI + semantic report across several messages is
-                    # now a separate, deliberate action: ask the Copilot
-                    # below to "track my last N emails" once it's on screen.
+                    # Stay on Dashboard; the rerun renders the analysis for
+                    # the freshly loaded message (Threat Summary + Copilot).
                     st.rerun()
 
             # A completed "Analyze 10 Recent Emails" batch pipeline run (see
