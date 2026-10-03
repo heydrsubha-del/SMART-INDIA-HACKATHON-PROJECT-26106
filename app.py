@@ -7076,61 +7076,59 @@ if active_panel == "Origin & Route":
 
     def _geo_semantic():
         st.markdown("---")
-        st.subheader("Semantic Origin Correlation (Nomic Embeddings)")
+        st.subheader("Find Similar Senders")
         st.caption(
-            "Compares this message's origin/routing profile against previously "
-            "analyzed emails by MEANING rather than exact match - so differently-hosted "
-            "infrastructure that behaves the same way can still surface as related, "
-            "even with no shared IP or domain. Uses the local nomic-embed-text model "
-            "via Ollama when available, falling back to Cohere's cloud embeddings "
-            "otherwise."
+            "Looks for other loaded emails whose sending infrastructure behaves like this "
+            "one -- same kind of hosting, same region, same anonymizing pattern -- even when "
+            "the IP address or domain is completely different. Useful for spotting the same "
+            "campaign reused under a different address. (Technical name: semantic origin "
+            "correlation via Nomic/Cohere embeddings.)"
         )
 
         if not _nomic_ready():
             st.warning(
-                "Semantic embeddings unavailable right now: locally, either Ollama isn't "
+                "This feature isn't available right now: locally, either Ollama isn't "
                 "running or `nomic-embed-text` hasn't been pulled; run `ollama pull "
                 "nomic-embed-text` and make sure Ollama is running. For the cloud "
-                "fallback, set SIH26106_COHERE_API_KEY. Then reopen this panel."
+                "fallback instead, set SIH26106_COHERE_API_KEY. Then reopen this panel."
             )
             return
 
         origin = geo.get("origin", {}) or {}
         description = _sem_describe_origin(geo)
 
-        with st.expander("Text sent to the embedding model"):
-            st.text(description)
+        # Plain-language strictness presets instead of a raw 0.30-0.95 slider --
+        # the slider let people drag it up to e.g. 90% without realizing that's
+        # ABOVE the "Strong" band ceiling (85%) defined by _sem_band(), which
+        # silently returns zero matches for almost any real data and looks like
+        # the feature is broken. These three options map directly onto the
+        # same Strong/Related/Weak bands the results table actually uses, so
+        # the number on screen always matches what you get.
+        _sem_preset = st.radio(
+            "How confident should a match be to show up?",
+            options=["weak", "related", "strong"],
+            format_func=lambda k: {
+                "weak": "Show everything, even weak leads (≥ 55%)",
+                "related": "Related matches only (≥ 70%) -- recommended",
+                "strong": "Strong matches only (≥ 85%)",
+            }[k],
+            index=1,
+            key="nomic_match_preset",
+            horizontal=False,
+        )
+        _sem_min = {"weak": _SEM_MIN_SIMILARITY, "related": _SEM_RELATED, "strong": _SEM_STRONG}[_sem_preset]
 
-        _sem_min = st.slider(
-            "Minimum match score", 0.30, 0.95, float(_SEM_MIN_SIMILARITY), 0.05,
-            format="%.2f", key="nomic_min_score",
-            help="Matches scoring below this are hidden as noise. Raise it for fewer, stronger matches; lower it to explore weak leads.",
+        _run_all = st.button(
+            "Find Similar Origins", key="run_nomic_embed", use_container_width=True, type="primary",
+            help="Compares this email's origin against every other email loaded this session, indexing anything not already compared.",
         )
 
-        _run_col, _idx_col = st.columns(2)
-        with _run_col:
-            _run_embed = st.button("Run Semantic Origin Analysis", key="run_nomic_embed", use_container_width=True, type="primary")
-        with _idx_col:
-            _run_index = st.button(
-                "Index all loaded emails", key="index_all_nomic", use_container_width=True,
-                help="Embeds the origin profile of every email loaded this session, so this email has more to be compared against.",
-            )
-
-        if _run_embed:
-            with st.spinner("Embedding this origin profile with nomic-embed-text..."):
-                _ok, _err = _sem_index(current_evidence_hash, geo, force=True)
-            if not _ok:
-                st.error(_err)
-            else:
-                st.session_state["nomic_last_hash"] = current_evidence_hash
-                st.success("Embedding stored. Comparing against previously analyzed origins below.")
-
-        if _run_index:
+        if _run_all:
             _pair_map = {h: (r.get("geo") or {}) for h, r in _corr_cases.items() if isinstance(r, dict) and "error" not in r}
             _pair_map[current_evidence_hash] = geo
-            _n_new = _sem_index_many(list(_pair_map.items()), label="Indexing every loaded email's origin profile...")
+            _sem_index_many(list(_pair_map.items()), label="Comparing this origin against every loaded email...")
             st.session_state["nomic_last_hash"] = current_evidence_hash
-            st.success(f"Indexed {_n_new} new origin profile(s); {len(_pair_map)} loaded email(s) are now searchable.")
+            st.success(f"Compared against {max(len(_pair_map) - 1, 0)} other loaded email(s).")
 
         _indexed_now = current_evidence_hash in st.session_state.get("_sem_indexed", {})
         if st.session_state.get("nomic_last_hash") == current_evidence_hash or _indexed_now:
@@ -7141,10 +7139,12 @@ if active_panel == "Origin & Route":
                 _render_polished_table(pd.DataFrame(_sem_rows(matches)))
             else:
                 st.info(
-                    _sem_none_text(_sem_min) + " Use 'Index all loaded emails', run this on more emails, "
-                    "or lower the minimum match score."
+                    _sem_none_text(_sem_min) + " Try loading more emails first, or choose "
+                    "'Show everything, even weak leads' above."
                 )
-            st.caption(_SEM_METHOD_NOTE)
+            with st.expander("How this scoring works"):
+                st.caption(_SEM_METHOD_NOTE)
+                st.text(description)
 
     panel(_geo_semantic, "Semantic Origin Correlation")
 
