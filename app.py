@@ -3159,6 +3159,77 @@ st.markdown(
        as glued to the card header underneath it, matching the breathing
        room the right dock now has between its own sections. */
     .st-key-dash_map_mode { margin-bottom:16px !important; }
+
+    /* =================================================================
+       DESIGN POLISH LAYER (last on purpose, CSS only)
+       One pass that pulls the leftover navy hard-codes (#06101c, #0b1828,
+       #102238, #203b57 ...) onto the same graphite tokens the rest of the
+       app already uses, and gives every component the same radius, border,
+       hover and focus behavior. Severity colors, layout, widths and
+       behavior are untouched.
+       ================================================================= */
+    :root {
+        --ring: 0 0 0 3px rgba(79,157,138,.18);
+        --surface-sunken: var(--panel-3);
+    }
+    .stApp {-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;}
+    ::selection {background:rgba(79,157,138,.35); color:#ffffff;}
+
+    /* Chrome: sidebar and scrollbars join the graphite palette. */
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div {background:var(--panel-3) !important;}
+    ::-webkit-scrollbar-track {background:var(--panel-3);}
+    ::-webkit-scrollbar-thumb {background:var(--line-strong); border:2px solid var(--panel-3); border-radius:8px;}
+    ::-webkit-scrollbar-thumb:hover {background:var(--cyan);}
+    @supports not selector(::-webkit-scrollbar) {
+        * {scrollbar-width:thin; scrollbar-color:var(--line-strong) var(--panel-3);}
+    }
+
+    /* Typography rhythm. */
+    h1, h2, h3 {letter-spacing:-.01em !important;}
+    .stCaption, [data-testid="stCaptionContainer"] {color:var(--muted) !important; line-height:1.55 !important;}
+    .stMarkdown a:where(:not([class])) {color:var(--cyan); text-decoration-color:rgba(79,157,138,.4); text-underline-offset:3px; transition:color .15s var(--ease);}
+    .stMarkdown a:where(:not([class])):hover {color:#7cc4b0;}
+    hr {border-color:var(--line) !important;}
+
+    /* Segmented controls (every st.radio is used as a tab bar). */
+    .stRadio > div {background:var(--surface-sunken) !important; border:1px solid var(--line-strong) !important;}
+
+    /* KPI cards. */
+    div[data-testid="stMetric"] {
+        background:linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+        border:1px solid var(--line) !important;
+    }
+    div[data-testid="stMetric"]:hover {border-color:var(--line-strong) !important;}
+    div[data-testid="stMetricLabel"] p {font-size:12px !important; font-weight:600 !important; letter-spacing:.3px !important; color:var(--muted) !important;}
+    div[data-testid="stMetricValue"] {letter-spacing:-.3px !important;}
+
+    /* Alerts: same card material, severity keeps its own left-edge color. */
+    .stAlert, div[data-testid="stAlertContainer"], div[data-testid="stAlert"] {
+        background:linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+        border-top-color:var(--line) !important; border-right-color:var(--line) !important; border-bottom-color:var(--line) !important;
+    }
+
+    /* Expanders. */
+    [data-testid="stExpander"] {background:var(--panel) !important; border-top-color:var(--line) !important; border-right-color:var(--line) !important; border-bottom-color:var(--line) !important;}
+    [data-testid="stExpander"]:hover {border-top-color:var(--line-strong) !important; border-right-color:var(--line-strong) !important; border-bottom-color:var(--line-strong) !important;}
+    [data-testid="stExpander"] summary {font-weight:650; transition:color .15s var(--ease);}
+    [data-testid="stExpander"] summary:hover {color:#ffffff;}
+
+    /* Tables, code, uploader. */
+    .stDataFrame {border:1px solid var(--line-strong) !important;}
+    [data-testid="stCode"], .stCodeBlock {border:1px solid var(--line) !important; border-radius:var(--r-md) !important;}
+    .stFileUploader {background:var(--surface-sunken) !important; border:1px dashed rgba(79,157,138,.4) !important; transition:border-color .15s var(--ease), background .15s var(--ease);}
+    .stFileUploader:hover {border-color:var(--cyan) !important; background:var(--panel) !important;}
+
+    /* Floating layers: dropdowns, tooltips, toasts. */
+    div[data-baseweb="popover"] > div {
+        border-radius:var(--r-md) !important; border:1px solid var(--line-strong) !important;
+        box-shadow:0 18px 40px rgba(0,0,0,.45) !important;
+    }
+    [data-testid="stToast"] {border-radius:var(--r-md) !important; border:1px solid var(--line-strong) !important; background:var(--panel-2) !important;}
+
+    /* Keyboard focus: one visible ring everywhere. */
+    .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(79,157,138,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
     """,
     unsafe_allow_html=True,
