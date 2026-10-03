@@ -5751,6 +5751,16 @@ result = analyze_bytes(raw, case_name, analysis_nonce)
 parsed, headers, iocs, geo = result["parsed"], result["headers"], result["iocs"], result["geo"]
 current_evidence_hash = hashlib.sha256(raw).hexdigest()
 
+# Tag _evidence_hash onto `result` itself (not just use it as the dict key)
+# -- every other place that writes into _corr_cases does this, but this
+# central one (which runs for every single loaded/analyzed email) didn't.
+# Without it, every "is the current email already in this list?" check
+# elsewhere (the Origin & Route single-email picker, the correlation graph
+# picker, etc.) always found no match on r.get("_evidence_hash") and
+# appended a second, duplicate entry for the exact same email -- which is
+# why the picker showed the same message twice instead of your other
+# loaded emails.
+result["_evidence_hash"] = current_evidence_hash
 _corr_cases[current_evidence_hash] = result
 while len(_corr_cases) > 60:
     _corr_cases.pop(next(iter(_corr_cases)))
