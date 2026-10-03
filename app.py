@@ -346,6 +346,30 @@ def _store_raw(cfg, uid, raw):
         pass
 
 
+@st.cache_data(show_spinner=False, max_entries=60)
+def _message_body_text(raw_bytes):
+    """Readable text of a message body (plain part preferred, HTML stripped)."""
+    try:
+        from email import policy as _policy
+        from email.parser import BytesParser as _BP
+        msg = _BP(policy=_policy.default).parsebytes(raw_bytes)
+        part = msg.get_body(preferencelist=("plain",))
+        if part is not None:
+            text = part.get_content()
+        else:
+            part = msg.get_body(preferencelist=("html",))
+            text = part.get_content() if part is not None else ""
+            text = re.sub(r"(?is)<(script|style).*?</\1>", "", text)
+            text = re.sub(r"(?i)<br\s*/?>|</(p|div|tr|li|h[1-6])>", "\n", text)
+            text = html.unescape(re.sub(r"<[^>]+>", "", text))
+        text = re.sub(r"\n{3,}", "\n\n", str(text or "")).strip()
+        if not text:
+            return "(This message has no readable text body.)"
+        return text[:200000]
+    except Exception as exc:
+        return f"(Could not read the message body: {exc})"
+
+
 def _start_prefetch(cfg, uids):
     """Fetch the newest message bodies in the background over one session."""
     try:
@@ -4885,7 +4909,7 @@ if active_panel == "Dashboard":
         mailbox_messages = st.session_state.get("live_mailbox_messages", [])
         if mailbox_messages:
             display_rows = []
-            for item in mailbox_messages:
+            for _no, item in enumerate(mailbox_messages, start=1):
                 dt = item.get("date_dt")
                 if dt is not None:
                     try:
@@ -4895,28 +4919,25 @@ if active_panel == "Dashboard":
                 else:
                     date_text = str(item.get("date") or "Unknown")
                 display_rows.append({
-                    "UID": item.get("uid", ""),
+                    "No.": _no,
                     "Date": date_text,
                     "From": item.get("from", "Unknown sender"),
                     "Subject": item.get("subject", "No Subject"),
                 })
 
-            labels = [
-                f"{i + 1}. {x.get('date', 'Unknown')} | {x.get('from', 'Unknown sender')} | {x.get('subject', 'No Subject')}"
-                for i, x in enumerate(mailbox_messages)
-            ]
-
             # Whole-row click-to-select. st.dataframe only ticks a row via its
             # checkbox column, so we ALSO listen for single-cell selections (a
             # click on any cell) and treat that as picking that row, then
-            # mirror the choice back into the table as a real row selection so
-            # the row highlights and its checkbox ticks. Picking a message --
-            # by table click or by the dropdown -- loads and scans it
-            # automatically (see the loading block below).
+            # mirror the choice back into the table as a real row selection.
+            # Picking a message loads and scans it automatically.
             _TBL_KEY = "imap_message_table"
+            _uid_list = [str(x.get("uid", "")) for x in mailbox_messages]
 
-            if st.session_state.get("imap_message_selector") not in labels:
-                st.session_state.pop("imap_message_selector", None)
+            _sel_uid = st.session_state.get("imap_sel_uid")
+            if _sel_uid not in _uid_list:
+                _sel_uid = None
+                st.session_state["imap_sel_uid"] = None
+            _sel_idx = _uid_list.index(_sel_uid) if _sel_uid is not None else None
 
             def _table_selection():
                 try:
@@ -4934,30 +4955,30 @@ if active_panel == "Dashboard":
                 _clicked_idx = _rows_now[0]
             elif _cells_now and _cells_now != st.session_state.get("_imap_last_cells"):
                 _clicked_idx = _cells_now[0][0]
+            if _clicked_idx is not None and 0 <= _clicked_idx < len(_uid_list):
+                _sel_idx = _clicked_idx
+                _sel_uid = _uid_list[_clicked_idx]
+                st.session_state["imap_sel_uid"] = _sel_uid
 
-            if _clicked_idx is not None and 0 <= _clicked_idx < len(labels):
-                st.session_state["imap_message_selector"] = labels[_clicked_idx]
-                st.session_state["_imap_want_load"] = True
-
-            _cur_label = st.session_state.get("imap_message_selector")
-            _cur_idx = labels.index(_cur_label) if _cur_label in labels else None
-            if _cur_idx is not None and _rows_now != [_cur_idx]:
+            _want_rows = [_sel_idx] if _sel_idx is not None else []
+            if _rows_now != _want_rows:
                 try:
-                    st.session_state[_TBL_KEY] = {"selection": {"rows": [_cur_idx], "columns": [], "cells": []}}
-                    _rows_now, _cells_now = [_cur_idx], []
+                    st.session_state[_TBL_KEY] = {"selection": {"rows": _want_rows, "columns": [], "cells": []}}
+                    _rows_now, _cells_now = _want_rows, []
                 except Exception:
                     pass
             st.session_state["_imap_last_rows"] = list(_rows_now)
             st.session_state["_imap_last_cells"] = list(_cells_now)
 
             _tbl_df = pd.DataFrame(display_rows)
+            _tbl_cfg = {"No.": st.column_config.NumberColumn("No.", width="small", format="%d")}
             for _mode in (["single-row", "single-cell"], "single-row"):
                 _drawn = False
                 for _wkw in ({"width": "stretch"}, {"use_container_width": True}):
                     try:
                         st.dataframe(
                             _tbl_df, hide_index=True, height=360, on_select="rerun",
-                            selection_mode=_mode, key=_TBL_KEY, **_wkw,
+                            selection_mode=_mode, key=_TBL_KEY, column_config=_tbl_cfg, **_wkw,
                         )
                         _drawn = True
                         break
@@ -4967,73 +4988,60 @@ if active_panel == "Dashboard":
                     break
             st.caption("Click anywhere on a row to open and scan that email.")
 
-            def _flag_want_load():
-                st.session_state["_imap_want_load"] = True
-
-            selected_label = st.selectbox(
-                "Message to investigate", labels,
-                key="imap_message_selector", on_change=_flag_want_load,
-            )
-            selected_index = labels.index(selected_label)
-            selected_meta = mailbox_messages[selected_index]
-            selected_uid = str(selected_meta.get("uid", ""))
-
+            selected_meta = mailbox_messages[_sel_idx] if _sel_idx is not None else None
+            selected_uid = _sel_uid
             already_loaded = (
-                st.session_state.get("live_selected_uid") == selected_uid
+                selected_uid is not None
+                and st.session_state.get("live_selected_uid") == selected_uid
                 and isinstance(st.session_state.get("live_selected_raw"), (bytes, bytearray))
                 and bool(st.session_state.get("live_selected_raw"))
             )
-            want_load = bool(st.session_state.pop("_imap_want_load", False))
-            rescan_clicked = False
-            retry_clicked = False
+
+            if selected_uid is None:
+                pass
+            elif not already_loaded:
+                if st.session_state.get("_imap_fetch_failed_uid") == selected_uid:
+                    st.error(f"Could not retrieve the selected message: {st.session_state.get('_imap_fetch_err', 'unknown error')}")
+                    if st.button("Retry", type="primary", use_container_width=True, key="retry_imap_message"):
+                        st.session_state["_imap_fetch_failed_uid"] = None
+                        st.rerun()
+                else:
+                    cfg = st.session_state.get("live_mailbox_config", {})
+                    credential = cfg.get("credential") or imap_credential
+                    if not cfg or not credential:
+                        st.error("Reconnect to the mailbox before selecting a message.")
+                        st.stop()
+                    fetch_ok = False
+                    try:
+                        selected_raw = _raw_cache().get(_raw_cache_key(cfg, selected_uid))
+                        if selected_raw is None:
+                            with st.spinner("Fetching message..."):
+                                selected_raw = fetch_message_by_uid(
+                                    cfg["host"], cfg["user"], credential, selected_uid,
+                                    folder=cfg["folder"], port=cfg["port"], auth_mode=cfg["auth_mode"],
+                                )
+                            if not isinstance(selected_raw, bytes) or not selected_raw:
+                                raise RuntimeError("The server returned an empty raw message.")
+                            _store_raw(cfg, selected_uid, selected_raw)
+                        st.session_state["live_selected_uid"] = selected_uid
+                        st.session_state["live_selected_raw"] = selected_raw
+                        st.session_state["_imap_fetch_failed_uid"] = None
+                        fetch_ok = True
+                    except Exception as exc:
+                        st.session_state["live_selected_raw"] = None
+                        st.session_state["_imap_fetch_failed_uid"] = selected_uid
+                        st.session_state["_imap_fetch_err"] = str(exc)
+                    # Stay on Dashboard; the rerun renders the analysis for the
+                    # freshly loaded message (Threat Summary + Copilot).
+                    st.rerun()
 
             if already_loaded:
-                _loaded_col, _rescan_col = st.columns([3, 1])
-                with _loaded_col:
-                    st.caption(f"Loaded · UID {selected_uid} · {len(st.session_state['live_selected_raw']):,} raw bytes")
-                with _rescan_col:
-                    rescan_clicked = st.button("Rescan", use_container_width=True, key="rescan_imap_message")
-            elif st.session_state.get("_imap_fetch_failed_uid") == selected_uid and not want_load:
-                st.caption("This message could not be loaded.")
-                retry_clicked = st.button("Retry", type="primary", use_container_width=True, key="retry_imap_message")
-            elif not want_load:
-                st.caption("Click an email above and it is loaded and scanned automatically.")
-
-            if (want_load and not already_loaded) or rescan_clicked or retry_clicked:
-                cfg = st.session_state.get("live_mailbox_config", {})
-                credential = cfg.get("credential") or imap_credential
-                if not cfg or not credential:
-                    st.error("Reconnect to the mailbox before selecting a message.")
-                    st.stop()
-                try:
-                    selected_raw = None
-                    if not rescan_clicked:
-                        selected_raw = _raw_cache().get(_raw_cache_key(cfg, selected_uid))
-                    if selected_raw is None:
-                        with st.spinner("Fetching message..."):
-                            selected_raw = fetch_message_by_uid(
-                                cfg["host"], cfg["user"], credential, selected_uid,
-                                folder=cfg["folder"], port=cfg["port"], auth_mode=cfg["auth_mode"],
-                            )
-                        if not isinstance(selected_raw, bytes) or not selected_raw:
-                            raise RuntimeError("The server returned an empty raw message.")
-                        _store_raw(cfg, selected_uid, selected_raw)
-                    st.session_state["live_selected_uid"] = selected_uid
-                    st.session_state["live_selected_raw"] = selected_raw
-                    st.session_state["_imap_fetch_failed_uid"] = None
-                    if rescan_clicked:
-                        st.session_state["live_rescan_nonce"] = int(st.session_state.get("live_rescan_nonce", 0)) + 1
-                    fetch_ok = True
-                except Exception as exc:
-                    st.error(f"Could not retrieve the selected message: {exc}")
-                    st.session_state["live_selected_raw"] = None
-                    st.session_state["_imap_fetch_failed_uid"] = selected_uid
-                    fetch_ok = False
-
-                if fetch_ok:
-                    # Stay on Dashboard; the rerun renders the analysis for
-                    # the freshly loaded message (Threat Summary + Copilot).
-                    st.rerun()
+                _raw_now = bytes(st.session_state["live_selected_raw"])
+                st.text_area(
+                    f"Message body · Email #{_sel_idx + 1} · {len(_raw_now):,} bytes",
+                    value=_message_body_text(_raw_now), height=320, disabled=True,
+                    key=f"imap_body_{selected_uid}",
+                )
 
             # A completed "Analyze 10 Recent Emails" batch pipeline run (see
             # _run_batch_pipeline) jumps straight to the Forensic Report panel
@@ -5063,11 +5071,11 @@ if active_panel == "Dashboard":
                 _case_name = f"Live IMAP: Batch item #{_fallback_item.get('position', 1)} (UID {_fallback_item.get('row', 'unknown')})"
                 st.info(
                     "Showing the just-completed batch scan below. Pick a message above and click "
-                    "**Load & Scan Selected Message** if you want to inspect one email individually instead."
+                    "an email in the table above if you want to inspect one individually instead."
                 )
                 return _raw, _case_name
 
-            if st.session_state.get("live_selected_uid") == selected_uid:
+            if selected_uid is not None and st.session_state.get("live_selected_uid") == selected_uid:
                 candidate_raw = st.session_state.get("live_selected_raw")
                 if isinstance(candidate_raw, (bytes, bytearray)) and candidate_raw:
                     raw = bytes(candidate_raw)
@@ -5075,7 +5083,7 @@ if active_panel == "Dashboard":
                 elif pipeline_ready:
                     raw, case_name = _use_pipeline_fallback_message()
                 else:
-                    st.warning("Select Load & Scan Selected Message to fetch this message.")
+                    st.warning("This message is not loaded yet.")
                     st.stop()
             elif pipeline_ready:
                 raw, case_name = _use_pipeline_fallback_message()
