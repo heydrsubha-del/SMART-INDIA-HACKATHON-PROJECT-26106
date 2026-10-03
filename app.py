@@ -630,6 +630,27 @@ components.html(
         }
         sync();
         setInterval(sync, 300);
+
+        // st.link_button (used for the Gmail/Outlook/Yahoo sign-in links --
+        // see the sign-in form code) always renders target="_blank",
+        // hardcoded by Streamlit with no parameter to change it. That's
+        // fine for an ordinary external link, but for an OAuth sign-in
+        // flow it means every click pops a brand-new tab that then shows
+        // the signed-in app, while the original tab is left behind still
+        // showing the stale signed-out page -- confusing, and easy to
+        // mistake for the button doing the wrong thing. Force those three
+        // specific links back to opening in the current tab instead.
+        function fixLinkTargets() {
+            doc.querySelectorAll(
+                '.st-key-google_signin_link_btn a, ' +
+                '.st-key-microsoft_signin_link_btn a, ' +
+                '.st-key-yahoo_signin_link_btn a'
+            ).forEach(function (a) {
+                if (a.target !== '_self') a.target = '_self';
+            });
+        }
+        fixLinkTargets();
+        setInterval(fixLinkTargets, 300);
     })();
     </script>
     """,
