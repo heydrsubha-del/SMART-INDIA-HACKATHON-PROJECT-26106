@@ -3252,6 +3252,19 @@ st.markdown(
     .part-sep {display:flex; align-items:center; gap:14px; margin:64px 0 22px 0;}
     .part-sep::before, .part-sep::after {content:""; flex:1; height:2px; background:linear-gradient(90deg, transparent, var(--teal), transparent);}
     .part-sep span {font:800 11px/1 ui-monospace,Consolas,monospace; letter-spacing:2.2px; color:var(--teal); white-space:nowrap;}
+    .part-banner-ai {background:linear-gradient(135deg, rgba(99,102,241,.20), var(--panel) 62%); border-left:5px solid var(--violet);}
+    .part-banner-ai .pb-step {background:linear-gradient(90deg,#6366f1,#8b5cf6);}
+    .part-banner-intel {background:linear-gradient(135deg, rgba(111,174,140,.18), var(--panel) 62%); border-left:5px solid var(--green);}
+    .part-banner-intel .pb-step {background:linear-gradient(90deg,#4f9d78,#6fae8c);}
+    .sec-head {
+        display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+        margin:26px 0 12px 0; padding:2px 0 2px 14px; border-left:4px solid var(--cyan);
+    }
+    .sec-head .sh-title {font:800 18px/1.3 Inter,"Segoe UI",sans-serif; color:#fff;}
+    .sec-head .sh-sub {font-size:12.5px; color:var(--muted);}
+    .sec-single {border-left-color:var(--teal);}
+    .sec-ai {border-left-color:var(--violet);}
+    .sec-intel {border-left-color:var(--green);}
     .st-key-single_email_select {
         background:var(--panel); border:1px solid var(--line-strong); border-left:4px solid var(--teal);
         border-radius:var(--r-lg); padding:14px 18px 16px 18px; margin:0 0 26px 0;
@@ -4036,6 +4049,36 @@ def _pin_marker(lat, lon, color, text, popup_html, tooltip=None, big=False,
 
 def _loc_key(h):
     return (round(float(h["lat"]), 3), round(float(h["lon"]), 3))
+
+
+_BANNER_TONES = ("batch", "single", "ai", "intel")
+
+
+def _banner(step, title, sub="", scope="", tone="batch"):
+    """Module-level header: step pill + title + one-line sub + scope tag.
+    Same component as the Forensic Report PART 1 / PART 2 banners."""
+    tone = tone if tone in _BANNER_TONES else "batch"
+    st.markdown(
+        f'<div class="part-banner part-banner-{tone}"><span class="pb-step">{html.escape(str(step))}</span>'
+        f'<div><div class="pb-title">{html.escape(str(title))}</div>'
+        + (f'<div class="pb-sub">{html.escape(str(sub))}</div>' if sub else '')
+        + '</div>'
+        + (f'<span class="pb-scope">{html.escape(str(scope))}</span>' if scope else '')
+        + '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _sec(title, sub="", tone="batch"):
+    """Slim section header (accent bar + title + optional sub) for the
+    sections inside a module."""
+    tone = tone if tone in _BANNER_TONES else "batch"
+    st.markdown(
+        f'<div class="sec-head sec-{tone}"><div class="sh-title">{html.escape(str(title))}</div>'
+        + (f'<div class="sh-sub">{html.escape(str(sub))}</div>' if sub else '')
+        + '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_rows=None):
@@ -6512,7 +6555,7 @@ if active_panel == "AI Threat Analysis":
                 b_res = saved_batch.get("result", {})
 
                 if b_res.get("ok"):
-                    st.markdown(f"#### Full Campaign Summary ({saved_batch.get('count')} Emails Assessed)")
+                    _sec(f"Full Campaign Summary ({saved_batch.get('count')} Emails Assessed)", tone="batch")
                     cleaned_summary = _clean_ai_display(b_res.get("analysis", ""))
                     cleaned_summary = _annotate_email_labels(cleaned_summary, st.session_state.get("qwen_batch_items") or [])
                     st.markdown(
@@ -6526,7 +6569,7 @@ if active_panel == "AI Threat Analysis":
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown("#### Download Multi-Email Forensic Intelligence")
+                    _sec("Download Multi-Email Forensic Intelligence", tone="batch")
 
                     # BUG FIX: this used to offer only one download -- the AI
                     # campaign summary -- with a caption redirecting anyone
@@ -6655,7 +6698,7 @@ if active_panel == "AI Threat Analysis":
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown("#### Download AI Threat Report")
+                    _sec("Download AI Threat Report", tone="ai")
                     single_markdown_report = (
                         f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
                         f"**Evidence:** {case_name}\n\n"
@@ -6684,9 +6727,11 @@ if active_panel == "AI Threat Analysis":
 # --------------------------------------------------------------------------
 if active_panel == "Classification":
     def _classification():
+        _banner("CLASSIFICATION", "Threat Classification",
+                "How the risk score was built and why the model flagged this email", "SELECTED EMAIL", "single")
         left, right = st.columns([1, 1])
         with left:
-            st.subheader("Risk score composition")
+            _sec("Risk score composition", tone="single")
             contributions = [c for c in result["verdict"]["contributions"]]
             fig = go.Figure(go.Bar(
                 x=[c["points"] for c in contributions],
@@ -6710,7 +6755,7 @@ if active_panel == "Classification":
             st.caption("Every point is attributable to a named detector - the score is a weighted sum, not a black box.")
 
         with right:
-            st.subheader("Why the model flagged this")
+            _sec("Why the model flagged this", tone="single")
             st.metric("Phishing probability", "{:.1%}".format(result["ml"]["prob"]), result["ml"]["label"])
             if result["ml"]["top_terms"]:
                 terms = result["ml"]["top_terms"]
@@ -6729,7 +6774,7 @@ if active_panel == "Classification":
                 st.success("No term in this message pushed the score toward phishing.")
 
         st.divider()
-        st.subheader("Message")
+        _sec("Message", tone="single")
         c1, c2 = st.columns([1, 1])
         c1.text_input("From", parsed.get("from_addr", ""), disabled=True)
         c2.text_input("Subject", parsed.get("subject", ""), disabled=True)
@@ -6742,7 +6787,9 @@ if active_panel == "Classification":
 # --------------------------------------------------------------------------
 if active_panel == "Headers & Auth":
     def _headers():
-        st.subheader("SPF / DKIM / DMARC")
+        _banner("HEADERS & AUTH", "Header Authentication & Identity",
+                "Sender authentication results and identity-field anomalies", "SELECTED EMAIL", "single")
+        _sec("SPF / DKIM / DMARC", tone="single")
         cols = st.columns(3)
         for col, mech in zip(cols, ("spf", "dkim", "dmarc")):
             value = headers[mech]
@@ -6756,7 +6803,7 @@ if active_panel == "Headers & Auth":
         st.caption("Verdicts stamped by the receiving server at delivery. We re-read them rather than re-running DNS, because published records may have changed since the message arrived.")
 
         st.divider()
-        st.subheader("Identity anomalies")
+        _sec("Identity anomalies", tone="single")
         if headers["anomalies"]:
             for a in headers["anomalies"]:
                 st.markdown(
@@ -6770,7 +6817,7 @@ if active_panel == "Headers & Auth":
 
         if headers["bec"]["is_bec"]:
             st.divider()
-            st.subheader("Business Email Compromise assessment")
+            _sec("Business Email Compromise assessment", tone="single")
             bec = headers["bec"]
             st.progress(min(1.0, bec["score"]), text="BEC pattern strength {:.0%}".format(bec["score"]))
             b1, b2 = st.columns(2)
@@ -6783,7 +6830,7 @@ if active_panel == "Headers & Auth":
             b2.write("**No link/attachment to scan:** {}".format("yes" if bec["no_links"] else "no"))
 
         st.divider()
-        st.subheader("Identity fields")
+        _sec("Identity fields", tone="single")
         _render_polished_table(pd.DataFrame([
             {"Header": label, "Value": parsed.get(key) or "(absent)"}
             for label, key in (
@@ -6808,7 +6855,8 @@ if active_panel == "Headers & Auth":
 # --------------------------------------------------------------------------
 if active_panel == "Origin & Route":
     def _geo():
-        st.subheader("Where the message actually came from")
+        _banner("ORIGIN & ROUTE", "Where the message actually came from",
+                "Trace the sending infrastructure hop by hop \u2014 compare up to 10 emails or drill into one", "ALL OR ONE", "batch")
 
         # Pull in every other browsed-but-not-yet-opened Live IMAP message
         # that's already been prefetched, so the map/picker below have all
@@ -6827,7 +6875,7 @@ if active_panel == "Origin & Route":
         if current_evidence_hash not in {r.get("_evidence_hash") for r in cases}:
             cases.append(current_case)
 
-        st.markdown("### Interactive Visual Hop Map (Folium)")
+        _sec("Interactive Visual Hop Map", "Satellite view of every hop", "batch")
         _geo_map_mode = st.radio(
             "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="geo_map_mode_v2",
         )
@@ -7229,7 +7277,7 @@ if active_panel == "Origin & Route":
         # used to pick a different one) -- "all senders" mode has no single
         # chain to show, so these keep describing the currently loaded message.
         if _table_geo.get("hops"):
-            st.subheader("Routing chain")
+            _sec("Routing chain", tone="batch")
             _render_polished_table(pd.DataFrame([{
                 "#": h.get("hop_index"),
                 "IP": h["ip"],
@@ -7320,7 +7368,7 @@ if active_panel == "Origin & Route":
 
     def _geo_semantic():
         st.markdown("---")
-        st.subheader("Find Similar Senders")
+        _sec("Find Similar Senders", tone="batch")
         st.caption(
             "Looks for other loaded emails whose sending infrastructure behaves like this "
             "one -- same kind of hosting, same region, same anonymizing pattern -- even when "
@@ -7389,6 +7437,8 @@ if active_panel == "Origin & Route":
 # --------------------------------------------------------------------------
 if active_panel == "Indicators":
     def _iocs():
+        _banner("INDICATORS", "Indicators of Compromise",
+                "URLs, domains, addresses and wallets extracted from the evidence", "SELECTED EMAIL", "single")
         urls = iocs.get("urls", [])
         counts = iocs.get("counts", {})
 
@@ -7402,7 +7452,7 @@ if active_panel == "Indicators":
         s3.metric("Local Memory", local_memory_matches)
 
         st.divider()
-        st.markdown("## Extracted Indicators")
+        _sec("Extracted Indicators", tone="single")
         st.caption("URLs, domains, email addresses, wallets and suspicious indicators extracted from the evidence.")
 
         indicator_data = [
@@ -7422,7 +7472,7 @@ if active_panel == "Indicators":
 
         if urls:
             st.divider()
-            st.markdown("### URL Intelligence")
+            _sec("URL Intelligence", tone="single")
             st.caption("Reputation and heuristic signals attached to extracted URLs.")
             for idx, u in enumerate(urls, 1):
                 risk = float(u.get("risk", 0))
@@ -7452,7 +7502,7 @@ if active_panel == "Indicators":
 
         if parsed.get("attachments"):
             st.divider()
-            st.subheader("Attachments")
+            _sec("Attachments", tone="single")
             _render_polished_table(pd.DataFrame([{
                 "Filename": a.get("filename", "-"),
                 "Bytes": a.get("size", 0),
@@ -7469,14 +7519,9 @@ if active_panel == "Indicators":
 # --------------------------------------------------------------------------
 if active_panel == "Correlation":
     def _graph():
-        st.markdown(
-            '<div style="padding:4px 0 14px 0;">'
-            '<div style="font-size:28px;font-weight:800;letter-spacing:.2px;color:#e8f1ff;">'
-            'Campaign Correlation & Attribution</div>'
-            '<div style="margin-top:5px;font-size:13px;color:#7f8da3;line-height:1.5;">'
-            'Correlate analyzed messages through shared infrastructure, indicators and identity signals.</div>'
-            '</div>', unsafe_allow_html=True
-        )
+        _banner("CORRELATION", "Campaign Correlation & Attribution",
+                "Correlate analyzed messages through shared infrastructure, indicators and identity signals",
+                "ACROSS EMAILS", "batch")
 
         saved_bulk_cases = st.session_state.get("bulk_scan_cases")
         saved_bulk_hash = st.session_state.get("bulk_scan_cases_hash")
@@ -7674,7 +7719,7 @@ if active_panel == "Correlation":
 # --------------------------------------------------------------------------
 if active_panel == "Threat History":
     def _threat_history():
-        st.subheader("Threat History")
+        _banner("THREAT HISTORY", "Threat History", "Every message this workbench has scored", "ALL ANALYZED", "batch")
         st.caption("Every message this workbench has scored, pulled from the local threat_memory.db (attackers table).")
         try:
             conn = get_connection()
@@ -7700,7 +7745,7 @@ if active_panel == "Threat History":
 
 if active_panel == "URLHaus Feed":
     def _urlhaus_feed():
-        st.subheader("URLHaus Threat Intelligence Feed")
+        _banner("THREAT INTEL", "URLHaus Threat Intelligence Feed", "Malicious-URL feed cached locally", "LIVE FEED", "intel")
         st.caption("abuse.ch URLHaus malicious-URL feed, cached locally in threat_memory.db so lookups stay offline between syncs. Auto-syncs whenever this tab is opened (throttled to once every 30 minutes) -- use the button below to force an immediate sync.")
 
         # Auto-sync just from visiting this panel, so you don't have to
@@ -7751,7 +7796,7 @@ if active_panel == "URLHaus Feed":
 
 if active_panel == "Antivirus":
     def _antivirus():
-        st.subheader("Antivirus (ClamAV)")
+        _banner("SCANNER", "Antivirus (ClamAV)", "Scan attachments and files for known malware", "FILE SCAN", "intel")
         av_up = _clamd_up_cached()
         _av_backend = _antivirus_backend_cached()
         if av_up and _av_backend == "cloud":
@@ -8066,7 +8111,7 @@ if active_panel == "Forensic Report":
         )
 
         # --- SHOW HIGHLY DETAILED MACHINE REPORT UI USING DATAFRAMES ---
-        st.markdown("#### Machine Forensic Analysis")
+        _sec("Machine Forensic Analysis", tone="single")
         st.caption("Deep technical telemetry extracted deterministically. Select the email above to populate.")
         
         with st.container(border=True):
@@ -8256,7 +8301,7 @@ if active_panel == "Forensic Report":
         # cached per evidence hash so it survives navigation/reruns).
         # --------------------------------------------------------------------
         st.divider()
-        st.markdown("#### AI Threat Report")
+        _sec("AI Threat Report", tone="ai")
         st.caption("Evidence-bound local Qwen assessment for this specific email. Generate it here if it hasn't run yet.")
 
         single_reports = st.session_state.setdefault("single_ai_reports", {})
@@ -8315,7 +8360,7 @@ if active_panel == "Forensic Report":
         # THREE DOWNLOAD OPTIONS: AI only, Machine only, Combined
         # --------------------------------------------------------------------
         st.divider()
-        st.markdown("#### Download Forensic Report")
+        _sec("Download Forensic Report", tone="single")
         st.caption("Choose which report to export for Email #{}.".format(sel_pos))
 
         # BUG FIX: "Combined Report" used to have no `disabled` guard, so
