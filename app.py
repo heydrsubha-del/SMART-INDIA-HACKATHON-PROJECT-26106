@@ -3598,8 +3598,6 @@ _MAP_MODE_ONE = "Single email"
 _TILE_LAYERS = (
     ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
      "Esri World Imagery", "Satellite"),
-    ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-     "Esri World Terrain", "Terrain"),
 )
 
 _LEVEL_MARKER_COLORS = {
@@ -3609,7 +3607,7 @@ _LEVEL_MARKER_COLORS = {
 
 def _add_base_tiles(m):
     for tiles, attr, name in _TILE_LAYERS:
-        folium.TileLayer(tiles=tiles, attr=attr, name=name, control=True).add_to(m)
+        folium.TileLayer(tiles=tiles, attr=attr, name=name, control=False).add_to(m)
 
 
 def _case_label(case, fallback):
@@ -5802,7 +5800,6 @@ if active_panel == "Dashboard":
                             dash_map.fit_bounds(_dash_coords, max_zoom=6)
                         except Exception:
                             pass
-                    folium.LayerControl(collapsed=False).add_to(dash_map)
                     st_folium(
                         dash_map, width="stretch", height=420, returned_objects=[],
                         key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
@@ -5818,11 +5815,13 @@ if active_panel == "Dashboard":
 
             with st.container(border=True, key="dash_graph_card"):
                 st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
-                    <span>{len(cases)} CASES</span></div>""", unsafe_allow_html=True)
+                    <span>CURRENT EMAIL</span></div>""", unsafe_allow_html=True)
                 # A fixed seed here keeps this small preview stable between
                 # reruns; the full, shuffleable, interactive version lives
                 # on the dedicated Correlation panel.
-                G = _build_correlation_graph(cases, max_cases=20, seed=42)
+                _dash_cur_case = dict(result)
+                _dash_cur_case["_evidence_hash"] = current_evidence_hash
+                G = _build_correlation_graph([_dash_cur_case], seed=42)
                 _corr_fig = correlate.graph_figure(G, height=560)
                 # Full-width now (not squeezed into a half-width column), so
                 # labels can run longer before needing to be cut off.
@@ -5871,10 +5870,7 @@ if active_panel == "Dashboard":
                 _corr_spread(_corr_fig)
                 _corr_fig.update_layout(margin=dict(l=24, r=24, t=10, b=10))
                 st.plotly_chart(_corr_fig, width="stretch")
-                if G.graph.get("sampled"):
-                    st.caption(f"Preview sample: {G.graph['case_count']} of {G.graph['total_case_count']} cases. Full interactive view: **Correlation Graph** in the sidebar.")
-                else:
-                    st.caption("Shared-indicator detail and case table: **Correlation Graph** in the sidebar.")
+                st.caption("Connections of the current email. Compare up to 10 emails, or pick another one, on **Correlation Graph** in the sidebar.")
 
         # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
         # In CSV mode this section already rendered earlier (between the Deep
@@ -6540,7 +6536,6 @@ if active_panel == "Origin & Route":
 
                         AntPath(locations=arc_points, color="#ff4757", pulse_color="#ffffff", weight=3, opacity=0.8, delay=800, dash_array=[15, 30]).add_to(m)
 
-                folium.LayerControl(collapsed=False).add_to(m)
                 left, center, right = st.columns([1, 8, 1])
                 with center:
                     st_folium(m, width="stretch", height=500, returned_objects=[], key="geo_single_map")
@@ -7088,61 +7083,58 @@ if active_panel == "Correlation":
             unsafe_allow_html=True
         )
 
-        # Keep the picture legible: large campaigns are thinned to a random,
-        # manageable sample (the metrics/table above always cover every
-        # case regardless). The sample and any node highlight stay put
-        # across unrelated reruns, and only change when the case set
-        # changes or the analyst explicitly asks.
+        # Same switch as Origin & Route: the 10 most recent emails together,
+        # or one email picked from the dropdown. (The metrics and the shared-
+        # infrastructure table further down always cover every case.)
+        _corr_mode = st.radio(
+            "Graph view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="corr_graph_mode",
+        )
+        if _corr_mode == _MAP_MODE_ONE:
+            graph_cases = [_pick_case_for_map(cases, result, case_name, key="corr_graph_email_pick", source_rows=data)]
+        else:
+            graph_cases = [
+                c for _, c in sorted(
+                    enumerate(cases),
+                    key=lambda pair: _case_recency_key(pair[1], pair[0], data),
+                    reverse=True,
+                )
+            ][:10]
+
         graph_scope = hashlib.sha256(
-            "|".join(sorted(r.get("_evidence_hash", "") for r in cases)).encode()
+            "|".join([_corr_mode] + sorted(
+                f"{r.get('_evidence_hash') or ''}:{r.get('name') or ''}" for r in graph_cases
+            )).encode()
         ).hexdigest()[:12]
         if st.session_state.get("corr_graph_scope") != graph_scope:
             st.session_state["corr_graph_scope"] = graph_scope
-            st.session_state["corr_graph_seed"] = random.randint(0, 2**31 - 1)
             st.session_state.pop("corr_graph_highlight", None)
-            st.session_state.pop("corr_graph_max_cases", None)
             st.session_state["corr_graph_key_nonce"] = st.session_state.get("corr_graph_key_nonce", 0) + 1
 
-        ctrl1, ctrl2, ctrl3 = st.columns([2.2, 2, 1.2])
-        with ctrl1:
-            if len(cases) > 5:
-                cases_to_show = st.slider(
-                    "Cases shown in graph", min_value=5,
-                    max_value=min(len(cases), 50), value=min(20, len(cases)),
-                    key="corr_graph_max_cases",
-                    help="Larger campaigns are thinned to a random sample so the picture stays readable.",
-                )
-            else:
-                cases_to_show = len(cases)
-        with ctrl2:
-            use_semantic = st.checkbox(
-                "AI-inferred semantic links", value=False, key="corr_graph_semantic",
-                help="Runs a similarity search per case shown to surface origins that resemble each other even with no shared indicator. Slower - opt in.",
-            )
-        with ctrl3:
-            if st.button("Shuffle", use_container_width=True, key="corr_graph_shuffle"):
-                st.session_state["corr_graph_seed"] = random.randint(0, 2**31 - 1)
-                st.session_state.pop("corr_graph_highlight", None)
-                st.session_state["corr_graph_key_nonce"] = st.session_state.get("corr_graph_key_nonce", 0) + 1
-                st.rerun()
+        use_semantic = st.checkbox(
+            "AI-inferred semantic links", value=False, key="corr_graph_semantic",
+            help="Runs a similarity search per case shown to surface origins that resemble each other even with no shared indicator. Slower - opt in.",
+        )
 
         highlight_node = st.session_state.get("corr_graph_highlight")
-        seed = st.session_state["corr_graph_seed"]
+        seed = 42
+        cases_to_show = len(graph_cases)
         # Cache miss (new data/settings) is the only time this actually
         # does the expensive layout work, so the spinner only shows then.
         if use_semantic:
             with st.spinner("Searching for semantically similar origins..."):
                 fig, G_view, semantic_failed, sampled, shown_count, total_count = _cached_correlation_view(
-                    graph_scope, cases, cases_to_show, seed, use_semantic, highlight_node,
+                    graph_scope, graph_cases, cases_to_show, seed, use_semantic, highlight_node,
                 )
         else:
             fig, G_view, semantic_failed, sampled, shown_count, total_count = _cached_correlation_view(
-                graph_scope, cases, cases_to_show, seed, use_semantic, highlight_node,
+                graph_scope, graph_cases, cases_to_show, seed, use_semantic, highlight_node,
             )
         if semantic_failed:
             st.caption("AI semantic similarity search isn't available right now - showing indicator-based links only.")
-        if sampled:
-            st.caption(f"Showing a random {shown_count} of {total_count} analyzed cases - shuffle for a different sample.")
+        if _corr_mode == _MAP_MODE_ONE:
+            st.caption("Showing the connections of the selected email.")
+        elif len(cases) > len(graph_cases):
+            st.caption(f"Showing the {len(graph_cases)} most recent of {len(cases)} analyzed emails.")
 
         widget_key = "corr_graph_widget_{}".format(st.session_state.get("corr_graph_key_nonce", 0))
         click_event = None
