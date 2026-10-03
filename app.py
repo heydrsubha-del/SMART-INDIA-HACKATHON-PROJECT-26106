@@ -7777,8 +7777,9 @@ if active_panel == "About":
 # 6. Unified forensic report (RICH MARKDOWN DETAILED MACHINE UI)
 if active_panel == "Forensic Report":
     
-    # Define a custom center layout constraint here, isolating it safely
-    d_spacer_l, d_center, d_spacer_r = st.columns([1, 8, 1])
+    # Full-width layout, same as every other module (was a centered 1:8:1
+    # column strip that left wide empty margins on both sides).
+    d_center = st.container()
     
     with d_center:
         st.subheader("Complete Forensic Investigation Dossier")
