@@ -1,6 +1,6 @@
 """Reliable IMAP mailbox browsing and raw-message retrieval for SIH26106.
 
-Supports Gmail, Yahoo Mail and Outlook/Microsoft 365 IMAP endpoints.
+Supports Gmail, Yandex Mail and Outlook/Microsoft 365 IMAP endpoints.
 The scanner is read-only: it never marks mail as read or deletes/moves mail.
 """
 
@@ -18,7 +18,7 @@ from email.utils import parsedate_to_datetime
 
 PROVIDERS = {
     "Gmail": {"host": "imap.gmail.com", "port": 993},
-    "Yahoo": {"host": "imap.mail.yahoo.com", "port": 993},
+    "Yandex": {"host": "imap.yandex.com", "port": 993},
     "Outlook / Microsoft 365": {"host": "outlook.office365.com", "port": 993},
     "Custom IMAP": {"host": "", "port": 993},
 }
