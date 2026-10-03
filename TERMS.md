@@ -22,7 +22,7 @@ The App connects to an email account you authorize (via Gmail OAuth or IMAP) to 
 
 ## 4. Data and Privacy
 
-Our handling of your data is described in our [Privacy Policy]. In summary: the App is read-only with respect to your mailbox (it does not delete or modify your mail), and we do not store your raw email content, credentials, or message contents beyond what is needed to perform a scan in your active session, unless otherwise stated in the Privacy Policy.
+Our handling of your data is described in our [https://github.com/heydrsubha-del/SMART-INDIA-HACKATHON-PROJECT-26106/blob/main/TERMS.md]. In summary: the App is read-only with respect to your mailbox (it does not delete or modify your mail), and we do not store your raw email content, credentials, or message contents beyond what is needed to perform a scan in your active session, unless otherwise stated in the Privacy Policy.
 
 ## 5. No Warranty
 
