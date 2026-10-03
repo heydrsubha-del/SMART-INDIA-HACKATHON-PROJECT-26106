@@ -76,8 +76,21 @@ except ImportError:
 try:
     import yandex_oauth
     YANDEX_OAUTH_READY = True
-except ImportError:
+except Exception as _yandex_import_exc:
+    # TEMPORARY: widened from `except ImportError` to `except Exception` and
+    # keeping the actual exception, so the "Not available" caption in the
+    # Yandex sign-in box can show the real reason instead of a generic
+    # "failed to import" message that hides what's actually wrong --
+    # ImportError only covers "file not found"; anything that goes wrong
+    # *inside* yandex_oauth.py while it's loading (e.g. a typo, a bad
+    # import) is a different exception type and was being silently caught
+    # as if the file were simply missing. Once this is working, this can
+    # be narrowed back to `except ImportError` if you don't want import
+    # errors elsewhere masked this broadly.
     YANDEX_OAUTH_READY = False
+    YANDEX_IMPORT_ERROR = repr(_yandex_import_exc)
+else:
+    YANDEX_IMPORT_ERROR = None
 
 # google_Oauth.py caches the OAuth *token* across restarts, but not the
 # account email that goes with it -- so a restored session knew it was
@@ -4600,7 +4613,7 @@ if active_panel == "Dashboard":
                         # working one-click sign-in -- same pattern as the
                         # Gmail/Outlook boxes beside it.
                         if not YANDEX_OAUTH_READY:
-                            st.caption("Not available: yandex_oauth.py failed to import.")
+                            st.caption(f"Not available: yandex_oauth.py failed to import -- {YANDEX_IMPORT_ERROR}")
                         elif not yandex_oauth.oauth_available():
                             st.caption(f"Needs setup: {yandex_oauth.client_secret_issue()}")
                         else:
