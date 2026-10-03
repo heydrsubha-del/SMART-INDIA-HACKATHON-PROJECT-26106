@@ -677,13 +677,23 @@ components.html(
         // showing the stale signed-out page -- confusing, and easy to
         // mistake for the button doing the wrong thing. Force those three
         // specific links back to opening in the current tab instead.
+        // When the app is embedded in an iframe (Streamlit Cloud, Spaces,
+        // previews), '_self' loads the provider's login INSIDE the frame
+        // ("refused to connect") and '_top' can be blocked by the frame's
+        // sandbox (button does nothing). A new tab ('_blank') works in both
+        // cases, so use it when framed and keep same-tab when not.
+        function isFramed() {
+            try { return window.parent.top !== window.parent; } catch (e) { return true; }
+        }
         function fixLinkTargets() {
+            var want = isFramed() ? '_blank' : '_self';
             doc.querySelectorAll(
                 '.st-key-google_signin_link_btn a, ' +
                 '.st-key-microsoft_signin_link_btn a, ' +
                 '.st-key-yandex_signin_link_btn a'
             ).forEach(function (a) {
-                if (a.target !== '_top') a.target = '_top';
+                if (a.target !== want) a.target = want;
+                if (want === '_blank') a.rel = 'noopener';
             });
         }
         fixLinkTargets();
