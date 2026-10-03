@@ -3744,30 +3744,66 @@ def _new_map(location, zoom_start=2):
     return m
 
 
-def _pin_marker(lat, lon, color, text, popup_html, tooltip=None, big=False):
-    """A map-pin marker (teardrop with a number/label inside) in any hex
-    colour. Easier to spot and click than a plain dot, and the label says
-    which email / hop it is."""
+def _chip(label, color, size=18):
+    """Small round, colour-coded number badge (email number / hop number)."""
+    return (
+        f'<span style="display:inline-flex;align-items:center;justify-content:center;width:{size}px;'
+        f'height:{size}px;border-radius:50%;background:{color};color:#fff;font:700 {max(size - 8, 9)}px/1 '
+        f'Inter,Segoe UI,sans-serif;box-shadow:0 0 0 1.5px rgba(255,255,255,.85);flex:none;">{html.escape(str(label))}</span>'
+    )
+
+
+def _pin_marker(lat, lon, color, text, popup_html, tooltip=None, big=False,
+                glyph=None, chips=None, chips_caption=""):
+    """A map pin (teardrop) in any hex colour.
+
+    text   - short label inside the pin (email / hop number)
+    glyph  - "stack" draws a layered-cards icon instead of text (several
+             emails share this spot)
+    chips  - [(label, colour), ...] drawn as a pill beside the pin, so you
+             can read WHICH emails/hops are here without clicking."""
     w, h = (36, 48) if big else (28, 38)
     fs = 13 if big else 11
     top = round(h * 0.375 - fs / 2, 1)
+    glyph_svg = ""
+    if glyph == "stack":
+        glyph_svg = (
+            '<g fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round">'
+            '<rect x="7.2" y="7" width="6.4" height="6.4" rx="1.2"/>'
+            '<rect x="10" y="10" width="6.4" height="6.4" rx="1.2" fill="rgba(255,255,255,0.35)"/></g>'
+        )
     svg = (
         f'<svg viewBox="0 0 24 32" width="{w}" height="{h}" xmlns="http://www.w3.org/2000/svg">'
         f'<path d="M12 1C5.9 1 1 5.9 1 12c0 8.5 11 19 11 19s11-10.5 11-19C23 5.9 18.1 1 12 1z" '
         f'fill="{color}" stroke="#ffffff" stroke-width="1.5"/>'
-        f'<circle cx="12" cy="12" r="8.2" fill="rgba(0,0,0,0.30)"/>'
+        f'<circle cx="12" cy="12" r="8.2" fill="rgba(0,0,0,0.30)"/>{glyph_svg}'
         f'<path d="M5 8.5C6.5 4.5 10.5 2.6 14 3.2" stroke="rgba(255,255,255,0.45)" stroke-width="1.3" '
         f'fill="none" stroke-linecap="round"/></svg>'
     )
-    label = (
-        f'<span style="position:absolute;left:0;right:0;top:{top}px;text-align:center;color:#fff;'
-        f'font:700 {fs}px/1.1 Inter,Segoe UI,sans-serif;letter-spacing:.2px;">{html.escape(str(text))}</span>'
-    )
+    label = ""
+    if glyph is None:
+        label = (
+            f'<span style="position:absolute;left:0;right:0;top:{top}px;text-align:center;color:#fff;'
+            f'font:700 {fs}px/1.1 Inter,Segoe UI,sans-serif;letter-spacing:.2px;">{html.escape(str(text))}</span>'
+        )
+    pill = ""
+    if chips:
+        shown = chips[:6]
+        more = f'<span style="color:#9db4d6;">+{len(chips) - 6}</span>' if len(chips) > 6 else ""
+        cap = (f'<span style="color:#9db4d6;font-weight:600;margin-right:2px;">{html.escape(chips_caption)}</span>'
+               if chips_caption else "")
+        pill = (
+            f'<div style="position:absolute;left:{w + 3}px;top:{max(top - 4, 0)}px;display:flex;align-items:center;'
+            f'gap:4px;padding:3px 8px 3px 7px;border-radius:999px;background:rgba(10,19,34,.93);'
+            f'border:1px solid rgba(255,255,255,.22);box-shadow:0 2px 8px rgba(0,0,0,.55);white-space:nowrap;'
+            f'font:600 10px/1 Inter,Segoe UI,sans-serif;pointer-events:none;">{cap}'
+            + "".join(_chip(lab, col, 16) for lab, col in shown) + more + "</div>"
+        )
     icon = folium.DivIcon(
-        html=f'<div style="position:relative;width:{w}px;height:{h}px;">{svg}{label}</div>',
+        html=f'<div style="position:relative;width:{w}px;height:{h}px;">{svg}{label}{pill}</div>',
         icon_size=(w, h), icon_anchor=(w // 2, h), class_name="ps-pin",
     )
-    mk = folium.Marker(location=[lat, lon], icon=icon, popup=folium.Popup(popup_html, max_width=360))
+    mk = folium.Marker(location=[lat, lon], icon=icon, popup=folium.Popup(popup_html, max_width=380))
     if tooltip:
         mk.add_child(folium.Tooltip(tooltip))
     return mk
@@ -3779,9 +3815,12 @@ def _loc_key(h):
 
 def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_rows=None):
     """Hop route of up to max_emails emails (most recent first) on one map.
-    Each hop is a numbered pin in its email's colour. When several emails
-    (or hops) land on the same location/IP they share ONE pin labelled
-    'xN'; clicking it lists every email and hop there."""
+
+    Every hop is a pin in its email's colour with the email number inside.
+    When several emails land on the same spot they share ONE violet
+    'stacked' pin; a pill beside it lists the colour-coded numbers of every
+    email there, and the details table underneath shows, per email, which
+    other emails it shares a spot with."""
     ordered = [
         c for _, c in sorted(
             enumerate(cases),
@@ -3799,43 +3838,64 @@ def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_ro
     all_coords = [[h["lat"], h["lon"]] for _, pts in routed for h in pts]
     m = _new_map(all_coords[0], zoom_start=2)
 
+    info = {}
     spots = {}
-    legend = []
     for n, (case, pts) in enumerate(routed, start=1):
         color = _EMAIL_ROUTE_COLORS[(n - 1) % len(_EMAIL_ROUTE_COLORS)]
-        label = _case_label(case, f"Email #{n}")
-        short = label if len(label) <= 60 else label[:59] + "…"
-        legend.append((n, color, short))
+        parsed = case.get("parsed", {}) or {}
+        sender = (parsed.get("from_addr") or "").strip() or "Unknown sender"
+        subject = re.sub(r"^\s*Live IMAP:\s*", "", str(case.get("name") or "")).strip() or "(no subject)"
+        origin = (case.get("geo", {}) or {}).get("origin", {}) or {}
+        where = ", ".join(p for p in [origin.get("city"), origin.get("country")] if p) or "Unknown location"
+        info[n] = {
+            "color": color, "sender": sender, "subject": subject,
+            "ip": origin.get("ip") or (pts[-1].get("ip") if pts else "") or "Unknown",
+            "where": where, "hops": len(pts), "shares": set(),
+        }
         coords = [[h["lat"], h["lon"]] for h in pts]
         if len(coords) > 1:
             folium.PolyLine(coords, color=color, weight=8, opacity=0.14).add_to(m)
             folium.PolyLine(coords, color=color, weight=2.5, opacity=0.9, dash_array="7 9").add_to(m)
         for i, h in enumerate(pts, start=1):
-            spot = spots.setdefault(_loc_key(h), {"lat": h["lat"], "lon": h["lon"], "ips": set(), "rows": [], "last": False})
+            spot = spots.setdefault(_loc_key(h), {"lat": h["lat"], "lon": h["lon"], "ips": set(), "rows": [], "last": False, "city": ""})
             if h.get("ip"):
                 spot["ips"].add(str(h.get("ip")))
-            spot["city"] = spot.get("city") or f"{h.get('city', '')} {h.get('country', '')}".strip()
-            spot["rows"].append((n, color, short, i, len(pts)))
+            spot["city"] = spot["city"] or f"{h.get('city', '')} {h.get('country', '')}".strip()
+            spot["rows"].append((n, i, len(pts)))
             spot["last"] = spot["last"] or (i == len(pts))
 
     for spot in spots.values():
         emails_here = sorted({r[0] for r in spot["rows"]})
         multi = len(emails_here) > 1
-        color = "#7c3aed" if multi else spot["rows"][0][1]
-        text = f"x{len(emails_here)}" if multi else str(emails_here[0])
+        if multi:
+            for a in emails_here:
+                info[a]["shares"].update(x for x in emails_here if x != a)
         ips = ", ".join(sorted(spot["ips"])) or "Unknown"
         rows_html = "".join(
-            f'<div class="ps-row"><span style="color:{c};font-size:14px;">&#9679;</span> '
-            f'<b>Email {n}</b> &middot; hop {i} of {tot}<br>'
-            f'<span style="color:#aab9d0;">{html.escape(lab)}</span></div>'
-            for n, c, lab, i, tot in spot["rows"]
+            f'<div class="ps-row" style="display:flex;gap:9px;align-items:flex-start;">{_chip(n, info[n]["color"], 20)}'
+            f'<div><b>{html.escape(info[n]["sender"])}</b><br>'
+            f'<span style="color:#aab9d0;">{html.escape(info[n]["subject"][:90])}</span><br>'
+            f'<span style="color:#8fb4e8;">hop {i} of {tot}</span></div></div>'
+            for n, i, tot in spot["rows"]
         )
+        head = (f"{len(emails_here)} emails share this spot" if multi else f"Email {emails_here[0]}")
         popup = (
-            f'<div class="ps-pop"><div class="ps-h">{len(emails_here)} email(s) at this spot</div>'
-            f'<div class="ps-sub">IP {html.escape(ips)} &middot; {html.escape(spot.get("city", ""))}</div>{rows_html}</div>'
+            f'<div class="ps-pop"><div class="ps-h">{head}</div>'
+            f'<div class="ps-sub">IP {html.escape(ips)} &middot; {html.escape(spot["city"])}</div>{rows_html}</div>'
         )
-        tip = f"{ips} · " + (f"{len(emails_here)} emails" if multi else f"Email {emails_here[0]}")
-        _pin_marker(spot["lat"], spot["lon"], color, text, popup, tooltip=tip, big=spot["last"]).add_to(m)
+        if multi:
+            _pin_marker(
+                spot["lat"], spot["lon"], "#7c3aed", "", popup,
+                tooltip=f"{ips} · emails " + ", ".join(str(x) for x in emails_here),
+                big=spot["last"], glyph="stack",
+                chips=[(x, info[x]["color"]) for x in emails_here], chips_caption="Emails",
+            ).add_to(m)
+        else:
+            n0 = emails_here[0]
+            _pin_marker(
+                spot["lat"], spot["lon"], info[n0]["color"], str(n0), popup,
+                tooltip=f"Email {n0} · {ips}", big=spot["last"],
+            ).add_to(m)
 
     if len(all_coords) > 1:
         try:
@@ -3843,20 +3903,44 @@ def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_ro
         except Exception:
             pass
     st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
-    st.markdown(
-        "<div style='display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;margin:6px 0 2px;'>"
-        + "".join(
-            f"<span><span style='color:{c};font-size:15px;'>&#9679;</span> <b>{n}</b> {html.escape(lab)}</span>"
-            for n, c, lab in legend
+
+    # ---- details table under the map ----
+    th = ("padding:9px 12px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.9px;"
+          "text-transform:uppercase;color:#8fb4e8;background:rgba(20,36,60,.9);")
+    td = "padding:9px 12px;border-top:1px solid rgba(255,255,255,.07);vertical-align:middle;"
+    cut = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+    body = ""
+    for n in sorted(info):
+        d = info[n]
+        shared = (
+            '<span style="display:inline-flex;gap:4px;flex-wrap:wrap;">'
+            + "".join(_chip(x, info[x]["color"], 18) for x in sorted(d["shares"])) + "</span>"
+            if d["shares"] else '<span style="color:#6f8199;">alone</span>'
         )
-        + "<span><span style='color:#7c3aed;font-size:15px;'>&#9679;</span> <b>xN</b> several emails at the same spot</span>"
-        + "</div>",
-        unsafe_allow_html=True,
+        body += (
+            f'<tr><td style="{td}">{_chip(n, d["color"], 22)}</td>'
+            f'<td style="{td}{cut}" title="{html.escape(d["sender"])}"><b style="color:#fff;">{html.escape(d["sender"])}</b></td>'
+            f'<td style="{td}{cut}color:#c9d6ea;" title="{html.escape(d["subject"])}">{html.escape(d["subject"])}</td>'
+            f'<td style="{td}{cut}color:#c9d6ea;" title="{html.escape(d["ip"])} &middot; {html.escape(d["where"])}">'
+            f'{html.escape(d["where"])}<br><span style="color:#7f93b0;font-size:11px;">{html.escape(str(d["ip"]))}</span></td>'
+            f'<td style="{td}text-align:center;color:#c9d6ea;">{d["hops"]}</td>'
+            f'<td style="{td}">{shared}</td></tr>'
+        )
+    table = (
+        '<div style="margin-top:10px;border:1px solid rgba(110,170,255,.2);border-radius:12px;overflow:hidden;'
+        'background:rgba(12,22,38,.65);">'
+        '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font:13px/1.35 Inter,Segoe UI,sans-serif;color:#e6eefc;">'
+        '<colgroup><col style="width:56px"><col style="width:23%"><col style="width:29%"><col style="width:22%">'
+        '<col style="width:64px"><col></colgroup>'
+        f'<thead><tr><th style="{th}">No.</th><th style="{th}">Sender</th><th style="{th}">Subject</th>'
+        f'<th style="{th}">Origin</th><th style="{th}text-align:center;">Hops</th><th style="{th}">Same spot as</th></tr></thead>'
+        f'<tbody>{body}</tbody></table></div>'
     )
+    st.markdown(table, unsafe_allow_html=True)
     st.caption(
-        f"Showing the hop route of {len(routed)} of {total_routed} emails with geolocatable hops "
-        f"(most recent {max_emails} max). Pin number = email number; the large pin is the last traced hop. "
-        "Click a pin to see which emails and hops are there. Imagery © Esri."
+        f"Showing {len(routed)} of {total_routed} emails with geolocatable hops (most recent {max_emails} max). "
+        "A pin with a number is one email. A violet stacked pin means several emails share that exact spot - "
+        "the pill beside it lists their numbers. Click any pin for sender and subject. Imagery © Esri."
     )
 
 
@@ -5898,8 +5982,10 @@ if active_panel == "Dashboard":
                         )
                         _pin_marker(
                             h["lat"], h["lon"], "#ff4757" if sp["origin"] else "#2fd8ff",
-                            str(sp["hops"][0]) if len(sp["hops"]) == 1 else f"x{len(sp['hops'])}",
+                            str(sp["hops"][0]),
                             _pop, tooltip=f"Hop {hop_txt} · {h.get('ip', '')}", big=sp["origin"],
+                            chips=([(x, "#ff4757" if sp["origin"] else "#2fd8ff") for x in sp["hops"]] if len(sp["hops"]) > 1 else None),
+                            chips_caption="Hops",
                         ).add_to(dash_map)
                     if len(_dash_coords) > 1:
                         folium.PolyLine(_dash_coords, color="#2fd8ff", weight=8, opacity=0.14).add_to(dash_map)
@@ -6623,8 +6709,10 @@ if active_panel == "Origin & Route":
                     )
                     _pin_marker(
                         h["lat"], h["lon"], "#ff4757" if sp["origin"] else "#2fd8ff",
-                        str(sp["hops"][0]) if len(sp["hops"]) == 1 else f"x{len(sp['hops'])}",
+                        str(sp["hops"][0]),
                         _pop, tooltip=f"Hop {hop_txt} · {h.get('ip', '')}", big=sp["origin"],
+                        chips=([(x, "#ff4757" if sp["origin"] else "#2fd8ff") for x in sp["hops"]] if len(sp["hops"]) > 1 else None),
+                        chips_caption="Hops",
                     ).add_to(m)
 
                 if len(coordinates) == 1:
@@ -6664,7 +6752,7 @@ if active_panel == "Origin & Route":
                 st_folium(m, width="stretch", height=640, returned_objects=[], key="geo_single_map")
                 st.caption(
                     "Pins are numbered by hop (hop 1 = earliest external sender). Red = origin or anonymising "
-                    "infrastructure; hops that share a location are merged into one 'xN' pin. Imagery © Esri."
+                    "infrastructure; hops that share a location are merged into one pin whose pill lists those hop numbers. Imagery © Esri."
                 )
             else:
                 st.warning("No hop in this email could be geolocated, so there is nothing to plot. Recorded as unresolved rather than guessed.")
