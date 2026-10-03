@@ -1685,60 +1685,48 @@ st.markdown(
         background:transparent !important; border:none !important; box-shadow:none !important;
         color:#bfe3ff !important; text-decoration:underline !important; transform:none !important;
     }
-    .stRadio > div {background:#081522 !important; border:1px solid #1b344e !important; border-radius:11px !important; padding:5px !important; gap:4px !important;}
-    /* Every st.radio in this app renders horizontal=True and is used as a
-       tab/segmented control (main workflow nav, acquisition mode, severity
-       filter...) rather than a traditional single-column choice list, so
-       each option gets full button-like affordances: pointer cursor, its
-       own pill hit-area, and a hover/press/select animation chain that
-       shares the same easing as .stButton so switching "tabs" feels like
-       the same physical material as the rest of the UI. */
-    .stRadio label {
-        color:#c9d8e7 !important;
-        cursor:pointer !important;
-        border-radius:9px !important;
-        border:1px solid transparent !important;
-        padding:7px 6px !important;
-        transition:background .22s var(--ease), border-color .22s var(--ease),
-                   box-shadow .22s var(--ease), transform .16s var(--ease), color .18s var(--ease) !important;
+    /* ------------------------------------------------------------------
+       Segmented control -- every st.radio in the app.
+       Only the options TRACK is boxed; the widget's own title ("Graph
+       view", "Filter by Severity Level:" ...) is plain eyebrow text.
+       The previous `.stRadio > div` rule matched BOTH children of the
+       widget -- the title wrapper AND the track -- so every labelled
+       radio drew its title inside a bordered, padded box: a heading that
+       looked exactly like a button.
+       The selected option is a tinted chip with an accent hairline rather
+       than the loud primary-button gradient, so a toggle no longer reads
+       as a call-to-action. The main nav / tab strips keep their own
+       gradient further down (their selectors are equal-or-more specific
+       and come later, so they still win). */
+    .stRadio [role="radiogroup"] {
+        background:var(--surface-sunken, #0a111a) !important;
+        border:1px solid var(--line-strong) !important;
+        border-radius:10px !important; padding:3px !important; gap:2px !important;
     }
-    .stRadio label:hover {
-        background:rgba(59,130,246,.08) !important;
-        border-color:#20402f !important;
-        transform:translateY(-1px) !important;
+    .stRadio [data-testid="stWidgetLabel"] {
+        background:transparent !important; border:0 !important; box-shadow:none !important;
+        padding:0 !important; margin:0 0 6px 0 !important; min-height:0 !important;
     }
-    .stRadio label:active {
-        transform:translateY(0) scale(.97) !important;
-        transition-duration:.08s !important;
+    .stRadio [data-testid="stWidgetLabel"] p {
+        font-size:11px !important; font-weight:700 !important; letter-spacing:.09em !important;
+        text-transform:uppercase !important; color:var(--muted) !important; margin:0 !important;
     }
-    /* Segmented-control feel: the checked pill gets a filled gradient
-       (the same one .stButton's primary action uses, for one consistent
-       "button" language across the app) instead of just a colored dot, so
-       the active workflow step reads at a glance and selecting it feels
-       like pressing a real button rather than flipping a bare radio.
-
-       This is the app-wide DEFAULT for any st.radio, and it turned out to
-       be quietly overriding every specific fix made to the top nav / bulk
-       scan / tech logs tab strips further down this file: this selector
-       happens to carry one more element-type selector than those, which
-       (by the letter of CSS specificity rules, not by anything about
-       source order) made it win regardless of what those later, more
-       specific-looking rules said. Every genuinely "why is this still the
-       old color" report earlier trace back to this. Fixed by pointing
-       both places at the same --act-1-* tokens instead of two different
-       hard-coded palettes, so which one technically "wins" no longer
-       matters -- they now agree. */
-    .stRadio label[data-baseweb="radio"]:has(input:checked),
-    .stRadio div[role="radiogroup"] label:has(input:checked) {
-        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
-        border-color:var(--act-1-border) !important;
-        box-shadow:0 2px 8px rgba(99,102,241,.35) !important;
-        transform:translateY(-1px) !important;
+    .stRadio [role="radiogroup"] label {
+        color:#c2cedb !important; cursor:pointer !important;
+        border-radius:8px !important; border:1px solid transparent !important;
+        padding:6px 14px !important;
+        transition:background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease) !important;
     }
-    .stRadio label:has(input:checked):hover {transform:translateY(-1px) !important;}
-    .stRadio label:has(input:checked):active {transform:translateY(-1px) scale(.97) !important;}
-    .stRadio label:has(input:checked) div:first-child {border-color:#eaf8ff !important;}
-    .stRadio label:has(input:checked) p {color:#ffffff !important; font-weight:800 !important;}
+    .stRadio [role="radiogroup"] label:hover {
+        background:rgba(255,255,255,.045) !important; color:#fff !important;
+    }
+    .stRadio [role="radiogroup"] label:has(input:checked) {
+        background:rgba(59,130,246,.16) !important;
+        background:color-mix(in srgb, var(--cyan) 18%, transparent) !important;
+        border-color:rgba(59,130,246,.5) !important;
+        border-color:color-mix(in srgb, var(--cyan) 55%, transparent) !important;
+    }
+    .stRadio [role="radiogroup"] label:has(input:checked) p {color:#ffffff !important; font-weight:700 !important;}
     .stFileUploader {background:#091625 !important; border:1px dashed #31584f !important; border-radius:12px !important;}
     .stFileUploader section {background:transparent !important;}
 
@@ -2518,6 +2506,7 @@ st.markdown(
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
         box-shadow:0 2px 8px rgba(99,102,241,.35) !important;
+        transform:translateY(-1px) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
     .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
@@ -3192,7 +3181,7 @@ st.markdown(
     hr {border-color:var(--line) !important;}
 
     /* Segmented controls (every st.radio is used as a tab bar). */
-    .stRadio > div {background:var(--surface-sunken) !important; border:1px solid var(--line-strong) !important;}
+    .stRadio [role="radiogroup"] {background:var(--surface-sunken) !important; border:1px solid var(--line-strong) !important;}
 
     /* KPI cards. */
     div[data-testid="stMetric"] {
@@ -3296,6 +3285,90 @@ st.markdown(
     .dossier-head .dh-title {font:800 26px/1.2 Inter,"Segoe UI",sans-serif; color:#fff;}
     .dossier-head .dh-of {font-size:14px; font-weight:600; color:var(--muted); margin-left:6px;}
     .dossier-head .dh-pill {font:800 12px/1 ui-monospace,Consolas,monospace; letter-spacing:1.2px; padding:8px 14px; border-radius:999px; border:1px solid;}
+
+    /* ==================================================================
+       SECTION HEADER SYSTEM v2
+       One quiet, consistent look for every module / part / section header
+       (_banner, _sec, the dossier head and the AI report bar).
+       Why the old ones read as buttons: solid-gradient rounded "step"
+       pills and outlined "scope" pills are exactly what a button looks
+       like, and a 5px coloured slab on the card edge made the whole card
+       look pressable. Now: no pills at all on anything that is not
+       clickable. The step becomes a small mono eyebrow with a leading
+       rule, the scope becomes plain meta text with a status dot, and the
+       accent is a slim inset bar (not a slab). Each tone only sets --tone.
+       ================================================================== */
+    .part-banner, .sec-head, .dossier-head {--tone:var(--cyan);}
+    .part-banner-batch, .sec-batch {--tone:var(--cyan);}
+    .part-banner-single, .sec-single, .dossier-head {--tone:var(--teal);}
+    .part-banner-ai, .sec-ai {--tone:var(--violet);}
+    .part-banner-intel, .sec-intel {--tone:var(--green);}
+    .part-banner-rose, .sec-rose {--tone:#f43f5e;}
+    .part-banner-sky, .sec-sky {--tone:#0ea5e9;}
+    .part-banner-gold, .sec-gold {--tone:#eab308;}
+    .part-banner-teal, .sec-teal {--tone:#14b8a6;}
+    .part-banner-plum, .sec-plum {--tone:#d946ef;}
+    .part-banner-lime, .sec-lime {--tone:#84cc16;}
+
+    .part-banner, .dossier-head {
+        position:relative; overflow:hidden;
+        padding:18px 24px 18px 30px; margin:8px 0 18px 0;
+        border-radius:var(--r-lg);
+        border:1px solid var(--line-strong); border-left:1px solid var(--line-strong);
+        background:
+            radial-gradient(120% 150% at 0% 0%, color-mix(in srgb, var(--tone) 15%, transparent) 0%, transparent 58%),
+            linear-gradient(180deg, var(--panel-2), var(--panel));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-md);
+    }
+    .part-banner::before, .dossier-head::before, .sec-head::before {
+        content:""; position:absolute; left:0; top:16px; bottom:16px; width:3px;
+        border-radius:0 3px 3px 0;
+        background:linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent));
+    }
+    .part-banner {display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;}
+    .part-banner .pb-main {min-width:0; flex:1 1 320px;}
+    .part-banner .pb-step {
+        display:inline-flex !important; align-items:center; gap:10px; margin-bottom:9px;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
+        text-transform:uppercase; white-space:nowrap;
+        color:var(--tone) !important; background:none !important;
+        padding:0 !important; border-radius:0 !important; border:0 !important;
+    }
+    .part-banner .pb-step::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .part-banner .pb-title {font:750 22px/1.25 Inter,"Segoe UI",sans-serif; color:#fff; letter-spacing:-.01em;}
+    .part-banner .pb-sub {color:var(--muted); font-size:13px; line-height:1.5; margin-top:4px; max-width:78ch;}
+    .part-banner .pb-scope {
+        margin-left:0 !important; display:inline-flex; align-items:center; gap:9px;
+        font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
+        color:var(--muted) !important; background:none !important; border:0 !important; padding:0 !important;
+    }
+    .part-banner .pb-scope::before {
+        content:""; width:6px; height:6px; border-radius:50%; background:var(--tone);
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 22%, transparent);
+    }
+    .part-sep::before, .part-sep::after {height:1px !important;}
+
+    .sec-head {
+        position:relative; display:block !important;
+        margin:30px 0 14px 0 !important; padding:2px 0 2px 16px !important; border-left:0 !important;
+    }
+    .sec-head::before {top:3px; bottom:3px; border-radius:3px;}
+    .sec-head .sh-title {font:750 17px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5f9; letter-spacing:-.005em;}
+    .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:var(--muted); max-width:80ch;}
+
+    .dossier-head .dh-title {font:750 24px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
+    .dossier-head .dh-pill {border-radius:6px; font-size:11.5px; letter-spacing:.1em; padding:7px 11px;}
+
+    .ai-report-bar {padding:12px 16px; font:700 10.5px/1.2 ui-monospace,Consolas,monospace; letter-spacing:.16em;}
+    .ai-report-chip {
+        display:inline-flex; align-items:center; gap:9px;
+        padding:0 !important; border:0 !important; background:none !important; border-radius:0 !important;
+        color:var(--muted) !important; font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em;
+    }
+    .ai-report-chip::before {
+        content:""; width:6px; height:6px; border-radius:50%; background:var(--violet);
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--violet) 25%, transparent);
+    }
 
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
@@ -4072,19 +4145,26 @@ def _loc_key(h):
 _BANNER_TONES = ("batch", "single", "ai", "intel", "rose", "sky", "gold", "teal", "plum", "lime")
 
 
-def _banner(step, title, sub="", scope="", tone="batch"):
-    """Module-level header: step pill + title + one-line sub + scope tag.
-    Same component as the Forensic Report PART 1 / PART 2 banners."""
+def _banner_html(step, title, sub="", scope="", tone="batch"):
+    """HTML for the module-level header (see SECTION HEADER SYSTEM v2 in the
+    CSS): small mono eyebrow, title, one-line sub, and a plain meta tag on
+    the right. No pill/button-shaped pieces -- nothing in it is clickable."""
     tone = tone if tone in _BANNER_TONES else "batch"
-    st.markdown(
-        f'<div class="part-banner part-banner-{tone}"><span class="pb-step">{html.escape(str(step))}</span>'
-        f'<div><div class="pb-title">{html.escape(str(title))}</div>'
+    return (
+        f'<div class="part-banner part-banner-{tone}">'
+        f'<div class="pb-main"><div class="pb-step">{html.escape(str(step))}</div>'
+        f'<div class="pb-title">{html.escape(str(title))}</div>'
         + (f'<div class="pb-sub">{html.escape(str(sub))}</div>' if sub else '')
         + '</div>'
         + (f'<span class="pb-scope">{html.escape(str(scope))}</span>' if scope else '')
-        + '</div>',
-        unsafe_allow_html=True,
+        + '</div>'
     )
+
+
+def _banner(step, title, sub="", scope="", tone="batch"):
+    """Module-level header: eyebrow + title + one-line sub + scope tag.
+    Same component as the Forensic Report PART 1 / PART 2 banners."""
+    st.markdown(_banner_html(step, title, sub, scope, tone), unsafe_allow_html=True)
 
 
 def _sec(title, sub="", tone="batch"):
@@ -7594,10 +7674,10 @@ if active_panel == "Correlation":
             unsafe_allow_html=True
         )
 
-        st.markdown(
-            '<div style="font-size:15px;font-weight:750;color:#e5edf7;margin-bottom:4px;">◉ Infrastructure Correlation Map</div>'
-            '<div style="font-size:12px;color:#7f8da3;margin-bottom:10px;">Solid lines are shared indicators straight from the evidence. Dashed lines are AI-inferred semantic matches. Click a node to trace its connections.</div>',
-            unsafe_allow_html=True
+        _sec(
+            "Infrastructure Correlation Map",
+            "Solid lines are shared indicators straight from the evidence. Dashed lines are AI-inferred semantic matches. Click a node to trace its connections.",
+            tone="batch",
         )
 
         # Same switch as Origin & Route: the 10 most recent emails together,
@@ -7957,13 +8037,10 @@ if active_panel == "Forensic Report":
                     height=0,
                 )
             _n_joint = pipeline_result.get('count', len(report_items))
-            st.markdown(
-                '<div class="part-banner part-banner-batch">'
-                '<span class="pb-step pb-step-batch">PART 1</span>'
-                '<div><div class="pb-title">Batch Report \u2014 All ' + str(_n_joint) + ' Emails</div>'
-                '<div class="pb-sub">Source: ' + html.escape(str(pipeline_result.get('source', ''))) + '</div></div>'
-                '<span class="pb-scope">COVERS ALL EMAILS</span></div>',
-                unsafe_allow_html=True,
+            _banner(
+                "PART 1", f"Batch Report \u2014 All {_n_joint} Emails",
+                sub=f"Source: {pipeline_result.get('source', '')}",
+                scope="Covers all emails", tone="batch",
             )
             st.caption("Machine analysis + AI threat analysis + semantic origin correlation, combined across the batch. Drill into any single email below, or grab everything at once.")
 
@@ -8091,11 +8168,12 @@ if active_panel == "Forensic Report":
 
         st.markdown(
             '<div class="part-sep"><span>' + ('END OF BATCH REPORT' if pipeline_active else 'EMAIL DEEP DIVE') + '</span></div>'
-            '<div class="part-banner part-banner-single">'
-            '<span class="pb-step pb-step-single">' + ('PART 2' if pipeline_active else 'SINGLE EMAIL') + '</span>'
-            '<div><div class="pb-title">Single-Email Deep Dive</div>'
-            '<div class="pb-sub">Everything below this point is about ONE email only. Choose which one:</div></div>'
-            '<span class="pb-scope">ONE EMAIL</span></div>',
+            + _banner_html(
+                'PART 2' if pipeline_active else 'SINGLE EMAIL',
+                'Single-Email Deep Dive',
+                sub='Everything below this point is about ONE email only. Choose which one:',
+                scope='One email', tone='single',
+            ),
             unsafe_allow_html=True,
         )
 
