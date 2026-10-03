@@ -3708,10 +3708,41 @@ def _case_hop_points(case):
     return []
 
 
+def _pin_marker(lat, lon, color, text, popup_html, tooltip=None, big=False):
+    """A map-pin marker (teardrop with a number/label inside) in any hex
+    colour. Easier to spot and click than a plain dot, and the label says
+    which email / hop it is."""
+    w, h = (34, 46) if big else (26, 36)
+    fs = 13 if big else 11
+    top = 7 if big else 5
+    svg = (
+        f'<svg viewBox="0 0 24 32" width="{w}" height="{h}" xmlns="http://www.w3.org/2000/svg">'
+        f'<path d="M12 1C5.9 1 1 5.9 1 12c0 8.5 11 19 11 19s11-10.5 11-19C23 5.9 18.1 1 12 1z" '
+        f'fill="{color}" stroke="#ffffff" stroke-width="1.6"/></svg>'
+    )
+    label = (
+        f'<span style="position:absolute;left:0;right:0;top:{top}px;text-align:center;color:#fff;'
+        f'font:700 {fs}px/1.1 sans-serif;text-shadow:0 0 3px #000,0 0 3px #000;">{html.escape(str(text))}</span>'
+    )
+    icon = folium.DivIcon(
+        html=f'<div style="position:relative;width:{w}px;height:{h}px;">{svg}{label}</div>',
+        icon_size=(w, h), icon_anchor=(w // 2, h), class_name="ps-pin",
+    )
+    mk = folium.Marker(location=[lat, lon], icon=icon, popup=folium.Popup(popup_html, max_width=340))
+    if tooltip:
+        mk.add_child(folium.Tooltip(tooltip))
+    return mk
+
+
+def _loc_key(h):
+    return (round(float(h["lat"]), 3), round(float(h["lon"]), 3))
+
+
 def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_rows=None):
-    """Hop route of up to max_emails emails (most recent first) on one map,
-    one colour per email. Each email is its own layer in the layer control
-    so individual routes can be switched on and off."""
+    """Hop route of up to max_emails emails (most recent first) on one map.
+    Each hop is a numbered pin in its email's colour. When several emails
+    (or hops) land on the same location/IP they share ONE pin labelled
+    'xN'; clicking it lists every email and hop there."""
     ordered = [
         c for _, c in sorted(
             enumerate(cases),
@@ -3729,38 +3760,63 @@ def _render_all_hops_map(cases, key_prefix, height=500, max_emails=10, source_ro
     all_coords = [[h["lat"], h["lon"]] for _, pts in routed for h in pts]
     m = folium.Map(location=all_coords[0], zoom_start=2, tiles=None)
     _add_base_tiles(m)
+
+    spots = {}
+    legend = []
     for n, (case, pts) in enumerate(routed, start=1):
         color = _EMAIL_ROUTE_COLORS[(n - 1) % len(_EMAIL_ROUTE_COLORS)]
         label = _case_label(case, f"Email #{n}")
-        if len(label) > 48:
-            label = label[:47] + "…"
-        layer = folium.FeatureGroup(name=f"{n}. {label}", show=True)
+        short = label if len(label) <= 60 else label[:59] + "…"
+        legend.append((n, color, short))
         coords = [[h["lat"], h["lon"]] for h in pts]
         if len(coords) > 1:
-            folium.PolyLine(coords, color=color, weight=3, opacity=0.8, dash_array="6 8").add_to(layer)
+            folium.PolyLine(coords, color=color, weight=3, opacity=0.8, dash_array="6 8").add_to(m)
         for i, h in enumerate(pts, start=1):
-            is_last = (i == len(pts))
-            popup = (
-                f"<b>Email {n}: {label}</b><br>Hop {i} of {len(pts)}<br>IP: {h.get('ip', 'Unknown')}<br>"
-                f"{h.get('city', '')} {h.get('country', '')}<br>Infra: {h.get('infra_label', '')}"
-            )
-            folium.CircleMarker(
-                location=[h["lat"], h["lon"]], radius=9 if is_last else 5,
-                color=color, fill=True, fill_color=color, fill_opacity=0.9 if is_last else 0.6,
-                popup=folium.Popup(popup, max_width=300),
-            ).add_to(layer)
-        layer.add_to(m)
+            spot = spots.setdefault(_loc_key(h), {"lat": h["lat"], "lon": h["lon"], "ips": set(), "rows": [], "last": False})
+            if h.get("ip"):
+                spot["ips"].add(str(h.get("ip")))
+            spot["city"] = spot.get("city") or f"{h.get('city', '')} {h.get('country', '')}".strip()
+            spot["rows"].append((n, color, short, i, len(pts)))
+            spot["last"] = spot["last"] or (i == len(pts))
+
+    for spot in spots.values():
+        emails_here = sorted({r[0] for r in spot["rows"]})
+        multi = len(emails_here) > 1
+        color = "#7c3aed" if multi else spot["rows"][0][1]
+        text = f"x{len(emails_here)}" if multi else str(emails_here[0])
+        ips = ", ".join(sorted(spot["ips"])) or "Unknown"
+        lines = "".join(
+            f'<li><span style="color:{c};font-weight:700;">&#9679;</span> '
+            f'<b>Email {n}</b>: {html.escape(lab)} &middot; hop {i} of {tot}</li>'
+            for n, c, lab, i, tot in spot["rows"]
+        )
+        popup = (
+            f"<b>{len(emails_here)} email(s) at this spot</b><br>IP: {html.escape(ips)}<br>"
+            f"{html.escape(spot.get('city', ''))}<ul style='padding-left:16px;margin:6px 0 0;'>{lines}</ul>"
+        )
+        tip = f"{ips} · " + (f"{len(emails_here)} emails" if multi else f"Email {emails_here[0]}")
+        _pin_marker(spot["lat"], spot["lon"], color, text, popup, tooltip=tip, big=spot["last"]).add_to(m)
+
     if len(all_coords) > 1:
         try:
             m.fit_bounds(all_coords, max_zoom=6)
         except Exception:
             pass
-    folium.LayerControl(collapsed=False).add_to(m)
     st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
+    st.markdown(
+        "<div style='display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;margin:6px 0 2px;'>"
+        + "".join(
+            f"<span><span style='color:{c};font-size:15px;'>&#9679;</span> <b>{n}</b> {html.escape(lab)}</span>"
+            for n, c, lab in legend
+        )
+        + "<span><span style='color:#7c3aed;font-size:15px;'>&#9679;</span> <b>xN</b> several emails at the same spot</span>"
+        + "</div>",
+        unsafe_allow_html=True,
+    )
     st.caption(
         f"Showing the hop route of {len(routed)} of {total_routed} emails with geolocatable hops "
-        f"(most recent {max_emails} max). One colour per email; the large dot is the last traced hop. "
-        "Use the layer list to hide or show a single email."
+        f"(most recent {max_emails} max). Pin number = email number; the large pin is the last traced hop. "
+        "Click a pin to see which emails and hops are there."
     )
 
 
@@ -5786,13 +5842,24 @@ if active_panel == "Dashboard":
                     _dash_coords = [[h["lat"], h["lon"]] for h in _dash_pts]
                     dash_map = folium.Map(location=_dash_coords[-1], zoom_start=4, tiles=None)
                     _add_base_tiles(dash_map)
+                    _dash_spots = {}
                     for i, h in enumerate(_dash_pts, 1):
                         is_origin = (h.get("infra") in ("tor", "vpn", "proxy")) or (i == len(_dash_pts))
-                        folium.CircleMarker(
-                            location=[h["lat"], h["lon"]], radius=9 if is_origin else 6,
-                            color="#ff4757" if is_origin else "#2fd8ff",
-                            fill=True, fill_opacity=0.85,
-                            popup=f"{h.get('ip', '')} · {h.get('city', '')} {h.get('country', '')}",
+                        sp = _dash_spots.setdefault(_loc_key(h), {"h": h, "hops": [], "origin": False})
+                        sp["hops"].append(i)
+                        sp["origin"] = sp["origin"] or is_origin
+                    for sp in _dash_spots.values():
+                        h = sp["h"]
+                        hop_txt = ", ".join(str(x) for x in sp["hops"])
+                        _pop = (
+                            f"<b>Hop {hop_txt}</b><br>IP: {html.escape(str(h.get('ip', '')))}<br>"
+                            f"{html.escape(str(h.get('city', '')))} {html.escape(str(h.get('country', '')))}<br>"
+                            f"Infra: {html.escape(str(h.get('infra_label', '')))}"
+                        )
+                        _pin_marker(
+                            h["lat"], h["lon"], "#ff4757" if sp["origin"] else "#2fd8ff",
+                            str(sp["hops"][0]) if len(sp["hops"]) == 1 else f"x{len(sp['hops'])}",
+                            _pop, tooltip=f"Hop {hop_txt} · {h.get('ip', '')}", big=sp["origin"],
                         ).add_to(dash_map)
                     if len(_dash_coords) > 1:
                         folium.PolyLine(_dash_coords, color="#2fd8ff", weight=2, opacity=0.7, dash_array="6 8").add_to(dash_map)
