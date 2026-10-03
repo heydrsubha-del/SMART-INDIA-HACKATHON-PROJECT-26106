@@ -4566,6 +4566,9 @@ if active_panel == "Dashboard":
                         else:
                             _cached_tok = st.session_state.get("microsoft_oauth_token") or microsoft_oauth.get_cached_access_token()
                             _pending_err = st.session_state.pop("_microsoft_oauth_error", None)
+                            _why = microsoft_oauth.last_error()
+                        if _why and not _cached_tok:
+                            st.caption(f"Session expired: {_why}")
                             if _pending_err:
                                 st.caption(f"Sign-in didn't complete: {_pending_err}")
                             if _cached_tok:

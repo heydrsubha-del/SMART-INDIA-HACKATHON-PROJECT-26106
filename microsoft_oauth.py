@@ -1,29 +1,25 @@
 """Microsoft (Outlook / Microsoft 365) OAuth2 for IMAP sign-in.
 
-Mirrors the call interface of google_Oauth.py so app.py can wire up a
-"Sign in with Microsoft" button the same way it wires up Google's:
+Same call interface as before, plus two small additions:
 
     oauth_available() -> bool
     client_secret_issue() -> str | None
     redirect_uri() -> str
     get_authorization_url(email_hint=None) -> (url, state)
     exchange_code_for_token(code, state=None) -> (access_token, email_or_None)
-    get_cached_access_token() -> str | None
+    get_cached_access_token() -> str | None      # refreshes automatically
     clear_saved_token() -> None
+    last_error() -> str | None                   # NEW: why the last refresh failed
 
-Setup (one-time, per environment):
-  1. Register an app at https://portal.azure.com -> App registrations.
-     Platform: "Web". Redirect URI: this app's URL (see redirect_uri()).
-  2. API permissions (delegated, Microsoft Graph + IMAP):
-     offline_access, openid, email, https://outlook.office.com/IMAP.AccessAsUser.All
-  3. Create a client secret under "Certificates & secrets".
-  4. Put {"client_id": "...", "client_secret": "...", "tenant": "common"}
-     in client_secret_microsoft.json next to this file (tenant is optional,
-     defaults to "common" so both personal and work/school accounts work).
+Config (checked in this order):
+  1. Env var / Streamlit secret SIH26106_MS_CLIENT_CONFIG holding JSON text:
+       {"client_id": "...", "client_secret": "...", "tenant": "common"}
+  2. client_secret_microsoft.json next to this file (local dev).
 
-The IMAP.AccessAsUser.All scope is what lets the resulting access token be
-used directly as the XOAUTH2 credential against outlook.office365.com,
-exactly like a Gmail OAuth2 access token is used against imap.gmail.com.
+Azure app registration: delegated permissions offline_access, openid, email,
+https://outlook.office.com/IMAP.AccessAsUser.All. NOTE: client secrets in Azure
+expire (max 24 months) -- when one does, sign-in AND token refresh both start
+failing, so last_error() will say invalid_client.
 """
 import json
 import os
@@ -35,6 +31,7 @@ import urllib.error
 
 _CLIENT_SECRET_PATH = "client_secret_microsoft.json"
 _TOKEN_CACHE_PATH = ".microsoft_oauth_token_cache.json"
+_CLIENT_CONFIG_ENV = "SIH26106_MS_CLIENT_CONFIG"
 
 _AUTHORITY = "https://login.microsoftonline.com/{tenant}"
 _SCOPES = (
@@ -42,19 +39,29 @@ _SCOPES = (
     "https://outlook.office.com/IMAP.AccessAsUser.All"
 )
 
-# Distinguishes this provider's redirects from Google's/Yahoo's when all
-# three share one redirect URI on the same running app -- the state value
-# always starts with this prefix so app.py's shared callback handler knows
-# which exchange_code_for_token() to call.
 STATE_PREFIX = "msoauth:"
+
+_LAST_ERROR = None
+
+
+def last_error():
+    """Human-readable reason the most recent token refresh/exchange failed."""
+    return _LAST_ERROR
 
 
 def _load_client_secret():
-    try:
-        with open(_CLIENT_SECRET_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f) or {}
-    except Exception:
-        return None
+    raw = os.environ.get(_CLIENT_CONFIG_ENV, "").strip()
+    if raw:
+        try:
+            data = json.loads(raw) or {}
+        except Exception:
+            return None
+    else:
+        try:
+            with open(_CLIENT_SECRET_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+        except Exception:
+            return None
     if not data.get("client_id"):
         return None
     data.setdefault("tenant", "common")
@@ -62,15 +69,15 @@ def _load_client_secret():
 
 
 def client_secret_issue():
-    """Returns a human-readable reason sign-in can't start yet, or None."""
     data = _load_client_secret()
     if data is None:
         return (
-            f"No `{_CLIENT_SECRET_PATH}` found (or it's missing `client_id`). "
-            "Register an app at portal.azure.com and save its credentials there."
+            f"No Microsoft client config found. Set `{_CLIENT_CONFIG_ENV}` (Streamlit "
+            f"secret / env var with JSON `{{\"client_id\": ..., \"client_secret\": ...}}`) "
+            f"or add `{_CLIENT_SECRET_PATH}` locally."
         )
     if not data.get("client_secret"):
-        return f"`{_CLIENT_SECRET_PATH}` is missing `client_secret`."
+        return "Microsoft client config is missing `client_secret`."
     return None
 
 
@@ -118,8 +125,17 @@ def _post_form(url, fields):
         url, data=body, method="POST",
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # Surface Microsoft's real error (invalid_grant, invalid_client, AADSTS...)
+        try:
+            detail = json.loads(e.read().decode("utf-8", errors="replace"))
+            detail = f"{detail.get('error')}: {detail.get('error_description', '')}".strip()
+        except Exception:
+            detail = str(e.reason)
+        raise RuntimeError(f"Microsoft token endpoint returned HTTP {e.code}: {detail}") from e
 
 
 def fetch_email(access_token):
@@ -136,6 +152,7 @@ def fetch_email(access_token):
 
 
 def exchange_code_for_token(code, state=None):
+    global _LAST_ERROR
     data = _load_client_secret()
     if not data:
         raise RuntimeError(client_secret_issue() or "Microsoft OAuth is not configured.")
@@ -153,6 +170,10 @@ def exchange_code_for_token(code, state=None):
     access_token = token_resp.get("access_token")
     if not access_token:
         raise RuntimeError(f"Microsoft token exchange did not return an access token: {token_resp}")
+    if not token_resp.get("refresh_token"):
+        _LAST_ERROR = "No refresh token was issued (is offline_access granted?). Sign-in will expire in ~1 hour."
+    else:
+        _LAST_ERROR = None
     _save_token_cache(token_resp)
     email = fetch_email(access_token)
     return access_token, email
@@ -163,7 +184,7 @@ def _save_token_cache(token_resp):
         cache = {
             "access_token": token_resp.get("access_token"),
             "refresh_token": token_resp.get("refresh_token"),
-            "expires_at": time.time() + float(token_resp.get("expires_in", 3600)) - 60,
+            "expires_at": time.time() + float(token_resp.get("expires_in", 3600)) - 120,
         }
         with open(_TOKEN_CACHE_PATH, "w", encoding="utf-8") as f:
             json.dump(cache, f)
@@ -172,8 +193,13 @@ def _save_token_cache(token_resp):
 
 
 def _refresh(cache):
+    global _LAST_ERROR
     data = _load_client_secret()
-    if not data or not cache.get("refresh_token"):
+    if not data:
+        _LAST_ERROR = client_secret_issue()
+        return None
+    if not cache.get("refresh_token"):
+        _LAST_ERROR = "No refresh token saved - please sign in with Outlook again."
         return None
     try:
         token_resp = _post_form(
@@ -187,13 +213,14 @@ def _refresh(cache):
             },
         )
         if not token_resp.get("access_token"):
+            _LAST_ERROR = f"Refresh returned no access token: {token_resp}"
             return None
-        # Microsoft doesn't always return a new refresh_token; keep the old
-        # one if a fresh one wasn't issued.
         token_resp.setdefault("refresh_token", cache.get("refresh_token"))
         _save_token_cache(token_resp)
+        _LAST_ERROR = None
         return token_resp.get("access_token")
-    except Exception:
+    except Exception as exc:
+        _LAST_ERROR = str(exc)
         return None
 
 
