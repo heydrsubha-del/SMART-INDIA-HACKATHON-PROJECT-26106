@@ -3783,12 +3783,18 @@ _MAP_CSS = """<style>
 </style>"""
 
 
-def _new_map(location, zoom_start=2):
+def _new_map(location, zoom_start=3, min_zoom=3):
     """Satellite-only map with a dark, branded look: no attribution box,
-    no repeated world copies, restyled controls and popups."""
+    no repeated world copies, restyled controls and popups.
+
+    min_zoom=3 (not 2): at zoom 2 the whole world is only ~1024px wide, so
+    on a full-width panel the sides show gray "Map data not yet available"
+    strips. At zoom 3 the world is 2048px wide, which covers the panel
+    width, so those gray areas never appear."""
+    zoom_start = max(zoom_start, min_zoom)
     try:
         m = folium.Map(
-            location=location, zoom_start=zoom_start, tiles=None, min_zoom=2,
+            location=location, zoom_start=zoom_start, tiles=None, min_zoom=min_zoom,
             max_bounds=True, zoom_snap=0.5, attribution_control=False,
         )
     except Exception:
@@ -3867,7 +3873,7 @@ def _loc_key(h):
     return (round(float(h["lat"]), 3), round(float(h["lon"]), 3))
 
 
-def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_rows=None):
+def _render_all_hops_map(cases, key_prefix, height=420, max_emails=10, source_rows=None):
     """Hop route of up to max_emails emails (most recent first) on one map.
 
     Every hop is a pin in its email's colour with the email number inside.
@@ -3890,7 +3896,7 @@ def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_ro
         st.info("No geolocatable hops across the loaded emails yet.")
         return
     all_coords = [[h["lat"], h["lon"]] for _, pts in routed for h in pts]
-    m = _new_map(all_coords[0], zoom_start=2)
+    m = _new_map(all_coords[0], zoom_start=3)
 
     info = {}
     spots = {}
@@ -3953,7 +3959,7 @@ def _render_all_hops_map(cases, key_prefix, height=640, max_emails=10, source_ro
 
     if len(all_coords) > 1:
         try:
-            m.fit_bounds(all_coords, max_zoom=6)
+            m.fit_bounds(all_coords, max_zoom=5)
         except Exception:
             pass
     st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
@@ -6751,7 +6757,7 @@ if active_panel == "Origin & Route":
 
         _table_geo = _active_geo
         if _geo_map_mode == _MAP_MODE_ALL:
-            _render_all_hops_map(cases, key_prefix="geo", height=640, source_rows=data)
+            _render_all_hops_map(cases, key_prefix="geo", height=420, source_rows=data)
         else:
             hops = [h for h in _table_geo.get("hops", []) if h.get("lat") is not None]
 
@@ -6759,7 +6765,7 @@ if active_panel == "Origin & Route":
                 start_lat = hops[0]["lat"] if hops else 20.0
                 start_lon = hops[0]["lon"] if hops else 0.0
 
-                m = _new_map([start_lat, start_lon], zoom_start=2)
+                m = _new_map([start_lat, start_lon], zoom_start=3)
                 coordinates = []
 
                 _spots = {}
@@ -6817,10 +6823,10 @@ if active_panel == "Origin & Route":
 
                 if len(coordinates) > 1:
                     try:
-                        m.fit_bounds(coordinates, max_zoom=6)
+                        m.fit_bounds(coordinates, max_zoom=5)
                     except Exception:
                         pass
-                st_folium(m, width="stretch", height=640, returned_objects=[], key="geo_single_map")
+                st_folium(m, width="stretch", height=420, returned_objects=[], key="geo_single_map")
                 st.caption(
                     "Pins are numbered by hop (hop 1 = earliest external sender). Red = origin or anonymising "
                     "infrastructure; hops that share a location are merged into one pin whose pill lists those hop numbers. Imagery © Esri."
