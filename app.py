@@ -5127,6 +5127,83 @@ st.markdown(
     .stFileUploader {border:1px dashed rgba(217,163,95,.4) !important;}
     .stFileUploader:hover {border-color:var(--amber) !important;}
     ::-webkit-scrollbar-thumb:hover {background:var(--amber) !important;}
+
+    /* ==================================================================
+       TEXT BOXES / FIELDS v2 -- message bodies, inputs, selects, code.
+       Graphite glass instead of navy; each kind of box owns an accent
+       (top hairline + focus ring + scrollbar) so they stop all looking
+       like the same blue slab:
+         message body = emerald, deep dive / AI = violet,
+         analysed body = rose, code / hops = amber, inputs = amber focus.
+       ================================================================== */
+    .stApp .stTextArea, .stApp .stTextInput, .stApp .stNumberInput, .stApp .stSelectbox, .stApp .stMultiSelect {--box:#d9a35f;}
+    .stApp [class*="st-key-imap_body_"] {--box:#2fb68e;}
+    .stApp [class*="st-key-dd_body_"], .stApp [class*="st-key-dossier_body_"] {--box:#8b7cf6;}
+    .stApp .st-key-analysed_body {--box:#e0708c;}
+    .stApp [data-testid="stTextAreaRootElement"], .stApp .stTextArea [data-baseweb="textarea"], .stApp .stTextArea [data-baseweb="base-input"] {
+        background:linear-gradient(180deg,#121821,#0d1218) !important;
+        border:1px solid var(--line-strong) !important; border-top:2px solid var(--box) !important;
+        border-radius:12px !important; overflow:hidden !important;
+        box-shadow:0 10px 26px -18px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.03) !important;
+    }
+    .stApp .stTextArea textarea, .stApp .stTextArea textarea:disabled {
+        background:transparent !important; border:0 !important; box-shadow:none !important; border-radius:0 !important;
+        color:#d6dce6 !important; -webkit-text-fill-color:#d6dce6 !important; opacity:1 !important;
+        font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace !important;
+        font-size:13px !important; line-height:1.65 !important; padding:16px 18px !important;
+        scrollbar-width:thin; scrollbar-color:var(--box) transparent;
+    }
+    .stApp .stTextArea textarea::-webkit-scrollbar {width:10px; height:10px;}
+    .stApp .stTextArea textarea::-webkit-scrollbar-track {background:transparent;}
+    .stApp .stTextArea textarea::-webkit-scrollbar-thumb {background:rgba(148,163,184,.28); border-radius:8px; border:2px solid transparent; background-clip:padding-box;}
+    .stApp .stTextArea textarea::-webkit-scrollbar-thumb:hover {background:var(--box); background-clip:padding-box;}
+    .stApp .stTextArea:focus-within [data-baseweb="textarea"], .stApp .stTextArea:focus-within [data-testid="stTextAreaRootElement"] {
+        border-color:var(--box) !important; box-shadow:0 0 0 3px rgba(217,163,95,.16) !important;
+        box-shadow:0 0 0 3px color-mix(in srgb,var(--box) 22%,transparent) !important;
+    }
+    .stApp .stTextArea [data-testid="stWidgetLabel"] p {
+        font-size:11px !important; font-weight:700 !important; letter-spacing:.1em !important;
+        text-transform:uppercase !important; color:#aab4c2 !important;
+    }
+    .stApp .stTextArea [data-testid="stWidgetLabel"] p::before {
+        content:""; display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 9px 1px 0; background:var(--box);
+        box-shadow:0 0 0 3px rgba(148,163,184,.14); box-shadow:0 0 0 3px color-mix(in srgb,var(--box) 25%,transparent);
+    }
+    /* single-line inputs, number fields, selects */
+    .stApp .stTextInput input, .stApp .stNumberInput input {
+        background:linear-gradient(180deg,#121821,#0d1218) !important; color:#e6ebf2 !important;
+        border:1px solid var(--line-strong) !important; border-radius:10px !important;
+    }
+    .stApp .stTextInput input:hover, .stApp .stNumberInput input:hover {border-color:#4a5568 !important;}
+    .stApp .stTextInput input:focus, .stApp .stNumberInput input:focus {
+        border-color:var(--box) !important; box-shadow:0 0 0 3px rgba(217,163,95,.18) !important;
+        box-shadow:0 0 0 3px color-mix(in srgb,var(--box) 22%,transparent) !important;
+    }
+    .stApp .stNumberInput button {background:linear-gradient(180deg,#171d27,#10151c) !important; border:1px solid var(--line-strong) !important; color:#aab4c2 !important;}
+    .stApp .stNumberInput button:hover {border-color:var(--box) !important; color:#fff !important;}
+    .stApp .stSelectbox [data-baseweb="select"] > div, .stApp .stMultiSelect [data-baseweb="select"] > div {
+        background:linear-gradient(180deg,#121821,#0d1218) !important; border:1px solid var(--line-strong) !important; border-radius:10px !important;
+    }
+    .stApp .stSelectbox [data-baseweb="select"]:hover > div, .stApp .stMultiSelect [data-baseweb="select"]:hover > div {border-color:#4a5568 !important;}
+    .stApp .stSelectbox [data-baseweb="select"]:focus-within > div, .stApp .stMultiSelect [data-baseweb="select"]:focus-within > div {
+        border-color:var(--box) !important; box-shadow:0 0 0 3px rgba(217,163,95,.18) !important;
+        box-shadow:0 0 0 3px color-mix(in srgb,var(--box) 22%,transparent) !important;
+    }
+    .stApp .stSelectbox svg, .stApp .stMultiSelect svg {color:var(--box) !important;}
+    div[data-baseweb="popover"] ul, div[data-baseweb="popover"] [role="listbox"] {background:#10151c !important;}
+    div[data-baseweb="popover"] li:hover, div[data-baseweb="popover"] [role="option"]:hover {background:rgba(217,163,95,.12) !important;}
+    div[data-baseweb="popover"] [aria-selected="true"] {background:rgba(47,182,142,.16) !important;}
+    /* code / hop lines */
+    .stApp [data-testid="stCode"], .stApp .stCodeBlock, .stApp [data-testid="stCode"] pre {
+        background:linear-gradient(180deg,#121821,#0d1218) !important; border-radius:12px !important;
+    }
+    .stApp [data-testid="stCode"], .stApp .stCodeBlock {border:1px solid var(--line-strong) !important; border-left:3px solid #d9a35f !important;}
+    .stApp [data-testid="stCode"] code, .stApp .stCodeBlock code {color:#f0d9b5 !important; background:transparent !important; font-size:12.5px !important;}
+    .stApp .stMarkdown code {background:rgba(217,163,95,.10) !important; color:#f0d9b5 !important; border:1px solid rgba(217,163,95,.22); border-radius:6px; padding:1px 6px;}
+    .stApp [data-testid="stText"], .stApp .stText {
+        background:linear-gradient(180deg,#121821,#0d1218); border:1px solid var(--line-strong); border-left:3px solid #38b2c8;
+        border-radius:10px; padding:12px 14px; color:#d6dce6;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -8955,7 +9032,7 @@ if active_panel == "Classification":
         c1, c2 = st.columns([1, 1])
         c1.text_input("From", parsed.get("from_addr", ""), disabled=True)
         c2.text_input("Subject", parsed.get("subject", ""), disabled=True)
-        st.text_area("Body as analysed", parsed.get("body_text", "")[:4000], height=240, disabled=True)
+        st.text_area("Body as analysed", parsed.get("body_text", "")[:4000], height=240, disabled=True, key="analysed_body")
 
     panel(_classification, "Classification")
 
