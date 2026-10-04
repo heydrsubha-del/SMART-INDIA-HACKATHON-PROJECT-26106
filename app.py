@@ -2986,13 +2986,18 @@ st.markdown(
        the middle of empty space. One flex row that wraps to exactly two
        rows on a phone (brand, then the account/status line) instead of
        the four stacked labelled rows this used to collapse into. */
+    .stApp .stElementContainer:has([data-testid="stMarkdownContainer"] > style:only-child),
+    .stApp [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {
+        display:none !important;
+    }
+    .stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:2rem !important;}
     .topbar-shell {
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px;
         background:
             radial-gradient(60% 160% at 100% 0%, rgba(76,141,255,.10), transparent 65%),
             linear-gradient(180deg,#161c26 0%,#0d1219 100%);
         border:1px solid #263140; border-radius:var(--r-lg);
-        min-height:190px; padding:34px; margin-top:8px; margin-bottom:20px;
+        min-height:260px; padding:40px; margin-top:8px; margin-bottom:20px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
     }
@@ -3053,7 +3058,7 @@ st.markdown(
     }
     .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
     @media (max-width:1000px) {
-        .topbar-shell {padding:26px 20px; min-height:0;}
+        .topbar-shell {padding:26px 20px; min-height:220px;}
         .topbar-subtitle {max-width:none;}
     }
     @media (max-width:640px) {
