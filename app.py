@@ -6374,7 +6374,9 @@ def _settings():
 
 def _about():
     st.subheader("About ALGORITHMISTIC")
+    st.success("readme_view active")
     render_readme()
+
     try:
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"), encoding="utf-8") as fh:
             st.markdown(fh.read())
