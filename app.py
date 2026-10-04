@@ -4010,6 +4010,90 @@ st.markdown(
     }
     @media (prefers-reduced-motion: reduce) {.acq2, .acq2::before, .acq2-sw, .acq2-sw i {transition:none !important;}}
 
+    /* ==================================================================
+       EVIDENCE INTAKE v4 (Channel B)
+       Same tile language as the acquisition switch: copper tone, hairline
+       top bar, mono tag, chips. Fixes: (1) the dropzone's Material-Symbols
+       font rule also hit the instruction text, so "Drag and drop" vanished
+       and "csv" turned into an icon; (2) st.info rendered as a box inside a
+       box because both the outer stAlert and inner stAlertContainer were
+       styled. ================================================================== */
+    .intake-head {
+        --tone:#d49a66;
+        position:relative; overflow:hidden; display:flex; align-items:center; justify-content:space-between;
+        gap:18px; flex-wrap:wrap; margin:8px 0 14px; padding:18px 22px;
+        border:1px solid var(--line-strong); border-radius:14px;
+        background:radial-gradient(90% 140% at 100% 0%, color-mix(in srgb, var(--tone) 12%, transparent) 0%, transparent 60%),
+                   linear-gradient(180deg, var(--panel-2), var(--panel));
+    }
+    .intake-head::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; background:var(--tone);}
+    .intake-main {min-width:0; flex:1 1 320px;}
+    .intake-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--tone);}
+    .intake-title {margin-top:10px; font:750 20px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+    .intake-sub {margin-top:4px; max-width:70ch; font-size:13px; line-height:1.5; color:var(--muted);}
+    .intake-meta {display:flex; align-items:center; flex-wrap:wrap; gap:6px;}
+    .intake-chip {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px;
+        color:var(--tone); border:1px solid color-mix(in srgb, var(--tone) 40%, transparent); background:color-mix(in srgb, var(--tone) 8%, transparent);}
+    .intake-limit {margin-left:8px; font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+
+    /* dropzone: one horizontal row (icon | instructions | button) */
+    .stApp section[data-testid="stFileUploaderDropzone"] {
+        flex-direction:row !important; justify-content:flex-start !important; align-items:center !important;
+        gap:20px !important; min-height:112px !important; padding:22px 26px !important;
+        border:1.5px dashed color-mix(in srgb, #d49a66 45%, var(--line-strong)) !important; border-radius:14px !important;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.015), transparent),
+            var(--panel-3) !important;
+    }
+    .stApp section[data-testid="stFileUploaderDropzone"]:hover {
+        border-color:#d49a66 !important; background:color-mix(in srgb, #d49a66 6%, var(--panel-3)) !important;
+    }
+    .stApp section[data-testid="stFileUploaderDropzone"]::before {
+        flex:0 0 48px; width:48px; height:48px; margin:0 !important; border-radius:12px;
+        background-color:color-mix(in srgb, #d49a66 12%, transparent);
+        border:1px solid color-mix(in srgb, #d49a66 38%, transparent);
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d49a66' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 16l-4-4-4 4'/%3E%3Cpath d='M12 12v9'/%3E%3Cpath d='M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 4 16.3'/%3E%3C/svg%3E");
+        background-size:22px 22px;
+    }
+    .stApp section[data-testid="stFileUploaderDropzone"] > div {flex:1 1 auto; align-items:flex-start !important; margin:0 !important;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] {text-align:left !important; align-items:flex-start !important;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] > div {align-items:flex-start !important;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] span,
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] small {
+        font-family:Inter,system-ui,"Segoe UI",sans-serif !important; font-feature-settings:normal !important;
+        letter-spacing:0 !important; text-transform:none !important; display:block !important; white-space:normal !important;
+    }
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] > div > span {font-size:15px !important; font-weight:650 !important; color:#eef2f7 !important;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] small {margin-top:3px; font-size:12px !important; font-weight:500 !important; color:var(--muted) !important;}
+    .stApp section[data-testid="stFileUploaderDropzone"] button {
+        flex:0 0 auto; min-width:140px !important; height:40px !important; margin-left:auto;
+        border-color:color-mix(in srgb, #d49a66 55%, var(--line-strong)) !important;
+        background:color-mix(in srgb, #d49a66 10%, var(--panel-2)) !important; color:#fff !important;
+    }
+    .stApp section[data-testid="stFileUploaderDropzone"] button:hover {border-color:#d49a66 !important; background:color-mix(in srgb, #d49a66 18%, var(--panel-2)) !important;}
+    @media (max-width:700px) {
+        .stApp section[data-testid="stFileUploaderDropzone"] {flex-wrap:wrap !important;}
+        .stApp section[data-testid="stFileUploaderDropzone"] button {margin-left:0; width:100%;}
+    }
+
+    /* ready strip (replaces st.info) */
+    .intake-status {
+        --tone:#d49a66;
+        display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 4px; padding:12px 18px;
+        border:1px solid var(--line-strong); border-radius:12px; background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    }
+    .intake-dot {width:7px; height:7px; border-radius:50%; background:var(--tone); box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 22%, transparent);}
+    .intake-status-k {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--tone);}
+    .intake-status-v {font-size:13px; line-height:1.5; color:#b4bfcc;}
+
+    /* alerts: style only the outer element; the inner container is reset
+       so a single st.info/success/warning is one card, not two. */
+    [data-testid="stAlert"] [data-testid="stAlertContainer"],
+    .stAlert [data-testid="stAlertContainer"] {
+        border:0 !important; border-radius:0 !important; background:transparent !important;
+        box-shadow:none !important; padding:0 !important; margin:0 !important;
+    }
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
@@ -5546,11 +5630,20 @@ if active_panel == "Dashboard":
             uploaded = _StoredUpload(_stored_evidence["name"], _stored_evidence["bytes"])
         else:
             st.markdown(
-                """<div class="acq-panel"><div class="acq-label">EVIDENCE ACQUISITION</div>
-                <div class="acq-help">Drop a suspicious EML, TXT or CSV evidence set into the secure analysis intake.</div></div>""",
+                """<div class="intake-head">
+                    <div class="intake-main">
+                        <div class="intake-eyebrow">Channel B &middot; Batch</div>
+                        <div class="intake-title">Evidence intake</div>
+                        <div class="intake-sub">Drop a suspicious EML, TXT or CSV evidence set into the secure analysis intake.</div>
+                    </div>
+                    <div class="intake-meta">
+                        <span class="intake-chip">.eml</span><span class="intake-chip">.txt</span><span class="intake-chip">.csv</span>
+                        <span class="intake-limit">200 MB per file</span>
+                    </div>
+                </div>""",
                 unsafe_allow_html=True,
             )
-            _up_l, _up_c, _up_r = st.columns([1, 3, 1])
+            _up_c = st.container()
             with _up_c:
                 _raw_uploaded = st.file_uploader(
                     "",
@@ -5564,7 +5657,12 @@ if active_panel == "Dashboard":
                 st.rerun()
             uploaded = None
             if not uploaded:
-                st.info("SYSTEM READY · Awaiting evidence acquisition. Supported: EML / TXT / CSV · Maximum 200 MB per file.")
+                st.markdown(
+                    '<div class="intake-status"><span class="intake-dot"></span>'
+                    '<span class="intake-status-k">Ready</span>'
+                    '<span class="intake-status-v">Waiting for evidence. Accepts EML, TXT and CSV, up to 200 MB per file.</span></div>',
+                    unsafe_allow_html=True,
+                )
                 st.stop()
     elif "Live IMAP Mailbox Interceptor" in input_mode:
         st.markdown(
