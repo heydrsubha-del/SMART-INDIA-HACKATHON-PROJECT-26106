@@ -373,29 +373,30 @@ _MAILBOX_TONES = {"emerald": "#2fb68e", "violet": "#8b7cf6", "rose": "#e0708c", 
 
 
 def _mail_box(key, kicker, title, body, height, chips=(), tone="emerald", sub="", widget_key=None, label=None):
-    """Read-only message box styled like the single-email dossier cards and the
-    workflow nav: rounded glass card, multi-colour spine, mono kicker, bold
-    title and one coloured chip per fact. CSS lives under st-key-mailbox_*."""
-    _chip_html = "".join(
-        "<span class='mb-chip' style='--c:{}'>{}</span>".format(html.escape(c), html.escape(t))
-        for t, c in chips
-    )
-    _head = (
+    """Read-only message viewer: one self-contained HTML card (header + scrolling
+    body) so the text can never spill over the header. One accent colour per
+    card (tone) drives the edge bar, kicker and scrollbar; chips are neutral.
+    Styles live in the MAIL BOX block of the main stylesheet (.mb-*)."""
+    _chip_html = "".join("<span class='mb-chip'>{}</span>".format(html.escape(t)) for t, _c in chips)
+    _txt = html.escape(str(body if body is not None else ""))
+    # Keep the markup on one line and neutralise markdown / LaTeX triggers so
+    # st.markdown renders the message verbatim.
+    for _ch, _ent in (("\\", "&#92;"), ("`", "&#96;"), ("*", "&#42;"), ("_", "&#95;"),
+                      ("$", "&#36;"), ("[", "&#91;"), ("]", "&#93;"), ("~", "&#126;")):
+        _txt = _txt.replace(_ch, _ent)
+    _txt = _txt.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "&#10;")
+    _card = (
+        "<div class='mb-card mb-{tone}' role='region' aria-label='{lbl}'>"
         "<div class='mb-head'><div class='mb-left'>"
-        "<div class='mb-kicker'><i></i>{k}</div>"
-        "<div class='mb-title'>{t}</div>{s}</div>"
+        "<div class='mb-kicker'>{k}</div><div class='mb-title'>{t}</div>{s}</div>"
         "<div class='mb-chips'>{c}</div></div>"
+        "<div class='mb-body' tabindex='0' style='height:{h}px'>{txt}</div></div>"
     ).format(
-        k=html.escape(kicker), t=html.escape(title),
+        tone=html.escape(tone), lbl=html.escape(label or title), k=html.escape(kicker), t=html.escape(title),
         s=("<div class='mb-sub'>" + html.escape(sub) + "</div>") if sub else "",
-        c=_chip_html,
+        c=_chip_html, h=int(height), txt=_txt,
     )
-    with st.container(key="mailbox_{}_{}".format(tone, key)):
-        st.markdown(_head, unsafe_allow_html=True)
-        st.text_area(
-            label or title, value=body, height=height, disabled=True,
-            label_visibility="collapsed", key=widget_key or ("mb_" + str(key)),
-        )
+    st.markdown(_card, unsafe_allow_html=True)
 
 
 
@@ -5490,89 +5491,50 @@ st.markdown(
     .inbox-row.is-sel .ir-subj {color:#fff;}
 
     /* ==================================================================
-       MAIL BOX v3 -- every message / body box (Live IMAP body, Deep Dive,
-       Dossier, Body as analysed) now reads like the single-email dossier
-       cards, wearing the workflow-nav palette: rounded glass card, a
-       blue>violet>green>amber>red spine, mono kicker, bold title and one
-       coloured chip per fact. Tone colour (--box) drives the kicker, glow
-       and scrollbar. Built by _mail_box(); delete this block to revert.
+       MAIL BOX v4 -- message viewers (Live IMAP body, Deep Dive, Dossier,
+       Body as analysed). One calm card: quiet graphite surface, a single
+       accent per card (edge bar, kicker, scrollbar), neutral chips, mono
+       body. Built by _mail_box(); delete this block to revert.
        ================================================================== */
-    .stApp [class*="st-key-mailbox_"] {
-        --box:#2fb68e; position:relative; overflow:hidden; gap:0 !important;
-        margin:6px 0 16px 0; padding:0 !important;
-        border:1px solid #243046; border-radius:16px;
-        background:
-            radial-gradient(50% 140% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
-            radial-gradient(40% 140% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
-            linear-gradient(180deg,#101826,#0a1019);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8);
+    .stApp .mb-card {
+        --ac:#2fb68e; position:relative; overflow:hidden; margin:6px 0 16px 0;
+        background:#0e141c; border:1px solid #232d3b; border-radius:12px;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7);
     }
-    .stApp [class*="st-key-mailbox_emerald_"] {--box:#2fb68e;}
-    .stApp [class*="st-key-mailbox_violet_"] {--box:#8b7cf6;}
-    .stApp [class*="st-key-mailbox_rose_"] {--box:#e0708c;}
-    .stApp [class*="st-key-mailbox_sky_"] {--box:#38bdf8;}
-    /* multi-colour spine, same stops as the nav strip */
-    .stApp [class*="st-key-mailbox_"]::before {
-        content:""; position:absolute; left:0; top:0; bottom:0; width:4px; z-index:3; pointer-events:none;
-        background:linear-gradient(180deg,#4c8dff 0%,#8b7cff 28%,#34d399 55%,#d49a66 80%,#e0634a 100%);
-        box-shadow:0 0 14px -2px rgba(139,124,255,.55);
+    .stApp .mb-card::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac);}
+    .stApp .mb-violet {--ac:#8b7cf6;} .stApp .mb-rose {--ac:#e0708c;} .stApp .mb-sky {--ac:#38bdf8;}
+    .stApp .mb-head {
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px 16px;
+        padding:14px 20px 13px 23px; background:#121923; border-bottom:1px solid #232d3b;
     }
-    .stApp [class*="st-key-mailbox_"] [data-testid="stElementContainer"],
-    .stApp [class*="st-key-mailbox_"] .stMarkdown {margin:0 !important; width:100% !important;}
+    .stApp .mb-left {min-width:0;}
+    .stApp .mb-kicker {font:600 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--ac);}
+    .stApp .mb-title {font:650 17px/1.25 Inter,"Segoe UI",sans-serif; color:#f1f5fa; margin-top:7px;}
+    .stApp .mb-sub {font:400 12.5px/1.35 Inter,"Segoe UI",sans-serif; color:#8793a5; margin-top:3px;}
+    .stApp .mb-chips {display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+    .stApp .mb-chip {
+        display:inline-block; padding:5px 10px; border-radius:6px; background:#18202c; border:1px solid #2a3546;
+        font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.04em; color:#b4bfce; white-space:nowrap;
+    }
+    .stApp .mb-body {
+        box-sizing:border-box; display:block; min-height:90px; max-height:80vh; overflow:auto; resize:vertical;
+        padding:16px 20px 18px 23px; background:#0b1017; color:#cfd6e1;
+        font:400 13px/1.65 'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+        white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; outline:none;
+        scrollbar-width:thin; scrollbar-color:var(--ac) #0b1017;
+    }
+    .stApp .mb-body:focus-visible {box-shadow:inset 0 0 0 1px var(--ac);}
+    .stApp .mb-body::selection {background:color-mix(in srgb,var(--ac) 35%, transparent);}
+    .stApp .mb-body::-webkit-scrollbar {width:10px; height:10px;}
+    .stApp .mb-body::-webkit-scrollbar-track {background:#0b1017;}
+    .stApp .mb-body::-webkit-scrollbar-thumb {background:var(--ac); opacity:.8; border-radius:8px; border:2px solid #0b1017;}
+    .stApp .mb-body::-webkit-scrollbar-thumb:hover {filter:brightness(1.15);}
+    .stApp .mb-body::-webkit-scrollbar-corner {background:#0b1017;}
 
-    .mb-head {
-        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 18px;
-        padding:16px 20px 14px 26px; position:relative;
-        border-bottom:1px solid rgba(148,163,184,.13);
-        background:linear-gradient(90deg, color-mix(in srgb,var(--box) 11%, transparent), transparent 62%);
-    }
-    .mb-head::after {
-        content:""; position:absolute; left:26px; bottom:-1px; width:72px; height:2px; border-radius:2px;
-        background:var(--box); box-shadow:0 0 12px var(--box);
-    }
-    .mb-left {min-width:0;}
-    .mb-kicker {
-        display:flex; align-items:center; gap:9px; font:700 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace;
-        letter-spacing:.2em; text-transform:uppercase; color:var(--box);
-    }
-    .mb-kicker i {display:inline-block; width:22px; height:1px; background:var(--box); opacity:.7;}
-    .mb-title {font:750 21px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff; margin-top:8px;}
-    .mb-sub {font:500 12.5px/1.3 Inter,"Segoe UI",sans-serif; color:#8b98ab; margin-top:4px;}
-    .mb-chips {display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
-    .mb-chip {
-        display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px;
-        font:700 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.1em; text-transform:uppercase;
-        color:var(--c); background:color-mix(in srgb,var(--c) 11%, transparent);
-        border:1px solid color-mix(in srgb,var(--c) 40%, transparent);
-    }
-    .mb-chip::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--c); box-shadow:0 0 8px var(--c);}
-
-    /* the text area inside the card: no box of its own */
-    .stApp [class*="st-key-mailbox_"] .stTextArea {margin:0 !important;}
-    .stApp [class*="st-key-mailbox_"] [data-testid="stTextAreaRootElement"],
-    .stApp [class*="st-key-mailbox_"] .stTextArea [data-baseweb="textarea"],
-    .stApp [class*="st-key-mailbox_"] .stTextArea [data-baseweb="base-input"] {
-        background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
-    }
-    .stApp [class*="st-key-mailbox_"] .stTextArea textarea,
-    .stApp [class*="st-key-mailbox_"] .stTextArea textarea:disabled {
-        padding:18px 22px 20px 28px !important; font-size:13px !important; line-height:1.7 !important;
-        color:#d6dce6 !important; -webkit-text-fill-color:#d6dce6 !important; background:transparent !important;
-        scrollbar-color:var(--box) transparent;
-    }
-    .stApp [class*="st-key-mailbox_"] .stTextArea textarea::-webkit-scrollbar-thumb {background:color-mix(in srgb,var(--box) 55%, transparent); background-clip:padding-box;}
-
-    /* hop lines and plain text boxes follow the same card language */
-    .stApp [data-testid="stCode"], .stApp .stCodeBlock, .stApp [data-testid="stText"], .stApp .stText {
-        position:relative; overflow:hidden; border:1px solid #243046 !important; border-left-width:1px !important;
-        border-radius:12px !important;
-    }
-    .stApp [data-testid="stCode"]::before, .stApp .stCodeBlock::before, .stApp [data-testid="stText"]::before, .stApp .stText::before {
-        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; z-index:2; pointer-events:none;
-        background:linear-gradient(180deg,#4c8dff,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a);
-    }
+    /* hop lines / plain text boxes: same radius and border, no extras */
+    .stApp [data-testid="stCode"], .stApp .stCodeBlock, .stApp [data-testid="stText"], .stApp .stText {border-radius:10px !important;}
     @media (max-width:640px) {
-        .mb-head {padding:14px 14px 12px 20px;} .mb-title {font-size:18px;}
+        .stApp .mb-head {padding:12px 14px 11px 18px;} .stApp .mb-title {font-size:16px;}
     }
     </style>
     """,
