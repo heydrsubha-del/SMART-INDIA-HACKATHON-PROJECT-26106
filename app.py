@@ -851,6 +851,16 @@ components.html(
             }, 800);
         }
         var waitingSince = 0;   // set when THIS tab launched a sign-in window
+        var lastPopup = null;   // handle to the sign-in popup we opened
+        // The opener is the one party Chrome always lets close a popup it
+        // created, even after the popup went through Google's pages.
+        function closePopupFromHere() {
+            [0, 250, 700, 1500, 3000].forEach(function (ms) {
+                setTimeout(function () {
+                    try { if (lastPopup && !lastPopup.closed) lastPopup.close(); } catch (e) {}
+                }, ms);
+            });
+        }
         var channel = null;
         try { channel = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
         if (channel) {
@@ -860,6 +870,7 @@ components.html(
                 if (Date.now() - waitingSince > 10 * 60 * 1000) return;
                 waitingSince = 0;
                 try { channel.postMessage({ type: 'oauth_ack' }); } catch (e) {}
+                closePopupFromHere();
                 try {
                     var p = new URLSearchParams(d.search || '');
                     p.set('sih_relayed', '1');
@@ -899,6 +910,7 @@ components.html(
                 } catch (e) {}
                 ev.preventDefault();
                 if (popup) {
+                    lastPopup = popup;
                     try { popup.focus(); } catch (e) {}
                 } else {
                     // Popup blocked -- fall back to the same-tab navigation
@@ -1044,6 +1056,12 @@ _OAUTH_RELAY_GATE_HTML = """
     function attemptClose() {
         try { pw.top.close(); } catch (e) {}
         try { pw.close(); } catch (e) {}
+        try { window.close(); } catch (e) {}
+        try {
+            var sc = doc.createElement('script');
+            sc.textContent = 'window.close();';
+            doc.head.appendChild(sc);
+        } catch (e) {}
     }
     function local() {
         if (done) return; done = true;
@@ -1091,12 +1109,18 @@ _OAUTH_RELAY_GATE_HTML = """
             // and lets close() succeed immediately after.
             try { pw.open('', '_self'); } catch (e) {}
             attemptClose();
+            var tries = 0;
+            var retry = setInterval(function () {
+                if (pw.closed) { clearInterval(retry); return; }
+                attemptClose();
+                if (++tries >= 8) clearInterval(retry);
+            }, 300);
             setTimeout(function () {
                 if (pw.closed) return;
                 // Neither worked (some browsers block even Plan B) -- offer
                 // one manual click instead of a dead-end message.
                 setStage('Signed in successfully', 'You can close this window now.', { done: true, showButton: true });
-            }, 250);
+            }, 2600);
         }, 300);
     }
     if (_elBtn) _elBtn.addEventListener('click', function () { attemptClose(); });
