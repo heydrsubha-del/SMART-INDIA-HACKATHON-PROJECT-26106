@@ -4108,43 +4108,52 @@ st.markdown(
     @media (max-width:700px) {.stApp section[data-testid="stFileUploaderDropzone"] button {width:auto; min-width:140px !important;}}
 
     /* ==================================================================
-       LIVE LOGIN v5  (Channel A, blue)
-       Step tracker above, a centred 920px card with a blue hairline top
-       bar, mono field labels, sunken inputs with a blue focus ring, a flat
-       primary button, and three provider tiles. Provider buttons keep
+       LIVE LOGIN v6  (Channel A, blue)
+       Split card: an info pane on the left (what this is, what it will and
+       won't do) and the sign-in form on the right. The card uses the full
+       content width like the mode tiles above it, so the page lines up;
+       below 900px it collapses to a single column. Provider buttons keep
        their brand colours. ================================================ */
-    .live-head {display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap; margin:6px 0 4px;}
+    .live-head {margin:6px 0 6px;}
     .live-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#4c8dff;}
     .live-title {margin-top:9px; font:750 24px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
-    .live-steps {display:flex; align-items:center; gap:6px; flex-wrap:wrap; list-style:none; margin:0; padding:0;}
-    .live-steps li {display:inline-flex; align-items:center; gap:8px; padding:6px 12px 6px 7px; border:1px solid var(--line-strong);
-        border-radius:999px; font:600 12px/1 Inter,"Segoe UI",sans-serif; color:#7d8896; background:rgba(255,255,255,.02);}
-    .live-steps li .ls-n {display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%;
-        font:700 10px/1 ui-monospace,Consolas,monospace; background:#1d2530; color:#8b96a5;}
-    .live-steps li.on {color:#fff; border-color:color-mix(in srgb, #4c8dff 60%, transparent); background:color-mix(in srgb, #4c8dff 12%, transparent);}
-    .live-steps li.on .ls-n {background:#4c8dff; color:#fff;}
-    .live-steps li.done {color:#a9b5c3;}
-    .live-steps li.done .ls-n {background:color-mix(in srgb, var(--green) 25%, #12171f); color:var(--green);}
+    .live-sub {margin-top:4px; font-size:13px; line-height:1.5; color:var(--muted);}
 
     .st-key-imap_signin_card {
-        --tone:#4c8dff; position:relative; overflow:hidden;
-        max-width:920px !important; margin:18px auto !important; padding:30px 36px 28px 36px !important;
+        --tone:#4c8dff; --pane:360px; --padx:40px;
+        position:relative; overflow:hidden;
+        display:grid !important; grid-template-columns:var(--pane) minmax(0,1fr); row-gap:0 !important; column-gap:0 !important;
+        align-items:start; width:100% !important; max-width:1180px !important; margin:14px auto 20px !important;
+        padding:34px 0 30px 0 !important;
         border:1px solid var(--line-strong) !important; border-radius:16px !important;
-        background:radial-gradient(90% 60% at 0% 0%, color-mix(in srgb, var(--tone) 11%, transparent) 0%, transparent 60%),
-                   linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 18px 44px rgba(0,0,0,.35) !important;
     }
-    .st-key-imap_signin_card::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; background:var(--tone); z-index:2;}
-    @media (max-width:720px) {.st-key-imap_signin_card {padding:24px 18px 22px 18px !important;}}
+    .st-key-imap_signin_card::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; background:var(--tone); z-index:3;}
+    .st-key-imap_signin_card::after {                         /* tinted info pane */
+        content:""; position:absolute; left:0; top:0; bottom:0; width:var(--pane); z-index:0; pointer-events:none;
+        background:radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, var(--tone) 13%, transparent) 0%, transparent 62%),
+                   rgba(255,255,255,.012);
+        border-right:1px solid var(--line-strong);
+    }
+    .st-key-imap_signin_card > * {position:relative; z-index:1; grid-column:2; margin:0 var(--padx) 14px var(--padx) !important; min-width:0;}
+    .st-key-imap_signin_card > *:first-child {grid-column:1; grid-row:1 / span 40; margin:0 !important; padding:0 32px 0 var(--padx);}
 
-    .signin-card-header {display:flex !important; align-items:flex-start !important; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px !important;}
-    .signin-card-main {min-width:0; flex:1 1 320px;}
+    .signin-card-header {display:block !important; margin:0 !important;}
     .signin-card-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#4c8dff;}
-    .signin-card-title {margin-top:10px; font:750 22px/1.25 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em; color:#fff !important;}
-    .signin-card-sub {margin-top:4px; max-width:60ch; font-size:13px !important; line-height:1.5 !important; color:var(--muted) !important;}
-    .signin-card-tags {display:flex; gap:6px; flex-wrap:wrap;}
-    .signin-card-tags span {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px;
-        color:#4c8dff; border:1px solid color-mix(in srgb, #4c8dff 40%, transparent); background:color-mix(in srgb, #4c8dff 8%, transparent);}
+    .signin-card-title {margin-top:12px; font:750 24px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em; color:#fff !important;}
+    .signin-card-sub {margin-top:8px; font-size:13px !important; line-height:1.55 !important; color:var(--muted) !important;}
+    .signin-facts {list-style:none; margin:26px 0 0; padding:0; display:flex; flex-direction:column; gap:16px;}
+    .signin-facts li {position:relative; padding-left:18px; display:flex; flex-direction:column; gap:3px;}
+    .signin-facts li::before {content:""; position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:2px; background:var(--tone);}
+    .signin-facts b {font:650 13px/1.3 Inter,"Segoe UI",sans-serif; color:#e6ecf4;}
+    .signin-facts span {font-size:12.5px; line-height:1.5; color:var(--muted);}
+
+    @media (max-width:900px) {
+        .st-key-imap_signin_card {display:flex !important; flex-direction:column; --padx:22px; padding:26px 0 22px 0 !important;}
+        .st-key-imap_signin_card::after {display:none;}
+        .st-key-imap_signin_card > *:first-child {padding:0 var(--padx) 18px; margin:0 0 6px 0 !important; border-bottom:1px solid var(--line-strong);}
+    }
 
     /* fields */
     .st-key-imap_signin_card [data-testid="stWidgetLabel"] p {
@@ -4153,40 +4162,37 @@ st.markdown(
     }
     .st-key-imap_signin_card .stTextInput input,
     .st-key-imap_signin_card div[data-baseweb="input"],
-    .st-key-imap_signin_card div[data-baseweb="base-input"] {
-        background:var(--panel-3) !important; border-radius:10px !important;
-    }
+    .st-key-imap_signin_card div[data-baseweb="base-input"] {background:var(--panel-3) !important; border-radius:10px !important;}
     .st-key-imap_signin_card .stTextInput input {
-        border:1px solid var(--line-strong) !important; min-height:46px; padding:0 14px !important;
+        border:1px solid var(--line-strong) !important; min-height:44px; padding:0 14px !important;
         color:#eef2f7 !important; box-shadow:none !important;
     }
     .st-key-imap_signin_card .stTextInput input::placeholder {color:#5f6b79 !important;}
-    .st-key-imap_signin_card .stTextInput input:focus {
-        border-color:#4c8dff !important; box-shadow:0 0 0 3px color-mix(in srgb, #4c8dff 22%, transparent) !important;
-    }
-    .st-key-manual_login_btn {margin:16px 0 4px 0 !important;}
+    .st-key-imap_signin_card .stTextInput input:focus {border-color:#4c8dff !important; box-shadow:0 0 0 3px color-mix(in srgb, #4c8dff 22%, transparent) !important;}
+    .st-key-manual_login_btn {margin:12px 0 0 0 !important;}
     .st-key-manual_login_btn button {
         background:#4c8dff !important; border:1px solid #4c8dff !important; color:#fff !important;
         font:700 14.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em;
-        border-radius:10px !important; min-height:46px !important; box-shadow:none !important; transform:none !important;
+        border-radius:10px !important; min-height:44px !important; box-shadow:none !important; transform:none !important;
     }
     .st-key-manual_login_btn button:hover {background:#6aa0ff !important; border-color:#6aa0ff !important; color:#fff !important; box-shadow:none !important; transform:none !important;}
 
     /* divider + note */
     .auth-divider {
-        justify-content:center !important; gap:14px !important; margin:26px 0 8px 0 !important;
+        justify-content:center !important; gap:14px !important; margin:10px 0 0 0 !important;
         font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:var(--muted) !important;
     }
     .auth-divider::before, .auth-divider::after {background:linear-gradient(90deg, transparent, var(--line-strong), transparent) !important;}
     .st-key-imap_signin_card [data-testid="stCaptionContainer"] {text-align:center;}
 
     /* provider tiles */
-    .st-key-auth_google_box, .st-key-auth_microsoft_box, .st-key-auth_yandex_box {padding:14px 16px 16px 22px !important; border-radius:14px !important;}
-    .auth-option-label {margin-bottom:12px !important; padding-bottom:0 !important; border-bottom:0 !important;}
+    .st-key-auth_google_box, .st-key-auth_microsoft_box, .st-key-auth_yandex_box {padding:12px 14px 14px 20px !important; border-radius:12px !important;}
+    .auth-option-label {margin-bottom:10px !important; padding-bottom:0 !important; border-bottom:0 !important;}
     .st-key-google_signin_link_btn a, .st-key-microsoft_signin_link_btn a, .st-key-yandex_signin_link_btn a {
-        border-radius:10px !important; min-height:44px !important; box-shadow:none !important;
+        border-radius:10px !important; min-height:42px !important; box-shadow:none !important;
+        font-size:13.5px !important; padding-left:40px !important;
     }
-    .st-key-google_signin_link_btn a:hover, .st-key-microsoft_signin_link_btn a:hover, .st-key-yandex_signin_link_btn a:hover {box-shadow:0 0 0 3px color-mix(in srgb, var(--tone, #fff) 18%, transparent) !important;}
+    .st-key-google_signin_link_btn a:hover, .st-key-microsoft_signin_link_btn a:hover, .st-key-yandex_signin_link_btn a:hover {box-shadow:0 0 0 3px rgba(255,255,255,.10) !important;}
 
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
@@ -5759,18 +5765,11 @@ if active_panel == "Dashboard":
                 )
                 st.stop()
     elif "Live IMAP Mailbox Interceptor" in input_mode:
-        _live_step = 3 if st.session_state.get("live_selected_uid") else (2 if st.session_state.get("live_mailbox_config") else 1)
-        _steps_html = "".join(
-            f'<li class="{"done" if i < _live_step else ("on" if i == _live_step else "")}"><span class="ls-n">{i}</span>{name}</li>'
-            for i, name in enumerate(["Connect", "Browse", "Select", "Acquire"], start=1)
-        )
         st.markdown(
-            f"""<div class="live-head">
-                <div class="live-head-main">
-                    <div class="live-eyebrow">Channel A &middot; Live</div>
-                    <div class="live-title">Live mailbox interceptor</div>
-                </div>
-                <ol class="live-steps">{_steps_html}</ol>
+            """<div class="live-head">
+                <div class="live-eyebrow">Channel A &middot; Live</div>
+                <div class="live-title">Live mailbox interceptor</div>
+                <div class="live-sub">Read-only access. Connect, browse, select, then acquire evidence.</div>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -5992,12 +5991,14 @@ if active_panel == "Dashboard":
             with st.container(key="imap_signin_card"):
                 st.markdown(
                     """<div class="signin-card-header">
-                        <div class="signin-card-main">
-                            <div class="signin-card-eyebrow">Mailbox access</div>
-                            <div class="signin-card-title">Connect your mailbox</div>
-                            <div class="signin-card-sub">Read-only IMAP access. Sign in to start pulling message headers for analysis.</div>
-                        </div>
-                        <div class="signin-card-tags"><span>Read-only</span><span>IMAP over SSL</span></div>
+                        <div class="signin-card-eyebrow">Mailbox access</div>
+                        <div class="signin-card-title">Connect your mailbox</div>
+                        <div class="signin-card-sub">Sign in to start pulling message headers for analysis.</div>
+                        <ul class="signin-facts">
+                            <li><b>Read-only</b><span>Nothing in your mailbox is changed.</span></li>
+                            <li><b>Headers first</b><span>Message headers are pulled for analysis.</span></li>
+                            <li><b>Provider sign-in</b><span>For Gmail, Outlook and Yandex your password never passes through this app.</span></li>
+                        </ul>
                     </div>""",
                     unsafe_allow_html=True,
                 )
