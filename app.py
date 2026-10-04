@@ -5538,203 +5538,83 @@ st.markdown(
     }
 
     /* ==================================================================
-       SURFACE v5 -- same calm card language as the message viewers, applied
-       to: Dashboard "Origin & Correlation" (map + graph cards), the right
-       Threat Summary dock, the Origin & Route stat boxes / infra card and
-       every section header (Origin & Route, Correlation, ...). One accent
-       per card, neutral chips, no glow / gradient washes. Delete this block
-       to revert.
+       HEADERS + DOCK v7 -- headers use the banner-card design everywhere
+       (kicker, bold title, sub, scope tag) with their own colour; section
+       boxes sit below their banner instead of carrying header text. The
+       right dock keeps colour = meaning (severity, auth, anomalies, signal
+       strength). Delete this block to revert.
        ================================================================== */
-    /* --- shared header strip + body (panel-card-head / body) --- */
-    .stApp .panel-card-head {
-        display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-        padding:11px 16px 11px 20px !important; background:#121923 !important;
-        border:1px solid #232d3b !important; border-radius:10px 10px 0 0 !important;
-        color:var(--tone) !important; box-shadow:none !important;
-        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase;
+    .stApp .part-banner-sm {padding:14px 20px 14px 26px !important; margin:22px 0 10px 0 !important;}
+    .stApp .part-banner-sm .pb-title {font-size:18px !important;}
+    .stApp .part-banner-sm .pb-sub {margin-top:2px; font-size:12.5px;}
+    .stApp .st-key-dash_map_card, .stApp .st-key-dash_graph_card {
+        padding:16px 18px 14px 18px !important; margin:0 0 6px 0; background:#0e141c !important;
+        border:1px solid #232d3b !important; border-radius:12px !important; box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important;
     }
-    .stApp .panel-card-head::before {top:0 !important; bottom:0 !important; width:3px !important; border-radius:10px 0 0 0 !important; background:var(--tone) !important;}
-    .stApp .panel-card-head > :last-child:not(:first-child) {
-        padding:5px 10px; border-radius:6px; background:#18202c; border:1px solid #2a3546;
-        font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.04em !important;
-        color:#b4bfce !important; text-transform:none;
+    .stApp .st-key-dash_map_card iframe {border-radius:8px; border:1px solid #232d3b;}
+
+    /* right dock */
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock {
+        background:#0c121a !important; border:1px solid #232d3b !important; border-radius:12px !important;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; padding:20px 16px 22px 16px !important;
     }
-    .stApp .panel-card-body {
-        padding:14px 16px 15px 20px !important; background:#0e141c !important; color:#cfd6e1;
-        border:1px solid #232d3b !important; border-top:0 !important; border-radius:0 0 10px 10px !important; box-shadow:none !important;
+    .stApp .rd-kicker, .stApp .right-dock-title {
+        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.16em !important;
+        text-transform:uppercase; color:#38bdf8 !important;
     }
-    .stApp .panel-card-body::before {top:0 !important; bottom:0 !important; width:3px !important; border-radius:0 0 0 10px !important; background:var(--tone) !important;}
+    .stApp .rd-title {display:flex; align-items:baseline; gap:12px; margin-top:7px; font:750 24px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
+    .stApp .rd-score {font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.04em; color:#b4bfce; padding:5px 9px; border-radius:6px; background:#18202c; border:1px solid #2a3546;}
+    .stApp .rd-gauge {height:6px; border-radius:6px; background:#18202c; margin-top:12px; overflow:hidden;}
+    .stApp .rd-gauge i {display:block; height:100%; border-radius:6px;}
+    .stApp .st-key-toggle_right_summary_open button {background:#121923 !important; border:1px solid #232d3b !important; color:#8793a5 !important; border-radius:8px !important; box-shadow:none !important;}
+    .stApp .st-key-toggle_right_summary_open button:hover {border-color:#38bdf8 !important; color:#fff !important;}
+    .stApp .rd-sec {display:flex; align-items:center; gap:10px; margin:20px 0 9px 0; color:var(--c,#38bdf8);
+        font:600 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.16em; text-transform:uppercase;}
+    .stApp .rd-sec::before {content:""; width:18px; height:1px; background:currentColor; opacity:.7;}
+    .stApp .rd-sec::after {content:""; flex:1; height:1px; background:#232d3b;}
+    .stApp .rd-tiles {display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .stApp .rd-tile {
+        --c:#38bdf8; position:relative; overflow:hidden; padding:12px 12px 11px 16px; border-radius:10px;
+        background:color-mix(in srgb,var(--c) 9%,#0e141c); border:1px solid color-mix(in srgb,var(--c) 40%,#232d3b);
+    }
+    .stApp .rd-tile::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c);}
+    .stApp .rd-tile span {display:block; font:600 10px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#8793a5;}
+    .stApp .rd-tile b {display:block; margin-top:7px; font:750 25px/1 Inter,"Segoe UI",sans-serif; letter-spacing:-.02em; color:#f4f7fb;}
+    .stApp .rd-tile i {display:block; margin-top:6px; font:700 10px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace; font-style:normal; letter-spacing:.1em; color:var(--c);}
+    .stApp .rd-card {position:relative; overflow:hidden; padding:12px 14px 12px 18px; border-radius:10px; background:#0e141c; border:1px solid color-mix(in srgb,var(--c) 30%,#232d3b);}
+    .stApp .rd-card::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c);}
     .stApp .kv {display:flex; flex-direction:column;}
     .stApp .kv-row {display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:7px 0; border-bottom:1px solid #1b2431; font-size:12.5px; line-height:1.4;}
     .stApp .kv-row:last-child {border-bottom:0; padding-bottom:0;} .stApp .kv-row:first-child {padding-top:0;}
     .stApp .kv-row span {color:#8793a5; flex:0 0 auto; font-size:11.5px;}
     .stApp .kv-row b {color:#e6ebf2; font-weight:600; text-align:right; min-width:0; overflow-wrap:anywhere;}
+    .stApp .threattype-row {display:flex; align-items:center; gap:12px; margin:10px 0; color:#b4bfce;}
+    .stApp .threattype-row .tt-label {flex:0 0 38%; min-width:0; font-size:11.5px; line-height:1.3;}
+    .stApp .threattype-row .bar-track {flex:1; height:7px; border-radius:6px; background:#18202c; overflow:hidden;}
+    .stApp .threattype-row .bar-fill {height:100%; border-radius:6px;}
+    .stApp .threattype-row .pct {font:700 11.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; min-width:34px; text-align:right;}
 
-    /* --- Dashboard: Origin & Correlation cards --- */
-    .stApp .st-key-dash_map_card, .stApp .st-key-dash_graph_card {
-        --ac:#2fb68e; position:relative; overflow:hidden; margin:0 0 16px 0;
-        padding:16px 20px 18px 23px !important; background:#0e141c !important;
-        border:1px solid #232d3b !important; border-radius:12px !important; box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important;
-    }
-    .stApp .st-key-dash_graph_card {--ac:#8b7cf6;}
-    .stApp .st-key-dash_map_card::before, .stApp .st-key-dash_graph_card::before {
-        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac); z-index:3; pointer-events:none;
-    }
-    .stApp .st-key-dash_map_card .panel-card-head, .stApp .st-key-dash_graph_card .panel-card-head {
-        --tone:var(--ac); margin:-16px -20px 16px -23px !important; border-width:0 0 1px 0 !important; border-radius:0 !important;
-        padding:14px 20px 13px 23px !important;
-    }
-    .stApp .st-key-dash_map_card .panel-card-head::before, .stApp .st-key-dash_graph_card .panel-card-head::before {display:none !important;}
-    .stApp .st-key-dash_map_card iframe {border-radius:8px; border:1px solid #232d3b;}
-    .stApp .st-key-dash_map_card [data-testid="stMarkdownContainer"], .stApp .st-key-dash_graph_card [data-testid="stMarkdownContainer"] {overflow:visible !important;}
-
-    /* --- Right dock: Threat Summary --- */
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock {
-        --ac:#38bdf8; overflow:hidden; background:#0c121a !important;
-        border:1px solid #232d3b !important; border-radius:12px !important;
-        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; padding:20px 16px 22px 20px !important;
-    }
-    .stApp .st-key-right_summary_pane::before, .stApp .st-key-bulk_command_dock::before {
-        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac); z-index:3; pointer-events:none;
-    }
-    .stApp .rd-head {padding:0 0 4px 0;}
-    .stApp .rd-kicker, .stApp .right-dock-title {
-        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.16em !important;
-        text-transform:uppercase; color:var(--ac) !important;
-    }
-    .stApp .rd-title {display:flex; align-items:baseline; gap:12px; margin-top:7px; font:750 22px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
-    .stApp .rd-score {font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.04em; color:#b4bfce; padding:5px 9px; border-radius:6px; background:#18202c; border:1px solid #2a3546;}
-    .stApp .st-key-toggle_right_summary_open button {
-        background:#121923 !important; border:1px solid #232d3b !important; color:#8793a5 !important; border-radius:8px !important; box-shadow:none !important;
-    }
-    .stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--ac) !important; color:#fff !important;}
-    .stApp .st-key-right_dock_reopen button {background:#121923 !important; border:1px solid #232d3b !important; border-right:0 !important; color:#cfd6e1 !important; box-shadow:-6px 0 18px rgba(0,0,0,.35) !important;}
-    .stApp .st-key-right_dock_reopen button:hover {color:#fff !important; border-color:#38bdf8 !important;}
-    .stApp .st-key-right_summary_pane .panel-card-head, .stApp .st-key-bulk_command_dock .panel-card-head {margin-top:14px;}
-    .stApp .st-key-right_dock_metrics_body, .stApp .st-key-dd_dock_metrics_body {
-        --tone:#38bdf8; background:#0e141c !important; border:1px solid #232d3b !important; border-top:0 !important;
-        border-radius:0 0 10px 10px !important; padding:14px 12px 2px 18px !important; box-shadow:none !important;
-    }
-    .stApp .st-key-right_dock_metrics_body::before, .stApp .st-key-dd_dock_metrics_body::before {top:0 !important; bottom:0 !important; border-radius:0 0 0 10px !important; background:#38bdf8 !important;}
-    .stApp .st-key-right_summary_pane div[data-testid="stMetric"], .stApp .st-key-bulk_command_dock div[data-testid="stMetric"] {
-        background:#121923 !important; border:1px solid #232d3b !important; border-radius:8px !important; box-shadow:none !important; padding:11px 12px !important;
-    }
-    .stApp .st-key-right_summary_pane div[data-testid="stMetric"]::before, .stApp .st-key-bulk_command_dock div[data-testid="stMetric"]::before {display:none !important;}
-    .stApp .st-key-right_summary_pane div[data-testid="stMetricLabel"] p::before, .stApp .st-key-bulk_command_dock div[data-testid="stMetricLabel"] p::before {display:none;}
-    .stApp .threattype-row {gap:12px; margin:11px 0; color:#b4bfce;}
-    .stApp .threattype-row .bar-track {height:6px; background:#18202c;}
-    .stApp .threattype-row .bar-fill {background:#d9a35f !important;}
-    .stApp .threattype-row .pct {font:600 11.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; color:#e6ebf2; min-width:34px; text-align:right;}
-
-    /* --- Origin & Route: stat boxes + infrastructure card --- */
+    /* Origin & Route stat boxes */
     .stApp .st-key-geo_vpn_box, .stApp .st-key-geo_trust_box, .stApp .st-key-geo_tor_box {
         --ac:#8b7cf6; position:relative; overflow:hidden; background:#0e141c !important;
         border:1px solid #232d3b !important; border-radius:10px !important; padding:13px 16px 13px 20px !important; box-shadow:none !important;
     }
     .stApp .st-key-geo_trust_box {--ac:#2fb68e;} .stApp .st-key-geo_tor_box {--ac:#d9a35f;}
-    .stApp .st-key-geo_vpn_box::before, .stApp .st-key-geo_trust_box::before, .stApp .st-key-geo_tor_box::before {
-        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac);
-    }
+    .stApp .st-key-geo_vpn_box::before, .stApp .st-key-geo_trust_box::before, .stApp .st-key-geo_tor_box::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac);}
     .stApp .st-key-geo_vpn_box [data-testid="stCaptionContainer"], .stApp .st-key-geo_trust_box [data-testid="stCaptionContainer"], .stApp .st-key-geo_tor_box [data-testid="stCaptionContainer"] {
         font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.14em; text-transform:uppercase; color:var(--ac) !important;
     }
-    .stApp .st-key-bulk_infra_scan {
-        --tone:#22d3ee; background:#0e141c !important; border:1px solid #232d3b !important; border-radius:12px !important;
-        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; overflow:hidden;
-    }
-    .stApp .st-key-bulk_infra_scan:hover {border-color:#2c3a4d !important; background:#0e141c !important;}
-    .stApp .st-key-bulk_infra_scan::before {top:0 !important; bottom:0 !important; border-radius:0 !important; background:var(--tone) !important;}
 
-    /* --- section headers (Origin & Route, Correlation, ...) --- */
-    .stApp .sec-head {margin:28px 0 14px 0 !important; padding:0 0 10px 14px !important; border-bottom:1px solid #232d3b !important;}
-    .stApp .sec-head::before {top:1px !important; bottom:11px !important; width:3px !important; border-radius:2px !important; background:var(--tone) !important;}
-    .stApp .sec-head .sh-title {font:650 16px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5fa;}
-    .stApp .sec-head .sh-sub {color:#8793a5;}
-
-    /* ==================================================================
-       HEADERS v6 -- ONE header language everywhere. Level 1 = calm card
-       (module banners, dossier head). Level 2 = accent bar + title + sub +
-       bottom divider (section titles, dashboard titles, numbered heads,
-       markdown headings, feedback, separators). Accent = the open module's
-       nav colour (--panel-tone). Delete this block to revert.
-       ================================================================== */
-    /* --- level 1: module banners + dossier head --- */
-    .stApp .part-banner, .stApp .dossier-head {
-        background:#0e141c !important; border:1px solid #232d3b !important; border-radius:12px !important;
-        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; padding:18px 22px 18px 26px !important;
-    }
-    .stApp .part-banner::before, .stApp .dossier-head::before {
-        top:0 !important; bottom:0 !important; left:0 !important; width:3px !important; border-radius:0 !important; background:var(--tone) !important;
-    }
-    .stApp .part-banner .pb-step {font-weight:600 !important; color:var(--tone) !important;}
-    .stApp .part-banner .pb-title {font:700 21px/1.25 Inter,"Segoe UI",sans-serif; color:#f4f7fb;}
-    .stApp .part-banner .pb-sub {color:#8793a5;}
-    .stApp .part-banner .pb-scope {
-        padding:5px 10px !important; border-radius:6px !important; background:#18202c !important; border:1px solid #2a3546 !important;
-        color:#b4bfce !important; font-size:11px !important; letter-spacing:.08em !important;
-    }
-    .stApp .part-banner .pb-scope::before {display:none !important;}
-    .stApp .dossier-head .dh-title {font:700 23px/1.2 Inter,"Segoe UI",sans-serif; color:#f4f7fb;}
-    .stApp .dossier-head .dh-pill {
-        border-radius:6px !important; background:#18202c !important; box-shadow:none !important;
-        color:var(--tone) !important; border:1px solid color-mix(in srgb,var(--tone) 45%,#2a3546) !important;
-    }
-
-    /* --- level 2: dashboard section title (was centred hairline) --- */
-    .stApp .dash-section-title {
-        --tone:var(--panel-tone,#38bdf8); position:relative; display:flex !important; align-items:baseline !important;
-        justify-content:flex-start !important; flex-wrap:wrap; gap:4px 14px !important;
-        margin:30px 0 16px 0 !important; padding:0 0 10px 14px !important; border-bottom:1px solid #232d3b !important;
-        color:#f1f5fa !important; font:650 16px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important; text-transform:none !important;
-    }
-    .stApp .dash-section-title::before {
-        content:""; position:absolute; left:0; top:1px; bottom:11px; width:3px; height:auto; flex:none; border-radius:2px; background:var(--tone);
-    }
-    .stApp .dash-section-title::after, .stApp .dash-section-title .dash-section-dot {display:none !important;}
-    .stApp .dash-section-title .dash-section-sub {color:#8793a5 !important; font:400 12.5px/1.4 Inter,"Segoe UI",sans-serif !important; letter-spacing:0 !important;}
-
-    /* --- level 2: numbered heads, part separator, feedback --- */
-    .stApp .num-head .nh-num {
-        width:34px; height:34px; border-radius:8px; background:#18202c !important; border:1px solid #2a3546 !important;
-        box-shadow:none !important; color:var(--tone);
-    }
-    .stApp .num-head .nh-title {font-weight:650;}
-    .stApp .num-head .nh-sub {color:#8793a5;}
-    .stApp .num-head .nh-rule {height:1px; background:#232d3b !important;}
-    .stApp .part-sep {margin:44px 0 18px 0 !important; gap:14px !important; justify-content:flex-start !important;}
-    .stApp .part-sep::before {display:none !important;}
-    .stApp .part-sep::after {height:1px !important; background:#232d3b !important;}
-    .stApp .part-sep span {
-        font:600 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.2em !important;
-        color:var(--panel-tone,#38bdf8) !important; padding:6px 10px; border-radius:6px; background:#18202c; border:1px solid #2a3546;
-    }
-    .stApp .feedback-panel {position:relative; margin:10px 0 16px 0; padding:0 0 10px 14px; border-bottom:1px solid #232d3b;}
-    .stApp .feedback-panel::before {content:""; position:absolute; left:0; top:1px; bottom:11px; width:3px; border-radius:2px; background:var(--panel-tone,#38bdf8);}
-    .stApp .feedback-title {font:650 16px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5fa; letter-spacing:-.005em;}
-    .stApp .feedback-subtitle {font-size:12.5px; line-height:1.4; color:#8793a5; margin-top:3px;}
-
-    /* --- level 2: markdown headings + st.subheader in the main area --- */
-    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4,h5,h6),
+    /* markdown headings follow the open module's colour */
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4),
     .stApp :is([data-testid="stMain"],section.main) [data-testid="stHeading"] :is(h1,h2,h3,h4) {
-        position:relative; margin:24px 0 12px 0 !important; padding:0 0 9px 14px !important;
-        border-bottom:1px solid #232d3b; color:#f1f5fa !important;
-        font:650 16px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important;
+        position:relative; margin:24px 0 12px 0 !important; padding:0 0 9px 14px !important; border-bottom:1px solid #232d3b;
+        color:#f1f5fa !important; font:650 16px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important;
     }
-    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4,h5,h6)::before,
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4)::before,
     .stApp :is([data-testid="stMain"],section.main) [data-testid="stHeading"] :is(h1,h2,h3,h4)::before {
         content:""; position:absolute; left:0; top:1px; bottom:10px; width:3px; border-radius:2px; background:var(--panel-tone,#38bdf8);
     }
-    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h5,h6) {font-size:14px !important; border-bottom:0; padding-bottom:2px !important; margin:18px 0 8px 0 !important;}
-    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h5,h6)::before {bottom:3px;}
-
-    /* --- sidebar group labels + AI report bar --- */
-    .stApp .sidebar-group-label {margin:30px 6px 12px 6px !important; color:#8793a5 !important;}
-    .stApp .sidebar-group-label:after {height:1px !important; background:#232d3b !important;}
-    .stApp .sidebar-group-label .grp-index {
-        border-radius:5px !important; background:#18202c !important; border:1px solid #2a3546 !important; color:var(--g) !important;
-    }
-    .stApp .ai-report-bar {background:#121923 !important; border-bottom:1px solid #232d3b !important; color:#8b7cf6 !important; font-weight:600 !important; letter-spacing:.16em !important;}
-    .stApp .ai-report-chip {background:#18202c !important; border:1px solid #2a3546 !important; color:#b4bfce !important; border-radius:6px !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -6732,6 +6612,22 @@ def _banner(step, title, sub="", scope="", tone="batch"):
     """Module-level header: eyebrow + title + one-line sub + scope tag.
     Same component as the Forensic Report PART 1 / PART 2 banners."""
     st.markdown(_banner_html(step, title, sub, scope, tone), unsafe_allow_html=True)
+
+
+def _banner_c(step, title, sub="", scope="", color="#38bdf8", small=False):
+    """Same banner card as _banner(), but with an explicit accent colour so
+    neighbouring headers on one panel can each wear their own colour."""
+    cls = "part-banner part-banner-sm" if small else "part-banner"
+    st.markdown(
+        f'<div class="{cls}" style="--tone:{html.escape(str(color))};">'
+        f'<div class="pb-main"><div class="pb-step">{html.escape(str(step))}</div>'
+        f'<div class="pb-title">{html.escape(str(title))}</div>'
+        + (f'<div class="pb-sub">{html.escape(str(sub))}</div>' if sub else '')
+        + '</div>'
+        + (f'<span class="pb-scope">{html.escape(str(scope))}</span>' if scope else '')
+        + '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _num_head(num, title, tone_hex, sub=""):
@@ -9077,7 +8973,8 @@ if active_panel == "Dashboard":
                         st.markdown(
                             '<div class="rd-head"><div class="rd-kicker">Threat summary</div>'
                             '<div class="rd-title"><span style="color:' + _rd_col + ';">' + html.escape(_rd_lvl) + '</span>'
-                            '<span class="rd-score">' + f"{float(result.get('score', 0)):.1f}" + ' / 100</span></div></div>',
+                            '<span class="rd-score">' + f"{float(result.get('score', 0)):.1f}" + ' / 100</span></div>'
+                            '<div class="rd-gauge"><i style="width:' + f"{max(2.0, min(100.0, float(result.get('score', 0)))):.0f}" + '%;background:' + _rd_col + ';"></i></div></div>',
                             unsafe_allow_html=True,
                         )
                     with _dock_h_r:
@@ -9097,16 +8994,31 @@ if active_panel == "Dashboard":
                     # three other sections to reach.
                     _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash)
 
-                    st.markdown('<div class="panel-card-head"><span>KEY METRICS</span></div>', unsafe_allow_html=True)
-                    with st.container(key="right_dock_metrics_body"):
-                        rc1, rc2 = st.columns(2, gap="small")
-                        rc1.metric("Threat Score", f"{float(result.get('score',0)):.1f}", str(result.get('level','?')).upper())
-                        rc2.metric("ML Phishing", f"{float(sel_m.get('prob',0)):.1%}")
-                        rc3, rc4 = st.columns(2, gap="small")
-                        rc3.metric("Auth Pass", f"{auth_pass}/3")
-                        rc4.metric("Anomalies", anomaly_count)
+                    _lvl_hex = _LEVEL_MARKER_COLORS.get(str(result.get("level", "UNKNOWN")).upper(), "#8b96a5")
 
-                    st.markdown('<div class="panel-card-head panel-card-head-violet" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
+                    def _sev_hex(frac):
+                        return "#ff4757" if frac >= 0.7 else "#ff9f43" if frac >= 0.4 else "#f5c04a" if frac >= 0.2 else "#35d399"
+
+                    _ml_p = float(sel_m.get("prob", 0) or 0)
+                    _auth_hex = ["#ff4757", "#ff9f43", "#f5c04a", "#35d399"][max(0, min(3, int(auth_pass)))]
+                    _anom_hex = "#35d399" if anomaly_count == 0 else ("#f5c04a" if anomaly_count <= 2 else "#ff4757")
+                    _tiles = [
+                        ("Threat score", f"{float(result.get('score', 0)):.1f}", str(result.get("level", "?")).upper(), _lvl_hex),
+                        ("ML phishing", f"{_ml_p:.1%}", "MODEL PROBABILITY", _sev_hex(_ml_p)),
+                        ("Auth pass", f"{auth_pass}/3", "SPF · DKIM · DMARC", _auth_hex),
+                        ("Anomalies", str(anomaly_count), "HEADER FINDINGS", _anom_hex),
+                    ]
+                    st.markdown('<div class="rd-sec" style="--c:#38bdf8;">Key metrics</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div class="rd-tiles">' + "".join(
+                            '<div class="rd-tile" style="--c:{c};"><span>{l}</span><b>{v}</b><i>{n}</i></div>'.format(
+                                c=html.escape(c), l=html.escape(l), v=html.escape(v), n=html.escape(n))
+                            for l, v, n, c in _tiles
+                        ) + '</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                    st.markdown('<div class="rd-sec" style="--c:#a78bfa;">Investigation summary</div>', unsafe_allow_html=True)
                     _inv_rows = [
                         ("From", sel_p.get("from_addr", "Unknown")),
                         ("Subject", sel_p.get("subject", "No Subject")),
@@ -9118,26 +9030,28 @@ if active_panel == "Dashboard":
                         ("Verdict", str(result.get("level", "UNKNOWN")).upper()),
                     ]
                     st.markdown(
-                        '<div class="panel-card-body panel-card-body-violet"><div class="kv">'
+                        '<div class="rd-card" style="--c:#a78bfa;"><div class="kv">'
                         + "".join(
-                            '<div class="kv-row"><span>{}</span><b>{}</b></div>'.format(html.escape(str(k)), html.escape(str(v)))
+                            '<div class="kv-row"><span>{}</span><b{}>{}</b></div>'.format(
+                                html.escape(str(k)),
+                                (' style="color:' + _lvl_hex + ';"') if k == "Verdict" else "",
+                                html.escape(str(v)))
                             for k, v in _inv_rows
                         )
                         + "</div></div>",
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown('<div class="panel-card-head panel-card-head-amber" style="margin-top:12px;"><span>TOP THREAT SIGNAL BREAKDOWN</span></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="rd-sec" style="--c:#f59e0b;">Top threat signals</div>', unsafe_allow_html=True)
                     contributions = sel_verdict.get("contributions", []) or []
-                    colors = ["#ff4757", "#ff9f43", "#2fd8ff", "#35d399", "#a389f4", "#f47ab0"]
-                    for i, c in enumerate(contributions[:6]):
-                        pct = c.get("strength", 0.0) * 100
+                    for c in contributions[:6]:
+                        _st = float(c.get("strength", 0.0) or 0.0)
+                        pct = _st * 100
                         st.markdown(
-                            f"""<div class="threattype-row">
-                                <span style="min-width:120px;font-size:11px;">{c.get('label','-')}</span>
-                                <div class="bar-track"><div class="bar-fill" style="width:{pct:.0f}%;background:{colors[i % len(colors)]};"></div></div>
-                                <span class="pct">{pct:.0f}%</span>
-                            </div>""",
+                            '<div class="threattype-row"><span class="tt-label">{l}</span>'
+                            '<div class="bar-track"><div class="bar-fill" style="width:{w:.0f}%;background:{col};"></div></div>'
+                            '<span class="pct" style="color:{col};">{w:.0f}%</span></div>'.format(
+                                l=html.escape(str(c.get("label", "-"))), w=pct, col=_sev_hex(_st)),
                             unsafe_allow_html=True,
                         )
 
@@ -9146,13 +9060,9 @@ if active_panel == "Dashboard":
                     # second instance of the one in that dock.
 
         with col_center:
-            st.markdown(
-                """<div class="dash-section-title">
-                    <span class="dash-section-dot"></span>
-                    <span>Origin &amp; Correlation</span>
-                    <span class="dash-section-sub">Geolocation map and infrastructure graph for this case set</span>
-                </div>""",
-                unsafe_allow_html=True,
+            _banner_c(
+                "DASHBOARD", "Origin & Correlation",
+                "Geolocation map and infrastructure graph for this case set", "THIS CASE SET", "#2fb68e",
             )
             # Map and correlation graph each render full-width, stacked --
             # side-by-side columns were squeezing both into half-width
@@ -9161,13 +9071,16 @@ if active_panel == "Dashboard":
             # Full width on every device (including narrow windows, where
             # Streamlit's columns used to squash rather than reflow) with
             # room for labels to read cleanly.
+            _bn_origin = ((result.get("geo", {}) or {}).get("origin", {}) or {})
+            _banner_c(
+                "GLOBE-SCAN", "IP Geolocation Map", "Where the current email entered the network",
+                str(_bn_origin.get("ip", "Unknown")), "#22d3ee", small=True,
+            )
             with st.container(border=True, key="dash_map_card"):
                 # Always the email that is currently open -- no toggle here.
                 # The all-emails / single-email switch lives on Origin & Route.
                 _dash_geo = result.get("geo", {}) or {}
                 _dash_origin = _dash_geo.get("origin", {}) or {}
-                st.markdown(f"""<div class="panel-card-head panel-card-head-green"><span>GLOBE-SCAN: IP GEOLOCATION MAP</span>
-                    <span>{html.escape(str(_dash_origin.get('ip', 'Unknown')))}</span></div>""", unsafe_allow_html=True)
                 _dash_pts = _case_hop_points(result)
                 if _dash_pts:
                     _dash_coords = [[h["lat"], h["lon"]] for h in _dash_pts]
@@ -9214,9 +9127,11 @@ if active_panel == "Dashboard":
                 else:
                     st.info("No geolocatable hop for this email yet.")
 
+            _banner_c(
+                "CORRELATION", "Infrastructure Correlation Graph", "Shared indicators and AI-inferred links for this email",
+                "CURRENT EMAIL", "#a78bfa", small=True,
+            )
             with st.container(border=True, key="dash_graph_card"):
-                st.markdown(f"""<div class="panel-card-head panel-card-head-violet"><span>NETWORK INFRASTRUCTURE CORRELATION GRAPH</span>
-                    <span>CURRENT EMAIL</span></div>""", unsafe_allow_html=True)
                 # A fixed seed here keeps this small preview stable between
                 # reruns; the full, shuffleable, interactive version lives
                 # on the dedicated Correlation panel.
