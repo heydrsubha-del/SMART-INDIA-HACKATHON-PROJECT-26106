@@ -810,19 +810,49 @@ components.html(
         // fine for an ordinary external link, but for an OAuth sign-in
         // flow it means every click pops a brand-new tab that then shows
         // the signed-in app, while the original tab is left behind still
-        // showing the stale signed-out page -- confusing, and easy to
-        // mistake for the button doing the wrong thing. Force those three
-        // specific links back to opening in the current tab instead.
-        // When the app is embedded in an iframe (Streamlit Cloud, Spaces,
-        // previews), '_self' loads the provider's login INSIDE the frame
-        // ("refused to connect") and '_top' can be blocked by the frame's
-        // sandbox (button does nothing). A new tab ('_blank') works in both
-        // cases, so use it when framed and keep same-tab when not.
+        // showing the stale signed-out page -- two tabs, one of them
+        // stale. So these three links are re-targeted here.
+        //
+        // Not embedded (running at its own URL): '_self' -- plain same-tab
+        // navigation to the provider and back.
+        //
+        // Embedded in an iframe (Streamlit Community Cloud, Spaces,
+        // previews): '_self' would load the provider's login INSIDE the
+        // frame ("refused to connect"), so the link targets '_top' instead
+        // -- the whole browser tab -- and the sign-in round trip happens in
+        // the tab the user is already looking at. A native <a target="_top">
+        // click carries the user's click gesture, which is what hosts that
+        // allow top-level navigation (allow-top-navigation-by-user-
+        // activation) require. If a host's sandbox doesn't allow it, the
+        // click silently does nothing -- so onSignInClick() below watches
+        // for that (the page is still here a few seconds after the click)
+        // and falls back to a new tab, and remembers that for the rest of
+        // the session so later clicks go straight to the new-tab behaviour
+        // instead of waiting out the delay again.
         function isFramed() {
             try { return window.parent.top !== window.parent; } catch (e) { return true; }
         }
+        var NAV_BLOCKED_KEY = 'sih26106_top_nav_blocked';
+        function topNavBlocked() {
+            try { return window.parent.sessionStorage.getItem(NAV_BLOCKED_KEY) === '1'; } catch (e) { return false; }
+        }
+        function markTopNavBlocked() {
+            try { window.parent.sessionStorage.setItem(NAV_BLOCKED_KEY, '1'); } catch (e) {}
+        }
+        function onSignInClick(ev) {
+            if (!isFramed() || topNavBlocked()) return;   // native anchor behaviour
+            var href = ev.currentTarget && ev.currentTarget.href;
+            if (!href) return;
+            setTimeout(function () {
+                // Still running => the page never navigated away, i.e. the
+                // host blocked the top-level navigation.
+                markTopNavBlocked();
+                fixLinkTargets();
+                try { window.open(href, '_blank', 'noopener'); } catch (e) {}
+            }, 3000);
+        }
         function fixLinkTargets() {
-            var want = isFramed() ? '_blank' : '_self';
+            var want = !isFramed() ? '_self' : (topNavBlocked() ? '_blank' : '_top');
             doc.querySelectorAll(
                 '.st-key-google_signin_link_btn a, ' +
                 '.st-key-microsoft_signin_link_btn a, ' +
@@ -830,6 +860,10 @@ components.html(
             ).forEach(function (a) {
                 if (a.target !== want) a.target = want;
                 if (want === '_blank') a.rel = 'noopener';
+                if (!a.dataset.sihSigninBound) {
+                    a.dataset.sihSigninBound = '1';
+                    a.addEventListener('click', onSignInClick);
+                }
             });
         }
         fixLinkTargets();
