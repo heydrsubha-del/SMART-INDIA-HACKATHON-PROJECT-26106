@@ -4508,6 +4508,74 @@ st.markdown(
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
 
+    /* ---- v9 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
+       One calm panel, quiet text tabs, and an active tab in the same
+       graphite-key + blue->indigo->copper edge language as Log in and the
+       provider tiles. The radio circle is suppressed with several
+       independent rules (see the app-wide radio-dot note above) so it can't
+       leak back; the scrollbar is hidden (the bar scrolls by swipe/wheel
+       only if the window is too narrow for every tab). Delete this block
+       to go back to the previous nav. -------------------------------- */
+    .nav-caption {
+        display:flex !important; align-items:center; gap:10px; margin:6px 0 10px 0 !important;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:#6f8aa5 !important;
+    }
+    .nav-caption::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+
+    .stApp .st-key-topnav {
+        padding:6px !important; border:1px solid #243046 !important; border-radius:14px !important;
+        background:
+            radial-gradient(60% 140% at 0% 0%, rgba(76,141,255,.08), transparent 70%),
+            linear-gradient(180deg,#101826,#0b111a) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 26px -16px rgba(0,0,0,.7) !important;
+    }
+    .stApp .st-key-topnav::after {display:none !important;}
+    .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
+    .stApp .st-key-topnav .stRadio > div {
+        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
+        padding:0 !important; gap:4px !important; flex-wrap:nowrap !important;
+        overflow-x:auto !important; overflow-y:hidden !important;
+        scrollbar-width:none !important; -ms-overflow-style:none !important;
+    }
+    .stApp .st-key-topnav .stRadio > div::-webkit-scrollbar,
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
+
+    /* no radio circle, however Streamlit nests it */
+    .stApp .st-key-topnav .stRadio label > div:not([data-testid="stMarkdownContainer"]):not(:has(p)),
+    .stApp .st-key-topnav .stRadio label > span:not(:has(p)),
+    .stApp .st-key-topnav .stRadio label div:empty,
+    .stApp .st-key-topnav .stRadio label input,
+    .stApp .st-key-topnav .stRadio label svg,
+    .stApp .st-key-topnav .stRadio label::before {
+        display:none !important; width:0 !important; height:0 !important; margin:0 !important; padding:0 !important;
+        border:0 !important; box-shadow:none !important; opacity:0 !important; position:absolute !important; left:-9999px !important;
+    }
+
+    .stApp .st-key-topnav .stRadio label {
+        flex:0 0 auto !important; padding:10px 16px !important; border-radius:10px !important; cursor:pointer !important;
+        border:1px solid transparent !important; background:transparent !important; box-shadow:none !important; transform:none !important;
+        transition:background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease), box-shadow .18s var(--ease) !important;
+    }
+    .stApp .st-key-topnav .stRadio label p {
+        display:inline-flex !important; align-items:center; gap:8px; margin:0 !important; white-space:nowrap !important;
+        font:600 13.5px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; color:#9aa7ba !important;
+    }
+    .stApp .st-key-topnav .stRadio label:hover {background:rgba(255,255,255,.05) !important;}
+    .stApp .st-key-topnav .stRadio label:hover p {color:#fff !important;}
+
+    .stApp .st-key-topnav .stRadio label:has(input:checked) {
+        background:
+            linear-gradient(180deg,rgba(76,141,255,.24),rgba(99,102,241,.12)) padding-box,
+            linear-gradient(115deg,#3b82f6 0%,#6366f1 60%,#c98a5c 100%) border-box !important;
+        border:1px solid transparent !important;
+        box-shadow:0 10px 22px -14px rgba(99,102,241,.8), inset 0 1px 0 rgba(255,255,255,.07) !important;
+    }
+    .stApp .st-key-topnav .stRadio label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
+    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {
+        content:""; width:6px; height:6px; border-radius:50%; background:#4c8dff;
+        box-shadow:0 0 0 3px rgba(76,141,255,.25), 0 0 10px rgba(76,141,255,.7);
+    }
+
     @media (max-width:900px){
       .st-key-imap_signin_card {--padx:22px;}
       .signin-card-header {padding:26px var(--padx) 22px !important; border-bottom:1px solid #243046;}
