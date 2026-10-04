@@ -5897,8 +5897,133 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-from redesign_ui import inject_redesign
-inject_redesign()  # Aurora SOC visual layer (header + banners, mobile-ready)
+# Header redesign: top banner + module/section headers share the .acq2 card language
+st.markdown(r"""
+<style>
+@keyframes pxPulse {0%,100% {opacity:1;} 50% {opacity:.45;}}
+
+/* ---- one muted accent per module (matches the .acq2 palette) ---- */
+.stApp .part-banner-batch,  .stApp .sec-batch  {--tone:#4c8dff;}
+.stApp .part-banner-single, .stApp .sec-single, .stApp .dossier-head {--tone:#d49a66;}
+.stApp .part-banner-ai,     .stApp .sec-ai     {--tone:#8b7cf6;}
+.stApp .part-banner-intel,  .stApp .sec-intel  {--tone:#3fb68b;}
+.stApp .part-banner-rose,   .stApp .sec-rose   {--tone:#e5637d;}
+.stApp .part-banner-sky,    .stApp .sec-sky    {--tone:#38a3e8;}
+.stApp .part-banner-gold,   .stApp .sec-gold   {--tone:#d9a35f;}
+.stApp .part-banner-teal,   .stApp .sec-teal   {--tone:#2fb6a8;}
+.stApp .part-banner-plum,   .stApp .sec-plum   {--tone:#b36ae0;}
+.stApp .part-banner-lime,   .stApp .sec-lime   {--tone:#8fbf4a;}
+
+/* ===================== shared card material ===================== */
+.stApp .topbar-shell, .stApp .part-banner, .stApp .dossier-head {
+  position:relative; overflow:hidden; isolation:isolate; box-sizing:border-box;
+  border:1px solid var(--line-strong,#313c4b); border-radius:14px;
+  background:
+    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 8%,transparent), 0 14px 32px -20px rgba(0,0,0,.7);
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+/* solid accent bar on top */
+.stApp .topbar-shell::before, .stApp .part-banner::before, .stApp .dossier-head::before {
+  content:""; position:absolute; left:0; right:0; top:0; bottom:auto; width:auto; height:3px; padding:0;
+  border-radius:0; z-index:3; pointer-events:none; -webkit-mask:none; mask:none;
+  background:var(--tone);
+}
+.stApp .part-banner::after, .stApp .dossier-head::after {display:none;}
+.stApp .part-banner:hover, .stApp .dossier-head:hover {
+  border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
+}
+
+/* ============================ TOP BANNER ============================ */
+.stApp .topbar-shell {
+  --tone:#4c8dff;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
+  padding:26px 30px 24px; margin:10px 0 20px;
+}
+/* network graphic: quiet, right side only */
+.stApp .topbar-shell::after {
+  opacity:.38; mix-blend-mode:screen; z-index:0;
+  -webkit-mask-image:linear-gradient(90deg,transparent 40%,#000 100%);
+  mask-image:linear-gradient(90deg,transparent 40%,#000 100%);
+}
+.stApp .topbar-brand, .stApp .topbar-status-wrap {position:relative; z-index:2;}
+.stApp .topbar-brand {display:flex; align-items:center; gap:20px; min-width:0; flex:1 1 420px;}
+.stApp .topbar-brand::before {display:none;}
+.stApp .topbar-logo {
+  width:66px; height:66px; flex:0 0 66px; padding:8px; border-radius:14px;
+  background:rgba(255,255,255,.03); box-shadow:none;
+  border:1px solid color-mix(in srgb,var(--tone) 40%,var(--line-strong,#313c4b));
+}
+.stApp .topbar-logo img {border-radius:10px;}
+.stApp .topbar-kicker {
+  display:block; margin-bottom:8px; color:var(--tone); text-shadow:none; background:none; -webkit-text-fill-color:currentColor;
+  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase;
+}
+.stApp .topbar-kicker::before {display:none;}
+.stApp .topbar-title {
+  font:800 clamp(20px,2.6vw,30px)/1.22 Inter,"Segoe UI",sans-serif; letter-spacing:-.015em;
+  color:#fff; background:none; -webkit-text-fill-color:#fff; text-shadow:none;
+}
+.stApp .topbar-subtitle {margin-top:6px; font-size:12.5px; line-height:1.5; color:#8b96a5;}
+
+.stApp .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:0; max-width:100%;}
+.stApp .topbar-actions {margin:0; max-width:100%;}
+.stApp .topbar-account-chip {
+  display:inline-flex; align-items:center; gap:10px; max-width:100%; padding:5px 14px 5px 6px; border-radius:999px;
+  background:rgba(255,255,255,.03); border:1px solid var(--line-strong,#313c4b); box-shadow:none; backdrop-filter:none;
+}
+.stApp .topbar-account-avatar {
+  width:26px; height:26px; flex:0 0 26px; border-radius:50%; display:grid; place-items:center;
+  font:800 12px/1 Inter,sans-serif; color:#0b1220; background:var(--tone); box-shadow:none;
+}
+.stApp .topbar-account-email {min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 12.5px/1 Inter,sans-serif; color:#d6deea;}
+.stApp .topbar-status-pill {
+  --c:#3fb68b; display:inline-flex; align-items:center; gap:9px; padding:7px 12px; border-radius:6px;
+  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
+  background:color-mix(in srgb,var(--c) 8%,transparent); border:1px solid color-mix(in srgb,var(--c) 40%,transparent); box-shadow:none;
+}
+.stApp .topbar-status-dot {width:6px; height:6px; background:var(--c); box-shadow:none; animation:pxPulse 2.4s ease-in-out infinite;}
+.stApp .topbar-status-online {color:var(--c); font-weight:600;}
+.stApp .topbar-status-time {font:600 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
+
+/* ======================= MODULE / PART BANNERS ======================= */
+.stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
+.stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
+.stApp .part-banner .pb-step {
+  color:var(--tone) !important; text-shadow:none; margin-bottom:10px;
+  font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
+}
+.stApp .part-banner .pb-step::before {width:18px; height:1px; border-radius:0; opacity:.7; background:currentColor;}
+.stApp .part-banner .pb-title {
+  font:750 21px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;
+  color:#fff; background:none; -webkit-text-fill-color:#fff;
+}
+.stApp .part-banner .pb-sub {color:#8b96a5; font-size:12.5px; line-height:1.5; margin-top:4px;}
+/* scope = small mono tag, same family as .acq2-chip */
+.stApp .part-banner .pb-scope {
+  display:inline-flex; align-items:center; gap:9px; padding:6px 10px !important; border-radius:6px; box-shadow:none; backdrop-filter:none;
+  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--tone) !important; background:color-mix(in srgb,var(--tone) 8%,transparent) !important;
+  border:1px solid color-mix(in srgb,var(--tone) 40%,transparent) !important; max-width:100%; overflow-wrap:anywhere;
+}
+.stApp .part-banner .pb-scope::before {width:6px; height:6px; background:var(--tone); box-shadow:none; animation:pxPulse 2.4s ease-in-out infinite;}
+
+/* ========================== SECTION HEADS ========================== */
+.stApp .sec-head::before {width:3px; border-radius:3px; background:var(--tone); box-shadow:none;}
+.stApp .sec-head .sh-title {font:750 17px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5f9;}
+.stApp .num-head .nh-num {
+  background:color-mix(in srgb,var(--tone) 10%,transparent) !important; color:var(--tone) !important;
+  border:1px solid color-mix(in srgb,var(--tone) 45%,transparent) !important; border-radius:8px !important; box-shadow:none;
+  font:700 13px/1 ui-monospace,Consolas,monospace;
+}
+.stApp .num-head .nh-rule {background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 50%,transparent),transparent) !important; opacity:1;}
+
+@media (prefers-reduced-motion:reduce) {
+  .stApp .topbar-status-dot, .stApp .part-banner .pb-scope::before {animation:none !important;}
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown(
     f"""<div class="topbar-shell">
