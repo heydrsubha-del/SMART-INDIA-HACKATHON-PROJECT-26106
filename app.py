@@ -962,12 +962,66 @@ st.session_state.setdefault("single_ai_reports", {})
 # then closes. Not embedded, or no acknowledgement within ~2s: it falls back
 # to finishing the sign-in locally, exactly like the old behaviour.
 _OAUTH_RELAY_GATE_HTML = """
-<div id="m" style="font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:15px;
-     color:#8b96a5;text-align:center;padding:28px 12px;">Completing sign-in&hellip;</div>
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#0a0e16; }
+  .gate-wrap {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family:Inter,'Segoe UI',Arial,sans-serif; padding:24px 16px; box-sizing:border-box;
+      background:radial-gradient(ellipse at 50% 0%, #121a2a 0%, #0a0e16 70%);
+  }
+  .gate-card {
+      width:100%; max-width:360px; text-align:center;
+      background:linear-gradient(180deg,#111827,#0d131f);
+      border:1px solid #232c3d; border-radius:16px;
+      padding:36px 28px 30px 28px; box-shadow:0 20px 50px rgba(0,0,0,.45);
+  }
+  .gate-icon {
+      width:52px; height:52px; margin:0 auto 18px auto; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(59,130,246,.14); border:1px solid rgba(59,130,246,.35);
+  }
+  .gate-spinner {
+      width:22px; height:22px; border-radius:50%;
+      border:2.5px solid rgba(59,130,246,.25); border-top-color:#3b82f6;
+      animation:gate-spin .8s linear infinite;
+  }
+  @keyframes gate-spin { to { transform:rotate(360deg); } }
+  .gate-title { color:#f3f6fb; font-size:16px; font-weight:700; margin-bottom:6px; letter-spacing:.1px; }
+  .gate-sub { color:#8b96a5; font-size:13px; line-height:1.5; }
+  .gate-btn {
+      display:none; margin-top:20px; width:100%; border:none; cursor:pointer;
+      background:linear-gradient(90deg,#3b82f6,#6366f1); color:#fff;
+      font:700 13.5px/1 Inter,'Segoe UI',Arial,sans-serif; letter-spacing:.2px;
+      padding:11px 0; border-radius:10px; transition:opacity .15s ease;
+  }
+  .gate-btn:hover { opacity:.88; }
+</style>
+<div class="gate-wrap">
+  <div class="gate-card">
+    <div class="gate-icon" id="gi"><div class="gate-spinner"></div></div>
+    <div class="gate-title" id="gt">Completing sign-in</div>
+    <div class="gate-sub" id="m">Verifying your account&hellip;</div>
+    <button class="gate-btn" id="gb" type="button">Close this window</button>
+  </div>
+</div>
 <script>
+(function () {
+    var _elIcon = document.getElementById('gi'), _elTitle = document.getElementById('gt'), _elBtn = document.getElementById('gb');
+    function setStage(title, sub, opts) {
+        opts = opts || {};
+        if (_elTitle) _elTitle.textContent = title;
+        say(sub);
+        if (opts.done && _elIcon) {
+            _elIcon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            _elIcon.style.background = 'rgba(74,222,128,.14)';
+            _elIcon.style.borderColor = 'rgba(74,222,128,.35)';
+        }
+        if (opts.showButton && _elBtn) _elBtn.style.display = 'block';
+    }
 (function () {
     var pw = window.parent, doc = pw.document, done = false, acked = false, ch = null;
     function say(t) { var m = document.getElementById('m'); if (m) m.textContent = t; }
+
     function framed() { try { return pw.top !== pw; } catch (e) { return true; } }
     // A sandboxed iframe (this page) may not navigate the frame that
     // contains it, so go through a link owned by that frame's own document.
@@ -987,27 +1041,32 @@ _OAUTH_RELAY_GATE_HTML = """
             } catch (e) {}
         }, 800);
     }
+    function attemptClose() {
+        try { pw.top.close(); } catch (e) {}
+        try { pw.close(); } catch (e) {}
+    }
     function local() {
         if (done) return; done = true;
+        setStage('Completing sign-in', 'One moment&hellip;');
         var p = new URLSearchParams(pw.location.search);
         p.set('sih_local', '1');
         var url = pw.location.origin + pw.location.pathname + '?' + p.toString();
         go(url);
         // Never leave the user staring at "Completing sign-in" forever.
         setTimeout(function () {
-            var m = document.getElementById('m');
-            if (!m) return;
-            m.innerHTML = 'Could not finish automatically. ';
+            if (!_elTitle) return;
+            setStage('Taking longer than expected', 'Use the link below to continue manually.');
             var l = document.createElement('a');
             l.href = url; l.target = '_blank'; l.rel = 'noopener';
-            l.textContent = 'Continue sign-in';
-            l.style.color = '#8fb4ff';
-            m.appendChild(l);
+            l.textContent = 'Continue sign-in \u2192';
+            l.style.cssText = 'display:inline-block;margin-top:6px;color:#8fb4ff;font-size:13px;font-weight:600;text-decoration:none;';
+            var m = document.getElementById('m');
+            if (m) { m.innerHTML = ''; m.appendChild(l); }
         }, 5000);
     }
     function finish() {
         if (done) return; done = true;
-        say('Signed in. Returning to the app...');
+        setStage('Signed in', 'Returning you to the app&hellip;');
         // Bring the original tab to the front right away -- some browsers
         // (current Chrome included) now permanently refuse a scripted
         // close() on a popup once it has navigated through more than one
@@ -1023,8 +1082,7 @@ _OAUTH_RELAY_GATE_HTML = """
         // here Chrome/Firefox usually refuse this silently (an anti-abuse
         // rule: script may only auto-close a window it opened AND that
         // never navigated elsewhere).
-        try { pw.top.close(); } catch (e) {}
-        try { pw.close(); } catch (e) {}
+        attemptClose();
         setTimeout(function () {
             if (pw.closed) return;
             // Plan B: the standard workaround for that exact rule --
@@ -1032,16 +1090,16 @@ _OAUTH_RELAY_GATE_HTML = """
             // history to a single entry, which satisfies the same check
             // and lets close() succeed immediately after.
             try { pw.open('', '_self'); } catch (e) {}
-            try { pw.top.close(); } catch (e) {}
-            try { pw.close(); } catch (e) {}
+            attemptClose();
             setTimeout(function () {
                 if (pw.closed) return;
-                // Neither worked (some browsers block even Plan B) -- the
-                // only thing left is asking for one manual click.
-                say('Signed in. You can close this window.');
+                // Neither worked (some browsers block even Plan B) -- offer
+                // one manual click instead of a dead-end message.
+                setStage('Signed in successfully', 'You can close this window now.', { done: true, showButton: true });
             }, 250);
         }, 300);
     }
+    if (_elBtn) _elBtn.addEventListener('click', function () { attemptClose(); });
     if (!framed()) { local(); return; }
     try { ch = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
     if (!ch) { local(); return; }
@@ -1065,7 +1123,7 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
     if (_oauth_code or _oauth_error) and not (
         st.query_params.get("sih_relayed") or st.query_params.get("sih_local")
     ):
-        components.html(_OAUTH_RELAY_GATE_HTML, height=120)
+        components.html(_OAUTH_RELAY_GATE_HTML, height=420)
         st.stop()
     # The redirect URI is shared across every provider (it's the same
     # running app), so the same ?code=/?state= callback can belong to
