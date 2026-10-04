@@ -4576,6 +4576,101 @@ st.markdown(
         box-shadow:0 0 0 3px rgba(76,141,255,.25), 0 0 10px rgba(76,141,255,.7);
     }
 
+    /* ---- v9 acquisition cards: aligned click-catcher + per-card hover ------
+       Bug: the invisible button that sits on each card was lined up with a
+       negative margin, which drifted ~20px off the card and let the generic
+       button hover paint a tinted box outside it. Now the button is pinned
+       to the top-left of its own column (position:absolute, same height as
+       the card), so it can't drift, and every paint on it is forced off.
+       The card reacts to hovering the button via :has().
+         Channel A (blue)   -> live scan: moving top bar + light sweep
+         Channel B (copper) -> batch: warm hatch rising from the corner
+       Delete this block to go back to the old hover. ------------------- */
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has(.acq2) {position:relative !important;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] {
+        position:absolute !important; top:0 !important; left:0 !important; right:auto !important; bottom:auto !important;
+        margin:0 !important; width:100% !important; height:var(--acq-h) !important; z-index:6 !important;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] > div,
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] [data-testid="stButton"],
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] .stButton {width:100% !important; height:100% !important;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button,
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button:hover,
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button:focus,
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button:active {
+        width:100% !important; height:100% !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+        background:transparent !important; background-image:none !important; border:0 !important; border-radius:14px !important;
+        box-shadow:none !important; outline:none !important; transform:none !important; filter:none !important;
+        color:transparent !important; cursor:pointer !important;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button::before,
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button::after {content:none !important; display:none !important;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] button * {color:transparent !important; opacity:0 !important;}
+
+    .acq2 {transition:border-color .2s var(--ease), background .2s var(--ease), box-shadow .22s var(--ease), transform .22s var(--ease) !important;}
+    .acq2::after {content:""; position:absolute; inset:0; pointer-events:none; opacity:0; z-index:0; transition:opacity .28s var(--ease), transform .8s var(--ease);}
+    .acq2-blue::after {transform:translateX(-60%); background:linear-gradient(115deg, transparent 30%, rgba(130,175,255,.17) 50%, transparent 70%);}
+    .acq2-copper::after {
+        background:repeating-linear-gradient(135deg, rgba(212,154,102,.13) 0 1px, transparent 1px 10px);
+        -webkit-mask-image:radial-gradient(90% 110% at 0% 100%, #000 0%, transparent 70%);
+        mask-image:radial-gradient(90% 110% at 0% 100%, #000 0%, transparent 70%);
+    }
+    .acq2-ghost {transition:opacity .28s var(--ease), transform .35s var(--ease) !important;}
+    .acq2-chip, .acq2-sw, .acq2-sw i {transition:all .22s var(--ease);}
+    @keyframes acqScan {from {background-position:0 0;} to {background-position:-200% 0;}}
+    @keyframes acqGrow {from {transform:scaleX(0);} to {transform:scaleX(1);}}
+
+    /* Channel A -- blue: live scan */
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue {
+        transform:translateY(-2px);
+        border-color:#4c8dff !important;
+        background:
+            radial-gradient(70% 130% at 100% 0%, rgba(76,141,255,.22), transparent 66%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:0 0 0 3px rgba(76,141,255,.16), 0 20px 36px -20px rgba(76,141,255,.65) !important;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue::before {
+        height:3px; background:linear-gradient(90deg,#4c8dff,#8b7cff,#4c8dff,#8b7cff); background-size:200% 100%;
+        animation:acqScan 1.8s linear infinite;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue::after {opacity:1; transform:translateX(60%);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue .acq2-tag, .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue .acq2-state-txt {color:#7fb0ff;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue .acq2-title {color:#fff;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue .acq2-ghost {opacity:.24; transform:translateX(-6px) rotate(-8deg) scale(1.07);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue .acq2-chip {color:#9dbcff; border-color:rgba(76,141,255,.5); background:rgba(76,141,255,.10);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue:not(.acq2-on) .acq2-sw {border-color:rgba(76,141,255,.6);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue:not(.acq2-on) .acq2-sw i {left:9px; background:#4c8dff;}
+
+    /* Channel B -- copper: batch intake */
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper {
+        transform:translateY(-2px);
+        border-color:#d49a66 !important;
+        background:
+            radial-gradient(80% 130% at 0% 100%, rgba(212,154,102,.22), transparent 64%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:0 0 0 3px rgba(212,154,102,.15), 0 20px 36px -20px rgba(212,154,102,.6) !important;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper::before {
+        height:3px; background:linear-gradient(90deg,#d49a66,#f0c58f 55%,#d49a66); transform-origin:left;
+        animation:acqGrow .45s var(--ease) both;
+    }
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper::after {opacity:1;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper .acq2-tag, .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper .acq2-state-txt {color:#e3b585;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper .acq2-title {color:#fff;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper .acq2-ghost {opacity:.24; transform:translateY(-9px) scale(1.06);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper .acq2-chip {color:#ecc088; border-color:rgba(212,154,102,.55); background:rgba(212,154,102,.12);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper:not(.acq2-on) .acq2-sw {border-color:rgba(212,154,102,.6);}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper:not(.acq2-on) .acq2-sw i {left:9px; background:#d49a66;}
+
+    /* keyboard focus: a clear ring on the card itself */
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:focus-visible) .acq2-blue {outline:2px solid #4c8dff; outline-offset:3px;}
+    .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:focus-visible) .acq2-copper {outline:2px solid #d49a66; outline-offset:3px;}
+
+    @media (prefers-reduced-motion: reduce) {
+        .acq2, .acq2::after, .acq2-ghost {transition:none !important;}
+        .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-blue::before, .stApp :is([data-testid="stColumn"],[data-testid="column"]):has([class*="st-key-acq_pick_"] button:hover) .acq2-copper::before {animation:none !important;}
+    }
+
     @media (max-width:900px){
       .st-key-imap_signin_card {--padx:22px;}
       .signin-card-header {padding:26px var(--padx) 22px !important; border-bottom:1px solid #243046;}
