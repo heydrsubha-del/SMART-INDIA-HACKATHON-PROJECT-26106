@@ -4596,23 +4596,17 @@ st.markdown(
        Delete this block (and the _NAV_STYLE generator) to go back. ------ */
 
     .stApp .st-key-topnav {
-        position:relative !important; overflow:hidden !important;
-        padding:10px 4px 20px 4px !important; margin:4px 0 8px 0 !important; border:1px solid #243046 !important; border-radius:16px !important;
-        background:
-            radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
-            radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
-            linear-gradient(180deg,#101826,#0a1019) !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8) !important;
-    }
-    .stApp .st-key-topnav::before {
-        content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; opacity:.85; pointer-events:none;
-        background:linear-gradient(90deg,#4c8dff,#8b7cff);
+        position:relative !important; overflow:hidden !important; display:flex !important; align-items:center !important;
+        padding:14px 4px !important; margin:4px 0 8px 0 !important;
+        background:linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+        border:1px solid var(--line-strong) !important; border-left:4px solid var(--cyan) !important; border-radius:var(--r-lg) !important;
+        box-shadow:0 10px 26px rgba(0,0,0,.26) !important;
     }
     /* slim scroll indicator (native bar is hidden): --nav-w = visible fraction,
        --nav-p = scroll position 0..1, --nav-on = 1 only when the strip overflows.
        All three are set by the helper script after the nav. */
     .stApp .st-key-topnav::after {
-        content:"" !important; display:block !important; position:absolute; left:28px; right:28px; bottom:8px; height:3px; border-radius:3px;
+        content:"" !important; display:block !important; position:absolute; left:28px; right:28px; bottom:3px; height:2px; border-radius:2px;
         pointer-events:none; opacity:var(--nav-on,0); transition:opacity .25s var(--ease);
         background:
             linear-gradient(90deg,#2fb68e,#8b7cff) no-repeat,
