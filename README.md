@@ -1,13 +1,68 @@
-# 🛡️ Algorithmistic
+<a id="top"></a>
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<div align="center">
 
-**AI-Powered Email Threat Detection, GeoLocation & Forensic Intelligence Platform**
-*(formerly Smart India Hackathon project **SIH26106**)*
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0b1626,35:1e3853,70:2fd8ff,100:a389f4&height=230&section=header&text=ALGORITHMISTIC&fontSize=72&fontColor=ffffff&fontAlignY=36&animation=fadeIn&desc=AI-Powered%20Email%20Threat%20Detection%20%E2%80%A2%20GeoLocation%20%E2%80%A2%20Forensic%20Intelligence&descSize=17&descAlignY=58&descColor=e6f7ff" alt="Algorithmistic banner" width="100%"/>
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/streamlit-1.30%2B-FF4B4B)
-![Local First](https://img.shields.io/badge/AI-local--first%20(Ollama)-6f42c1)
-![License](https://img.shields.io/badge/license-MIT-green)
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=19&duration=2800&pause=900&color=2FD8FF&center=true&vCenter=true&width=760&lines=Explainable+ML+Phishing+Detection;SPF+%E2%80%A2+DKIM+%E2%80%A2+DMARC+Verification;Received-Chain+Origin+Tracing+%2B+Tor%2FVPN+Detection;Local-First+AI+Copilot+(Qwen+%2B+Nomic+AI);Court-Ready+Forensic+Reports+with+SHA-256+Evidence" alt="Typing tagline"/>
 
+<br/>
+
+<img src="https://img.shields.io/badge/DETECT-2fd8ff?style=for-the-badge&labelColor=0b1626" alt="Detect"/>
+<img src="https://img.shields.io/badge/TRACE-35d399?style=for-the-badge&labelColor=0b1626" alt="Trace"/>
+<img src="https://img.shields.io/badge/CORRELATE-a389f4?style=for-the-badge&labelColor=0b1626" alt="Correlate"/>
+<img src="https://img.shields.io/badge/REPORT-ff9f43?style=for-the-badge&labelColor=0b1626" alt="Report"/>
+<img src="https://img.shields.io/badge/DEFEND-ff4757?style=for-the-badge&labelColor=0b1626" alt="Defend"/>
+
+<br/><br/>
+
+<img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
+<img src="https://img.shields.io/badge/Streamlit-1.30%2B-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit"/>
+<img src="https://img.shields.io/badge/scikit--learn-TF--IDF%20%2B%20LogReg-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" alt="scikit-learn"/>
+<img src="https://img.shields.io/badge/Ollama-Local%20AI-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama"/>
+<img src="https://img.shields.io/badge/Plotly-Dark%20SOC%20UI-3F4F75?style=flat-square&logo=plotly&logoColor=white" alt="Plotly"/>
+<img src="https://img.shields.io/badge/SQLite-Threat%20Memory-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite"/>
+<img src="https://img.shields.io/badge/ClamAV-Antivirus-8b1e1e?style=flat-square" alt="ClamAV"/>
+<img src="https://img.shields.io/badge/License-MIT-35d399?style=flat-square" alt="MIT License"/>
+
+<br/>
+
+<img src="https://img.shields.io/badge/Local--First-100%25%20offline%20by%20default-6f42c1?style=flat-square" alt="Local first"/>
+<img src="https://img.shields.io/badge/IMAP-Read--Only-2fb68e?style=flat-square" alt="Read-only IMAP"/>
+<img src="https://img.shields.io/badge/OAuth-Google%20%E2%80%A2%20Outlook%20%E2%80%A2%20Yandex-4285F4?style=flat-square" alt="OAuth"/>
+<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-SIH26106-ff9933?style=flat-square" alt="SIH26106"/>
+
+<br/><br/>
+
+<b>
+<a href="#-feature-highlights">Features</a> •
+<a href="#-how-an-email-moves-through-the-pipeline">Pipeline</a> •
+<a href="#-installation">Install</a> •
+<a href="#-using-the-dashboard">Usage</a> •
+<a href="#-synapse-copilot">Copilot</a> •
+<a href="#-configuration-reference">Config</a> •
+<a href="#-security--secrets">Security</a> •
+<a href="#-license">License</a>
+</b>
+
+<br/><br/>
+
+<i>Formerly Smart India Hackathon project <b>SIH26106</b></i>
+
+</div>
+
+<!-- ═══════════════════════════ AT A GLANCE ═══════════════════════════ -->
+
+<div align="center">
+
+| 🎯 **6-signal** explainable risk score | 🔐 **3** password-free OAuth providers | 📜 **4** report export types | 🛰️ **3** Tor exit-list sources | 🧠 **100%** local AI by default |
+|:---:|:---:|:---:|:---:|:---:|
+
+</div>
+
+---
+
+## 🛡️ About
 
 Algorithmistic is an offline-first email forensics and threat-intelligence
 platform. Point it at a raw `.eml` file, a bulk `.csv` export, or a live IMAP
@@ -27,46 +82,49 @@ narratives and semantic origin correlation.
 
 ---
 
-## Table of contents
+## 📑 Table of contents
 
-- [Feature highlights](#feature-highlights)
-- [How an email moves through the pipeline](#how-an-email-moves-through-the-pipeline)
-- [Project structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Running the app](#running-the-app)
-- [Using the dashboard](#using-the-dashboard)
-- [Synapse Copilot](#synapse-copilot)
-- [Optional integrations](#optional-integrations)
-- [Configuration reference](#configuration-reference)
-- [Training / retraining the classifier](#training--retraining-the-classifier)
-- [Data, storage & privacy](#data-storage--privacy)
-- [Built-in limits](#built-in-limits)
-- [Known limitations](#known-limitations)
-- [Troubleshooting](#troubleshooting)
-- [Security & secrets](#security--secrets)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+- [Feature highlights](#-feature-highlights)
+- [How an email moves through the pipeline](#-how-an-email-moves-through-the-pipeline)
+- [Project structure](#-project-structure)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Running the app](#-running-the-app)
+- [Using the dashboard](#-using-the-dashboard)
+- [Synapse Copilot](#-synapse-copilot)
+- [Optional integrations](#-optional-integrations)
+- [Configuration reference](#-configuration-reference)
+- [Training / retraining the classifier](#-training--retraining-the-classifier)
+- [Data, storage & privacy](#-data-storage--privacy)
+- [Built-in limits](#-built-in-limits)
+- [Known limitations](#-known-limitations)
+- [Troubleshooting](#-troubleshooting)
+- [Security & secrets](#-security--secrets)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgements](#-acknowledgements)
 
 ---
 
-## Feature highlights
+## ✨ Feature highlights
 
-**Acquisition**
+### <img src="https://img.shields.io/badge/-ACQUISITION-2fd8ff?style=flat-square" alt=""/>
+
 - 📁 **Evidence file upload (Channel B · Batch)**: single `.eml`/`.txt` files, or a bulk `.csv` manifest of cases, up to **50 MB per file**. CSV columns are detected by intelligent field mapping, so the CSV doesn't need one fixed schema.
 - ⚡ **Live IMAP mailbox interceptor (Channel A · Live)**: a read-only connection over IMAP-over-SSL (port 993) to Gmail, Yahoo, Outlook/Microsoft 365, Yandex, or any custom IMAP server. You can connect with an app password, an OAuth2 access token, or one-click **Sign in with Google / Outlook / Yandex**.
 - 🔐 **Password-free OAuth**: with Google, Microsoft and Yandex sign-in, your password never passes through the app. Sign-in can finish in a popup or new tab, and the code is handed back to the main tab through a secure relay (`BroadcastChannel`). The signed-in address is cached so it doesn't need retyping after a restart.
 - 🚀 **Instant message opening**: the newest 15 message bodies are prefetched in one background IMAP session and held in a per-session cache, so opening a message is close to instant. The inbox view shows sender avatars, subject tags (Security, Account, Billing…) and relative timestamps.
 
-**Detection**
+### <img src="https://img.shields.io/badge/-DETECTION-ff4757?style=flat-square" alt=""/>
+
 - **Explainable ML classifier**: TF‑IDF (1–2 grams) + Logistic Regression, exposing the exact terms that pushed a message toward "phishing"
 - **SPF / DKIM / DMARC verification**: reads the receiving server's own authentication verdicts rather than re-querying DNS after the fact
 - **BEC (Business Email Compromise) heuristics**: payment pressure, urgency language, executive-identity claims, free-mail senders, and the absence of any link/attachment to scan
 - **IOC extraction**: URLs, domains, IPs, email addresses and crypto wallets, with look-alike/typosquat/homoglyph brand detection (`paypa1-support.com`, `micros0ft-securelogin.ru`, …) that needs no DNS or WHOIS lookup
 - **Attachment scanning**: real-time ClamAV (`clamd`) in-memory scanning (`zINSTREAM`), an optional VirusTotal multi-engine cloud fallback, and a risky-extension heuristic as the last resort
 
-**Origin & routing**
+### <img src="https://img.shields.io/badge/-ORIGIN%20%26%20ROUTING-35d399?style=flat-square" alt=""/>
+
 - **Received-chain reconstruction**: walks the header chain oldest-first, skipping private/loopback/reserved addresses, to find the true origin hop, and separates trusted hops from possibly forged ones
 - **Geolocation**: live IP‑API lookups with an offline cache fallback, plus an optional local MaxMind GeoLite2 database, classifying infrastructure as Tor / VPN / proxy / hosting / residential / corporate
 - **Interactive hop map**: a Folium satellite map (Esri World Imagery) with numbered, risk-coloured hop pins (Critical red, High orange, Medium yellow, Low blue). It has "All emails" mode (up to 10 recent emails) and "Single email" mode, and when several emails come from the same location they share one stacked pin labelled with their email numbers.
@@ -75,25 +133,30 @@ narratives and semantic origin correlation.
 - **Bulk infrastructure scan**: scans every origin and hop IP across all loaded cases in one pass, either against X4BNet VPN/datacenter CIDR ranges (fetched live in the UI, or loaded from a local CSV for air-gapped use) or against the cached Tor exit lists
 - **Optional offline VPN/datacenter CIDR check**: built from X4BNet's public lists, for environments without live internet access
 
-**AI & correlation (local-first)**
+### <img src="https://img.shields.io/badge/-AI%20%26%20CORRELATION-a389f4?style=flat-square" alt=""/>
+
 - 🤖 **AI Threat Analysis**: per-email and multi-email campaign threat narratives (up to 20 recent emails in campaign mode), generated by a local Qwen model via Ollama and limited to the evidence in front of it
-- 💬 **Synapse Copilot**: an always-available chat assistant (Qwen + Nomic AI) that runs forensic workflows from plain-English commands. See [Synapse Copilot](#synapse-copilot).
+- 💬 **Synapse Copilot**: an always-available chat assistant (Qwen + Nomic AI) that runs forensic workflows from plain-English commands. See [Synapse Copilot](#-synapse-copilot).
 - 🧠 **Nomic AI origin correlation**: embeds each message's origin/routing profile (geography, infrastructure class, relay path of up to 8 hops, network operator) with `nomic-embed-text` (via Ollama, with an optional Cohere cloud fallback) to surface cases that *behave* alike even when no literal indicator overlaps. Matches are ranked by cosine similarity plus a shared-trait bonus and grouped into **Strong ≥ 85%**, **Related ≥ 70%** and **Weak ≥ 55%** (anything lower is treated as noise).
 - 🕸️ **Correlation graph**: a NetworkX graph linking senders, domains, IPs and wallets to surface multi-message campaigns. Solid edges are hard evidence and dashed edges are AI-inferred semantic links (opt-in). Click a node to highlight what it connects to. Large graphs are sampled for readability with a reproducible layout seed, and the result is cached so it doesn't re-render on every interaction.
 
-**Intelligence & memory**
+### <img src="https://img.shields.io/badge/-INTELLIGENCE%20%26%20MEMORY-f4c95d?style=flat-square" alt=""/>
+
 - **Local adaptive threat memory** (SQLite): every indicator seen is remembered and reused across future analyses, with repeat-offender alerts for IPs seen before
 - **URLhaus live sync**: real-time Auth-Key API with an automatic CSV fallback, throttled to a 30‑minute window, plus a manual "Sync URLHaus Feed Now" button
 - **Threat history**: total logged, Critical/High count, average score, and the last 200 logged messages with timestamp, IP, country, score and verdict
 - **Analyst feedback loop**: "Confirm Threat" / "False Positive" verdicts are stored separately from raw indicators. Once **20 verified samples** are collected, an adaptive model is retrained, and it only replaces the base model if validation accuracy improves.
 
-**Reporting**
+### <img src="https://img.shields.io/badge/-REPORTING-ff9f43?style=flat-square" alt=""/>
+
 - **Court-ready Markdown reports**: full scoring breakdown, header evidence, routing chain, IOCs, model explanation, recommended response actions, and an explicit limitations/legal section, anchored by a SHA‑256 hash of the original evidence file
 - **Four export types**: *AI Result Only*, *Machine Result Only*, *Combined Report*, and a batch *Joint Report*, which covers all emails in a pipeline run as one `.md` file
 
+<p align="right"><a href="#top">⬆ back to top</a></p>
+
 ---
 
-## How an email moves through the pipeline
+## 🔄 How an email moves through the pipeline
 
 ```mermaid
 flowchart LR
@@ -112,6 +175,17 @@ flowchart LR
     G -.-> K[ollama_threat.py\nAI narrative]
     F -.-> L[nomic_embed.py\nsemantic origin index]
     I -.-> M[correlate.py\ncampaign graph]
+
+    classDef input fill:#0b1626,stroke:#2fd8ff,color:#e6f7ff;
+    classDef detect fill:#1a0f1a,stroke:#ff4757,color:#ffe6ea;
+    classDef origin fill:#0d1f19,stroke:#35d399,color:#e6fff4;
+    classDef ai fill:#16112b,stroke:#a389f4,color:#f0ebff;
+    classDef out fill:#22170a,stroke:#ff9f43,color:#fff3e6;
+    class A,B input;
+    class C,D,E,G detect;
+    class F,J origin;
+    class K,L,M,I ai;
+    class H out;
 ```
 
 `analyzer.py` is the single entry point that runs this whole pipeline for
@@ -128,7 +202,9 @@ machine-only analysis automatically, so the Origin & Route map and the
 Correlation graph can show every browsed message without waiting on the
 slower LLM stages.
 
-## Project structure
+---
+
+## 🗂️ Project structure
 
 | File | Role |
 | --- | --- |
@@ -159,16 +235,18 @@ slower LLM stages.
 | `requirements.txt` | Python dependencies |
 | `client_secret.example.json` | Template for your own Google OAuth client file (copy to `client_secret.json`) |
 | `.streamlit/config.toml` | Streamlit theme/server settings |
+| `LICENSE` | MIT License text |
 | `data/` | Created at runtime: `emails.csv`, `model.joblib`, `geo_cache.json`, `vpn_ranges.csv` (optional), `GeoLite2-City.mmdb` (optional), `urlhaus_last_update.txt` |
 | `samples/` | Demo `.eml` files and sample threat CSVs for offline testing (fictional addresses only) |
 | `threat_memory.db` | SQLite database created on first run (local only, gitignored) |
 
+> [!NOTE]
 > The **About** page inside the app displays this `README.md`, so keep it
 > next to `app.py`.
 
 ---
 
-## Prerequisites
+## 🧰 Prerequisites
 
 - **Python 3.10+**
 - **pip** and **git**
@@ -185,10 +263,13 @@ slower LLM stages.
 - *(optional)* A free **URLhaus Auth-Key** from [auth.abuse.ch](https://auth.abuse.ch/), needed for the real-time threat-intel sync (a CSV fallback works with no key)
 - *(optional)* `python-docx`, used for DOCX support if installed (the app detects it automatically)
 
-None of the optional items block the app from running. Each one fails soft,
-and the relevant panel explains what's missing.
+> [!TIP]
+> None of the optional items block the app from running. Each one fails
+> soft, and the relevant panel explains what's missing.
 
-## Installation
+---
+
+## 📦 Installation
 
 ### 1. Clone the repository
 
@@ -239,7 +320,7 @@ you need:
 
 | Feature | What you provide | How |
 | --- | --- | --- |
-| Sign in with Google | Your own OAuth client | Copy `client_secret.example.json` to `client_secret.json` and fill in your values (see [Google OAuth](#optional-integrations)) |
+| Sign in with Google | Your own OAuth client | Copy `client_secret.example.json` to `client_secret.json` and fill in your values (see [Google OAuth](#-optional-integrations)) |
 | Sign in with Outlook / Yandex | Your own app registration | Configure `microsoft_oauth.py` / `yandex_oauth.py` with your client details |
 | Real-time URLhaus sync | Your own free Auth-Key | Set the `URLHAUS_AUTH_KEY` environment variable |
 | VirusTotal fallback | Your own API key | Set `SIH26106_VT_API_KEY` |
@@ -249,7 +330,9 @@ you need:
 `client_secret.json`, your OAuth token files, the email-cache files and
 `.env` are all listed in `.gitignore`, so they stay on your machine.
 
-## Running the app
+---
+
+## ▶️ Running the app
 
 ```bash
 streamlit run app.py
@@ -258,10 +341,12 @@ streamlit run app.py
 Streamlit will start a local server and open your browser to
 `http://localhost:8501`. On first launch the app will automatically
 generate its training data, its model and its local SQLite database. See
-[Training / retraining the classifier](#training--retraining-the-classifier)
+[Training / retraining the classifier](#-training--retraining-the-classifier)
 below.
 
-## Using the dashboard
+---
+
+## 🖥️ Using the dashboard
 
 **1. Pick an acquisition mode** on the Dashboard:
    - **Channel A · Live: Live IMAP mailbox interceptor.** Connects straight
@@ -289,11 +374,11 @@ below.
 
 | Group | Contains |
 | --- | --- |
-| Threat Operations | Upload Email(s), Live Email Scan (IMAP), AI Copilot, Nomic AI |
-| Visualization | Global Threat Map, Correlation Graph, Analytics |
-| Intelligence | Threat History, IOC Lookup, URLhaus Feed |
-| Security | Antivirus (ClamAV) |
-| System | Settings, About |
+| 🔴 Threat Operations | Upload Email(s), Live Email Scan (IMAP), AI Copilot, Nomic AI |
+| 🔵 Visualization | Global Threat Map, Correlation Graph, Analytics |
+| 🟣 Intelligence | Threat History, IOC Lookup, URLhaus Feed |
+| 🟠 Security | Antivirus (ClamAV) |
+| ⚪ System | Settings, About |
 
    Sidebar shortcuts map onto the workflow panels: *Nomic AI* and *Global
    Threat Map* open **Origin & Route**, *Analytics* opens **Classification**,
@@ -311,7 +396,9 @@ batch runs can be exported as a single *Joint Report*. Each report includes a
 SHA‑256 hash of the source file so a reviewer can confirm the exhibit hasn't
 been altered.
 
-## Synapse Copilot
+---
+
+## 💬 Synapse Copilot
 
 Synapse Copilot is the dashboard's built-in assistant, powered by the local
 Qwen model plus Nomic AI. It knows whether you are in Live IMAP or
@@ -329,10 +416,12 @@ and accepts typed commands such as:
 The chat shows the most recent messages, and a pulse indicator shows when
 the Copilot is ready.
 
-## Optional integrations
+---
+
+## 🔌 Optional integrations
 
 <details>
-<summary><b>Ollama: AI Threat Analysis, Synapse Copilot & Nomic AI</b></summary>
+<summary><b>🤖 Ollama: AI Threat Analysis, Synapse Copilot & Nomic AI</b></summary>
 
 ```bash
 # Install Ollama from https://ollama.com, then:
@@ -349,7 +438,7 @@ For semantic correlation without a local Ollama, set
 </details>
 
 <details>
-<summary><b>ClamAV: attachment scanning (with VirusTotal fallback)</b></summary>
+<summary><b>🦠 ClamAV: attachment scanning (with VirusTotal fallback)</b></summary>
 
 Install and run `clamd` locally (via your OS package manager, or Docker).
 By default the app looks for it at `127.0.0.1:3310`. To override that:
@@ -373,7 +462,7 @@ If `clamd` isn't reachable, the app falls back in two steps:
 </details>
 
 <details>
-<summary><b>Google OAuth: one-click Gmail sign-in</b></summary>
+<summary><b>🟦 Google OAuth: one-click Gmail sign-in</b></summary>
 
 Every user creates their **own** Google OAuth client. No shared or
 project-owned credentials are included in this repository.
@@ -401,7 +490,7 @@ and delete the token file.
 </details>
 
 <details>
-<summary><b>Microsoft & Yandex OAuth: one-click Outlook / Yandex sign-in</b></summary>
+<summary><b>🟪 Microsoft & Yandex OAuth: one-click Outlook / Yandex sign-in</b></summary>
 
 Sign-in for **Outlook / Microsoft 365** and **Yandex** is handled by
 `microsoft_oauth.py` and `yandex_oauth.py` (or `yandex_Oauth.py`). Register
@@ -420,7 +509,7 @@ details in those modules.
 </details>
 
 <details>
-<summary><b>URLhaus: live malicious-URL feed</b></summary>
+<summary><b>🌐 URLhaus: live malicious-URL feed</b></summary>
 
 Get a free Auth-Key from [auth.abuse.ch](https://auth.abuse.ch/) and set it
 as an environment variable:
@@ -443,7 +532,7 @@ sync happened.
 </details>
 
 <details>
-<summary><b>Offline VPN/datacenter ranges</b></summary>
+<summary><b>🛰️ Offline VPN/datacenter ranges</b></summary>
 
 For environments without live internet access, build a local CIDR
 database from X4BNet's public lists:
@@ -462,7 +551,7 @@ can point it at a local CSV path and skip live fetching.
 </details>
 
 <details>
-<summary><b>MaxMind GeoLite2: offline geolocation</b></summary>
+<summary><b>🗺️ MaxMind GeoLite2: offline geolocation</b></summary>
 
 To resolve IPs without any live lookup, place a MaxMind GeoLite2 City
 database at:
@@ -476,7 +565,9 @@ The lookup order is: bundled cache, then the local GeoLite2 database, then
 helps for demos and air-gapped labs.
 </details>
 
-## Configuration reference
+---
+
+## ⚙️ Configuration reference
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
@@ -498,7 +589,9 @@ session instead of on disk, and a **Delete my data & sign out** button in the
 sidebar wipes the visitor's stored data, clears caches and resets the
 session.
 
-## Training / retraining the classifier
+---
+
+## 🧠 Training / retraining the classifier
 
 `classifier.load_or_train()` loads the existing model from
 `data/model.joblib` if there is one. Otherwise it trains a fresh one the
@@ -555,16 +648,18 @@ final 0–100 score can be traced to a named reason:
 
 | Score | Verdict |
 | --- | --- |
-| ≥ 75 | Critical |
-| ≥ 55 | High |
-| ≥ 30 | Medium |
-| < 30 | Low |
+| ≥ 75 | <img src="https://img.shields.io/badge/-CRITICAL-ff4757?style=flat-square" alt="Critical"/> |
+| ≥ 55 | <img src="https://img.shields.io/badge/-HIGH-ff9f43?style=flat-square" alt="High"/> |
+| ≥ 30 | <img src="https://img.shields.io/badge/-MEDIUM-f4c95d?style=flat-square" alt="Medium"/> |
+| < 30 | <img src="https://img.shields.io/badge/-LOW-2fd8ff?style=flat-square" alt="Low"/> |
 
 The **Classification** panel shows the breakdown: points contributed by each
 detector against its maximum weight, the ML phishing probability, the
 top-weighted terms, and the exact body text the model analysed.
 
-## Data, storage & privacy
+---
+
+## 🔒 Data, storage & privacy
 
 - Everything is stored **locally** in `threat_memory.db` (SQLite) and the
   `data/` folder. Nothing is uploaded anywhere by default.
@@ -582,7 +677,9 @@ top-weighted terms, and the exact body text the model analysed.
   protection policy (the report template itself flags this, referencing
   India's DPDP Act 2023) and restrict access to authorised investigators.
 
-## Built-in limits
+---
+
+## 📏 Built-in limits
 
 | Limit | Value |
 | --- | --- |
@@ -600,10 +697,13 @@ top-weighted terms, and the exact body text the model analysed.
 | Adaptive model minimum | 20 verified analyst samples |
 | Message body shown in the viewer | 200,000 characters |
 
-## Known limitations
+---
 
-These are stated plainly in every generated report and are worth knowing
-before you start:
+## ⚠️ Known limitations
+
+> [!WARNING]
+> These are stated plainly in every generated report and are worth knowing
+> before you start.
 
 - **Geolocation is approximate**: city/country level at best, and can be
   wrong for VPN, proxy, Tor and cloud ranges. Treat it as an investigative
@@ -620,7 +720,9 @@ before you start:
 - **The Tor exit-node check is a point-in-time snapshot** of the published
   exit list at analysis time, not necessarily at send time.
 
-## Troubleshooting
+---
+
+## 🩺 Troubleshooting
 
 | Symptom | Likely cause / fix |
 | --- | --- |
@@ -633,14 +735,18 @@ before you start:
 | Correlation graph lacks sampling controls | Update `correlate.py`; the app falls back to the full unsampled graph with older versions |
 | About page says README not found | Keep `README.md` in the same folder as `app.py` |
 
-## Security & secrets
+---
 
-**No credentials are stored in this repository.** The URLhaus, VirusTotal
-and Cohere keys are read from environment variables, Google / Microsoft /
-Yandex sign-in use *your own* OAuth client registrations, and app passwords
-are typed into the dashboard at runtime. Without any of them the app still
-runs, falling back to the keyless URLhaus CSV feed, heuristic attachment
-checks and manual IMAP credentials.
+## 🔐 Security & secrets
+
+> [!IMPORTANT]
+> **No credentials are stored in this repository.** The URLhaus, VirusTotal
+> and Cohere keys are read from environment variables, Google / Microsoft /
+> Yandex sign-in use *your own* OAuth client registrations, and app
+> passwords are typed into the dashboard at runtime.
+
+Without any of them the app still runs, falling back to the keyless URLhaus
+CSV feed, heuristic attachment checks and manual IMAP credentials.
 
 The included `.gitignore` keeps local secrets and generated data out of
 Git:
@@ -686,18 +792,22 @@ If you fork or contribute:
 - Consider enabling GitHub secret scanning and push protection in your
   repository settings.
 
-## Contributing
+---
+
+## 🤝 Contributing
 
 Issues and pull requests are welcome. If you propose a change to the
 scoring weights, brand lists, or detection heuristics in `config.py`,
 please include the reasoning (and ideally a sample email) behind it. Every
 number in this project is meant to be traceable to a reason, not tuned
 blind.
+
 By submitting a contribution, you agree that it will be licensed under the
 same MIT License as the rest of the project.
 
+---
 
-## License
+## 📄 License
 
 This project is licensed under the **MIT License**. See the
 [`LICENSE`](LICENSE) file for the full text.
@@ -707,13 +817,15 @@ and/or sell copies of this software, provided the copyright notice and
 permission notice are included in all copies or substantial portions of it.
 The software is provided **"as is"**, without warranty of any kind.
 
-> **Note:** The MIT License covers this project's source code only.
-> Third-party services and data it integrates with (URLhaus, X4BNet lists,
-> Tor exit lists, ip-api.com, MaxMind GeoLite2, VirusTotal, Cohere, Ollama
-> models, Esri imagery) are governed by their own terms and licenses.
+> [!NOTE]
+> The MIT License covers this project's source code only. Third-party
+> services and data it integrates with (URLhaus, X4BNet lists, Tor exit
+> lists, ip-api.com, MaxMind GeoLite2, VirusTotal, Cohere, Ollama models,
+> Esri imagery) are governed by their own terms and licenses.
 
+---
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 - [abuse.ch URLhaus](https://urlhaus.abuse.ch/): malicious URL feed
 - [X4BNet](https://github.com/X4BNet/lists_vpn): public VPN/datacenter IP ranges
@@ -725,3 +837,20 @@ The software is provided **"as is"**, without warranty of any kind.
 - [Ollama](https://ollama.com/): local model runtime powering AI Threat Analysis, Synapse Copilot and Nomic AI
 - [Nomic AI](https://www.nomic.ai/): `nomic-embed-text` embedding model
 - [Esri World Imagery](https://www.esri.com/) and [Folium](https://python-visualization.github.io/folium/): satellite hop map
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<div align="center">
+
+<br/>
+
+<b>Built for investigators, by investigators — every score traceable, every exhibit hashed.</b>
+
+<br/><br/>
+
+<img src="https://img.shields.io/badge/Made%20with-Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Made with Python"/>
+<img src="https://img.shields.io/badge/Powered%20by-Local%20AI-a389f4?style=flat-square" alt="Local AI"/>
+<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-SIH26106-ff9933?style=flat-square" alt="SIH26106"/>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:a389f4,30:2fd8ff,65:1e3853,100:0b1626&height=120&section=footer" alt="footer" width="100%"/>
+
+</div>
