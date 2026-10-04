@@ -5971,6 +5971,46 @@ st.markdown(r"""
 .stApp .topbar-status-online {color:#3fb68b; font-weight:600;}
 .stApp .topbar-status-time {font-family:ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
 
+/* ---- banner fit: keep status on the right, trim dead space ---- */
+.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:2.6rem !important;}
+.stApp .topbar-shell {padding:20px 28px; margin-top:0; gap:14px 20px;}
+.stApp .topbar-brand {flex:1 1 480px; min-width:0; gap:18px;}
+.stApp .topbar-status-wrap {flex:0 0 auto;}
+.stApp .topbar-title {font-size:clamp(20px,2.3vw,30px); line-height:1.18;}
+.stApp .topbar-kicker {margin-bottom:6px;}
+.stApp .topbar-subtitle {margin-top:5px;}
+.stApp .topbar-actions {margin-bottom:0;}
+.stApp .topbar-logo {width:60px; height:60px; flex-basis:60px;}
+
+/* ---- sidebar brand card: same language as the main banner, text fits ---- */
+.stApp .sidebar-brand-v2 {
+  --tone:#4c8dff; border:1px solid var(--line-strong,#313c4b); border-radius:14px; padding:18px 14px 14px;
+  background:
+    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 8%,transparent), 0 14px 28px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.stApp .sidebar-brand-v2::before {height:3px; opacity:1; background:var(--tone);}
+.stApp .sidebar-brand-v2 .brand-row {gap:11px; min-width:0;}
+.stApp .sidebar-brand-v2 .brand-text {min-width:0; flex:1 1 auto;}
+.stApp .sidebar-brand-v2 .brand-mark {
+  width:42px; height:42px; flex:0 0 42px; border-radius:11px; box-shadow:none;
+  background:rgba(255,255,255,.03); border:1px solid color-mix(in srgb,var(--tone) 40%,var(--line-strong,#313c4b));
+}
+.stApp .sidebar-brand-v2 .brand-text .name {
+  font:800 14px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:.07em; white-space:nowrap;
+  background:none; -webkit-text-fill-color:#fff; color:#fff !important;
+}
+.stApp .sidebar-brand-v2 .brand-text .role {
+  font:600 8.5px/1.3 ui-monospace,Consolas,monospace; letter-spacing:.1em; white-space:nowrap; margin-top:5px;
+  color:var(--tone) !important;
+}
+.stApp .sidebar-brand-v2 .brand-meta {
+  border-radius:6px; padding:6px 10px; margin-top:12px; letter-spacing:.14em; font-weight:600;
+  color:#3fb68b !important; border:1px solid color-mix(in srgb,#3fb68b 40%,transparent); background:color-mix(in srgb,#3fb68b 8%,transparent);
+}
+.stApp .sidebar-brand-v2 .brand-dot {background:#3fb68b; box-shadow:0 0 8px rgba(63,182,139,.8);}
+
 /* ======================= MODULE / PART BANNERS ======================= */
 .stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
 .stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
