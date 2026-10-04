@@ -3716,6 +3716,230 @@ st.markdown(
         box-shadow:0 0 0 3px color-mix(in srgb, var(--violet) 25%, transparent);
     }
 
+    /* ==================================================================
+       DASHBOARD CARD SYSTEM v3
+       Brings every dashboard card onto the same language as the Email
+       Deep Dive headers above (.part-banner / .dossier-head): one quiet
+       card material (graphite gradient + a faint tone wash from the top-
+       left corner), a slim inset accent bar instead of a thick border
+       slab, a small mono eyebrow with a leading hairline, and tabular
+       numerals for data. Each card only sets --tone, so colour carries
+       meaning (copper = origin/route, blue = intake, violet = AI/auth,
+       amber = scope/caution, green = healthy/connected) rather than
+       decoration. Severity colours used on pills/chips are untouched.
+       ================================================================== */
+
+    /* ---- tones ------------------------------------------------------ */
+    .stage-card, .panel-card-head, .panel-card-body, div[data-testid="stMetric"],
+    .st-key-bulk_infra_scan, .st-key-dash_map_graph_card,
+    .st-key-right_dock_metrics_body, .st-key-dd_dock_metrics_body,
+    .st-key-imap_connected_actions {--tone:var(--cyan);}
+    .stage-card-auth {--tone:var(--violet);}
+    .stage-card-scope {--tone:var(--amber);}
+    .stage-card-success, .st-key-imap_connected_actions {--tone:var(--green);}
+    .panel-card-head-violet, .panel-card-body-violet {--tone:var(--violet);}
+    .panel-card-head-amber,  .panel-card-body-amber  {--tone:var(--amber);}
+    .panel-card-head-green,  .panel-card-body-green  {--tone:var(--green);}
+    .panel-card-head-copper, .panel-card-body-copper {--tone:var(--teal);}
+    .st-key-bulk_infra_scan, .st-key-dash_map_graph_card {--tone:var(--teal);}
+    .st-key-dd_dock_metrics_body {--tone:var(--teal);}
+    .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_ya {--tone:#a6947c;}
+    .st-key-auth_google_box {--tone:#3b82f6;}
+    .st-key-auth_microsoft_box {--tone:#c98a5c;}
+    .st-key-auth_yandex_box {--tone:#d65f45;}
+
+    /* ---- shared card material -------------------------------------- */
+    .stage-card, .st-key-bulk_infra_scan, .st-key-dash_map_graph_card,
+    .st-key-imap_connected_actions,
+    .st-key-auth_password_box, .st-key-auth_google_box,
+    .st-key-auth_password_box_ms, .st-key-auth_microsoft_box,
+    .st-key-auth_password_box_ya, .st-key-auth_yandex_box {
+        position:relative;
+        border:1px solid var(--line-strong) !important;
+        border-top-width:1px !important; border-left-width:1px !important;
+        border-radius:var(--r-lg) !important;
+        background:
+            radial-gradient(120% 150% at 0% 0%, color-mix(in srgb, var(--tone) 13%, transparent) 0%, transparent 58%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-md) !important;
+    }
+    .stage-card::before, .st-key-bulk_infra_scan::before, .st-key-dash_map_graph_card::before,
+    .st-key-imap_connected_actions::before,
+    .st-key-auth_password_box::before, .st-key-auth_google_box::before,
+    .st-key-auth_password_box_ms::before, .st-key-auth_microsoft_box::before,
+    .st-key-auth_password_box_ya::before, .st-key-auth_yandex_box::before {
+        content:""; position:absolute; left:0; top:16px; bottom:16px; width:3px;
+        border-radius:0 3px 3px 0; pointer-events:none; z-index:2;
+        background:linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent));
+    }
+    /* Static cards don't lift on hover (they aren't clickable); the border
+       just warms toward the card's own tone. */
+    .stage-card:hover, .stage-card-auth:hover, .stage-card-scope:hover, .stage-card-success:hover,
+    .st-key-auth_password_box:hover, .st-key-auth_google_box:hover,
+    .st-key-auth_password_box_ms:hover, .st-key-auth_microsoft_box:hover,
+    .st-key-auth_password_box_ya:hover, .st-key-auth_yandex_box:hover {
+        transform:none !important;
+        border-color:color-mix(in srgb, var(--tone) 42%, var(--line-strong)) !important;
+        background:
+            radial-gradient(120% 150% at 0% 0%, color-mix(in srgb, var(--tone) 16%, transparent) 0%, transparent 58%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-md) !important;
+    }
+    .stage-card {padding:18px 22px 18px 28px !important; overflow:hidden;}
+    .st-key-bulk_infra_scan {padding:18px 24px 20px 30px !important;}
+    .st-key-dash_map_graph_card {padding:24px 24px 24px 30px !important;}
+    .st-key-imap_connected_actions {
+        border-top-color:var(--line-strong) !important;
+        border-top-left-radius:0 !important; border-top-right-radius:0 !important;
+        padding:14px 22px 16px 28px !important;
+    }
+    .stage-card-success::after {
+        background:color-mix(in srgb, var(--green) 14%, transparent) !important;
+        border-color:color-mix(in srgb, var(--green) 40%, transparent) !important;
+    }
+
+    /* ---- eyebrow / title / sub inside cards ------------------------ */
+    .stage-card .stage-label, .stage-card-auth .stage-label,
+    .stage-card-scope .stage-label, .stage-card-success .stage-label {
+        gap:10px; padding:0 !important; border:0 !important; border-radius:0 !important;
+        background:none !important; color:var(--tone) !important;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important;
+        letter-spacing:.18em !important; text-transform:uppercase !important;
+    }
+    .stage-card .stage-label::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .stage-card .stage-title {font:750 18px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em; margin-top:9px !important;}
+    .stage-card .stage-help {font-size:13px !important; line-height:1.5 !important; color:var(--muted) !important; margin-top:4px !important; max-width:78ch;}
+    .infra-scan-eyebrow {
+        display:inline-flex; align-items:center; gap:10px; color:var(--tone) !important;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
+    }
+    .infra-scan-eyebrow::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .infra-scan-title {font:750 20px/1.25 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em !important;}
+    .auth-option-label {
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important;
+        color:var(--tone) !important;
+    }
+    .auth-option-label::before {box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 22%, transparent) !important; background:var(--tone) !important;}
+
+    /* ---- panel-card head + body (right dock, globe-scan, copilot) --- */
+    .panel-card-head, .panel-card-body {
+        position:relative;
+        border:1px solid var(--line-strong) !important;
+        border-left:1px solid var(--line-strong) !important;
+    }
+    .panel-card-head {
+        padding:13px 18px 13px 26px !important;
+        border-bottom:1px solid var(--line) !important;
+        border-radius:var(--r-lg) var(--r-lg) 0 0 !important;
+        background:
+            radial-gradient(120% 220% at 0% 0%, color-mix(in srgb, var(--tone) 15%, transparent) 0%, transparent 60%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        color:var(--tone) !important;
+        font:700 10.5px/1.2 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
+        text-transform:uppercase;
+    }
+    .panel-card-head > :first-child {display:inline-flex; align-items:center; gap:10px;}
+    .panel-card-head > :first-child::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .panel-card-head > :last-child:not(:first-child) {
+        font:600 10.5px/1.2 ui-monospace,Consolas,monospace !important; letter-spacing:.12em !important;
+        color:var(--muted) !important; text-transform:uppercase;
+    }
+    .panel-card-body {
+        padding:16px 18px 17px 26px !important; border-top:none !important;
+        border-radius:0 0 var(--r-lg) var(--r-lg) !important;
+        background:linear-gradient(180deg, var(--panel), var(--panel-3)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.03), var(--shadow-sm) !important;
+    }
+    .panel-card-head::before, .panel-card-body::before {
+        content:""; position:absolute; left:0; width:3px; pointer-events:none;
+        background:linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent));
+    }
+    .panel-card-head::before {top:12px; bottom:0; border-radius:0 3px 0 0;}
+    .panel-card-body::before {top:0; bottom:16px; border-radius:0 0 3px 0;}
+    .st-key-dash_map_graph_card .panel-card-head span:last-child {
+        font:600 10.5px/1.2 ui-monospace,Consolas,monospace !important; letter-spacing:.12em !important;
+        color:var(--muted) !important; text-transform:uppercase;
+    }
+    .st-key-right_dock_metrics_body, .st-key-dd_dock_metrics_body {
+        position:relative;
+        border:1px solid var(--line-strong) !important; border-top:none !important;
+        border-radius:0 0 var(--r-lg) var(--r-lg) !important;
+        background:linear-gradient(180deg, var(--panel), var(--panel-3)) !important;
+        padding:16px 14px 4px 22px !important;
+    }
+    .st-key-right_dock_metrics_body::before, .st-key-dd_dock_metrics_body::before {
+        content:""; position:absolute; left:0; top:0; bottom:16px; width:3px;
+        border-radius:0 0 3px 0; pointer-events:none;
+        background:linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent));
+    }
+
+    /* ---- KPI / metric tiles ---------------------------------------- */
+    div[data-testid="stMetric"] {
+        position:relative; overflow:hidden;
+        padding:15px 16px 14px 20px !important;
+        border:1px solid var(--line-strong) !important; border-radius:var(--r-md) !important;
+        background:
+            radial-gradient(130% 160% at 0% 0%, color-mix(in srgb, var(--tone) 13%, transparent) 0%, transparent 60%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-sm) !important;
+        transform:none !important;
+    }
+    /* Tone rotates by column so a row of four reads as four distinct
+       numbers: copper, blue, violet, green (repeating). */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"] {--tone:var(--teal);}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"] {--tone:var(--cyan);}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+3) div[data-testid="stMetric"] {--tone:var(--violet);}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"] {--tone:var(--green);}
+    /* Replace the old 2px top bar with the same slim inset bar the cards use. */
+    div[data-testid="stMetric"]:before,
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] div[data-testid="stMetric"]:before {
+        content:"" !important; position:absolute !important; left:0 !important; right:auto !important;
+        top:14px !important; bottom:14px !important; width:3px !important; height:auto !important;
+        border-radius:0 3px 3px 0 !important; opacity:1 !important;
+        background:linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent)) !important;
+    }
+    div[data-testid="stMetric"]:hover,
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] div[data-testid="stMetric"]:hover {
+        transform:none !important;
+        border-color:color-mix(in srgb, var(--tone) 45%, var(--line-strong)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-sm) !important;
+    }
+    div[data-testid="stMetricLabel"] p {
+        display:inline-flex; align-items:center; gap:8px;
+        font:600 10.5px/1.2 ui-monospace,Consolas,monospace !important;
+        letter-spacing:.14em !important; text-transform:uppercase; color:var(--muted) !important;
+    }
+    div[data-testid="stMetricLabel"] p::before {content:""; width:12px; height:1px; background:var(--tone); opacity:.8;}
+    div[data-testid="stMetricValue"] {font-weight:750 !important; letter-spacing:-.02em !important; color:#f4f7fb !important;}
+
+    /* ---- dashboard section title: centred hairline divider ---------- */
+    .dash-section-title {
+        justify-content:center !important; gap:14px !important; border-bottom:0 !important;
+        margin:34px 0 18px !important; padding-bottom:0 !important;
+        color:var(--teal) !important; font:700 10.5px/1.3 ui-monospace,Consolas,monospace !important;
+        letter-spacing:.2em !important;
+    }
+    .dash-section-title::before, .dash-section-title::after {
+        content:""; flex:1; height:1px;
+        background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--teal) 70%, transparent), transparent);
+    }
+    .dash-section-title .dash-section-dot {background:var(--teal) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 22%, transparent) !important;}
+    .dash-section-title .dash-section-sub {color:var(--muted) !important; letter-spacing:.04em !important;}
+
+    /* ---- alerts + expanders share the same material ----------------- */
+    .stAlert, div[data-testid="stAlertContainer"], div[data-testid="stAlert"] {
+        border:1px solid var(--line-strong) !important;
+        border-left:3px solid var(--line-strong) !important;
+        background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), var(--shadow-sm) !important;
+    }
+    [data-testid="stExpander"] {
+        border:1px solid var(--line-strong) !important; border-left:3px solid var(--violet) !important;
+        border-radius:var(--r-md) !important;
+        background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+    }
+    [data-testid="stExpander"] summary {font-weight:650; letter-spacing:-.005em;}
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
