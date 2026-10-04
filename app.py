@@ -4516,15 +4516,10 @@ st.markdown(
        module has its own colour + icon (generated from NAV_OPTIONS).
        The collapsed widget title is hidden -- it was being styled as a tab.
        Delete this block (and the _NAV_STYLE generator) to go back. ------ */
-    .nav-caption {
-        display:flex !important; align-items:center; gap:10px; margin:6px 0 10px 0 !important;
-        font:700 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:#7f98b3 !important;
-    }
-    .nav-caption::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
 
     .stApp .st-key-topnav {
         position:relative !important; overflow:hidden !important;
-        padding:8px 4px 4px 4px !important; border:1px solid #243046 !important; border-radius:16px !important;
+        padding:10px 4px 20px 4px !important; margin:4px 0 8px 0 !important; border:1px solid #243046 !important; border-radius:16px !important;
         background:
             radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
             radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
@@ -4535,7 +4530,18 @@ st.markdown(
         content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; opacity:.85; pointer-events:none;
         background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
     }
-    .stApp .st-key-topnav::after {display:none !important;}
+    /* slim scroll indicator (native bar is hidden): --nav-w = visible fraction,
+       --nav-p = scroll position 0..1, --nav-on = 1 only when the strip overflows.
+       All three are set by the helper script after the nav. */
+    .stApp .st-key-topnav::after {
+        content:"" !important; display:block !important; position:absolute; left:28px; right:28px; bottom:8px; height:3px; border-radius:3px;
+        pointer-events:none; opacity:var(--nav-on,0); transition:opacity .25s var(--ease);
+        background:
+            linear-gradient(90deg,#3b82f6,#8b7cff) no-repeat,
+            rgba(255,255,255,.06);
+        background-size:calc(var(--nav-w,1) * 100%) 100%, 100% 100%;
+        background-position:calc(var(--nav-p,0) * 100%) 0, 0 0;
+    }
     .stApp .st-key-topnav .stRadio [data-testid="stWidgetLabel"],
     .stApp .st-key-topnav .stRadio label[data-testid="stWidgetLabel"] {
         display:none !important; height:0 !important; width:0 !important; margin:0 !important; padding:0 !important;
@@ -4547,18 +4553,13 @@ st.markdown(
     .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {
         display:flex !important; flex-wrap:nowrap !important; align-items:stretch !important; gap:6px !important; width:100% !important;
         background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
-        padding:2px 26px 12px 26px !important; box-sizing:border-box !important;
+        padding:4px 26px !important; box-sizing:border-box !important;
         overflow-x:auto !important; overflow-y:hidden !important; scroll-behavior:auto !important; scroll-snap-type:none !important;
         overscroll-behavior-x:contain !important; -webkit-overflow-scrolling:touch !important; cursor:grab;
-        scrollbar-width:thin !important; scrollbar-color:rgba(76,141,255,.55) transparent !important;
+        scrollbar-width:none !important; -ms-overflow-style:none !important;
         -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
         mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
     }
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {height:5px !important;}
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-track {background:rgba(255,255,255,.03) !important; border-radius:6px !important; margin:0 26px;}
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb {background:linear-gradient(90deg,#3b82f6,#8b7cff) !important; border-radius:6px !important;}
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-button {display:none !important; width:0 !important; height:0 !important;}
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb:hover {background:linear-gradient(90deg,#5b9bf8,#a394ff) !important;}
 
     /* no radio marker, however deep Streamlit nests it */
     .stApp .st-key-topnav .stRadio [role="radiogroup"] label *:not(:has(p)):not(p):not(p *),
@@ -4624,6 +4625,8 @@ st.markdown(
     .stApp [data-testid="stElementContainer"]:has(iframe[height="0"]), .stApp .stElementContainer:has(iframe[height="0"]) {
         position:absolute !important; height:0 !important; margin:0 !important; overflow:hidden !important; visibility:hidden !important;
     }
+
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
 
     /* ---- v11 mailbox-connected panel ------------------------------------
        One card: identity header (avatar, status, address, host/folder/count
@@ -5185,12 +5188,24 @@ components.html(
           if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
         }, true);
       }
+      function metrics(box) {
+        var panel = box.closest('.st-key-topnav');
+        if (!panel) return;
+        var max = box.scrollWidth - box.clientWidth;
+        panel.style.setProperty('--nav-on', max > 2 ? 1 : 0);
+        panel.style.setProperty('--nav-w', max > 2 ? (box.clientWidth / box.scrollWidth).toFixed(4) : 1);
+        panel.style.setProperty('--nav-p', max > 2 ? (box.scrollLeft / max).toFixed(4) : 0);
+      }
       function tick() {
         try {
           var d = window.parent.document;
           var box = d.querySelector('.st-key-topnav [role="radiogroup"]');
           if (!box) return;
-          if (!box.dataset.navWheel) { box.dataset.navWheel = "1"; bind(box); }
+          if (!box.dataset.navWheel) {
+            box.dataset.navWheel = "1"; bind(box);
+            box.addEventListener("scroll", function () { metrics(box); }, { passive: true });
+          }
+          metrics(box);
           var act = box.querySelector("label:has(input:checked)");
           var key = act ? act.innerText : null;
           if (act && key !== last) {
@@ -5205,7 +5220,6 @@ components.html(
     </script>""",
     height=0,
 )
-st.markdown('<div class="nav-caption">FORENSIC WORKFLOW / ACTIVE MODULE</div>', unsafe_allow_html=True)
 with st.container(key="topnav"):
     active_panel = st.radio(
         "Forensic workflow",
