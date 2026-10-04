@@ -4277,7 +4277,7 @@ st.markdown(
     .st-key-imap_signin_card > * {width:calc(100% - 2 * var(--padx)) !important; max-width:none !important; box-sizing:border-box !important;}
     .st-key-imap_signin_card > *:first-child {width:100% !important;}
 
-    .st-key-imap_signin_card::before {height:3px !important; background:linear-gradient(90deg,#4c8dff,rgba(76,141,255,.12) 75%,transparent) !important;}
+    .st-key-imap_signin_card::before {height:3px !important; background:linear-gradient(90deg,#4c8dff 0%,#6c9bff 34%,#d49a66 70%,#e0634a 100%) !important;}
     .st-key-imap_signin_card {
         background:
             radial-gradient(55% 45% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
@@ -4590,13 +4590,13 @@ st.markdown(
         padding:10px 4px 20px 4px !important; margin:4px 0 8px 0 !important; border:1px solid #243046 !important; border-radius:16px !important;
         background:
             radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
-            radial-gradient(40% 160% at 100% 100%, rgba(76,141,255,.05), transparent 70%),
+            radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
             linear-gradient(180deg,#101826,#0a1019) !important;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8) !important;
     }
     .stApp .st-key-topnav::before {
         content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; opacity:.85; pointer-events:none;
-        background:linear-gradient(90deg,#4c8dff,rgba(76,141,255,.12) 70%,transparent);
+        background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
     }
     /* slim scroll indicator (native bar is hidden): --nav-w = visible fraction,
        --nav-p = scroll position 0..1, --nav-on = 1 only when the strip overflows.
@@ -4605,7 +4605,7 @@ st.markdown(
         content:"" !important; display:block !important; position:absolute; left:28px; right:28px; bottom:8px; height:3px; border-radius:3px;
         pointer-events:none; opacity:var(--nav-on,0); transition:opacity .25s var(--ease);
         background:
-            linear-gradient(90deg,#3b82f6,#4c8dff) no-repeat,
+            linear-gradient(90deg,#2fb68e,#8b7cff) no-repeat,
             rgba(255,255,255,.06);
         background-size:calc(var(--nav-w,1) * 100%) 100%, 100% 100%;
         background-position:calc(var(--nav-p,0) * 100%) 0, 0 0;
@@ -4726,7 +4726,7 @@ st.markdown(
     }
     .stApp .sidebar-brand-v2::before {
         content:""; position:absolute; left:0; right:0; top:0; height:2px; opacity:.9;
-        background:linear-gradient(90deg,#4c8dff,rgba(76,141,255,.12) 75%,transparent);
+        background:linear-gradient(90deg,#4c8dff,#8b7cff 45%,#d49a66 80%,#e0634a);
     }
     .stApp .sidebar-brand-v2 .brand-row {gap:12px;}
     .stApp .sidebar-brand-v2 .brand-mark {
@@ -4735,12 +4735,11 @@ st.markdown(
         box-shadow:0 0 0 3px rgba(76,141,255,.10), 0 10px 20px -10px rgba(76,141,255,.8), inset 0 1px 0 rgba(255,255,255,.08);
     }
     .stApp .sidebar-brand-v2 .brand-text .name {
-        font:800 14.5px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:.1em;
-        color:#fff !important; -webkit-text-fill-color:#fff !important; background:none !important;
-        white-space:normal; overflow-wrap:anywhere;
+        font:800 15.5px/1.1 Inter,"Segoe UI",sans-serif; letter-spacing:.14em;
+        background:linear-gradient(180deg,#fff 30%,#a9c3f2); -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent; color:transparent !important;
     }
-    .stApp .sidebar-brand-v2 .brand-text {min-width:0; flex:1 1 auto;}
-    .stApp .sidebar-brand-v2 .brand-text .role {font:600 9px/1.35 ui-monospace,Consolas,monospace; letter-spacing:.08em; color:#8da3bb !important; margin-top:5px; white-space:normal;}
+    .stApp .sidebar-brand-v2 .brand-text .role {font:600 9px/1.3 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#7f98b3 !important; margin-top:5px;}
     .stApp .sidebar-brand-v2 .brand-meta {
         display:inline-flex; align-items:center; gap:8px; margin-top:13px; padding:6px 11px; border-radius:999px;
         font:700 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
@@ -4887,7 +4886,8 @@ st.markdown(
     .mbx-chips {display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
     .mbx-chips span {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.05em; padding:5px 9px; border-radius:999px; color:#9fb3c8; border:1px solid #2a3750; background:rgba(255,255,255,.025);}
     .mbx-chips span:nth-child(1) {color:#9dbcff; border-color:rgba(76,141,255,.4); background:rgba(76,141,255,.09);}
-    .mbx-chips span:nth-child(2), .mbx-chips span:nth-child(3) {color:#9dbcff; border-color:rgba(76,141,255,.4); background:rgba(76,141,255,.09);}
+    .mbx-chips span:nth-child(2) {color:#ecc088; border-color:rgba(224,164,88,.4); background:rgba(224,164,88,.09);}
+    .mbx-chips span:nth-child(3) {color:#86d9bf; border-color:rgba(79,195,161,.4); background:rgba(79,195,161,.09);}
     .mbx-badge {flex:0 0 auto; align-self:flex-start; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; padding:7px 11px; border-radius:999px; color:#34d399; border:1px solid rgba(52,211,153,.4); background:rgba(52,211,153,.10);}
     .mbx-note {margin-top:14px; padding:12px 14px; border-radius:12px; border:1px dashed #2a3750; background:rgba(255,255,255,.02); font-size:12.5px; line-height:1.6; color:#8d99ac;}
 
@@ -6077,7 +6077,7 @@ st.markdown(r"""
   border:1px solid #243046 !important; border-radius:18px !important; overflow:hidden !important;
   background:
     radial-gradient(55% 150% at 0% 0%, rgba(76,141,255,.16), transparent 66%),
-    radial-gradient(45% 140% at 100% 100%, rgba(76,141,255,.06), transparent 70%),
+    radial-gradient(45% 140% at 100% 100%, rgba(212,154,102,.10), transparent 70%),
     linear-gradient(180deg,#111a29,#0a1019) !important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 18px 40px -24px rgba(0,0,0,.9) !important;
 }
@@ -6085,7 +6085,7 @@ st.markdown(r"""
 .stApp .topbar-shell::before {
   content:"" !important; position:absolute; inset:0 !important; height:auto !important; top:0 !important; left:0 !important; right:0 !important; z-index:0; pointer-events:none;
   background:
-    linear-gradient(90deg,#4c8dff,rgba(76,141,255,.12) 70%,transparent) top/100% 2px no-repeat,
+    linear-gradient(90deg,#4c8dff 0%,#8b7cff 28%,#34d399 54%,#d49a66 80%,#e0634a 100%) top/100% 2px no-repeat,
     linear-gradient(rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px,
     linear-gradient(90deg, rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px;
   -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
@@ -6114,9 +6114,10 @@ st.markdown(r"""
 .stApp .topbar-kicker::before {content:""; width:7px; height:7px; border-radius:50%; background:#4c8dff; box-shadow:0 0 0 3px rgba(76,141,255,.22), 0 0 10px rgba(76,141,255,.9);}
 .stApp .topbar-title {
   font:800 clamp(21px, 2.05vw, 30px)/1.18 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.02em !important;
-  background:none !important; color:#f4f7fb !important; -webkit-text-fill-color:#f4f7fb !important; text-shadow:none !important;
+  background:linear-gradient(180deg,#ffffff 35%,#a9c3f2); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent !important; text-shadow:none !important; max-width:34ch;
 }
-.stApp .topbar-subtitle {margin-top:10px !important; max-width:none; font-size:12.5px !important; line-height:1.6 !important; color:#8d99ac !important;}
+.stApp .topbar-subtitle {margin-top:10px !important; max-width:78ch; font-size:12.5px !important; line-height:1.6 !important; color:#8d99ac !important;}
 
 /* session panel */
 .stApp .topbar-status-wrap {
@@ -6138,27 +6139,11 @@ st.markdown(r"""
   .stApp .topbar-status-wrap {flex:1 1 100% !important; width:100% !important;}
   .stApp .topbar-title {max-width:none;}
 }
-@media (max-width:640px) {
-  .stApp .topbar-shell {padding:16px 16px !important; gap:14px !important;}
-  .stApp .topbar-brand {gap:12px !important; flex:1 1 100% !important;}
-  .stApp .topbar-logo {width:46px !important; height:46px !important; flex-basis:46px !important; padding:6px !important; border-radius:14px !important; animation:none !important;}
-  .stApp .topbar-kicker {font-size:9px !important; letter-spacing:.1em !important; margin-bottom:6px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block !important;}
-  .stApp .topbar-kicker::before {display:none !important;}
-  .stApp .topbar-title {font-size:16.5px !important; line-height:1.22 !important;}
+@media (max-width:560px) {
+  .stApp .topbar-logo {width:56px !important; height:56px !important; flex-basis:56px !important; border-radius:16px !important;}
   .stApp .topbar-subtitle {display:none;}
-  .stApp .topbar-status-wrap {padding:2px 14px !important; border-radius:12px !important;}
-  .stApp .topbar-actions, .stApp .topbar-status-pill {padding:8px 0 !important;}
 }
 @media (prefers-reduced-motion:reduce) {.stApp .topbar-logo {animation:none !important;}}
-
-/* ---- single-accent pass: no per-item rainbow --------------------------------
-   Tabs, sidebar rows and section chips all use the one blue accent; only the
-   Live/Operational status dots stay green (they mean "ok"). Delete this block
-   to get the per-module colours back. */
-.stApp .st-key-topnav [role="radiogroup"] > * {--c:#4c8dff !important;}
-.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] {--c:#4c8dff !important;}
-.stApp .sidebar-group-label, .stApp .sidebar-group-label[class] {--g:#6f8aa5 !important;}
-.stApp .st-key-imap_connected_panel {--tone:#4c8dff;}
 
 /* ---- reclaim the dead space above the banner and between banner and nav ----
    The page injects a lot of <style>-only st.markdown blocks before the banner.
@@ -6196,6 +6181,7 @@ st.markdown(
           <span class="topbar-status-dot"></span>
           <span class="topbar-status-online">System operational</span>
         </div>
+        <div class="topbar-status-time">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
       </div>
     </div>""",
     unsafe_allow_html=True,
