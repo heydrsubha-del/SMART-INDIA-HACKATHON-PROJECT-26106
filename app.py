@@ -6144,6 +6144,18 @@ st.markdown(r"""
   .stApp .topbar-subtitle {display:none;}
 }
 @media (prefers-reduced-motion:reduce) {.stApp .topbar-logo {animation:none !important;}}
+
+/* ---- reclaim the dead space above the banner and between banner and nav ----
+   The page injects a lot of <style>-only st.markdown blocks before the banner.
+   Each one is an empty element that still takes a full flex gap (1rem), which
+   is where the ~130px of blank space came from. An element whose only content
+   is a <style> tag is taken out of the layout (its CSS keeps applying). */
+.stApp .stElementContainer:has([data-testid="stMarkdownContainer"] > style:only-child),
+.stApp [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {
+  display:none !important;
+}
+.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:3.6rem !important;}
+.stApp .topbar-shell {margin-bottom:14px !important;}
 </style>
 """, unsafe_allow_html=True)
 
