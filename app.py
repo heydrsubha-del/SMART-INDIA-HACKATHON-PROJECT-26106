@@ -4645,7 +4645,7 @@ st.markdown(
         scrollbar-color:#2a3750 transparent;
     }
     .stApp [data-testid="stSidebar"] > div {background:transparent !important;}
-    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding-left:14px !important; padding-right:14px !important; padding-bottom:28px !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding-left:12px !important; padding-right:12px !important; padding-bottom:28px !important;}
 
     /* brand card */
     .stApp .sidebar-brand-v2 {
@@ -4700,16 +4700,17 @@ st.markdown(
     /* nav rows */
     .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.5rem !important;}
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {
-        position:relative !important; min-height:46px !important; padding:11px 16px !important; border-radius:12px !important;
+        position:relative !important; min-height:46px !important; padding:11px 14px !important; border-radius:12px !important;
         border:1px solid transparent !important; background:transparent !important; box-shadow:none !important;
         color:#a9b6c8 !important; transform:none !important; overflow:hidden !important;
         transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease) !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {
-        display:flex !important; align-items:center !important; gap:14px; width:100% !important; margin:0 !important;
+        display:flex !important; align-items:center !important; gap:12px; width:100% !important; margin:0 !important; white-space:nowrap !important; min-width:0;
         font:600 14px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.005em !important; color:#a9b6c8 !important;
         transition:color .2s var(--ease);
     }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button > div {min-width:0 !important; width:100% !important;}
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {
         content:""; flex:0 0 18px; width:18px; height:18px; background-color:var(--c,#4c8dff); opacity:.78;
         -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
@@ -4728,7 +4729,7 @@ st.markdown(
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover {
         background:color-mix(in srgb, var(--c,#4c8dff) 10%, transparent) !important;
         border-color:color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
-        transform:translateX(2px) !important; padding-left:16px !important;
+        transform:translateX(2px) !important; padding-left:14px !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p {color:#fff !important;}
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p::before {opacity:1; transform:scale(1.14);}
@@ -4740,7 +4741,7 @@ st.markdown(
         background:
             linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 26%, #0f1724), color-mix(in srgb, var(--c,#4c8dff) 7%, #0b111a)) padding-box,
             linear-gradient(120deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 14%, transparent) 75%) border-box !important;
-        border:1px solid transparent !important; padding-left:16px !important; transform:none !important;
+        border:1px solid transparent !important; padding-left:14px !important; transform:none !important;
         box-shadow:0 12px 22px -16px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.07) !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p {color:#fff !important; font-weight:700 !important;}
@@ -5099,12 +5100,12 @@ with st.sidebar:
 
     _nav_group("Threat Operations", accent="teal")
     _nav_button(
-        "Upload Email(s)", "Dashboard", force_mode=_UPLOAD_MODE, key="nav_upload",
-        active_when=_on_dashboard and _mode_now == _UPLOAD_MODE,
-    )
-    _nav_button(
         "Live Email Scan (IMAP)", "Dashboard", force_mode=_LIVE_MODE, key="nav_live",
         active_when=_on_dashboard and _mode_now == _LIVE_MODE,
+    )
+    _nav_button(
+        "Upload Email(s)", "Dashboard", force_mode=_UPLOAD_MODE, key="nav_upload",
+        active_when=_on_dashboard and _mode_now == _UPLOAD_MODE,
     )
 
     # Everything below jumps to an analysis panel (AI Copilot, Nomic AI,
