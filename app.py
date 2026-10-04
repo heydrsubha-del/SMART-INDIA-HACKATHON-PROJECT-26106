@@ -4508,14 +4508,15 @@ st.markdown(
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
 
-    /* ---- v9 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
-       One calm panel, quiet text tabs, and an active tab in the same
-       graphite-key + blue->indigo->copper edge language as Log in and the
-       provider tiles. The radio circle is suppressed with several
-       independent rules (see the app-wide radio-dot note above) so it can't
-       leak back; the scrollbar is hidden (the bar scrolls by swipe/wheel
-       only if the window is too narrow for every tab). Delete this block
-       to go back to the previous nav. -------------------------------- */
+    /* ---- v10 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
+       One glass panel with a four-tone top hairline. Tabs wrap and stretch to
+       fill the row (nothing is ever cut off or needs scrolling). Every module
+       has its own colour + icon; the per-tab --c and icon masks are generated
+       from NAV_OPTIONS in Python, right before the nav is drawn. Hover tints
+       the tab and grows an underline from the centre; the active tab is a
+       solid tinted key with a coloured edge, a glowing underline and a lit
+       icon. The radio marker is removed at every nesting level. Delete this
+       block (and the _NAV_STYLE generator) to go back. ------------------ */
     .nav-caption {
         display:flex !important; align-items:center; gap:10px; margin:6px 0 10px 0 !important;
         font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:#6f8aa5 !important;
@@ -4523,57 +4524,87 @@ st.markdown(
     .nav-caption::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
 
     .stApp .st-key-topnav {
-        padding:6px !important; border:1px solid #243046 !important; border-radius:14px !important;
+        position:relative !important; overflow:hidden !important;
+        padding:9px !important; border:1px solid #243046 !important; border-radius:16px !important;
         background:
-            radial-gradient(60% 140% at 0% 0%, rgba(76,141,255,.08), transparent 70%),
-            linear-gradient(180deg,#101826,#0b111a) !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 26px -16px rgba(0,0,0,.7) !important;
+            radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
+            radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
+            linear-gradient(180deg,#101826,#0a1019) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8) !important;
+    }
+    .stApp .st-key-topnav::before {
+        content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; opacity:.85; pointer-events:none;
+        background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
     }
     .stApp .st-key-topnav::after {display:none !important;}
+
     .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
     .stApp .st-key-topnav .stRadio > div {
-        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
-        padding:0 !important; gap:4px !important; flex-wrap:nowrap !important;
-        overflow-x:auto !important; overflow-y:hidden !important;
-        scrollbar-width:none !important; -ms-overflow-style:none !important;
+        display:flex !important; flex-wrap:wrap !important; gap:6px !important; width:100% !important;
+        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important;
+        overflow:visible !important; scroll-snap-type:none !important;
     }
-    .stApp .st-key-topnav .stRadio > div::-webkit-scrollbar,
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
 
-    /* no radio circle, however Streamlit nests it */
-    .stApp .st-key-topnav .stRadio label > div:not([data-testid="stMarkdownContainer"]):not(:has(p)),
-    .stApp .st-key-topnav .stRadio label > span:not(:has(p)),
-    .stApp .st-key-topnav .stRadio label div:empty,
+    /* no radio marker, however deep Streamlit nests it */
+    .stApp .st-key-topnav .stRadio label *:not(:has(p)):not(p):not(p *),
     .stApp .st-key-topnav .stRadio label input,
     .stApp .st-key-topnav .stRadio label svg,
     .stApp .st-key-topnav .stRadio label::before {
-        display:none !important; width:0 !important; height:0 !important; margin:0 !important; padding:0 !important;
-        border:0 !important; box-shadow:none !important; opacity:0 !important; position:absolute !important; left:-9999px !important;
+        display:none !important; width:0 !important; height:0 !important; min-width:0 !important; margin:0 !important; padding:0 !important;
+        border:0 !important; box-shadow:none !important; background:none !important; opacity:0 !important;
+        position:absolute !important; left:-9999px !important; pointer-events:none !important;
     }
 
     .stApp .st-key-topnav .stRadio label {
-        flex:0 0 auto !important; padding:10px 16px !important; border-radius:10px !important; cursor:pointer !important;
-        border:1px solid transparent !important; background:transparent !important; box-shadow:none !important; transform:none !important;
-        transition:background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease), box-shadow .18s var(--ease) !important;
+        --c:#4c8dff;
+        position:relative !important; flex:1 1 auto !important; min-width:0 !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        padding:11px 14px !important; border-radius:11px !important; cursor:pointer !important;
+        border:1px solid transparent !important; background:transparent !important; box-shadow:none !important;
+        transform:none !important; overflow:hidden !important;
+        transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .22s var(--ease), transform .2s var(--ease) !important;
     }
+    .stApp .st-key-topnav .stRadio label > div {width:auto !important; margin:0 !important;}
     .stApp .st-key-topnav .stRadio label p {
-        display:inline-flex !important; align-items:center; gap:8px; margin:0 !important; white-space:nowrap !important;
-        font:600 13.5px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; color:#9aa7ba !important;
+        display:inline-flex !important; align-items:center; gap:9px; margin:0 !important; white-space:nowrap !important;
+        font:600 13px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; color:#9aa7ba !important;
+        transition:color .2s var(--ease);
     }
-    .stApp .st-key-topnav .stRadio label:hover {background:rgba(255,255,255,.05) !important;}
+    .stApp .st-key-topnav .stRadio label p::before {
+        content:""; flex:0 0 16px; width:16px; height:16px; background-color:var(--c); opacity:.75;
+        -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
+        -webkit-mask-size:contain; mask-size:contain;
+        transition:opacity .2s var(--ease), transform .25s var(--ease), filter .25s var(--ease);
+    }
+    /* underline that grows from the centre */
+    .stApp .st-key-topnav .stRadio label::after {
+        content:""; position:absolute; left:50%; bottom:0; width:0; height:2px; border-radius:2px; transform:translateX(-50%);
+        background:var(--c); transition:width .25s var(--ease), box-shadow .25s var(--ease);
+    }
+
+    .stApp .st-key-topnav .stRadio label:hover {
+        background:color-mix(in srgb, var(--c) 11%, transparent) !important;
+        border-color:color-mix(in srgb, var(--c) 30%, transparent) !important;
+        transform:translateY(-1px) !important;
+    }
     .stApp .st-key-topnav .stRadio label:hover p {color:#fff !important;}
+    .stApp .st-key-topnav .stRadio label:hover p::before {opacity:1; transform:translateY(-1px) scale(1.12);}
+    .stApp .st-key-topnav .stRadio label:hover::after {width:42%;}
 
     .stApp .st-key-topnav .stRadio label:has(input:checked) {
         background:
-            linear-gradient(180deg,rgba(76,141,255,.24),rgba(99,102,241,.12)) padding-box,
-            linear-gradient(115deg,#3b82f6 0%,#6366f1 60%,#c98a5c 100%) border-box !important;
-        border:1px solid transparent !important;
-        box-shadow:0 10px 22px -14px rgba(99,102,241,.8), inset 0 1px 0 rgba(255,255,255,.07) !important;
+            linear-gradient(180deg, color-mix(in srgb, var(--c) 26%, #0f1724), color-mix(in srgb, var(--c) 9%, #0b111a)) padding-box,
+            linear-gradient(140deg, var(--c), color-mix(in srgb, var(--c) 16%, transparent) 72%) border-box !important;
+        border:1px solid transparent !important; transform:none !important;
+        box-shadow:0 12px 24px -16px var(--c), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        animation:navPop .35s var(--ease);
     }
     .stApp .st-key-topnav .stRadio label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
-    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {
-        content:""; width:6px; height:6px; border-radius:50%; background:#4c8dff;
-        box-shadow:0 0 0 3px rgba(76,141,255,.25), 0 0 10px rgba(76,141,255,.7);
+    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c));}
+    .stApp .st-key-topnav .stRadio label:has(input:checked)::after {width:calc(100% - 28px); box-shadow:0 0 12px var(--c);}
+    @keyframes navPop {from {transform:translateY(3px); opacity:.65;} to {transform:none; opacity:1;}}
+    @media (prefers-reduced-motion: reduce) {
+        .stApp .st-key-topnav .stRadio label, .stApp .st-key-topnav .stRadio label::after {transition:none !important; animation:none !important;}
     }
 
     /* ---- v9 acquisition cards: aligned click-catcher + per-card hover ------
@@ -4982,6 +5013,37 @@ if "_pending_active_panel" in st.session_state:
     st.session_state["active_panel"] = st.session_state.pop("_pending_active_panel")
 elif st.session_state.get("active_panel") not in NAV_OPTIONS:
     st.session_state["active_panel"] = NAV_OPTIONS[0]
+# Per-module colour + icon for the workflow tabs. Radio labels carry no
+# per-option attribute, so the rules are generated by position from NAV_OPTIONS
+# (which already reflects whether evidence is loaded).
+import urllib.parse as _nav_up
+_NAV_STYLE = {
+    "Dashboard": ("#4c8dff", "<rect x='3' y='3' width='7' height='9' rx='1.5'/><rect x='14' y='3' width='7' height='5' rx='1.5'/><rect x='14' y='12' width='7' height='9' rx='1.5'/><rect x='3' y='16' width='7' height='5' rx='1.5'/>"),
+    "AI Threat Analysis": ("#a78bfa", "<rect x='6' y='6' width='12' height='12' rx='2'/><path d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/>"),
+    "Forensic Report": ("#38bdf8", "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/>"),
+    "Classification": ("#f59e0b", "<path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/>"),
+    "Headers & Auth": ("#34d399", "<path d='M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'/><path d='M9 12l2 2 4-4'/>"),
+    "Origin & Route": ("#22d3ee", "<path d='M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z'/><circle cx='12' cy='10' r='2.5'/>"),
+    "Indicators": ("#fb7185", "<circle cx='12' cy='12' r='8'/><circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3'/>"),
+    "Correlation": ("#c084fc", "<circle cx='6' cy='6' r='2.5'/><circle cx='18' cy='7' r='2.5'/><circle cx='12' cy='18' r='2.5'/><path d='M8.5 6.3l7 .6M7.3 8.3l3.6 7.4M16.8 9.3l-3.6 6.4'/>"),
+    "Threat History": ("#fbbf24", "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/>"),
+    "URLHaus Feed": ("#fb923c", "<circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/>"),
+    "Antivirus": ("#4ade80", "<path d='M12 21a5 5 0 0 1-5-5v-4a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z'/><path d='M12 7V4M7 12H3M21 12h-4M8 8L5 5M16 8l3-3M8 18l-3 3M16 18l3 3'/>"),
+    "Settings": ("#94a3b8", "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/><circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>"),
+    "About": ("#60a5fa", "<circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 8h.01'/>"),
+}
+_nav_rules = []
+for _ni, _nopt in enumerate(NAV_OPTIONS, start=1):
+    _ncol, _nsvg = _NAV_STYLE.get(_nopt, ("#4c8dff", "<circle cx='12' cy='12' r='9'/>"))
+    _nuri = "data:image/svg+xml," + _nav_up.quote(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' "
+        "stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>" + _nsvg + "</svg>",
+        safe="/:=' ()",
+    )
+    _nsel = ".stApp .st-key-topnav .stRadio label:nth-of-type(" + str(_ni) + ")"
+    _nav_rules.append(_nsel + "{--c:" + _ncol + ";}")
+    _nav_rules.append(_nsel + ' p::before{-webkit-mask-image:url("' + _nuri + '");mask-image:url("' + _nuri + '");}')
+st.markdown("<style>" + "".join(_nav_rules) + "</style>", unsafe_allow_html=True)
 st.markdown('<div class="nav-caption">FORENSIC WORKFLOW / ACTIVE MODULE</div>', unsafe_allow_html=True)
 with st.container(key="topnav"):
     active_panel = st.radio(
