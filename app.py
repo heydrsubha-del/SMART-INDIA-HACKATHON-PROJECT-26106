@@ -6373,7 +6373,6 @@ def _settings():
     )
 
 def _about():
-    st.subheader("About ALGORITHMISTIC")
     render_readme()
 
 # --------------------------------------------------------------------------
