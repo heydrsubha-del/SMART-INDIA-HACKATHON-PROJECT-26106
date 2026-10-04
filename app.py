@@ -4451,6 +4451,63 @@ st.markdown(
     .st-key-imap_signin_card .st-key-imap_custom_toggle_btn {display:flex !important; justify-content:center !important; max-width:none; margin:2px var(--padx) 0 !important;}
     .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button {padding:8px 16px !important;}
 
+    /* ---- v9 login polish -------------------------------------------------
+       a) "OR CONTINUE WITH" + helper note live in ONE block now, in normal
+          flow, so they can't collide (Streamlit's negative markdown margin
+          used to drag the note up onto the divider). The padding-bottom
+          cancels that margin wherever it is applied.
+       b) Gmail button label: solid dark text on the white pill.
+       c) "Set IMAP server / port manually": full-width row that matches the
+          provider tiles instead of a floating dashed pill.
+       Delete this block to go back to v8. ----------------------------- */
+    .auth-divider-wrap {display:flex; flex-direction:column; align-items:center; gap:12px; padding-bottom:16px;}
+    .auth-divider-wrap .auth-divider {width:100%; margin:0 !important; line-height:1 !important; color:#9aa7ba !important;}
+    .auth-divider-wrap .auth-note {
+        margin:0 !important; max-width:56ch; text-align:center;
+        font:400 12.5px/1.55 Inter,"Segoe UI",sans-serif !important; color:#8d99ac !important;
+    }
+
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a,
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a *,
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a:hover,
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a:hover * {
+        color:#1f2328 !important; -webkit-text-fill-color:#1f2328 !important;
+        opacity:1 !important; text-shadow:none !important;
+    }
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a,
+    .st-key-imap_signin_card .st-key-google_signin_link_btn a p {font-weight:650 !important; font-size:14px !important; letter-spacing:.01em !important;}
+
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn {display:block !important; margin:6px var(--padx) 0 !important;}
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn [data-testid="stButton"],
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn .stButton {width:100% !important;}
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button {
+        width:100% !important; min-height:46px !important; padding:0 14px 0 10px !important;
+        display:flex !important; align-items:center !important; justify-content:flex-start !important;
+        background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)) !important;
+        border:1px solid #2a3750 !important; border-radius:12px !important; box-shadow:none !important;
+        color:#c3cddb !important; text-transform:none !important; letter-spacing:0 !important;
+        font:600 13px/1.2 Inter,"Segoe UI",sans-serif !important;
+        transition:border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease) !important;
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button > div {width:100% !important;}
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button p {
+        display:flex !important; align-items:center !important; gap:12px; width:100%; margin:0 !important;
+        font:600 13px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:0 !important; text-transform:none !important;
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button p::before {
+        content:"\2699\FE0E"; margin:0 !important; flex:0 0 28px; width:28px; height:28px; border-radius:8px;
+        display:inline-flex; align-items:center; justify-content:center; font-size:15px; color:#9fbfff;
+        background:rgba(76,141,255,.12); border:1px solid rgba(76,141,255,.35);
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button p::after {
+        content:"\203A"; margin-left:auto; font-size:20px; line-height:1; color:#6f7d92; transition:transform .18s var(--ease), color .18s var(--ease);
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover {
+        border-color:rgba(76,141,255,.6) !important; color:#fff !important; text-decoration:none !important;
+        background:linear-gradient(180deg, rgba(76,141,255,.12), rgba(76,141,255,.04)) !important;
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
+
     @media (max-width:900px){
       .st-key-imap_signin_card {--padx:22px;}
       .signin-card-header {padding:26px var(--padx) 22px !important; border-bottom:1px solid #243046;}
@@ -6368,10 +6425,9 @@ if active_panel == "Dashboard":
                 # just always rendered side by side rather than gated behind
                 # `_is_gmail`/`_is_outlook`/`_is_yandex`.
                 st.markdown(
-                    """<div class="auth-divider"><span>or continue with</span></div>""",
+                    """<div class="auth-divider-wrap"><div class="auth-divider"><span>or continue with</span></div><p class="auth-note">Opens the provider's own sign-in page. Your password never passes through this app for these three.</p></div>""",
                     unsafe_allow_html=True,
                 )
-                st.caption("Opens the provider's own sign-in page. Your password never passes through this app for these three.")
 
                 _b1, _b2, _b3 = st.columns(3)
 
