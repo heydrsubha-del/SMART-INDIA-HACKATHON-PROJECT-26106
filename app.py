@@ -45,6 +45,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
 pio.templates.default = "plotly_dark+sih26106_dark"
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama
 from nomic_embed import nomic_available, embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
+from readme_view import render_readme
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
 
