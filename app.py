@@ -4508,24 +4508,23 @@ st.markdown(
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
 
-    /* ---- v10 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
-       One glass panel with a four-tone top hairline. Tabs wrap and stretch to
-       fill the row (nothing is ever cut off or needs scrolling). Every module
-       has its own colour + icon; the per-tab --c and icon masks are generated
-       from NAV_OPTIONS in Python, right before the nav is drawn. Hover tints
-       the tab and grows an underline from the centre; the active tab is a
-       solid tinted key with a coloured edge, a glowing underline and a lit
-       icon. The radio marker is removed at every nesting level. Delete this
-       block (and the _NAV_STYLE generator) to go back. ------------------ */
+    /* ---- v11 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
+       Single-row, horizontally scrollable tab strip sized to match the rest
+       of the app (15px Inter, same as the buttons and headings). Slim themed
+       scrollbar, soft fade at both edges, wheel / drag scrolling, and the
+       active tab is scrolled into view (small script after the nav). Each
+       module has its own colour + icon (generated from NAV_OPTIONS).
+       The collapsed widget title is hidden -- it was being styled as a tab.
+       Delete this block (and the _NAV_STYLE generator) to go back. ------ */
     .nav-caption {
         display:flex !important; align-items:center; gap:10px; margin:6px 0 10px 0 !important;
-        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:#6f8aa5 !important;
+        font:700 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; color:#7f98b3 !important;
     }
     .nav-caption::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
 
     .stApp .st-key-topnav {
         position:relative !important; overflow:hidden !important;
-        padding:9px !important; border:1px solid #243046 !important; border-radius:16px !important;
+        padding:10px 4px 6px 4px !important; border:1px solid #243046 !important; border-radius:16px !important;
         background:
             radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
             radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
@@ -4537,13 +4536,23 @@ st.markdown(
         background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
     }
     .stApp .st-key-topnav::after {display:none !important;}
+    .stApp .st-key-topnav [data-testid="stWidgetLabel"] {display:none !important;}
 
+    /* the scroller */
     .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
-    .stApp .st-key-topnav .stRadio > div {
-        display:flex !important; flex-wrap:wrap !important; gap:6px !important; width:100% !important;
-        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important;
-        overflow:visible !important; scroll-snap-type:none !important;
+    .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {
+        display:flex !important; flex-wrap:nowrap !important; align-items:stretch !important; gap:6px !important; width:100% !important;
+        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
+        padding:2px 26px 12px 26px !important; box-sizing:border-box !important;
+        overflow-x:auto !important; overflow-y:hidden !important; scroll-behavior:smooth !important; scroll-snap-type:none !important;
+        scrollbar-width:thin !important; scrollbar-color:rgba(76,141,255,.55) transparent !important;
+        -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+        mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
     }
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {height:5px !important;}
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-track {background:rgba(255,255,255,.03) !important; border-radius:6px !important; margin:0 26px;}
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb {background:linear-gradient(90deg,#3b82f6,#8b7cff) !important; border-radius:6px !important;}
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb:hover {background:linear-gradient(90deg,#5b9bf8,#a394ff) !important;}
 
     /* no radio marker, however deep Streamlit nests it */
     .stApp .st-key-topnav .stRadio label *:not(:has(p)):not(p):not(p *),
@@ -4556,35 +4565,33 @@ st.markdown(
     }
 
     .stApp .st-key-topnav .stRadio label {
-        --c:#4c8dff;
-        position:relative !important; flex:1 1 auto !important; min-width:0 !important;
+        position:relative !important; flex:0 0 auto !important;
         display:flex !important; align-items:center !important; justify-content:center !important;
-        padding:11px 14px !important; border-radius:11px !important; cursor:pointer !important;
+        padding:13px 20px !important; border-radius:12px !important; cursor:pointer !important;
         border:1px solid transparent !important; background:transparent !important; box-shadow:none !important;
         transform:none !important; overflow:hidden !important;
         transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .22s var(--ease), transform .2s var(--ease) !important;
     }
     .stApp .st-key-topnav .stRadio label > div {width:auto !important; margin:0 !important;}
     .stApp .st-key-topnav .stRadio label p {
-        display:inline-flex !important; align-items:center; gap:9px; margin:0 !important; white-space:nowrap !important;
-        font:600 13px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; color:#9aa7ba !important;
+        display:inline-flex !important; align-items:center; gap:10px; margin:0 !important; white-space:nowrap !important;
+        font:600 15px/1.2 Inter,"Segoe UI",Arial,sans-serif !important; letter-spacing:.005em !important; color:#a9b6c8 !important;
         transition:color .2s var(--ease);
     }
     .stApp .st-key-topnav .stRadio label p::before {
-        content:""; flex:0 0 16px; width:16px; height:16px; background-color:var(--c); opacity:.75;
+        content:""; flex:0 0 18px; width:18px; height:18px; background-color:var(--c,#4c8dff); opacity:.8;
         -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
         -webkit-mask-size:contain; mask-size:contain;
         transition:opacity .2s var(--ease), transform .25s var(--ease), filter .25s var(--ease);
     }
-    /* underline that grows from the centre */
     .stApp .st-key-topnav .stRadio label::after {
         content:""; position:absolute; left:50%; bottom:0; width:0; height:2px; border-radius:2px; transform:translateX(-50%);
-        background:var(--c); transition:width .25s var(--ease), box-shadow .25s var(--ease);
+        background:var(--c,#4c8dff); transition:width .25s var(--ease), box-shadow .25s var(--ease);
     }
 
     .stApp .st-key-topnav .stRadio label:hover {
-        background:color-mix(in srgb, var(--c) 11%, transparent) !important;
-        border-color:color-mix(in srgb, var(--c) 30%, transparent) !important;
+        background:color-mix(in srgb, var(--c,#4c8dff) 11%, transparent) !important;
+        border-color:color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
         transform:translateY(-1px) !important;
     }
     .stApp .st-key-topnav .stRadio label:hover p {color:#fff !important;}
@@ -4593,18 +4600,23 @@ st.markdown(
 
     .stApp .st-key-topnav .stRadio label:has(input:checked) {
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--c) 26%, #0f1724), color-mix(in srgb, var(--c) 9%, #0b111a)) padding-box,
-            linear-gradient(140deg, var(--c), color-mix(in srgb, var(--c) 16%, transparent) 72%) border-box !important;
+            linear-gradient(180deg, color-mix(in srgb, var(--c,#4c8dff) 26%, #0f1724), color-mix(in srgb, var(--c,#4c8dff) 9%, #0b111a)) padding-box,
+            linear-gradient(140deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 16%, transparent) 72%) border-box !important;
         border:1px solid transparent !important; transform:none !important;
-        box-shadow:0 12px 24px -16px var(--c), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 10px 20px -16px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.08) !important;
         animation:navPop .35s var(--ease);
     }
     .stApp .st-key-topnav .stRadio label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
-    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c));}
-    .stApp .st-key-topnav .stRadio label:has(input:checked)::after {width:calc(100% - 28px); box-shadow:0 0 12px var(--c);}
+    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c,#4c8dff));}
+    .stApp .st-key-topnav .stRadio label:has(input:checked)::after {width:calc(100% - 32px); box-shadow:0 0 12px var(--c,#4c8dff);}
     @keyframes navPop {from {transform:translateY(3px); opacity:.65;} to {transform:none; opacity:1;}}
     @media (prefers-reduced-motion: reduce) {
         .stApp .st-key-topnav .stRadio label, .stApp .st-key-topnav .stRadio label::after {transition:none !important; animation:none !important;}
+        .stApp .st-key-topnav [role="radiogroup"] {scroll-behavior:auto !important;}
+    }
+    /* the zero-height helper iframe must not leave a gap */
+    .stApp [data-testid="stElementContainer"]:has(iframe[height="0"]), .stApp .stElementContainer:has(iframe[height="0"]) {
+        position:absolute !important; height:0 !important; margin:0 !important; overflow:hidden !important; visibility:hidden !important;
     }
 
     /* ---- v9 acquisition cards: aligned click-catcher + per-card hover ------
@@ -5040,10 +5052,44 @@ for _ni, _nopt in enumerate(NAV_OPTIONS, start=1):
         "stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>" + _nsvg + "</svg>",
         safe="/:=' ()",
     )
-    _nsel = ".stApp .st-key-topnav .stRadio label:nth-of-type(" + str(_ni) + ")"
+    _nsel = '.stApp .st-key-topnav [role="radiogroup"] > :nth-child(' + str(_ni) + ")"
     _nav_rules.append(_nsel + "{--c:" + _ncol + ";}")
     _nav_rules.append(_nsel + ' p::before{-webkit-mask-image:url("' + _nuri + '");mask-image:url("' + _nuri + '");}')
 st.markdown("<style>" + "".join(_nav_rules) + "</style>", unsafe_allow_html=True)
+components.html(
+    """<script>
+    (function () {
+      var last = null;
+      function tick() {
+        try {
+          var d = window.parent.document;
+          var box = d.querySelector('.st-key-topnav [role="radiogroup"]');
+          if (!box) return;
+          if (!box.dataset.navWheel) {
+            box.dataset.navWheel = "1";
+            box.addEventListener("wheel", function (e) {
+              if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+              var max = box.scrollWidth - box.clientWidth;
+              if (max <= 0) return;
+              if ((e.deltaY > 0 && box.scrollLeft < max - 1) || (e.deltaY < 0 && box.scrollLeft > 0)) {
+                box.scrollLeft += e.deltaY; e.preventDefault();
+              }
+            }, { passive: false });
+          }
+          var act = box.querySelector("label:has(input:checked)");
+          var key = act ? act.innerText : null;
+          if (act && key !== last) {
+            last = key;
+            var x = act.getBoundingClientRect().left - box.getBoundingClientRect().left + box.scrollLeft;
+            box.scrollTo({ left: Math.max(0, x - (box.clientWidth - act.offsetWidth) / 2), behavior: "smooth" });
+          }
+        } catch (err) {}
+      }
+      tick(); setInterval(tick, 400);
+    })();
+    </script>""",
+    height=0,
+)
 st.markdown('<div class="nav-caption">FORENSIC WORKFLOW / ACTIVE MODULE</div>', unsafe_allow_html=True)
 with st.container(key="topnav"):
     active_panel = st.radio(
