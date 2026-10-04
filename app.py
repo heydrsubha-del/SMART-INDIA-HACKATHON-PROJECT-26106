@@ -868,40 +868,55 @@ components.html(
                 } catch (e) {}
             };
         }
+        var SIGNIN_SELECTOR = (
+            '.st-key-google_signin_link_btn a, ' +
+            '.st-key-microsoft_signin_link_btn a, ' +
+            '.st-key-yandex_signin_link_btn a'
+        );
+        // st.link_button always renders target="_blank" at the instant it's
+        // (re-)created, and a plain click can land in that window before the
+        // old per-element fix-up (run on an interval) ever got a chance to
+        // correct it -- opening a second tab that finishes the sign-in on
+        // its own, stranding the original tab. A single click listener on
+        // the document, added ONCE and using capture, sees every click on
+        // these links immediately, including on a link that was rendered a
+        // moment ago, so there's no window for the default "_blank" to win.
         function onSignInClick(ev) {
-            if (!isFramed() || !channel) return;     // native anchor behaviour
-            var a = ev.currentTarget;
-            var href = a && a.href;
+            var a = ev.target && ev.target.closest ? ev.target.closest(SIGNIN_SELECTOR) : null;
+            if (!a) return;
+            var href = a.href;
             if (!href) return;
-            waitingSince = Date.now();
-            var w = 520, h = 720, popup = null;
-            try {
-                var pw = window.parent;
-                var left = Math.max(0, (pw.screenX || 0) + ((pw.outerWidth || 1024) - w) / 2);
-                var top = Math.max(0, (pw.screenY || 0) + ((pw.outerHeight || 768) - h) / 2);
-                var feat = 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top;
-                try { popup = pw.open(href, 'sih26106_oauth_popup', feat); } catch (e) {}
-                if (!popup) { popup = window.open(href, 'sih26106_oauth_popup', feat); }
-            } catch (e) {}
-            if (popup) {
+            if (isFramed() && channel) {
+                waitingSince = Date.now();
+                var w = 520, h = 720, popup = null;
+                try {
+                    var pw = window.parent;
+                    var left = Math.max(0, (pw.screenX || 0) + ((pw.outerWidth || 1024) - w) / 2);
+                    var top = Math.max(0, (pw.screenY || 0) + ((pw.outerHeight || 768) - h) / 2);
+                    var feat = 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top;
+                    try { popup = pw.open(href, 'sih26106_oauth_popup', feat); } catch (e) {}
+                    if (!popup) { popup = window.open(href, 'sih26106_oauth_popup', feat); }
+                } catch (e) {}
                 ev.preventDefault();
-                try { popup.focus(); } catch (e) {}
-            }
-            // No popup (blocked)? The anchor's own target="_blank" click goes
-            // ahead, and that new tab relays back to this one the same way.
-        }
-        function fixLinkTargets() {
-            var want = isFramed() ? '_blank' : '_self';
-            doc.querySelectorAll(
-                '.st-key-google_signin_link_btn a, ' +
-                '.st-key-microsoft_signin_link_btn a, ' +
-                '.st-key-yandex_signin_link_btn a'
-            ).forEach(function (a) {
-                if (a.target !== want) a.target = want;
-                if (!a.dataset.sihSigninBound) {
-                    a.dataset.sihSigninBound = '1';
-                    a.addEventListener('click', onSignInClick);
+                if (popup) {
+                    try { popup.focus(); } catch (e) {}
+                } else {
+                    // Popup blocked -- fall back to the same-tab navigation
+                    // below instead of letting target="_blank" open a tab.
+                    waitingSince = 0;
+                    navigateAppFrame(href);
                 }
+                return;
+            }
+            // Not embedded: always finish in this same tab, regardless of
+            // whatever the anchor's own target attribute currently says.
+            ev.preventDefault();
+            navigateAppFrame(href);
+        }
+        doc.addEventListener('click', onSignInClick, true);
+        function fixLinkTargets() {
+            doc.querySelectorAll(SIGNIN_SELECTOR).forEach(function (a) {
+                if (a.target !== '_self') a.target = '_self';
             });
         }
         fixLinkTargets();
