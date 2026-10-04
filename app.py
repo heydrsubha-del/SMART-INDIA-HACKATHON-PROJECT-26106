@@ -4094,6 +4094,19 @@ st.markdown(
         box-shadow:none !important; padding:0 !important; margin:0 !important;
     }
 
+    /* Dropzone, centred: icon, instructions and button stacked on the middle axis. */
+    .stApp section[data-testid="stFileUploaderDropzone"] {
+        flex-direction:column !important; justify-content:center !important; align-items:center !important;
+        gap:14px !important; min-height:190px !important; padding:28px 26px !important; text-align:center;
+    }
+    .stApp section[data-testid="stFileUploaderDropzone"]::before {margin:0 auto !important;}
+    .stApp section[data-testid="stFileUploaderDropzone"] > div {flex:0 0 auto; align-items:center !important; width:100%;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"],
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] > div {text-align:center !important; align-items:center !important; justify-content:center !important;}
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] small {display:none !important;}   /* size is stated in the header chips: 50 MB */
+    .stApp section[data-testid="stFileUploaderDropzone"] button {margin:2px auto 0 !important; align-self:center !important;}
+    @media (max-width:700px) {.stApp section[data-testid="stFileUploaderDropzone"] button {width:auto; min-width:140px !important;}}
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
@@ -5638,7 +5651,7 @@ if active_panel == "Dashboard":
                     </div>
                     <div class="intake-meta">
                         <span class="intake-chip">.eml</span><span class="intake-chip">.txt</span><span class="intake-chip">.csv</span>
-                        <span class="intake-limit">200 MB per file</span>
+                        <span class="intake-limit">50 MB per file</span>
                     </div>
                 </div>""",
                 unsafe_allow_html=True,
@@ -5660,7 +5673,7 @@ if active_panel == "Dashboard":
                 st.markdown(
                     '<div class="intake-status"><span class="intake-dot"></span>'
                     '<span class="intake-status-k">Ready</span>'
-                    '<span class="intake-status-v">Waiting for evidence. Accepts EML, TXT and CSV, up to 200 MB per file.</span></div>',
+                    '<span class="intake-status-v">Waiting for evidence. Accepts EML, TXT and CSV, up to 50 MB per file.</span></div>',
                     unsafe_allow_html=True,
                 )
                 st.stop()
