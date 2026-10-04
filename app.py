@@ -1249,8 +1249,8 @@ st.markdown(
     .st-key-imap_connected_actions .stCaption p {
         font-size:11.5px !important; color:#7993a8 !important; line-height:1.5 !important;
     }
-    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(2) .stButton > button,
-    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(3) .stButton > button {
+    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(2) .stButton button,
+    .st-key-imap_connected_actions [data-testid="column"]:nth-of-type(3) .stButton button {
         font-size:12.5px !important;
     }
     .stage-label {
@@ -1281,48 +1281,115 @@ st.markdown(
     .stage-card-scope .stage-label {color:#ffd98a !important; background:rgba(244,178,61,.12) !important; border-color:rgba(244,178,61,.32) !important;}
 
     /* ------------------------------------------------------------------
-       BUTTON SYSTEM -- one restrained, enterprise-grade look for every
-       action button in the workspace (st.button, download buttons and
-       form-submit buttons).
-         * Primary   : solid teal action key with dark ink text. Teal is the
-                       app's existing brand-chrome color, so the CTA reads as
-                       part of the product instead of a stock blue fill.
-         * Secondary : graphite key from the same family as the panels --
-                       hairline border, teal edge on hover.
-       Colors come from the --act-* tokens in :root.
+       BUTTON SYSTEM v3 -- slim, multi-colour "aurora" buttons.
+       Every button is a slim dark-glass key with a thin multi-colour edge.
+       Colour comes from three stops (--b1/--b2/--b3) set per button TYPE,
+       so different kinds of action read as different colours:
+         * st.button         aurora : blue -> violet -> magenta
+         * download buttons  ocean  : teal -> sky -> indigo
+         * form-submit       sunset : amber -> rose -> plum
+       Secondary: quiet -- graphite fill, faint colour in the edge; on
+       hover the edge lights up and a soft wash of the three colours
+       slides across.
+       Primary: same slim key, edge in full colour and a tinted wash at
+       rest; on hover the wash floods the whole key and the glow lifts.
+       Deliberately NOT a big solid-colour slab: at rest nothing here is a
+       large bright block, so it stays easy on the eyes.
+
+       Selectors are DESCENDANT (`.stButton button`), not child: Streamlit
+       wraps any button that has a `help=` tooltip in an extra element, and
+       the child form skipped those buttons (they showed Streamlit's flat
+       default colour). Primary is matched by `kind` OR `data-testid`
+       because newer Streamlit builds dropped the `kind` attribute.
        ------------------------------------------------------------------ */
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button {
-        min-height:44px !important;
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) {--b1:#3b82f6; --b2:#7c3aed; --b3:#db2777;}
+    .stDownloadButton {--b1:#0d9488; --b2:#0284c7; --b3:#4f46e5;}
+    .stFormSubmitButton {--b1:#d97706; --b2:#e11d48; --b3:#a21caf;}
+
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button {
+        position:relative; overflow:hidden; isolation:isolate;
+        min-height:40px !important;
+        padding:0 18px !important;
         border-radius:10px !important;
-        background:linear-gradient(180deg,var(--act-2-top) 0%,var(--act-2-bot) 100%) !important;
-        color:var(--act-2-text) !important;
-        border:1px solid var(--act-2-border) !important;
-        font-weight:700 !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.045) !important;
-        transition:background .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease), color .18s var(--ease), transform .1s var(--ease) !important;
+        /* fallback if color-mix() is unsupported */
+        background:linear-gradient(180deg,#131a27,#0c121c) !important;
+        border:1px solid #2a3444 !important;
+        color:#e6edf7 !important;
+        font-size:13px !important; font-weight:600 !important;
+        letter-spacing:.01em !important; text-transform:none !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4) !important;
+        transition:box-shadow .3s var(--ease), color .2s var(--ease), transform .14s var(--ease) !important;
     }
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:hover {
-        border-color:var(--act-2-border-hover) !important;
-        background:linear-gradient(180deg,var(--act-2-top-hover) 0%,var(--act-2-bot-hover) 100%) !important;
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button {
+        /* dark key + a faint multi-colour edge (graphite mixed into the 3 stops) */
+        background:
+            linear-gradient(180deg,#131a27,#0c121c) padding-box,
+            linear-gradient(115deg,
+                color-mix(in srgb, var(--b1) 42%, #2a3444),
+                color-mix(in srgb, var(--b2) 42%, #2a3444),
+                color-mix(in srgb, var(--b3) 42%, #2a3444)) border-box !important;
+        background-origin:border-box !important;
+        background-clip:padding-box, border-box !important;
+        border:1px solid transparent !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button p {
+        margin:0 !important; font-size:inherit !important; font-weight:inherit !important;
+        letter-spacing:inherit !important; text-transform:inherit !important;
+    }
+    /* the colour wash that sits behind the label */
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button::after {
+        content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; border-radius:9px;
+        background:linear-gradient(115deg,var(--b1),var(--b2),var(--b3));
+        background-size:220% 100%; background-position:0% 0;
+        opacity:0;
+        transition:opacity .3s var(--ease), background-position .9s var(--ease);
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:hover {
+        color:#ffffff !important; transform:translateY(-1px);
+        box-shadow:0 8px 22px -8px rgba(0,0,0,.6) !important;
+        box-shadow:0 8px 22px -10px color-mix(in srgb, var(--b2) 70%, transparent) !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:hover {
+        background:
+            linear-gradient(180deg,#131a27,#0c121c) padding-box,
+            linear-gradient(115deg, var(--b1), var(--b2), var(--b3)) border-box !important;
+        background-origin:border-box !important;
+        background-clip:padding-box, border-box !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:hover::after {opacity:.16; background-position:100% 0;}
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:active {
+        transform:translateY(0) scale(.99) !important; transition-duration:.07s !important;
+    }
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:focus-visible {
+        outline:2px solid var(--b1) !important; outline-offset:3px !important;
+    }
+
+    /* Primary: full-colour edge + tinted wash at rest, flood on hover */
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) :is(button[kind^="primary"], button[data-testid^="stBaseButton-primary"]) {
+        background:
+            linear-gradient(180deg,#131a27,#0c121c) padding-box,
+            linear-gradient(115deg, var(--b1), var(--b2), var(--b3)) border-box !important;
+        background-origin:border-box !important;
+        background-clip:padding-box, border-box !important;
         color:#ffffff !important;
-        box-shadow:0 0 0 1px rgba(56,189,248,.14), 0 8px 20px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.06) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px color-mix(in srgb, var(--b2) 80%, transparent) !important;
     }
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:active {transform:translateY(1px) !important; transition-duration:.08s !important;}
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:focus-visible {outline:2px solid rgba(56,189,248,.55) !important; outline-offset:2px !important;}
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"] {
-        background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
-        color:var(--act-1-text) !important;
-        border:1px solid var(--act-1-border) !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(99,102,241,.25), inset 0 1px 0 rgba(255,255,255,.22) !important;
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) :is(button[kind^="primary"], button[data-testid^="stBaseButton-primary"])::after {opacity:.22;}
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) :is(button[kind^="primary"], button[data-testid^="stBaseButton-primary"]):hover {
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px color-mix(in srgb, var(--b2) 90%, transparent) !important;
     }
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button[kind^="primary"]:hover {
-        background:linear-gradient(135deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
-        border-color:var(--act-1-border-hover) !important;
-        color:var(--act-1-text) !important;
-        box-shadow:0 0 0 1px rgba(99,102,241,.30), 0 10px 26px rgba(99,102,241,.4), inset 0 1px 0 rgba(255,255,255,.28) !important;
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) :is(button[kind^="primary"], button[data-testid^="stBaseButton-primary"]):hover::after {opacity:.92; background-position:100% 0;}
+
+    @media (prefers-reduced-motion: reduce) {
+        :is(.stButton, .stDownloadButton, .stFormSubmitButton) button,
+        :is(.stButton, .stDownloadButton, .stFormSubmitButton) button::after {transition:none !important;}
     }
     /* Disabled keys: dimmed and inert, so they never look clickable. */
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button:disabled {opacity:.4 !important; filter:saturate(.55) !important; pointer-events:none !important; box-shadow:none !important;}
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:disabled {opacity:.38 !important; filter:saturate(.5) !important; pointer-events:none !important; box-shadow:none !important;}
+    /* Sidebar nav buttons have their own look (accent bar etc.): no wash,
+       and don't clip their ::before bar. */
+    [data-testid="stSidebar"] :is(.stButton, .stDownloadButton, .stFormSubmitButton) button {overflow:visible !important;}
+    [data-testid="stSidebar"] :is(.stButton, .stDownloadButton, .stFormSubmitButton) button::after {display:none !important;}
 
     /* "Download Forensic Report" row -- these three used to all be plain
        identical secondary/graphite buttons (the default for any
@@ -1335,36 +1402,36 @@ st.markdown(
        "main action" treatment instead of blending into the graphite
        row). The container key is fixed even though the download keys
        inside it change per email, so this survives switching emails. */
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton button {
         background:linear-gradient(180deg,#241a3d,#160f28) !important;
         border:1px solid rgba(99,102,241,.55) !important;
         color:#f1ecff !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton > button:hover {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton button:hover {
         box-shadow:0 0 0 1px rgba(99,102,241,.35), 0 10px 26px rgba(99,102,241,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton button {
         background:linear-gradient(180deg,#0f3350,#0a2032) !important;
         border:1px solid rgba(99,102,241,.5) !important;
         color:#eaf6ff !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton > button:hover {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton button:hover {
         box-shadow:0 0 0 1px rgba(99,102,241,.32), 0 10px 26px rgba(99,102,241,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         color:var(--act-1-text) !important;
         border:1px solid var(--act-1-border) !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
         font-weight:800 !important;
     }
-    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton > button:hover {
+    .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button:hover {
         background:linear-gradient(135deg,var(--act-1-top-hover) 0%,var(--act-1-bot-hover) 100%) !important;
         border-color:var(--act-1-border-hover) !important;
     }
-    .st-key-forensic_download_row [data-testid="column"] .stDownloadButton > button:disabled {
+    .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button:disabled {
         background:linear-gradient(180deg,var(--act-2-top) 0%,var(--act-2-bot) 100%) !important;
         border:1px solid var(--act-2-border) !important;
         color:var(--act-2-text) !important;
@@ -1387,23 +1454,23 @@ st.markdown(
        secondary/graphite button -- not everything needs a warning color,
        and coloring low-risk actions red would just teach people to
        ignore red on the actually risky ones. */
-    .st-key-delete_my_data_btn .stButton > button {
+    .st-key-delete_my_data_btn .stButton button {
         background:linear-gradient(135deg,#ef5a5a 0%,#c73f3f 100%) !important;
         border:1px solid rgba(239,90,90,.6) !important;
         color:#ffffff !important;
         box-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 16px rgba(239,90,90,.25), inset 0 1px 0 rgba(255,255,255,.18) !important;
     }
-    .st-key-delete_my_data_btn .stButton > button:hover {
+    .st-key-delete_my_data_btn .stButton button:hover {
         background:linear-gradient(135deg,#f56b6b 0%,#d84c4c 100%) !important;
         border-color:rgba(239,90,90,.85) !important;
         box-shadow:0 0 0 1px rgba(239,90,90,.3), 0 10px 22px rgba(239,90,90,.35), inset 0 1px 0 rgba(255,255,255,.22) !important;
     }
-    .st-key-imap_disconnect_btn .stButton > button {
+    .st-key-imap_disconnect_btn .stButton button {
         background:transparent !important;
         border:1px solid rgba(239,90,90,.55) !important;
         color:#ff9d9d !important;
     }
-    .st-key-imap_disconnect_btn .stButton > button:hover {
+    .st-key-imap_disconnect_btn .stButton button:hover {
         background:rgba(239,90,90,.12) !important;
         border-color:rgba(239,90,90,.85) !important;
         color:#ffbcbc !important;
@@ -1414,32 +1481,32 @@ st.markdown(
        to the color of the mode it belongs to (indigo for Live IMAP,
        teal-green for Upload), so a user tracks "which flow am I in" by
        color the same way they did when picking the mode card itself. */
-    .st-key-imap_show_form_btn .stButton > button {
+    .st-key-imap_show_form_btn .stButton button {
         background:transparent !important;
         border:1px solid rgba(147,167,255,.45) !important;
         color:#c3ccff !important;
     }
-    .st-key-imap_show_form_btn .stButton > button:hover {
+    .st-key-imap_show_form_btn .stButton button:hover {
         background:rgba(147,167,255,.10) !important;
         border-color:rgba(147,167,255,.8) !important;
         color:#e4e8ff !important;
     }
-    .st-key-evidence_show_form_btn .stButton > button {
+    .st-key-evidence_show_form_btn .stButton button {
         background:transparent !important;
         border:1px solid rgba(56,189,248,.45) !important;
         color:#9bdcfb !important;
     }
-    .st-key-evidence_show_form_btn .stButton > button:hover {
+    .st-key-evidence_show_form_btn .stButton button:hover {
         background:rgba(56,189,248,.10) !important;
         border-color:rgba(56,189,248,.8) !important;
         color:#d4fbef !important;
     }
-    .st-key-imap_reload_folder_btn .stButton > button {
+    .st-key-imap_reload_folder_btn .stButton button {
         background:transparent !important;
         border:1px solid rgba(59,130,246,.4) !important;
         color:#8fe9cf !important;
     }
-    .st-key-imap_reload_folder_btn .stButton > button:hover {
+    .st-key-imap_reload_folder_btn .stButton button:hover {
         background:rgba(59,130,246,.1) !important;
         border-color:rgba(59,130,246,.75) !important;
         color:#d4fbef !important;
@@ -2145,7 +2212,7 @@ st.markdown(
        the container shapes to read as a modern product rather than a
        flat SCADA panel. */
     [data-testid="stExpander"], div[data-testid="stMetric"] {border-radius:var(--r-lg) !important;}
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) > button {border-radius:var(--r-md) !important; text-transform:uppercase; letter-spacing:.6px;}
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) button {border-radius:10px !important;}
     /* (Tab radius/case/size is fully owned by the .stRadio segmented-control
        rules and the per-panel .st-key-* overrides further down -- this
        used to re-declare a conflicting tiny-uppercase variant here,
@@ -2348,7 +2415,7 @@ st.markdown(
         background:transparent !important; border:none !important; box-shadow:none !important;
         color:transparent !important; cursor:pointer !important; outline:none !important;
     }
-    /* The generic .stButton > button:hover / :active rules elsewhere in this
+    /* The generic .stButton button:hover / :active rules elsewhere in this
        stylesheet paint a visible gradient + glow on every button -- without
        an explicit override here those rules (same selector specificity,
        but matching a real interactive state) win over the plain default
@@ -2708,7 +2775,7 @@ st.markdown(
     .sidebar-group-slate .grp-index {color:#9db3c8 !important; border-color:#2c4a60 !important;}
     .sidebar-group-slate:after {background:linear-gradient(90deg,#2c4a60,transparent) !important;}
 
-    [data-testid="stSidebar"] .stButton > button {
+    [data-testid="stSidebar"] .stButton button {
         position:relative !important;
         justify-content:flex-start !important; text-align:left !important;
         background:transparent !important; border:1px solid transparent !important;
@@ -2723,32 +2790,32 @@ st.markdown(
        with its own centered flex layout -- overriding justify-content on
        the <button> alone doesn't reach it, so the label still renders
        centered. Force the same left alignment on that inner wrapper. */
-    [data-testid="stSidebar"] .stButton > button > div {
+    [data-testid="stSidebar"] .stButton button > div {
         width:100% !important; display:flex !important; justify-content:flex-start !important;
     }
-    [data-testid="stSidebar"] .stButton > button p {
+    [data-testid="stSidebar"] .stButton button p {
         text-align:left !important; width:100% !important;
     }
     /* A left accent bar as a pseudo-element (not a border) so it animates
        in/out on hover/select without ever nudging the row's own layout. */
-    [data-testid="stSidebar"] .stButton > button::before {
+    [data-testid="stSidebar"] .stButton button::before {
         content:""; position:absolute; left:0; top:7px; bottom:7px; width:3px; border-radius:2px;
         background:var(--teal); opacity:0; transform:scaleY(.3);
         transition:opacity .2s var(--ease), transform .2s var(--ease);
     }
-    [data-testid="stSidebar"] .stButton > button:hover {
+    [data-testid="stSidebar"] .stButton button:hover {
         background:rgba(178,91,240,.14) !important; border-color:#4a2a63 !important; color:#eaf6ff !important;
         padding-left:18px !important;
     }
-    [data-testid="stSidebar"] .stButton > button:hover::before {opacity:.5; transform:scaleY(.7);}
-    [data-testid="stSidebar"] .stButton > button:active {transform:scale(.985) !important; transition-duration:.08s !important;}
-    [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    [data-testid="stSidebar"] .stButton button:hover::before {opacity:.5; transform:scaleY(.7);}
+    [data-testid="stSidebar"] .stButton button:active {transform:scale(.985) !important; transition-duration:.08s !important;}
+    [data-testid="stSidebar"] .stButton button[kind="primary"] {
         background:linear-gradient(90deg,rgba(178,91,240,.22),rgba(178,91,240,.02)) !important;
         border:1px solid #4a2a63 !important;
         color:#eefaff !important; box-shadow:inset 0 0 0 1px rgba(178,91,240,.12) !important;
         padding-left:18px !important;
     }
-    [data-testid="stSidebar"] .stButton > button[kind="primary"]::before {
+    [data-testid="stSidebar"] .stButton button[kind="primary"]::before {
         opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 8px rgba(178,91,240,.7);
     }
     /* Uniform, tight vertical rhythm between sidebar nav rows. Streamlit's
@@ -2907,14 +2974,14 @@ st.markdown(
        dense paragraph-and-buttons blob. */
     .st-key-copilot_quick_actions { margin-top:14px !important; }
     .st-key-copilot_command_row { margin-top:12px !important; }
-    .st-key-copilot_quick_actions .stButton > button {
+    .st-key-copilot_quick_actions .stButton button {
         font-size:10.5px !important; padding:6px 6px !important; min-height:34px !important;
         white-space:normal !important; line-height:1.2 !important;
     }
     .st-key-copilot_command_row .stTextInput input {
         background:#0a1826 !important; border-color:#1c3a52 !important; font-size:12.5px !important;
     }
-    .st-key-copilot_command_row .stFormSubmitButton > button {
+    .st-key-copilot_command_row .stFormSubmitButton button {
         min-height:38px !important; padding:0 !important; font-weight:900 !important;
     }
 
