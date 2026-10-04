@@ -5108,6 +5108,70 @@ st.markdown(
     .stApp [data-testid="stMain"] [data-testid="stCaptionContainer"] strong {color:#e6ebf2;}
     .stApp hr {border-color:transparent !important; height:1px; background:linear-gradient(90deg,var(--panel-tone),rgba(148,163,184,.18) 35%,transparent) !important; opacity:.7;}
     .stApp .stAlert [data-testid="stAlertContainer"] {border-left-width:3px !important;}
+
+    /* ==================================================================
+       INBOX LIST (Dashboard) -- HTML rows, per-sender colour avatars,
+       stat strip, full-row click target.
+       ================================================================== */
+    .inbox-stats {display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:6px 0 14px 0;}
+    .inbox-stats .is-card {
+        position:relative; overflow:hidden; padding:14px 18px 14px 20px; border-radius:14px;
+        border:1px solid var(--line-strong);
+        background:radial-gradient(120% 170% at 0% 0%, color-mix(in srgb,var(--tone) 16%,transparent), transparent 62%), linear-gradient(180deg,var(--panel-2),var(--panel));
+        box-shadow:var(--shadow-sm);
+    }
+    .inbox-stats .is-card::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--tone);}
+    .inbox-stats .is-card span {display:block; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--tone);}
+    .inbox-stats .is-card b {display:block; margin-top:9px; font:750 19px/1.2 Inter,"Segoe UI",sans-serif; color:#f4f6fa; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    @media (max-width:900px) {.inbox-stats {grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+    .inbox-head, .inbox-row {display:grid; grid-template-columns:54px minmax(220px,1.15fr) minmax(220px,1.6fr) 170px 82px; align-items:center; column-gap:16px;}
+    .inbox-head {
+        padding:11px 18px; margin:0; border:1px solid var(--line-strong); border-bottom:0; border-radius:14px 14px 0 0;
+        background:linear-gradient(180deg,#171d27,#11161e);
+        font:700 10.5px/1 Inter,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#a3adbb;
+        position:relative;
+    }
+    .inbox-head::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; border-radius:14px 14px 0 0; background:linear-gradient(90deg,#2fb68e,#d9a35f 30%,#e0708c 58%,#8b7cf6 82%,#38b2c8);}
+    .inbox-head .ih-date {text-align:left;}
+    .st-key-inbox_list {
+        border:1px solid var(--line-strong) !important; border-radius:0 0 14px 14px !important;
+        background:linear-gradient(180deg,#0f141b,#0b0f15) !important; padding:0 !important; gap:0 !important;
+        box-shadow:0 16px 34px -22px rgba(0,0,0,.85) !important;
+    }
+    .st-key-inbox_list > div {gap:0 !important;}
+    [class*="st-key-mrow_"]:not([class*="st-key-mrow_btn"]) {position:relative; margin:0 !important; gap:0 !important;}
+    [class*="st-key-mrow_"] [data-testid="stVerticalBlock"] {gap:0 !important;}
+    [class*="st-key-mrow_"] [data-testid="stElementContainer"]:has(.stButton), [class*="st-key-mrow_"] .stButton {position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; margin:0 !important; z-index:3;}
+    [class*="st-key-mrow_"] .stButton button {width:100% !important; height:100% !important; min-height:0 !important; opacity:0 !important; cursor:pointer !important; border:0 !important; padding:0 !important;}
+    .inbox-row {
+        position:relative; padding:12px 18px; border-bottom:1px solid rgba(148,163,184,.09);
+        transition:background .18s var(--ease);
+    }
+    .inbox-row::before {content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:var(--tone); opacity:.35; transition:opacity .18s var(--ease), top .18s var(--ease), bottom .18s var(--ease);}
+    [class*="st-key-mrow_"]:hover .inbox-row {background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 14%,transparent),transparent 85%);}
+    [class*="st-key-mrow_"]:hover .inbox-row::before {opacity:1; top:0; bottom:0;}
+    .inbox-row.is-sel {background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 22%,transparent),color-mix(in srgb,var(--tone) 5%,transparent) 70%);}
+    .inbox-row.is-sel::before {opacity:1; top:0; bottom:0;}
+    .inbox-row .ir-no {font:700 11px/1 'JetBrains Mono',Consolas,monospace; color:var(--tone); background:color-mix(in srgb,var(--tone) 12%,transparent); border:1px solid color-mix(in srgb,var(--tone) 35%,transparent); border-radius:8px; padding:5px 0; text-align:center; width:34px;}
+    .inbox-row .ir-from {display:flex; align-items:center; gap:12px; min-width:0;}
+    .inbox-row .ir-av {flex:none; width:36px; height:36px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; font:800 15px/1 Inter,sans-serif; color:#0b0e14; background:linear-gradient(145deg,var(--tone),color-mix(in srgb,var(--tone) 60%,#000)); box-shadow:0 6px 16px -8px var(--tone);}
+    .inbox-row .ir-fromtxt {display:flex; flex-direction:column; gap:3px; min-width:0;}
+    .inbox-row .ir-fromtxt b {font:650 13.5px/1.2 Inter,sans-serif; color:#eef2f7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .inbox-row .ir-fromtxt i {font:500 11.5px/1.2 'JetBrains Mono',Consolas,monospace; color:#8b96a5; font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .inbox-row .ir-subj {font:600 13.5px/1.4 Inter,sans-serif; color:#dfe5ee; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+    .inbox-row .ir-date {display:flex; flex-direction:column; gap:3px;}
+    .inbox-row .ir-date b {font:650 12.5px/1.2 Inter,sans-serif; color:#cfd7e3; font-variant-numeric:tabular-nums;}
+    .inbox-row .ir-date i {font:500 11px/1.2 Inter,sans-serif; font-style:normal; color:#8b96a5;}
+    .inbox-row .ir-go {justify-self:end; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase; color:#6b7686; opacity:.0; transform:translateX(-4px); transition:all .18s var(--ease); white-space:nowrap;}
+    .inbox-row .ir-go em {font-style:normal; font-size:15px; margin-left:3px;}
+    [class*="st-key-mrow_"]:hover .inbox-row .ir-go {opacity:1; transform:none; color:var(--tone);}
+    .inbox-row.is-sel .ir-go {opacity:1; transform:none; color:var(--tone);}
+    @media (max-width:900px) {
+        .inbox-head {display:none;}
+        .inbox-row {grid-template-columns:44px 1fr; row-gap:6px;}
+        .inbox-row .ir-subj, .inbox-row .ir-date {grid-column:2;} .inbox-row .ir-go {display:none;}
+    }
     /* ---- Tables: rich cells ---- */
     .polished-table-wrap {
         background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
@@ -7840,43 +7904,72 @@ if active_panel == "Dashboard":
                     _r, _c = [], []
                 return _r, _c
 
-            _rows_now, _cells_now = _table_selection()
-            _clicked_idx = None
-            if _rows_now and _rows_now != st.session_state.get("_imap_last_rows"):
-                _clicked_idx = _rows_now[0]
-            elif _cells_now and _cells_now != st.session_state.get("_imap_last_cells"):
-                _clicked_idx = _cells_now[0][0]
-            if _clicked_idx is not None and 0 <= _clicked_idx < len(_uid_list):
-                _sel_idx = _clicked_idx
-                _sel_uid = _uid_list[_clicked_idx]
-                st.session_state["imap_sel_uid"] = _sel_uid
+            # ---- Inbox list: real HTML rows, clickable end to end. -----------
+            # st.dataframe draws onto a canvas (no theming possible), so each
+            # row is an HTML card with an invisible full-row button laid over
+            # it. Same behaviour as before: click a row -> it is selected,
+            # loaded and scanned.
+            def _pick_msg(_u):
+                st.session_state["imap_sel_uid"] = _u
 
-            _want_rows = [_sel_idx] if _sel_idx is not None else []
-            if _rows_now != _want_rows:
+            from email.utils import parseaddr as _parseaddr
+            _AV_COLS = ["#2fb68e", "#d9a35f", "#8b7cf6", "#e0708c", "#38b2c8", "#a3c94a", "#f08a4b", "#e879b9"]
+            _now_local = datetime.now()
+
+            def _when(_txt):
                 try:
-                    st.session_state[_TBL_KEY] = {"selection": {"rows": _want_rows, "columns": [], "cells": []}}
-                    _rows_now, _cells_now = _want_rows, []
+                    _d = datetime.strptime(_txt, "%Y-%m-%d %H:%M:%S")
+                    _delta = (_now_local.date() - _d.date()).days
+                    _rel = "Today" if _delta == 0 else ("Yesterday" if _delta == 1 else (f"{_delta} days ago" if 1 < _delta < 31 else _d.strftime("%d %b %Y")))
+                    return _d.strftime("%d %b %Y"), _d.strftime("%H:%M:%S"), _rel
                 except Exception:
-                    pass
-            st.session_state["_imap_last_rows"] = list(_rows_now)
-            st.session_state["_imap_last_cells"] = list(_cells_now)
+                    return str(_txt), "", ""
 
-            _tbl_df = pd.DataFrame(display_rows)
-            _tbl_cfg = {"No.": st.column_config.NumberColumn("No.", width="small", format="%d")}
-            for _mode in (["single-row", "single-cell"], "single-row"):
-                _drawn = False
-                for _wkw in ({"width": "stretch"}, {"use_container_width": True}):
-                    try:
-                        st.dataframe(
-                            _tbl_df, hide_index=True, height=360, on_select="rerun",
-                            selection_mode=_mode, key=_TBL_KEY, column_config=_tbl_cfg, **_wkw,
+            _senders = {}
+            for _r in display_rows:
+                _n, _a = _parseaddr(str(_r["From"]))
+                _senders[(_a or str(_r["From"])).lower()] = 1
+            _newest = display_rows[0]["Date"] if display_rows else "-"
+            _oldest = display_rows[-1]["Date"] if display_rows else "-"
+            st.markdown(
+                '<div class="inbox-stats">'
+                f'<div class="is-card" style="--tone:#2fb68e;"><span>Messages loaded</span><b>{len(display_rows)}</b></div>'
+                f'<div class="is-card" style="--tone:#d9a35f;"><span>Unique senders</span><b>{len(_senders)}</b></div>'
+                f'<div class="is-card" style="--tone:#8b7cf6;"><span>Newest</span><b>{html.escape(str(_newest))}</b></div>'
+                f'<div class="is-card" style="--tone:#e0708c;"><span>Oldest</span><b>{html.escape(str(_oldest))}</b></div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                '<div class="inbox-head"><span class="ih-no">No.</span><span>Sender</span>'
+                '<span>Subject</span><span class="ih-date">Received</span><span class="ih-go"></span></div>',
+                unsafe_allow_html=True,
+            )
+            try:
+                _list_box = st.container(height=min(520, 64 * len(display_rows) + 8), key="inbox_list")
+            except TypeError:
+                _list_box = st.container(key="inbox_list")
+            with _list_box:
+                for _i, _r in enumerate(display_rows):
+                    _uid_i = _uid_list[_i]
+                    _name, _addr = _parseaddr(str(_r["From"]))
+                    _name = _name or (_addr.split("@")[0] if _addr else str(_r["From"]))
+                    _col = _AV_COLS[int(hashlib.md5((_addr or _name).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_AV_COLS)]
+                    _d1, _d2, _rel = _when(_r["Date"])
+                    _is_sel = (_i == _sel_idx)
+                    with st.container(key=f"mrow_{_i}"):
+                        st.markdown(
+                            f'<div class="inbox-row{" is-sel" if _is_sel else ""}" style="--tone:{_col};">'
+                            f'<span class="ir-no">{int(_r["No."])}</span>'
+                            f'<span class="ir-from"><span class="ir-av">{html.escape((_name[:1] or "?").upper())}</span>'
+                            f'<span class="ir-fromtxt"><b>{html.escape(_name)}</b><i>{html.escape(_addr)}</i></span></span>'
+                            f'<span class="ir-subj">{html.escape(str(_r["Subject"]))}</span>'
+                            f'<span class="ir-date"><b>{html.escape(_d1)}</b><i>{html.escape(_d2)}{" · " + html.escape(_rel) if _rel else ""}</i></span>'
+                            f'<span class="ir-go">{"Selected" if _is_sel else "Open"} <em>&rsaquo;</em></span>'
+                            '</div>',
+                            unsafe_allow_html=True,
                         )
-                        _drawn = True
-                        break
-                    except Exception:
-                        continue
-                if _drawn:
-                    break
+                        st.button(" ", key=f"mrow_btn_{_i}", on_click=_pick_msg, args=(_uid_i,))
             st.caption("Click anywhere on a row to open and scan that email.")
 
             selected_meta = mailbox_messages[_sel_idx] if _sel_idx is not None else None
