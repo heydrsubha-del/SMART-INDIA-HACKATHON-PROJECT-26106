@@ -5650,6 +5650,91 @@ st.markdown(
     .stApp .sec-head::before {top:1px !important; bottom:11px !important; width:3px !important; border-radius:2px !important; background:var(--tone) !important;}
     .stApp .sec-head .sh-title {font:650 16px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5fa;}
     .stApp .sec-head .sh-sub {color:#8793a5;}
+
+    /* ==================================================================
+       HEADERS v6 -- ONE header language everywhere. Level 1 = calm card
+       (module banners, dossier head). Level 2 = accent bar + title + sub +
+       bottom divider (section titles, dashboard titles, numbered heads,
+       markdown headings, feedback, separators). Accent = the open module's
+       nav colour (--panel-tone). Delete this block to revert.
+       ================================================================== */
+    /* --- level 1: module banners + dossier head --- */
+    .stApp .part-banner, .stApp .dossier-head {
+        background:#0e141c !important; border:1px solid #232d3b !important; border-radius:12px !important;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; padding:18px 22px 18px 26px !important;
+    }
+    .stApp .part-banner::before, .stApp .dossier-head::before {
+        top:0 !important; bottom:0 !important; left:0 !important; width:3px !important; border-radius:0 !important; background:var(--tone) !important;
+    }
+    .stApp .part-banner .pb-step {font-weight:600 !important; color:var(--tone) !important;}
+    .stApp .part-banner .pb-title {font:700 21px/1.25 Inter,"Segoe UI",sans-serif; color:#f4f7fb;}
+    .stApp .part-banner .pb-sub {color:#8793a5;}
+    .stApp .part-banner .pb-scope {
+        padding:5px 10px !important; border-radius:6px !important; background:#18202c !important; border:1px solid #2a3546 !important;
+        color:#b4bfce !important; font-size:11px !important; letter-spacing:.08em !important;
+    }
+    .stApp .part-banner .pb-scope::before {display:none !important;}
+    .stApp .dossier-head .dh-title {font:700 23px/1.2 Inter,"Segoe UI",sans-serif; color:#f4f7fb;}
+    .stApp .dossier-head .dh-pill {
+        border-radius:6px !important; background:#18202c !important; box-shadow:none !important;
+        color:var(--tone) !important; border:1px solid color-mix(in srgb,var(--tone) 45%,#2a3546) !important;
+    }
+
+    /* --- level 2: dashboard section title (was centred hairline) --- */
+    .stApp .dash-section-title {
+        --tone:var(--panel-tone,#38bdf8); position:relative; display:flex !important; align-items:baseline !important;
+        justify-content:flex-start !important; flex-wrap:wrap; gap:4px 14px !important;
+        margin:30px 0 16px 0 !important; padding:0 0 10px 14px !important; border-bottom:1px solid #232d3b !important;
+        color:#f1f5fa !important; font:650 16px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important; text-transform:none !important;
+    }
+    .stApp .dash-section-title::before {
+        content:""; position:absolute; left:0; top:1px; bottom:11px; width:3px; height:auto; flex:none; border-radius:2px; background:var(--tone);
+    }
+    .stApp .dash-section-title::after, .stApp .dash-section-title .dash-section-dot {display:none !important;}
+    .stApp .dash-section-title .dash-section-sub {color:#8793a5 !important; font:400 12.5px/1.4 Inter,"Segoe UI",sans-serif !important; letter-spacing:0 !important;}
+
+    /* --- level 2: numbered heads, part separator, feedback --- */
+    .stApp .num-head .nh-num {
+        width:34px; height:34px; border-radius:8px; background:#18202c !important; border:1px solid #2a3546 !important;
+        box-shadow:none !important; color:var(--tone);
+    }
+    .stApp .num-head .nh-title {font-weight:650;}
+    .stApp .num-head .nh-sub {color:#8793a5;}
+    .stApp .num-head .nh-rule {height:1px; background:#232d3b !important;}
+    .stApp .part-sep {margin:44px 0 18px 0 !important; gap:14px !important; justify-content:flex-start !important;}
+    .stApp .part-sep::before {display:none !important;}
+    .stApp .part-sep::after {height:1px !important; background:#232d3b !important;}
+    .stApp .part-sep span {
+        font:600 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.2em !important;
+        color:var(--panel-tone,#38bdf8) !important; padding:6px 10px; border-radius:6px; background:#18202c; border:1px solid #2a3546;
+    }
+    .stApp .feedback-panel {position:relative; margin:10px 0 16px 0; padding:0 0 10px 14px; border-bottom:1px solid #232d3b;}
+    .stApp .feedback-panel::before {content:""; position:absolute; left:0; top:1px; bottom:11px; width:3px; border-radius:2px; background:var(--panel-tone,#38bdf8);}
+    .stApp .feedback-title {font:650 16px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5fa; letter-spacing:-.005em;}
+    .stApp .feedback-subtitle {font-size:12.5px; line-height:1.4; color:#8793a5; margin-top:3px;}
+
+    /* --- level 2: markdown headings + st.subheader in the main area --- */
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4,h5,h6),
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stHeading"] :is(h1,h2,h3,h4) {
+        position:relative; margin:24px 0 12px 0 !important; padding:0 0 9px 14px !important;
+        border-bottom:1px solid #232d3b; color:#f1f5fa !important;
+        font:650 16px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important;
+    }
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h3,h4,h5,h6)::before,
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stHeading"] :is(h1,h2,h3,h4)::before {
+        content:""; position:absolute; left:0; top:1px; bottom:10px; width:3px; border-radius:2px; background:var(--panel-tone,#38bdf8);
+    }
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h5,h6) {font-size:14px !important; border-bottom:0; padding-bottom:2px !important; margin:18px 0 8px 0 !important;}
+    .stApp :is([data-testid="stMain"],section.main) [data-testid="stMarkdownContainer"] > :is(h5,h6)::before {bottom:3px;}
+
+    /* --- sidebar group labels + AI report bar --- */
+    .stApp .sidebar-group-label {margin:30px 6px 12px 6px !important; color:#8793a5 !important;}
+    .stApp .sidebar-group-label:after {height:1px !important; background:#232d3b !important;}
+    .stApp .sidebar-group-label .grp-index {
+        border-radius:5px !important; background:#18202c !important; border:1px solid #2a3546 !important; color:var(--g) !important;
+    }
+    .stApp .ai-report-bar {background:#121923 !important; border-bottom:1px solid #232d3b !important; color:#8b7cf6 !important; font-weight:600 !important; letter-spacing:.16em !important;}
+    .stApp .ai-report-chip {background:#18202c !important; border:1px solid #2a3546 !important; color:#b4bfce !important; border-radius:6px !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -9065,7 +9150,7 @@ if active_panel == "Dashboard":
                 """<div class="dash-section-title">
                     <span class="dash-section-dot"></span>
                     <span>Origin &amp; Correlation</span>
-                    <span class="dash-section-sub">— geolocation map and infrastructure graph for this case set</span>
+                    <span class="dash-section-sub">Geolocation map and infrastructure graph for this case set</span>
                 </div>""",
                 unsafe_allow_html=True,
             )
