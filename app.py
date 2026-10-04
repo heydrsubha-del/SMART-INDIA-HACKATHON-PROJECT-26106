@@ -2980,14 +2980,26 @@ st.markdown(
         border-color: var(--line-strong) !important;
     }
 
-    /* ================= NEW DASHBOARD-STYLE UI SHELL ================= */
+    /* ================= TOP BANNER (single clean layer) =================
+       Full-bleed app header: edge-to-edge, sits above the page's own top
+       padding so it reads as a header bar rather than a card floating in
+       the middle of empty space. One flex row that wraps to exactly two
+       rows on a phone (brand, then the account/status line) instead of
+       the four stacked labelled rows this used to collapse into. */
+    .stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:0 !important;}
     .topbar-shell {
-        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
-        background:linear-gradient(180deg,#161c26 0%,#0d1219 100%);
-        border:1px solid #263140; border-radius:var(--r-lg);
-        padding:28px 34px; margin-top:8px; margin-bottom:18px;
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px;
+        background:
+            radial-gradient(60% 160% at 100% 0%, rgba(76,141,255,.10), transparent 65%),
+            linear-gradient(180deg,#161c26 0%,#0d1219 100%);
+        border-bottom:1px solid #263140; border-radius:0 0 18px 18px;
+        padding:2.6rem 32px 20px; margin:0 -1.35rem 20px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
+    }
+    .topbar-shell::before {
+        content:""; position:absolute; left:0; right:0; top:0; height:3px; z-index:2; pointer-events:none;
+        background:linear-gradient(90deg,#4c8dff,#8b7cff 35%,#34d399 65%,#d49a66);
     }
     /* Network/globe background graphic (image itself set in a small
        separate <style> tag right before this markup, since the big
@@ -3003,61 +3015,60 @@ st.markdown(
         pointer-events:none; z-index:0;
     }
     .topbar-brand, .topbar-status-wrap {position:relative; z-index:1;}
-    .topbar-brand {display:flex; align-items:center; gap:20px;}
-    /* Logo + name are the whole point of this banner, so both got a real
-       size increase (34px logo -> 64px, 23px title -> 34px) instead of
-       sharing the header row with an unrelated, non-functional search
-       box. That search input never filtered anything (see the removed
-       .st-key-topbar_utility rule this replaced) -- it just sat above the
-       banner as clutter with no real feature behind it, so it's gone
-       rather than kept and restyled. The bell + account chip it used to
-       carry are folded into this same shell instead (top-right), so
-       there's one prominent header, not two stacked bars. */
+    .topbar-brand {display:flex; align-items:center; gap:18px; min-width:0; flex:1 1 420px;}
     .topbar-logo {
-        width:64px; height:64px; flex:0 0 64px; border-radius:16px;
+        width:56px; height:56px; flex:0 0 56px; border-radius:15px;
         background:radial-gradient(circle at 35% 30%, rgba(139,124,246,.22), transparent 70%);
         box-shadow:0 0 0 1px rgba(139,124,246,.28), 0 8px 20px rgba(0,0,0,.3);
-        display:flex; align-items:center; justify-content:center; padding:8px;
+        display:flex; align-items:center; justify-content:center; padding:7px;
     }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
-    .topbar-actions {display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-bottom:8px;}
-    .topbar-icon-btn {
-        width:36px; height:36px; border-radius:50%;
-        display:flex; align-items:center; justify-content:center;
-        background:linear-gradient(180deg,#10151c,#0b0f15); border:1px solid #2a3444;
-        color:#9fb4cc; cursor:pointer; transition:border-color .18s var(--ease), color .18s var(--ease);
-        padding:0;
+    .topbar-brand > div:last-child {min-width:0;}
+    .topbar-kicker {font-size:11px; font-weight:800; letter-spacing:1.6px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
+    .topbar-title {
+        font-size:26px; font-weight:850; letter-spacing:-.01em; color:#f3f6fb; line-height:1.25;
+        text-shadow:0 2px 14px rgba(0,0,0,.35);
     }
-    .topbar-icon-btn:hover {border-color:var(--cyan); color:#eaf1ff;}
+    .topbar-subtitle {font-size:12.5px; color:#8d99ac; line-height:1.55; margin-top:6px; max-width:74ch;}
+    /* Right side: one row holding the account chip and the status pill
+       together, instead of a stacked labelled "session panel". */
+    .topbar-status-wrap {display:flex; align-items:center; gap:10px; flex:0 0 auto;}
+    .topbar-actions {display:flex; align-items:center;}
     .topbar-account-chip {
         display:flex; align-items:center; gap:8px;
         background:linear-gradient(180deg,#10151c,#0b0f15); border:1px solid #2a3444;
-        border-radius:999px; padding:5px 14px 5px 5px;
-        max-width:230px;
+        border-radius:999px; padding:5px 14px 5px 5px; max-width:230px;
     }
     .topbar-account-avatar {
-        width:26px; height:26px; border-radius:50%; flex:0 0 26px;
+        width:24px; height:24px; border-radius:50%; flex:0 0 24px;
         display:flex; align-items:center; justify-content:center;
-        background:var(--brand-gradient); color:#fff; font-weight:800; font-size:12px;
+        background:var(--brand-gradient); color:#fff; font-weight:800; font-size:11px;
     }
     .topbar-account-email {
         font-size:12.5px; color:var(--text); font-weight:600;
         overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .topbar-account-chevron {color:#5b7690; flex:0 0 13px; margin-left:2px; transition:color .18s var(--ease), transform .18s var(--ease);}
-    .topbar-account-chip:hover .topbar-account-chevron {color:#9fb4cc;}
-    .topbar-kicker {font-size:11.5px; font-weight:800; letter-spacing:1.8px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
-    .topbar-title {font-size:34px; font-weight:900; letter-spacing:.2px; color:#eef1f5; line-height:1.2; text-shadow:0 2px 14px rgba(0,0,0,.35);}
-    .topbar-subtitle {font-size:12.5px; color:#93abc3; line-height:1.5; margin-top:6px;}
-    .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:9px;}
     .topbar-status-pill {
-        display:flex; align-items:center; gap:8px; font-size:11.5px; color:#b9d2c3; white-space:nowrap;
-        background:rgba(111,174,140,.09); border:1px solid rgba(111,174,140,.25); border-radius:999px;
-        padding:6px 14px; order:-1;
+        display:flex; align-items:center; gap:7px; font-size:11px; font-weight:650; color:#b9d2c3; white-space:nowrap;
+        background:rgba(111,174,140,.1); border:1px solid rgba(111,174,140,.3); border-radius:999px; padding:6px 13px;
     }
-    .topbar-status-dot {width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(111,174,140,.6);display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
-    .topbar-status-online {color:#b9d2c3; font-weight:650;}
-    .topbar-status-time {font-size:10.5px; color:#5b7690; letter-spacing:.3px; white-space:nowrap;}
+    .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
+    @media (max-width:1000px) {
+        .topbar-shell {padding:2.4rem 20px 18px;}
+        .topbar-subtitle {max-width:none;}
+    }
+    @media (max-width:640px) {
+        /* Two rows total on a phone: brand row, then one compact row for
+           account + status -- never the 4-5 line stack this used to be. */
+        .topbar-shell {padding:2.2rem 16px 16px; gap:12px;}
+        .topbar-logo {width:42px; height:42px; flex:0 0 42px; border-radius:12px;}
+        .topbar-kicker {font-size:9.5px; letter-spacing:1.2px;}
+        .topbar-title {font-size:18px; line-height:1.3;}
+        .topbar-subtitle {display:none;}
+        .topbar-status-wrap {width:100%; justify-content:space-between;}
+        .topbar-account-email {max-width:34vw;}
+    }
+    @media (prefers-reduced-motion:reduce) {.topbar-status-dot {animation:none !important;}}
 
     /* ============ SIDEBAR — full redesign ============
        A shared "breathing" pulse keyframe for every live-status dot in the
@@ -5935,227 +5946,6 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
-/* ============ TOP BANNER: skin only (layout/markup untouched) ============
-   Same card language as the acquisition cards and module headers:
-   1px graphite border, solid accent bar on top, mono eyebrow, outlined
-   chips. No display/flex/order/position changes, so every element stays
-   exactly where it was. */
-.stApp .topbar-shell {
-  --tone:#4c8dff;
-  border:1px solid var(--line-strong,#313c4b); border-radius:14px;
-  background:
-    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
-    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 8%,transparent), 0 14px 32px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04);
-}
-.stApp .topbar-shell::before {
-  content:""; position:absolute; left:0; right:0; top:0; height:3px; z-index:2; pointer-events:none; background:var(--tone);
-}
-.stApp .topbar-logo {
-  background:rgba(255,255,255,.03); box-shadow:none;
-  border:1px solid color-mix(in srgb,var(--tone) 40%,var(--line-strong,#313c4b));
-}
-.stApp .topbar-kicker {
-  color:var(--tone); font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-shadow:none;
-}
-.stApp .topbar-title {font-weight:800; letter-spacing:-.015em; color:#fff; text-shadow:none;}
-.stApp .topbar-subtitle {color:#8b96a5;}
-.stApp .topbar-account-chip {
-  background:rgba(255,255,255,.03); border:1px solid var(--line-strong,#313c4b); box-shadow:none;
-}
-.stApp .topbar-account-avatar {background:var(--tone); color:#0b1220;}
-.stApp .topbar-status-pill {
-  border-radius:6px; font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
-  background:color-mix(in srgb,#3fb68b 8%,transparent); border:1px solid color-mix(in srgb,#3fb68b 40%,transparent);
-}
-.stApp .topbar-status-online {color:#3fb68b; font-weight:600;}
-.stApp .topbar-status-time {font-family:ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
-
-/* ============ TOP BANNER v2: segmented accent + session panel ============
-   Same elements, same order, same links to app logic. The right-hand
-   status column becomes a labelled "session panel"; labels are CSS-only. */
-.stApp .topbar-shell::before {
-  height:3px;
-  background:linear-gradient(90deg,#4c8dff 0 16.66%,#d49a66 0 33.33%,#8b7cf6 0 50%,#3fb68b 0 66.66%,#38a3e8 0 83.33%,#e5637d 0);
-}
-.stApp .topbar-shell {padding:22px 26px 20px; align-items:stretch;}
-.stApp .topbar-brand {align-items:center;}
-.stApp .topbar-logo {
-  width:64px; height:64px; flex-basis:64px; border-radius:16px;
-  background:radial-gradient(circle at 35% 30%, color-mix(in srgb,var(--tone) 22%,transparent), rgba(10,15,28,.85) 72%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 10px 22px -12px var(--tone);
-}
-.stApp .topbar-status-wrap {
-  align-items:stretch; justify-content:center; gap:0; width:min(100%,292px); flex:0 0 auto;
-  padding:2px 16px; border:1px solid var(--line-strong,#313c4b); border-radius:12px;
-  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)); box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-}
-.stApp .topbar-actions, .stApp .topbar-status-pill, .stApp .topbar-status-time {
-  display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0;
-  padding:10px 0; border-radius:0; background:none; box-shadow:none;
-}
-.stApp .topbar-actions::before, .stApp .topbar-status-pill::before, .stApp .topbar-status-time::before {
-  font:600 9px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#6b7788; flex:0 0 auto;
-}
-.stApp .topbar-actions::before {content:"Operator";}
-.stApp .topbar-status-pill::before {content:"Status";}
-.stApp .topbar-status-time::before {content:"Timestamp";}
-.stApp .topbar-status-pill {
-  border:0 !important; border-top:1px solid rgba(255,255,255,.07) !important; letter-spacing:.12em;
-}
-.stApp .topbar-status-pill .topbar-status-dot {margin-left:auto;}
-.stApp .topbar-status-time {border-top:1px solid rgba(255,255,255,.07); font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.08em; color:#8b96a5;}
-.stApp .topbar-account-chip {max-width:190px; padding:3px 11px 3px 4px; gap:8px;}
-.stApp .topbar-account-avatar {width:22px; height:22px; flex-basis:22px; font-size:11px;}
-.stApp .topbar-account-email {font-size:12px;}
-
-/* ============ TOP BANNER v3: full-bleed app bar ============
-   The banner now starts at the very top edge of the page and runs edge to
-   edge, so the strip that used to be empty (behind the sidebar toggle and
-   the Share toolbar) becomes part of the banner, like an app header. */
-.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:0 !important;}
-.stApp .topbar-shell {
-  margin:0 -1.35rem 18px; border-top:0; border-radius:0 0 18px 18px;
-  padding:3.5rem 28px 20px;   /* top padding = the header strip (toggle + toolbar sit inside it) */
-  background:
-    linear-gradient(180deg,rgba(0,0,0,.28) 0,transparent 3.2rem),
-    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
-    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
-}
-.stApp [data-testid="stToolbar"] {opacity:.85 !important;}
-.stApp [data-testid="stHeader"] {z-index:5;}
-
-/* ======================= MODULE / PART BANNERS ======================= */
-.stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
-.stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
-.stApp .part-banner .pb-step {
-  color:var(--tone) !important; text-shadow:none; margin-bottom:10px;
-  font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
-}
-.stApp .part-banner .pb-step::before {width:18px; height:1px; border-radius:0; opacity:.7; background:currentColor;}
-.stApp .part-banner .pb-title {
-  font:750 21px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;
-  color:#fff; background:none; -webkit-text-fill-color:#fff;
-}
-.stApp .part-banner .pb-sub {color:#8b96a5; font-size:12.5px; line-height:1.5; margin-top:4px;}
-/* scope = small mono tag, same family as .acq2-chip */
-.stApp .part-banner .pb-scope {
-  display:inline-flex; align-items:center; gap:9px; padding:6px 10px !important; border-radius:6px; box-shadow:none; backdrop-filter:none;
-  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--tone) !important; background:color-mix(in srgb,var(--tone) 8%,transparent) !important;
-  border:1px solid color-mix(in srgb,var(--tone) 40%,transparent) !important; max-width:100%; overflow-wrap:anywhere;
-}
-.stApp .part-banner .pb-scope::before {width:6px; height:6px; background:var(--tone); box-shadow:none; animation:pxPulse 2.4s ease-in-out infinite;}
-
-/* ========================== SECTION HEADS ========================== */
-.stApp .sec-head::before {width:3px; border-radius:3px; background:var(--tone); box-shadow:none;}
-.stApp .sec-head .sh-title {font:750 17px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5f9;}
-.stApp .num-head .nh-num {
-  background:color-mix(in srgb,var(--tone) 10%,transparent) !important; color:var(--tone) !important;
-  border:1px solid color-mix(in srgb,var(--tone) 45%,transparent) !important; border-radius:8px !important; box-shadow:none;
-  font:700 13px/1 ui-monospace,Consolas,monospace;
-}
-.stApp .num-head .nh-rule {background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 50%,transparent),transparent) !important; opacity:1;}
-
-@media (prefers-reduced-motion:reduce) {
-  .stApp .topbar-status-dot, .stApp .part-banner .pb-scope::before {animation:none !important;}
-}
-
-/* ============ TOP BANNER v4: sized card + glass redesign ============
-   Fixes the size: the banner is a normal in-flow card exactly as wide as the
-   content column (no negative-margin bleed), with a fixed minimum height and
-   a title that scales down instead of wrapping to three lines. The old
-   3.5rem top padding is now the page's own top padding, so the Streamlit
-   toolbar still sits clear above it. Markup is untouched.
-   Delete this block to go back to v3. ------------------------------------ */
-.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:3.5rem !important;}
-.stApp .topbar-shell {
-  --tone:#4c8dff;
-  box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-height:150px;
-  margin:0 0 22px 0 !important; padding:26px 30px !important; gap:26px 32px !important;
-  display:flex !important; flex-wrap:wrap !important; align-items:center !important; justify-content:space-between !important;
-  border:1px solid #243046 !important; border-radius:18px !important; overflow:hidden !important;
-  background:
-    radial-gradient(55% 150% at 0% 0%, rgba(76,141,255,.16), transparent 66%),
-    radial-gradient(45% 140% at 100% 100%, rgba(212,154,102,.10), transparent 70%),
-    linear-gradient(180deg,#111a29,#0a1019) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 18px 40px -24px rgba(0,0,0,.9) !important;
-}
-/* faint engineering grid behind the text, fading out to the right */
-.stApp .topbar-shell::before {
-  content:"" !important; position:absolute; inset:0 !important; height:auto !important; top:0 !important; left:0 !important; right:0 !important; z-index:0; pointer-events:none;
-  background:
-    linear-gradient(90deg,#4c8dff 0%,#8b7cff 28%,#34d399 54%,#d49a66 80%,#e0634a 100%) top/100% 2px no-repeat,
-    linear-gradient(rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px,
-    linear-gradient(90deg, rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px;
-  -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
-  mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
-}
-.stApp .topbar-shell::after {opacity:.9;}
-.stApp .topbar-brand {position:relative; z-index:1; flex:1 1 560px !important; min-width:0 !important; gap:22px !important; align-items:center !important;}
-.stApp .topbar-brand > div:last-child {min-width:0;}
-
-.stApp .topbar-logo {
-  position:relative; width:72px !important; height:72px !important; flex:0 0 72px !important; padding:9px !important; border-radius:20px !important;
-  background:radial-gradient(circle at 35% 28%, rgba(76,141,255,.30), rgba(8,13,24,.92) 72%) !important;
-  border:1px solid rgba(76,141,255,.55) !important;
-  box-shadow:0 0 0 5px rgba(76,141,255,.07), 0 16px 30px -14px rgba(76,141,255,.85), inset 0 1px 0 rgba(255,255,255,.10) !important;
-  animation:tbGlow 3.4s ease-in-out infinite;
-}
-@keyframes tbGlow {
-  0%,100% {box-shadow:0 0 0 5px rgba(76,141,255,.07), 0 16px 30px -14px rgba(76,141,255,.85), inset 0 1px 0 rgba(255,255,255,.10);}
-  50% {box-shadow:0 0 0 8px rgba(76,141,255,.03), 0 18px 34px -12px rgba(139,124,255,.85), inset 0 1px 0 rgba(255,255,255,.10);}
-}
-
-.stApp .topbar-kicker {
-  display:flex; align-items:center; gap:10px; margin-bottom:9px !important;
-  font:700 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; text-transform:uppercase; color:#7fb0ff !important;
-}
-.stApp .topbar-kicker::before {content:""; width:7px; height:7px; border-radius:50%; background:#4c8dff; box-shadow:0 0 0 3px rgba(76,141,255,.22), 0 0 10px rgba(76,141,255,.9);}
-.stApp .topbar-title {
-  font:800 clamp(21px, 2.05vw, 30px)/1.18 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.02em !important;
-  background:linear-gradient(180deg,#ffffff 35%,#a9c3f2); -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent; color:transparent !important; text-shadow:none !important; max-width:34ch;
-}
-.stApp .topbar-subtitle {margin-top:10px !important; max-width:78ch; font-size:12.5px !important; line-height:1.6 !important; color:#8d99ac !important;}
-
-/* session panel */
-.stApp .topbar-status-wrap {
-  position:relative; z-index:1; flex:0 0 292px !important; width:292px !important; padding:4px 18px !important; border-radius:16px !important;
-  border:1px solid #2a3750 !important; backdrop-filter:blur(6px);
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 28px -20px rgba(0,0,0,.9) !important;
-}
-.stApp .topbar-account-chip {border-color:#2a3750 !important; background:rgba(255,255,255,.04) !important;}
-.stApp .topbar-account-avatar {background:linear-gradient(145deg,#4c8dff,#8b7cff) !important; color:#fff !important; font-weight:750;}
-.stApp .topbar-status-pill {color:#6ee7b7;}
-.stApp .topbar-status-online {color:#6ee7b7 !important;}
-.stApp .topbar-status-dot {background:#34d399 !important; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9) !important;}
-.stApp .topbar-status-time {color:#9fb3c8 !important;}
-.stApp .topbar-actions::before, .stApp .topbar-status-pill::before, .stApp .topbar-status-time::before {color:#7f98b3;}
-
-@media (max-width:1000px) {
-  .stApp .topbar-shell {padding:22px 20px !important; min-height:0;}
-  .stApp .topbar-status-wrap {flex:1 1 100% !important; width:100% !important;}
-  .stApp .topbar-title {max-width:none;}
-}
-@media (max-width:560px) {
-  .stApp .topbar-logo {width:56px !important; height:56px !important; flex-basis:56px !important; border-radius:16px !important;}
-  .stApp .topbar-subtitle {display:none;}
-}
-@media (prefers-reduced-motion:reduce) {.stApp .topbar-logo {animation:none !important;}}
-
-/* ---- reclaim the dead space above the banner and between banner and nav ----
-   The page injects a lot of <style>-only st.markdown blocks before the banner.
-   Each one is an empty element that still takes a full flex gap (1rem), which
-   is where the ~130px of blank space came from. An element whose only content
-   is a <style> tag is taken out of the layout (its CSS keeps applying). */
-.stApp .stElementContainer:has([data-testid="stMarkdownContainer"] > style:only-child),
-.stApp [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {
-  display:none !important;
-}
-.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:3.6rem !important;}
-.stApp .topbar-shell {margin-bottom:14px !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -6181,7 +5971,6 @@ st.markdown(
           <span class="topbar-status-dot"></span>
           <span class="topbar-status-online">System operational</span>
         </div>
-        <div class="topbar-status-time">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
       </div>
     </div>""",
     unsafe_allow_html=True,
