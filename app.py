@@ -2993,13 +2993,13 @@ st.markdown(
             radial-gradient(60% 160% at 100% 0%, rgba(76,141,255,.10), transparent 65%),
             linear-gradient(180deg,#161c26 0%,#0d1219 100%);
         border-bottom:1px solid #263140; border-radius:0 0 18px 18px;
-        padding:2.6rem 32px 20px; margin:0 -1.35rem 20px;
+        min-height:190px; padding:3.4rem 32px 34px; margin:0 -1.35rem 20px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
     }
     .topbar-shell::before {
         content:""; position:absolute; left:0; right:0; top:0; height:3px; z-index:2; pointer-events:none;
-        background:linear-gradient(90deg,#4c8dff,#8b7cff 35%,#34d399 65%,#d49a66);
+        background:linear-gradient(90deg,#4c8dff,#8b7cff);
     }
     /* Network/globe background graphic (image itself set in a small
        separate <style> tag right before this markup, since the big
@@ -3054,13 +3054,13 @@ st.markdown(
     }
     .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
     @media (max-width:1000px) {
-        .topbar-shell {padding:2.4rem 20px 18px;}
+        .topbar-shell {padding:2.6rem 20px 26px; min-height:0;}
         .topbar-subtitle {max-width:none;}
     }
     @media (max-width:640px) {
         /* Two rows total on a phone: brand row, then one compact row for
            account + status -- never the 4-5 line stack this used to be. */
-        .topbar-shell {padding:2.2rem 16px 16px; gap:12px;}
+        .topbar-shell {padding:2.2rem 16px 16px; gap:12px; min-height:0;}
         .topbar-logo {width:42px; height:42px; flex:0 0 42px; border-radius:12px;}
         .topbar-kicker {font-size:9.5px; letter-spacing:1.2px;}
         .topbar-title {font-size:18px; line-height:1.3;}
@@ -4737,7 +4737,7 @@ st.markdown(
     }
     .stApp .sidebar-brand-v2::before {
         content:""; position:absolute; left:0; right:0; top:0; height:2px; opacity:.9;
-        background:linear-gradient(90deg,#4c8dff,#8b7cff 45%,#d49a66 80%,#e0634a);
+        background:linear-gradient(90deg,#4c8dff,#8b7cff);
     }
     .stApp .sidebar-brand-v2 .brand-row {gap:12px;}
     .stApp .sidebar-brand-v2 .brand-mark {
@@ -5173,7 +5173,7 @@ st.markdown(
         font:700 10.5px/1 Inter,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#a3adbb;
         position:relative;
     }
-    .inbox-head::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; border-radius:14px 14px 0 0; background:linear-gradient(90deg,#2fb68e,#d9a35f 30%,#e0708c 58%,#8b7cf6 82%,#38b2c8);}
+    .inbox-head::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; border-radius:14px 14px 0 0; background:linear-gradient(90deg,#2fb68e,#38b2c8);}
     .inbox-head .ih-date {text-align:left;}
     .st-key-inbox_list {
         border:1px solid var(--line-strong) !important; border-radius:0 0 14px 14px !important;
