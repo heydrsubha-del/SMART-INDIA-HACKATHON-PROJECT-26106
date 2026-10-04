@@ -2986,14 +2986,13 @@ st.markdown(
        the middle of empty space. One flex row that wraps to exactly two
        rows on a phone (brand, then the account/status line) instead of
        the four stacked labelled rows this used to collapse into. */
-    .stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:0 !important;}
     .topbar-shell {
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px;
         background:
             radial-gradient(60% 160% at 100% 0%, rgba(76,141,255,.10), transparent 65%),
             linear-gradient(180deg,#161c26 0%,#0d1219 100%);
-        border-bottom:1px solid #263140; border-radius:0 0 18px 18px;
-        min-height:190px; padding:3.4rem 32px 34px; margin:0 -1.35rem 20px;
+        border:1px solid #263140; border-radius:var(--r-lg);
+        min-height:190px; padding:34px; margin-top:8px; margin-bottom:20px;
         box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
         position:relative; overflow:hidden;
     }
@@ -3054,13 +3053,13 @@ st.markdown(
     }
     .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
     @media (max-width:1000px) {
-        .topbar-shell {padding:2.6rem 20px 26px; min-height:0;}
+        .topbar-shell {padding:26px 20px; min-height:0;}
         .topbar-subtitle {max-width:none;}
     }
     @media (max-width:640px) {
         /* Two rows total on a phone: brand row, then one compact row for
            account + status -- never the 4-5 line stack this used to be. */
-        .topbar-shell {padding:2.2rem 16px 16px; gap:12px; min-height:0;}
+        .topbar-shell {padding:20px 16px; gap:12px; min-height:0;}
         .topbar-logo {width:42px; height:42px; flex:0 0 42px; border-radius:12px;}
         .topbar-kicker {font-size:9.5px; letter-spacing:1.2px;}
         .topbar-title {font-size:18px; line-height:1.3;}
