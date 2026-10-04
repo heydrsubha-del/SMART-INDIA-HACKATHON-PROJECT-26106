@@ -4645,10 +4645,11 @@ st.markdown(
         scrollbar-color:#2a3750 transparent;
     }
     .stApp [data-testid="stSidebar"] > div {background:transparent !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding-left:14px !important; padding-right:14px !important; padding-bottom:28px !important;}
 
     /* brand card */
     .stApp .sidebar-brand-v2 {
-        position:relative; overflow:hidden; margin:6px 0 10px 0; padding:15px 14px 14px 14px;
+        position:relative; overflow:hidden; margin:8px 0 14px 0; padding:17px 16px 16px 16px;
         border:1px solid #243046; border-bottom:1px solid #243046; border-radius:16px;
         background:
             radial-gradient(90% 130% at 0% 0%, rgba(76,141,255,.16), transparent 62%),
@@ -4679,7 +4680,7 @@ st.markdown(
     .stApp .sidebar-brand-v2 .brand-dot {width:6px; height:6px; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9);}
 
     /* section headers */
-    .stApp .sidebar-group-label {--g:#4c8dff; margin:22px 4px 8px 4px !important; gap:10px !important;
+    .stApp .sidebar-group-label {--g:#4c8dff; margin:34px 6px 14px 6px !important; gap:10px !important;
         font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important;
         color:color-mix(in srgb, var(--g) 62%, #8d99ac) !important;}
     .stApp .sidebar-group-label.sidebar-group-green {--g:#34d399;}
@@ -4697,15 +4698,15 @@ st.markdown(
     }
 
     /* nav rows */
-    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.2rem !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.5rem !important;}
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {
-        position:relative !important; min-height:42px !important; padding:9px 12px !important; border-radius:12px !important;
+        position:relative !important; min-height:46px !important; padding:11px 16px !important; border-radius:12px !important;
         border:1px solid transparent !important; background:transparent !important; box-shadow:none !important;
         color:#a9b6c8 !important; transform:none !important; overflow:hidden !important;
         transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease) !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {
-        display:flex !important; align-items:center !important; gap:12px; width:100% !important; margin:0 !important;
+        display:flex !important; align-items:center !important; gap:14px; width:100% !important; margin:0 !important;
         font:600 14px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.005em !important; color:#a9b6c8 !important;
         transition:color .2s var(--ease);
     }
@@ -4727,7 +4728,7 @@ st.markdown(
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover {
         background:color-mix(in srgb, var(--c,#4c8dff) 10%, transparent) !important;
         border-color:color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
-        transform:translateX(2px) !important; padding-left:12px !important;
+        transform:translateX(2px) !important; padding-left:16px !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p {color:#fff !important;}
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p::before {opacity:1; transform:scale(1.14);}
@@ -4739,7 +4740,7 @@ st.markdown(
         background:
             linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 26%, #0f1724), color-mix(in srgb, var(--c,#4c8dff) 7%, #0b111a)) padding-box,
             linear-gradient(120deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 14%, transparent) 75%) border-box !important;
-        border:1px solid transparent !important; padding-left:12px !important; transform:none !important;
+        border:1px solid transparent !important; padding-left:16px !important; transform:none !important;
         box-shadow:0 12px 22px -16px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.07) !important;
     }
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p {color:#fff !important; font-weight:700 !important;}
@@ -4755,7 +4756,7 @@ st.markdown(
 
     /* status card */
     .stApp .sidebar-status-card-v2 {
-        margin-top:22px; padding:15px 15px 12px 17px; border:1px solid #243046; border-radius:16px;
+        margin-top:32px; padding:17px 17px 14px 19px; border:1px solid #243046; border-radius:16px;
         background:
             radial-gradient(80% 120% at 0% 0%, rgba(52,211,153,.10), transparent 62%),
             linear-gradient(180deg,#101826,#0b111a);
@@ -4763,7 +4764,7 @@ st.markdown(
     }
     .stApp .sidebar-status-card-v2:hover {border-color:#2f4363; box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 16px 30px -18px rgba(0,0,0,.95);}
     .stApp .sidebar-status-card-v2:before {top:16px; bottom:16px; width:3px; border-radius:0 3px 3px 0; background:linear-gradient(180deg,#34d399,rgba(52,211,153,.15));}
-    .stApp .sidebar-status-card-v2 .ssc-head {gap:9px; margin-bottom:12px;}
+    .stApp .sidebar-status-card-v2 .ssc-head {gap:9px; margin-bottom:14px;}
     .stApp .sidebar-status-card-v2 .ssc-pulse {background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9);}
     .stApp .sidebar-status-card-v2 .ssc-title {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; color:#6ee7b7 !important;}
     .stApp .sidebar-status-card-v2 .ssc-grid {gap:10px;}
