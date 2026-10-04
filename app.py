@@ -5971,6 +5971,44 @@ st.markdown(r"""
 .stApp .topbar-status-online {color:#3fb68b; font-weight:600;}
 .stApp .topbar-status-time {font-family:ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
 
+/* ============ TOP BANNER v2: segmented accent + session panel ============
+   Same elements, same order, same links to app logic. The right-hand
+   status column becomes a labelled "session panel"; labels are CSS-only. */
+.stApp .topbar-shell::before {
+  height:3px;
+  background:linear-gradient(90deg,#4c8dff 0 16.66%,#d49a66 0 33.33%,#8b7cf6 0 50%,#3fb68b 0 66.66%,#38a3e8 0 83.33%,#e5637d 0);
+}
+.stApp .topbar-shell {padding:22px 26px 20px; align-items:stretch;}
+.stApp .topbar-brand {align-items:center;}
+.stApp .topbar-logo {
+  width:64px; height:64px; flex-basis:64px; border-radius:16px;
+  background:radial-gradient(circle at 35% 30%, color-mix(in srgb,var(--tone) 22%,transparent), rgba(10,15,28,.85) 72%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 10px 22px -12px var(--tone);
+}
+.stApp .topbar-status-wrap {
+  align-items:stretch; justify-content:center; gap:0; width:min(100%,292px); flex:0 0 auto;
+  padding:2px 16px; border:1px solid var(--line-strong,#313c4b); border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)); box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.stApp .topbar-actions, .stApp .topbar-status-pill, .stApp .topbar-status-time {
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0;
+  padding:10px 0; border-radius:0; background:none; box-shadow:none;
+}
+.stApp .topbar-actions::before, .stApp .topbar-status-pill::before, .stApp .topbar-status-time::before {
+  font:600 9px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#6b7788; flex:0 0 auto;
+}
+.stApp .topbar-actions::before {content:"Operator";}
+.stApp .topbar-status-pill::before {content:"Status";}
+.stApp .topbar-status-time::before {content:"Timestamp";}
+.stApp .topbar-status-pill {
+  border:0 !important; border-top:1px solid rgba(255,255,255,.07) !important; letter-spacing:.12em;
+}
+.stApp .topbar-status-pill .topbar-status-dot {margin-left:auto;}
+.stApp .topbar-status-time {border-top:1px solid rgba(255,255,255,.07); font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.08em; color:#8b96a5;}
+.stApp .topbar-account-chip {max-width:190px; padding:3px 11px 3px 4px; gap:8px;}
+.stApp .topbar-account-avatar {width:22px; height:22px; flex-basis:22px; font-size:11px;}
+.stApp .topbar-account-email {font-size:12px;}
+
 /* ======================= MODULE / PART BANNERS ======================= */
 .stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
 .stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
