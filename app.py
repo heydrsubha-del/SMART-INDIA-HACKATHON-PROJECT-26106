@@ -5547,10 +5547,22 @@ st.markdown(
     .stApp .part-banner-sm {padding:14px 20px 14px 26px !important; margin:22px 0 10px 0 !important;}
     .stApp .part-banner-sm .pb-title {font-size:18px !important;}
     .stApp .part-banner-sm .pb-sub {margin-top:2px; font-size:12.5px;}
+    /* Dashboard map + graph: ONE card. The banner is its header; its tint
+       fades into the body (like the message viewer) instead of a separate box. */
     .stApp .st-key-dash_map_card, .stApp .st-key-dash_graph_card {
-        padding:16px 18px 14px 18px !important; margin:0 0 6px 0; background:#0e141c !important;
-        border:1px solid #232d3b !important; border-radius:12px !important; box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important;
+        --cc:#22d3ee; position:relative; overflow:hidden; margin:0 0 18px 0;
+        padding:16px 18px 14px 18px !important;
+        border:1px solid color-mix(in srgb,var(--cc) 30%,#232d3b) !important; border-radius:12px !important;
+        background:linear-gradient(180deg, color-mix(in srgb,var(--cc) 13%,#0e141c) 0, #0e141c 170px) !important;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important;
     }
+    .stApp .st-key-dash_graph_card {--cc:#a78bfa;}
+    .stApp .st-key-dash_map_card .part-banner, .stApp .st-key-dash_graph_card .part-banner {
+        margin:-16px -18px 14px -18px !important; border:0 !important; border-radius:0 !important;
+        border-bottom:1px solid color-mix(in srgb,var(--cc) 22%,#232d3b) !important;
+        background:transparent !important; box-shadow:none !important; padding:16px 20px 14px 26px !important;
+    }
+    .stApp .st-key-dash_map_card [data-testid="stElementContainer"]:first-child, .stApp .st-key-dash_graph_card [data-testid="stElementContainer"]:first-child {margin:0 !important;}
     .stApp .st-key-dash_map_card iframe {border-radius:8px; border:1px solid #232d3b;}
 
     /* right dock */
@@ -9060,10 +9072,6 @@ if active_panel == "Dashboard":
                     # second instance of the one in that dock.
 
         with col_center:
-            _banner_c(
-                "DASHBOARD", "Origin & Correlation",
-                "Geolocation map and infrastructure graph for this case set", "THIS CASE SET", "#2fb68e",
-            )
             # Map and correlation graph each render full-width, stacked --
             # side-by-side columns were squeezing both into half-width
             # panels, which is what forced aggressive label truncation and
@@ -9072,11 +9080,11 @@ if active_panel == "Dashboard":
             # Streamlit's columns used to squash rather than reflow) with
             # room for labels to read cleanly.
             _bn_origin = ((result.get("geo", {}) or {}).get("origin", {}) or {})
-            _banner_c(
-                "GLOBE-SCAN", "IP Geolocation Map", "Where the current email entered the network",
-                str(_bn_origin.get("ip", "Unknown")), "#22d3ee", small=True,
-            )
             with st.container(border=True, key="dash_map_card"):
+                _banner_c(
+                    "GLOBE-SCAN", "IP Geolocation Map", "Where the current email entered the network",
+                    str(_bn_origin.get("ip", "Unknown")), "#22d3ee", small=True,
+                )
                 # Always the email that is currently open -- no toggle here.
                 # The all-emails / single-email switch lives on Origin & Route.
                 _dash_geo = result.get("geo", {}) or {}
@@ -9127,11 +9135,11 @@ if active_panel == "Dashboard":
                 else:
                     st.info("No geolocatable hop for this email yet.")
 
-            _banner_c(
-                "CORRELATION", "Infrastructure Correlation Graph", "Shared indicators and AI-inferred links for this email",
-                "CURRENT EMAIL", "#a78bfa", small=True,
-            )
             with st.container(border=True, key="dash_graph_card"):
+                _banner_c(
+                    "CORRELATION", "Infrastructure Correlation Graph", "Shared indicators and AI-inferred links for this email",
+                    "CURRENT EMAIL", "#a78bfa", small=True,
+                )
                 # A fixed seed here keeps this small preview stable between
                 # reruns; the full, shuffleable, interactive version lives
                 # on the dedicated Correlation panel.
