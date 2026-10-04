@@ -804,62 +804,76 @@ components.html(
         sync();
         setInterval(sync, 300);
 
-        // st.link_button (used for the Gmail/Outlook/Yandex sign-in links --
-        // see the sign-in form code) always renders target="_blank",
-        // hardcoded by Streamlit with no parameter to change it. That's
-        // fine for an ordinary external link, but for an OAuth sign-in
-        // flow it means every click pops a brand-new tab that then shows
-        // the signed-in app, while the original tab is left behind still
-        // showing the stale signed-out page -- two tabs, one of them
-        // stale. So these three links are re-targeted here.
+        // Sign-in links (Gmail / Outlook / Yandex): finish in ONE tab.
         //
-        // Not embedded (running at its own URL): '_self' -- plain same-tab
-        // navigation to the provider and back.
+        // st.link_button always renders target="_blank", so a plain click
+        // opened a second tab, completed the sign-in THERE, and left the
+        // original tab sitting on the old signed-out page.
         //
-        // Embedded in an iframe (Streamlit Community Cloud, Spaces,
-        // previews): '_self' would load the provider's login INSIDE the
-        // frame ("refused to connect"), so the link targets '_top' instead
-        // -- the whole browser tab -- and the sign-in round trip happens in
-        // the tab the user is already looking at. A native <a target="_top">
-        // click carries the user's click gesture, which is what hosts that
-        // allow top-level navigation (allow-top-navigation-by-user-
-        // activation) require. If a host's sandbox doesn't allow it, the
-        // click silently does nothing -- so onSignInClick() below watches
-        // for that (the page is still here a few seconds after the click)
-        // and falls back to a new tab, and remembers that for the rest of
-        // the session so later clicks go straight to the new-tab behaviour
-        // instead of waiting out the delay again.
+        // Not embedded (running at its own URL): '_self' -- an ordinary
+        // same-tab round trip to the provider and back.
+        //
+        // Embedded in an iframe (Streamlit Community Cloud etc.): the
+        // provider can't load inside the frame and the host may forbid
+        // navigating the top window, so the click opens the provider in a
+        // small popup instead. When the provider sends the popup back to
+        // this app, the popup's page (see the "relay gate" right after the
+        // OAuth callback handler in the Python code) passes the ?code=...
+        // to THIS tab over a BroadcastChannel and closes itself; this tab
+        // then reloads its app frame with that code, so the sign-in
+        // completes in the tab the user started in. If nobody acknowledges
+        // (popup blocked, original tab closed...), the popup simply
+        // finishes the sign-in itself, exactly as it did before.
         function isFramed() {
             try { return window.parent.top !== window.parent; } catch (e) { return true; }
         }
-        var NAV_BLOCKED_KEY = 'sih26106_top_nav_blocked';
-        function topNavBlocked() {
-            try { return window.parent.sessionStorage.getItem(NAV_BLOCKED_KEY) === '1'; } catch (e) { return false; }
-        }
-        function markTopNavBlocked() {
-            try { window.parent.sessionStorage.setItem(NAV_BLOCKED_KEY, '1'); } catch (e) {}
+        var waitingSince = 0;   // set when THIS tab launched a sign-in window
+        var channel = null;
+        try { channel = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
+        if (channel) {
+            channel.onmessage = function (ev) {
+                var d = ev.data || {};
+                if (d.type !== 'oauth_return' || !waitingSince) return;
+                if (Date.now() - waitingSince > 10 * 60 * 1000) return;
+                waitingSince = 0;
+                try { channel.postMessage({ type: 'oauth_ack' }); } catch (e) {}
+                try {
+                    var p = new URLSearchParams(d.search || '');
+                    p.set('sih_relayed', '1');
+                    window.parent.location.href = window.parent.location.pathname + '?' + p.toString();
+                } catch (e) {}
+            };
         }
         function onSignInClick(ev) {
-            if (!isFramed() || topNavBlocked()) return;   // native anchor behaviour
-            var href = ev.currentTarget && ev.currentTarget.href;
+            if (!isFramed() || !channel) return;     // native anchor behaviour
+            var a = ev.currentTarget;
+            var href = a && a.href;
             if (!href) return;
-            setTimeout(function () {
-                // Still running => the page never navigated away, i.e. the
-                // host blocked the top-level navigation.
-                markTopNavBlocked();
-                fixLinkTargets();
-                try { window.open(href, '_blank', 'noopener'); } catch (e) {}
-            }, 3000);
+            waitingSince = Date.now();
+            var w = 520, h = 720, popup = null;
+            try {
+                var pw = window.parent;
+                var left = Math.max(0, (pw.screenX || 0) + ((pw.outerWidth || 1024) - w) / 2);
+                var top = Math.max(0, (pw.screenY || 0) + ((pw.outerHeight || 768) - h) / 2);
+                var feat = 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top;
+                try { popup = pw.open(href, 'sih26106_oauth_popup', feat); } catch (e) {}
+                if (!popup) { popup = window.open(href, 'sih26106_oauth_popup', feat); }
+            } catch (e) {}
+            if (popup) {
+                ev.preventDefault();
+                try { popup.focus(); } catch (e) {}
+            }
+            // No popup (blocked)? The anchor's own target="_blank" click goes
+            // ahead, and that new tab relays back to this one the same way.
         }
         function fixLinkTargets() {
-            var want = !isFramed() ? '_self' : (topNavBlocked() ? '_blank' : '_top');
+            var want = isFramed() ? '_blank' : '_self';
             doc.querySelectorAll(
                 '.st-key-google_signin_link_btn a, ' +
                 '.st-key-microsoft_signin_link_btn a, ' +
                 '.st-key-yandex_signin_link_btn a'
             ).forEach(function (a) {
                 if (a.target !== want) a.target = want;
-                if (want === '_blank') a.rel = 'noopener';
                 if (!a.dataset.sihSigninBound) {
                     a.dataset.sihSigninBound = '1';
                     a.addEventListener('click', onSignInClick);
@@ -900,10 +914,59 @@ st.session_state.setdefault("single_ai_reports", {})
 # widget is never created during *this* run at all, so there's nothing to
 # conflict with -- the very next run picks up st.session_state["imap_user"]
 # cleanly, exactly like any other pre-seeded default value.
+# Page shown (briefly) in the sign-in popup / new tab when the provider sends
+# it back to this app. Instead of finishing the sign-in HERE -- which would
+# strand the user in this second window while the tab they started in stays
+# signed out -- it offers the ?code=... to the original tab over a
+# BroadcastChannel. The original tab (waiting in the JS above) acknowledges,
+# reloads itself with that code and finishes the sign-in there; this window
+# then closes. Not embedded, or no acknowledgement within ~2s: it falls back
+# to finishing the sign-in locally, exactly like the old behaviour.
+_OAUTH_RELAY_GATE_HTML = """
+<div id="m" style="font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:15px;
+     color:#8b96a5;text-align:center;padding:28px 12px;">Completing sign-in&hellip;</div>
+<script>
+(function () {
+    var pw = window.parent, done = false, acked = false, ch = null;
+    function say(t) { var m = document.getElementById('m'); if (m) m.textContent = t; }
+    function framed() { try { return pw.top !== pw; } catch (e) { return true; } }
+    function local() {
+        if (done) return; done = true;
+        var p = new URLSearchParams(pw.location.search);
+        p.set('sih_local', '1');
+        pw.location.href = pw.location.pathname + '?' + p.toString();
+    }
+    function finish() {
+        if (done) return; done = true;
+        say('Signed in \u2014 returning to the app\u2026');
+        try { pw.top.close(); } catch (e) {}
+        setTimeout(function () { say('Signed in. You can close this window.'); }, 700);
+    }
+    if (!framed()) { local(); return; }
+    try { ch = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
+    if (!ch) { local(); return; }
+    ch.onmessage = function (ev) {
+        var d = ev.data || {};
+        if (d.type === 'oauth_ack') { acked = true; finish(); }
+    };
+    ch.postMessage({ type: 'oauth_return', search: pw.location.search });
+    setTimeout(function () { if (!acked) local(); }, 2000);
+})();
+</script>
+"""
+
 if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
     _oauth_code = st.query_params.get("code")
     _oauth_state = st.query_params.get("state")
     _oauth_error = st.query_params.get("error")
+    # Fresh from the provider (no relay/local marker yet): run the relay
+    # gate above and render nothing else. The markers are added by the gate
+    # itself (local) or by the original tab (relayed), so this runs once.
+    if (_oauth_code or _oauth_error) and not (
+        st.query_params.get("sih_relayed") or st.query_params.get("sih_local")
+    ):
+        components.html(_OAUTH_RELAY_GATE_HTML, height=120)
+        st.stop()
     # The redirect URI is shared across every provider (it's the same
     # running app), so the same ?code=/?state= callback can belong to
     # Google, Microsoft or Yandex. Each provider's own get_authorization_url()
