@@ -2261,72 +2261,57 @@ st.markdown(
        (see .st-key-topnav) -- styled below via the proven, version-proof
        label:has(input:checked) pattern instead of guessing at BaseWeb's
        DOM. */
-    .stDataFrame {border:1px solid rgba(148,163,184,.16) !important; border-radius:12px !important; overflow:hidden !important; box-shadow:none !important;}
+    .stDataFrame {border:1px solid #203b57 !important; border-radius:var(--r-md) !important; overflow:hidden !important; box-shadow:var(--shadow-sm) !important;}
 
-    /* ------------------------------------------------------------------
-       TABLE SYSTEM v2 -- slim, calm data tables.
-       Compact rows, a quiet header (small muted caps, hairline under it)
-       instead of the old thick blue rule + bright cyan header text, a
-       soft row hover with a thin accent edge, and tabular numerals so
-       numbers line up. Colour lives in the DATA (severity pills, score
-       bars) plus a small muted colour tick above each column header
-       that cycles blue / violet / teal / amber / rose -- all low
-       saturation, nothing neon.
-       Real HTML tables (used wherever there's no row-click selection);
-       st.dataframe is canvas-drawn and can't be restyled with CSS, so
-       only its frame is softened above.
-       ------------------------------------------------------------------ */
+    /* Polished static table -- used in place of st.dataframe wherever the
+       table is a plain read-only grid (no row-click selection, no
+       column_config widgets). st.dataframe renders those onto a canvas,
+       so it can never pick up the app's own dark theme (font, colors,
+       hover, spacing) no matter what CSS targets it -- it just sits there
+       looking like an unstyled default grid next to everything else that
+       *is* themed. This is real HTML/CSS instead, so it matches. */
     .polished-table-wrap {
-        position:relative;
-        border:1px solid rgba(148,163,184,.16);
-        border-radius:12px;
+        border:1px solid #203b57;
+        border-radius:var(--r-md);
         overflow:hidden;
-        background:#0a111b;
-        margin:6px 0 6px 0;
+        box-shadow:var(--shadow-sm);
+        background:linear-gradient(180deg,#0b1524,#091120);
+        margin:6px 0 4px 0;
     }
     .polished-table-wrap[style*="overflow-y:auto"] {overflow:auto;}
-    .polished-table-wrap::-webkit-scrollbar {width:8px; height:8px;}
-    .polished-table-wrap::-webkit-scrollbar-thumb {background:rgba(148,163,184,.25); border-radius:8px;}
-    .polished-table-wrap::-webkit-scrollbar-track {background:transparent;}
     table.polished-table {
         width:100%;
-        border-collapse:separate; border-spacing:0;
+        border-collapse:collapse;
         font-family:Inter,"Segoe UI",Arial,sans-serif;
-        font-size:13px; line-height:1.4;
-        font-variant-numeric:tabular-nums;
+        font-size:13.5px;
     }
     table.polished-table thead th {
         position:sticky; top:0; z-index:1;
         text-align:left;
-        padding:9px 14px;
-        background:#0d1522;
-        color:#8b9bb0;
-        font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
-        border-bottom:1px solid rgba(148,163,184,.18);
+        padding:11px 16px;
+        background:linear-gradient(180deg,#132a42,#0f2135);
+        color:#9fd6f5;
+        font-size:11.5px;
+        font-weight:750;
+        letter-spacing:.55px;
+        text-transform:uppercase;
+        border-bottom:2px solid rgba(59,130,246,.35);
         white-space:nowrap;
-        --tc:#5b8def;
-        box-shadow:inset 0 2px 0 var(--tc);
-        box-shadow:inset 0 2px 0 color-mix(in srgb, var(--tc) 92%, transparent);
     }
-    table.polished-table thead th:nth-child(5n+2) {--tc:#8b7cf6;}
-    table.polished-table thead th:nth-child(5n+3) {--tc:#38b2a3;}
-    table.polished-table thead th:nth-child(5n+4) {--tc:#e0a050;}
-    table.polished-table thead th:nth-child(5n+5) {--tc:#e0708c;}
     table.polished-table tbody td {
-        padding:7px 14px;
-        color:#c9d5e3;
-        border-bottom:1px solid rgba(148,163,184,.09);
-        vertical-align:middle;
+        padding:10px 16px;
+        color:var(--text);
+        border-bottom:1px solid #16283c;
+        vertical-align:top;
     }
     table.polished-table tbody tr:last-child td {border-bottom:none;}
-    table.polished-table tbody tr:nth-child(even) {background:rgba(148,163,184,.025);}
-    table.polished-table tbody tr {transition:background .15s var(--ease);}
-    table.polished-table tbody tr:hover {background:rgba(148,163,184,.07);}
-    table.polished-table tbody tr:hover td:first-child {box-shadow:inset 2px 0 0 #5b8def;}
-    table.polished-table tbody td:first-child {color:#e2e8f0; font-weight:600;}
+    table.polished-table tbody tr:nth-child(even) {background:rgba(255,255,255,.014);}
+    table.polished-table tbody tr {transition:background .12s var(--ease);}
+    table.polished-table tbody tr:hover {background:rgba(59,130,246,.10);}
+    table.polished-table tbody td:first-child {color:#cfe3f5; font-weight:600;}
     .polished-table-empty {
-        padding:14px; text-align:center; color:var(--muted); font-size:13px;
-        border:1px dashed rgba(148,163,184,.25); border-radius:12px; background:#0a111b;
+        padding:16px; text-align:center; color:var(--muted); font-size:13px;
+        border:1px dashed #203b57; border-radius:var(--r-md); background:#0a121f;
     }
     hr {border-color:#20364f !important;}
     .stMarkdown code {background:#07131f !important; color:#9beaff !important;}
@@ -2372,7 +2357,7 @@ st.markdown(
        edge that persisted after the earlier block-container fix, since that
        fix addressed the content's own max-width but not this. */
     [data-testid="stSidebar"][aria-expanded="true"] {
-        min-width:268px !important; width:268px !important; max-width:268px !important;
+        min-width:290px !important;
     }
     [data-testid="stSidebar"][aria-expanded="false"] {
         min-width:0 !important;
@@ -3164,115 +3149,6 @@ st.markdown(
     .ssc-tile-low:hover {border-color:var(--sev-low);}
     .ssc-tile-low .ssc-tile-value {color:var(--sev-low);}
 
-    /* ==================================================================
-       SIDEBAR v3 -- slim, multi-colour navigation.
-       Narrower (268px), 34px nav rows, quiet group labels, and a
-       per-group accent colour that follows every row under its label
-       (--nav-accent): blue (home) / teal (operations) / green
-       (visualization) / violet (intelligence) / rose (security) / slate
-       (system). The accent drives the group label, the active row's wash
-       and its edge bar -- so the sidebar reads as colour-coded sections
-       without any big filled blocks. Muted tones only, nothing neon.
-       Rows after a label inherit its accent via a general-sibling rule
-       (the group order in the DOM matches the order of these rules; the
-       label's own selector is written at the same specificity as the
-       sibling selector so a label never inherits the previous group's
-       colour). Browsers without :has() just keep the default blue.
-       ================================================================== */
-    [data-testid="stSidebar"] {--nav-accent:#5b8def;}
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-teal):is([data-testid="stElementContainer"], .element-container),
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-teal) ~ :is([data-testid="stElementContainer"], .element-container) {--nav-accent:#38b2a3;}
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-green):is([data-testid="stElementContainer"], .element-container),
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-green) ~ :is([data-testid="stElementContainer"], .element-container) {--nav-accent:#5bbf8a;}
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-violet):is([data-testid="stElementContainer"], .element-container),
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-violet) ~ :is([data-testid="stElementContainer"], .element-container) {--nav-accent:#8b7cf6;}
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-rose):is([data-testid="stElementContainer"], .element-container),
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-rose) ~ :is([data-testid="stElementContainer"], .element-container) {--nav-accent:#e0708c;}
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-slate):is([data-testid="stElementContainer"], .element-container),
-    [data-testid="stSidebar"] :is([data-testid="stElementContainer"], .element-container):has(.sidebar-group-slate) ~ :is([data-testid="stElementContainer"], .element-container) {--nav-accent:#8fa1b6;}
-
-    /* brand */
-    [data-testid="stSidebar"] .sidebar-brand-v2 {position:relative; padding:2px 4px 14px !important; margin-bottom:4px !important; border-bottom:0 !important;}
-    [data-testid="stSidebar"] .sidebar-brand-v2::after {
-        content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
-        background:linear-gradient(90deg,#5b8def,#8b7cf6 45%,#e0708c 80%,transparent); opacity:.55;
-    }
-    [data-testid="stSidebar"] .brand-mark {width:30px !important; height:30px !important; flex:0 0 30px !important; border-radius:9px !important; background:#0d1522 !important; border:1px solid rgba(148,163,184,.2) !important; box-shadow:none !important;}
-    [data-testid="stSidebar"] .brand-text .name {
-        font-size:13.5px !important; font-weight:800 !important; letter-spacing:.16em !important;
-        background:linear-gradient(90deg,#9db8f5,#b6a8f7); -webkit-background-clip:text; background-clip:text;
-        -webkit-text-fill-color:transparent; color:transparent !important;
-    }
-    [data-testid="stSidebar"] .brand-text .role {font-size:8.5px !important; letter-spacing:.08em !important; color:#6b7c91 !important; white-space:nowrap !important;}
-    [data-testid="stSidebar"] .brand-meta {margin-top:10px !important; font-size:9.5px !important; letter-spacing:.08em !important; color:#6b7c91 !important;}
-    [data-testid="stSidebar"] .brand-dot {width:6px !important; height:6px !important; background:#5bbf8a !important; box-shadow:0 0 0 3px rgba(91,191,138,.18) !important; animation:none !important;}
-
-    /* group labels */
-    [data-testid="stSidebar"] .sidebar-group-label {
-        margin:16px 2px 6px !important; gap:8px !important;
-        font-size:10px !important; font-weight:700 !important; letter-spacing:.16em !important;
-        color:var(--nav-accent) !important;
-    }
-    [data-testid="stSidebar"] .sidebar-group-label .grp-index {
-        border:0 !important; background:none !important; padding:0 !important; border-radius:0 !important;
-        font:600 9.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.06em !important;
-        color:var(--nav-accent) !important; opacity:.6;
-    }
-    [data-testid="stSidebar"] .sidebar-group-label::after {
-        content:""; flex:1; height:1px;
-        background:linear-gradient(90deg, rgba(148,163,184,.3), transparent) !important;
-        background:linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 40%, transparent), transparent) !important;
-    }
-
-    /* nav rows */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.1rem !important;}
-    [data-testid="stSidebar"] .stButton button {
-        min-height:34px !important; padding:6px 10px 6px 14px !important; border-radius:9px !important;
-        font-size:13px !important; font-weight:550 !important; letter-spacing:.005em !important;
-        color:#9aabbe !important; background:transparent !important; border:1px solid transparent !important;
-        box-shadow:none !important; transform:none !important;
-    }
-    [data-testid="stSidebar"] .stButton button p {font-size:13px !important; font-weight:inherit !important;}
-    [data-testid="stSidebar"] .stButton button::before {
-        top:8px !important; bottom:8px !important; width:2px !important; background:var(--nav-accent) !important;
-    }
-    [data-testid="stSidebar"] .stButton button:hover {
-        background:rgba(148,163,184,.08) !important; border-color:transparent !important; color:#e6edf7 !important;
-        padding-left:14px !important; box-shadow:none !important; transform:none !important;
-    }
-    [data-testid="stSidebar"] .stButton button:hover::before {opacity:.55 !important; transform:scaleY(.6) !important;}
-    [data-testid="stSidebar"] .stButton :is(button[kind="primary"], button[data-testid^="stBaseButton-primary"]) {
-        background:linear-gradient(90deg, rgba(148,163,184,.14), transparent 85%) !important;
-        background:linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 22%, transparent), transparent 88%) !important;
-        border:1px solid transparent !important;
-        border-color:color-mix(in srgb, var(--nav-accent) 28%, transparent) !important;
-        color:#ffffff !important; box-shadow:none !important; padding-left:14px !important;
-    }
-    [data-testid="stSidebar"] .stButton :is(button[kind="primary"], button[data-testid^="stBaseButton-primary"])::before {
-        opacity:1 !important; transform:scaleY(1) !important; box-shadow:none !important;
-    }
-
-    /* status card */
-    [data-testid="stSidebar"] .sidebar-status-card-v2 {
-        margin-top:14px !important; padding:12px 12px 9px !important;
-        border:1px solid rgba(148,163,184,.16) !important; border-radius:12px !important;
-        background:#0a111b !important; box-shadow:none !important;
-    }
-    [data-testid="stSidebar"] .sidebar-status-card-v2:hover {border-color:rgba(148,163,184,.28) !important; box-shadow:none !important;}
-    [data-testid="stSidebar"] .sidebar-status-card-v2:before {
-        left:0 !important; right:0 !important; top:0 !important; bottom:auto !important; width:auto !important; height:2px !important;
-        background:linear-gradient(90deg,#5bbf8a,#5b8def 55%,#8b7cf6) !important; opacity:.8;
-    }
-    [data-testid="stSidebar"] .ssc-pulse {width:6px !important; height:6px !important; background:#5bbf8a !important; box-shadow:0 0 0 3px rgba(91,191,138,.18) !important; animation:none !important;}
-    [data-testid="stSidebar"] .ssc-title {font-size:10px !important; letter-spacing:.14em !important; color:#cfe0f0 !important;}
-    [data-testid="stSidebar"] .ssc-tile {background:#0d1522 !important; border:1px solid rgba(148,163,184,.12) !important; border-radius:9px !important; padding:7px 9px !important;}
-    [data-testid="stSidebar"] .ssc-tile:hover {border-color:rgba(148,163,184,.3) !important; transform:none !important;}
-    [data-testid="stSidebar"] .ssc-tile-value {font-size:16px !important; font-weight:700 !important; color:#8ab4f8 !important;}
-    [data-testid="stSidebar"] .ssc-tile-alert .ssc-tile-value {color:#f08a9a !important;}
-    [data-testid="stSidebar"] .ssc-tile-alert {border-color:rgba(240,138,154,.22) !important;}
-    [data-testid="stSidebar"] .ssc-tile-label {font-size:9.5px !important; color:#74859a !important; letter-spacing:.04em !important;}
-    [data-testid="stSidebar"] .ssc-foot {font-size:9px !important; color:#5f7084 !important; border-top:1px solid rgba(148,163,184,.1) !important;}
-
     /* Compact right-dock summary widgets: st.metric's own card padding
        runs ~2-3x taller than these, and stacking Threat + Investigation
        Summary + Top Threat Signal Breakdown on top of Synapse Copilot in
@@ -3512,12 +3388,12 @@ st.markdown(
        coloured bar + coloured pill, both keyed off the same severity
        colours the map markers already use, so LOW/MEDIUM/HIGH/CRITICAL
        mean the same colour everywhere in the app. */
-    .email-score-cell {display:flex; align-items:center; gap:10px; min-width:120px;}
-    .email-score-track {flex:1; height:4px; border-radius:4px; background:rgba(148,163,184,.14); overflow:hidden;}
-    .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease); filter:saturate(.82);}
-    .email-score-num {font-variant-numeric:tabular-nums; font-weight:700; font-size:12px; min-width:32px; text-align:right; color:#dbe4ef;}
-    .verdict-pill {display:inline-block; padding:2px 9px; border-radius:6px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; filter:saturate(.82);}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#a9c1dc; background:rgba(148,163,184,.08); border:1px solid rgba(148,163,184,.14); padding:1px 7px; border-radius:6px; white-space:nowrap;}
+    .email-score-cell {display:flex; align-items:center; gap:10px; min-width:130px;}
+    .email-score-track {flex:1; height:6px; border-radius:4px; background:#121f30; overflow:hidden;}
+    .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
+    .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
+    .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(59,130,246,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
     .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
 
     /* ------------------------------------------------------------------
@@ -3675,7 +3551,7 @@ st.markdown(
     [data-testid="stExpander"] summary:hover {color:#ffffff;}
 
     /* Tables, code, uploader. */
-    .stDataFrame {border:1px solid rgba(148,163,184,.16) !important;}
+    .stDataFrame {border:1px solid var(--line-strong) !important;}
     [data-testid="stCode"], .stCodeBlock {border:1px solid var(--line) !important; border-radius:var(--r-md) !important;}
     .stFileUploader {background:var(--surface-sunken) !important; border:1px dashed rgba(59,130,246,.4) !important; transition:border-color .15s var(--ease), background .15s var(--ease);}
     .stFileUploader:hover {border-color:var(--cyan) !important; background:var(--panel) !important;}
@@ -6134,9 +6010,9 @@ def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_ro
         st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
 
     # ---- details table under the map ----
-    th = ("padding:8px 12px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.12em;"
-          "text-transform:uppercase;color:#8b9bb0;background:#0d1522;border-bottom:1px solid rgba(148,163,184,.18);")
-    td = "padding:7px 12px;border-top:1px solid rgba(148,163,184,.09);vertical-align:middle;"
+    th = ("padding:9px 12px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.9px;"
+          "text-transform:uppercase;color:#8fb4e8;background:rgba(20,36,60,.9);")
+    td = "padding:9px 12px;border-top:1px solid rgba(255,255,255,.07);vertical-align:middle;"
     cut = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
     body = ""
     for n in sorted(info):
@@ -6156,8 +6032,8 @@ def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_ro
             f'<td style="{td}">{shared}</td></tr>'
         )
     table = (
-        '<div style="margin-top:10px;border:1px solid rgba(148,163,184,.16);border-radius:12px;overflow:hidden;'
-        'background:#0a111b;">'
+        '<div style="margin-top:10px;border:1px solid rgba(110,170,255,.2);border-radius:12px;overflow:hidden;'
+        'background:rgba(12,22,38,.65);">'
         '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font:13px/1.35 Inter,Segoe UI,sans-serif;color:#e6eefc;">'
         '<colgroup><col style="width:56px"><col style="width:23%"><col style="width:29%"><col style="width:22%">'
         '<col style="width:64px"><col></colgroup>'
