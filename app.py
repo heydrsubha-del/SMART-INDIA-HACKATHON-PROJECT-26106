@@ -23,6 +23,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
 import streamlit.components.v1 as components
+from readme_view import render_readme
 
 # Keep all Plotly visuals consistent with the dark SOC interface: extend the
 # built-in dark template with our own palette/typography instead of leaving
@@ -6373,6 +6374,7 @@ def _settings():
 
 def _about():
     st.subheader("About ALGORITHMISTIC")
+    render_readme()
     try:
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"), encoding="utf-8") as fh:
             st.markdown(fh.read())
