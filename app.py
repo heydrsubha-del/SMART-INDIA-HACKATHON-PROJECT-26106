@@ -6009,6 +6009,22 @@ st.markdown(r"""
 .stApp .topbar-account-avatar {width:22px; height:22px; flex-basis:22px; font-size:11px;}
 .stApp .topbar-account-email {font-size:12px;}
 
+/* ============ TOP BANNER v3: full-bleed app bar ============
+   The banner now starts at the very top edge of the page and runs edge to
+   edge, so the strip that used to be empty (behind the sidebar toggle and
+   the Share toolbar) becomes part of the banner, like an app header. */
+.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:0 !important;}
+.stApp .topbar-shell {
+  margin:0 -1.35rem 18px; border-top:0; border-radius:0 0 18px 18px;
+  padding:3.5rem 28px 20px;   /* top padding = the header strip (toggle + toolbar sit inside it) */
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.28) 0,transparent 3.2rem),
+    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+}
+.stApp [data-testid="stToolbar"] {opacity:.85 !important;}
+.stApp [data-testid="stHeader"] {z-index:5;}
+
 /* ======================= MODULE / PART BANNERS ======================= */
 .stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
 .stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
@@ -6047,51 +6063,6 @@ st.markdown(r"""
 </style>
 """, unsafe_allow_html=True)
 
-# Typography: Inter was already named all over this stylesheet but never actually
-# loaded, so text fell back to a mix of Segoe UI / Streamlit's own font. Loading
-# it makes the whole UI one consistent face. CSS only -- no logic touched.
-st.markdown("""<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500..800&display=swap');</style>""", unsafe_allow_html=True)
-st.markdown(r"""
-<style>
-.stApp,
-.stApp [data-testid="stAppViewContainer"], .stApp [data-testid="stSidebar"], .stApp [data-testid="stMain"],
-.stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"],
-.stApp [data-testid="stMetric"], .stApp [data-testid="stMetricValue"], .stApp [data-testid="stMetricLabel"],
-.stApp [data-baseweb="tab"], .stApp [data-baseweb="select"], .stApp [data-baseweb="input"], .stApp [data-baseweb="textarea"],
-[data-baseweb="popover"], [data-baseweb="menu"],
-.stApp .stButton button, .stApp .stDownloadButton button, .stApp .stTextInput input, .stApp .stTextArea textarea,
-.stApp .stNumberInput input, .stApp [data-testid="stExpander"] summary, .stApp [data-testid="stAlert"] {
-  font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif !important;
-  /* Inter has a taller x-height than the fonts it replaces; normalising it keeps
-     every string the same width as before, so nothing wraps, clips or shifts. */
-  font-size-adjust:0.5;
-  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;
-}
-/* icon fonts must never be touched */
-.stApp [data-testid="stIconMaterial"], .stApp .material-symbols-rounded,
-.stApp [class*="material-symbols"], .stApp [class*="material-icons"] {font-size-adjust:none !important;}
-</style>
-""", unsafe_allow_html=True)
-
-# Gentleman touch: a refined serif (Source Serif 4) for headline titles only; every
-# label, table, button and tag stays in Inter. Sizes are untouched and the serif is
-# size-normalised, so no title grows wider than before.
-st.markdown(r"""
-<style>
-.stApp .topbar-title,
-.stApp .part-banner .pb-title,
-.stApp .dossier-head .dh-title,
-.stApp .sec-head .sh-title,
-.stApp .num-head .nh-title,
-.stApp .acq2-title {
-  font-family:"Source Serif 4","Source Serif Pro",Georgia,"Times New Roman",serif !important;
-  font-size-adjust:0.47; font-optical-sizing:auto;
-}
-.stApp .topbar-title {font-weight:700; letter-spacing:-.005em;}
-.stApp .part-banner .pb-title {font-weight:700; letter-spacing:-.005em;}
-.stApp .dossier-head .dh-title, .stApp .sec-head .sh-title, .stApp .num-head .nh-title, .stApp .acq2-title {font-weight:650; letter-spacing:0;}
-</style>
-""", unsafe_allow_html=True)
 
 st.markdown(
     f"""<div class="topbar-shell">
