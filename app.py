@@ -4524,7 +4524,7 @@ st.markdown(
 
     .stApp .st-key-topnav {
         position:relative !important; overflow:hidden !important;
-        padding:10px 4px 6px 4px !important; border:1px solid #243046 !important; border-radius:16px !important;
+        padding:8px 4px 4px 4px !important; border:1px solid #243046 !important; border-radius:16px !important;
         background:
             radial-gradient(50% 160% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
             radial-gradient(40% 160% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
@@ -4536,7 +4536,11 @@ st.markdown(
         background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
     }
     .stApp .st-key-topnav::after {display:none !important;}
-    .stApp .st-key-topnav [data-testid="stWidgetLabel"] {display:none !important;}
+    .stApp .st-key-topnav .stRadio [data-testid="stWidgetLabel"],
+    .stApp .st-key-topnav .stRadio label[data-testid="stWidgetLabel"] {
+        display:none !important; height:0 !important; width:0 !important; margin:0 !important; padding:0 !important;
+        border:0 !important; overflow:hidden !important; visibility:hidden !important;
+    }
 
     /* the scroller */
     .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
@@ -4552,19 +4556,20 @@ st.markdown(
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {height:5px !important;}
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-track {background:rgba(255,255,255,.03) !important; border-radius:6px !important; margin:0 26px;}
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb {background:linear-gradient(90deg,#3b82f6,#8b7cff) !important; border-radius:6px !important;}
+    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-button {display:none !important; width:0 !important; height:0 !important;}
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb:hover {background:linear-gradient(90deg,#5b9bf8,#a394ff) !important;}
 
     /* no radio marker, however deep Streamlit nests it */
-    .stApp .st-key-topnav .stRadio label *:not(:has(p)):not(p):not(p *),
-    .stApp .st-key-topnav .stRadio label input,
-    .stApp .st-key-topnav .stRadio label svg,
-    .stApp .st-key-topnav .stRadio label::before {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label *:not(:has(p)):not(p):not(p *),
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label input,
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label svg,
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label::before {
         display:none !important; width:0 !important; height:0 !important; min-width:0 !important; margin:0 !important; padding:0 !important;
         border:0 !important; box-shadow:none !important; background:none !important; opacity:0 !important;
         position:absolute !important; left:-9999px !important; pointer-events:none !important;
     }
 
-    .stApp .st-key-topnav .stRadio label {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label {
         position:relative !important; flex:0 0 auto !important;
         display:flex !important; align-items:center !important; justify-content:center !important;
         padding:13px 20px !important; border-radius:12px !important; cursor:pointer !important;
@@ -4572,33 +4577,33 @@ st.markdown(
         transform:none !important; overflow:hidden !important;
         transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .22s var(--ease), transform .2s var(--ease) !important;
     }
-    .stApp .st-key-topnav .stRadio label > div {width:auto !important; margin:0 !important;}
-    .stApp .st-key-topnav .stRadio label p {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label > div {width:auto !important; margin:0 !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {
         display:inline-flex !important; align-items:center; gap:10px; margin:0 !important; white-space:nowrap !important;
         font:600 15px/1.2 Inter,"Segoe UI",Arial,sans-serif !important; letter-spacing:.005em !important; color:#a9b6c8 !important;
         transition:color .2s var(--ease);
     }
-    .stApp .st-key-topnav .stRadio label p::before {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {
         content:""; flex:0 0 18px; width:18px; height:18px; background-color:var(--c,#4c8dff); opacity:.8;
         -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
         -webkit-mask-size:contain; mask-size:contain;
         transition:opacity .2s var(--ease), transform .25s var(--ease), filter .25s var(--ease);
     }
-    .stApp .st-key-topnav .stRadio label::after {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label::after {
         content:""; position:absolute; left:50%; bottom:0; width:0; height:2px; border-radius:2px; transform:translateX(-50%);
         background:var(--c,#4c8dff); transition:width .25s var(--ease), box-shadow .25s var(--ease);
     }
 
-    .stApp .st-key-topnav .stRadio label:hover {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover {
         background:color-mix(in srgb, var(--c,#4c8dff) 11%, transparent) !important;
         border-color:color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
         transform:translateY(-1px) !important;
     }
-    .stApp .st-key-topnav .stRadio label:hover p {color:#fff !important;}
-    .stApp .st-key-topnav .stRadio label:hover p::before {opacity:1; transform:translateY(-1px) scale(1.12);}
-    .stApp .st-key-topnav .stRadio label:hover::after {width:42%;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p {color:#fff !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p::before {opacity:1; transform:translateY(-1px) scale(1.12);}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover::after {width:42%;}
 
-    .stApp .st-key-topnav .stRadio label:has(input:checked) {
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) {
         background:
             linear-gradient(180deg, color-mix(in srgb, var(--c,#4c8dff) 26%, #0f1724), color-mix(in srgb, var(--c,#4c8dff) 9%, #0b111a)) padding-box,
             linear-gradient(140deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 16%, transparent) 72%) border-box !important;
@@ -4606,12 +4611,12 @@ st.markdown(
         box-shadow:0 10px 20px -16px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.08) !important;
         animation:navPop .35s var(--ease);
     }
-    .stApp .st-key-topnav .stRadio label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
-    .stApp .st-key-topnav .stRadio label:has(input:checked) p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c,#4c8dff));}
-    .stApp .st-key-topnav .stRadio label:has(input:checked)::after {width:calc(100% - 32px); box-shadow:0 0 12px var(--c,#4c8dff);}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c,#4c8dff));}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked)::after {width:calc(100% - 32px); box-shadow:0 0 12px var(--c,#4c8dff);}
     @keyframes navPop {from {transform:translateY(3px); opacity:.65;} to {transform:none; opacity:1;}}
     @media (prefers-reduced-motion: reduce) {
-        .stApp .st-key-topnav .stRadio label, .stApp .st-key-topnav .stRadio label::after {transition:none !important; animation:none !important;}
+        .stApp .st-key-topnav .stRadio [role="radiogroup"] label, .stApp .st-key-topnav .stRadio [role="radiogroup"] label::after {transition:none !important; animation:none !important;}
         .stApp .st-key-topnav [role="radiogroup"] {scroll-behavior:auto !important;}
     }
     /* the zero-height helper iframe must not leave a gap */
