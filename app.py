@@ -5172,6 +5172,27 @@ st.markdown(
         .inbox-row {grid-template-columns:44px 1fr; row-gap:6px;}
         .inbox-row .ir-subj, .inbox-row .ir-date {grid-column:2;} .inbox-row .ir-go {display:none;}
     }
+
+    /* inbox rows: hard row boundaries. Streamlit gives markdown blocks a
+       negative bottom margin and the flex gap adds spacing; both are zeroed
+       here and every row is a fixed-height, clipped box so hover/selected
+       washes can never bleed into the neighbouring row. */
+    [class*="st-key-mrow_"], [class*="st-key-mrow_"] > div, [class*="st-key-mrow_"] [data-testid="stVerticalBlock"],
+    [class*="st-key-mrow_"] [data-testid="stElementContainer"], [class*="st-key-mrow_"] [data-testid="stMarkdown"],
+    [class*="st-key-mrow_"] [data-testid="stMarkdownContainer"], [class*="st-key-mrow_"] .stMarkdown {
+        margin:0 !important; padding:0 !important; gap:0 !important; min-height:0 !important;
+    }
+    [class*="st-key-mrow_"]:not([class*="st-key-mrow_btn"]) {height:68px !important; overflow:hidden !important; isolation:isolate; display:block !important; flex:none !important;}
+    .inbox-row {height:68px !important; box-sizing:border-box !important; overflow:hidden !important; border-bottom:1px solid rgba(148,163,184,.10) !important; margin:0 !important;}
+    .inbox-row .ir-subj {max-height:38px;}
+    .inbox-row::before {top:12px; bottom:12px;}
+    [class*="st-key-mrow_"]:hover .inbox-row::before, .inbox-row.is-sel::before {top:0 !important; bottom:0 !important;}
+    [class*="st-key-mrow_"]:last-child .inbox-row {border-bottom:0 !important;}
+    [class*="st-key-mrow_"] .stButton {z-index:3; border-radius:0 !important;}
+    .st-key-inbox_list {overflow-y:auto !important; overflow-x:hidden !important;}
+    .st-key-inbox_list::-webkit-scrollbar {width:8px;}
+    .st-key-inbox_list::-webkit-scrollbar-thumb {background:rgba(148,163,184,.28); border-radius:8px;}
+    .st-key-inbox_list::-webkit-scrollbar-thumb:hover {background:var(--panel-tone, #2fb68e);}
     /* ---- Tables: rich cells ---- */
     .polished-table-wrap {
         background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
@@ -7946,7 +7967,7 @@ if active_panel == "Dashboard":
                 unsafe_allow_html=True,
             )
             try:
-                _list_box = st.container(height=min(520, 64 * len(display_rows) + 8), key="inbox_list")
+                _list_box = st.container(height=min(540, 68 * len(display_rows) + 4), key="inbox_list")
             except TypeError:
                 _list_box = st.container(key="inbox_list")
             with _list_box:
