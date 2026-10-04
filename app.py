@@ -4548,7 +4548,8 @@ st.markdown(
         display:flex !important; flex-wrap:nowrap !important; align-items:stretch !important; gap:6px !important; width:100% !important;
         background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
         padding:2px 26px 12px 26px !important; box-sizing:border-box !important;
-        overflow-x:auto !important; overflow-y:hidden !important; scroll-behavior:smooth !important; scroll-snap-type:none !important;
+        overflow-x:auto !important; overflow-y:hidden !important; scroll-behavior:auto !important; scroll-snap-type:none !important;
+        overscroll-behavior-x:contain !important; -webkit-overflow-scrolling:touch !important; cursor:grab;
         scrollbar-width:thin !important; scrollbar-color:rgba(76,141,255,.55) transparent !important;
         -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
         mask-image:linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
@@ -4623,6 +4624,82 @@ st.markdown(
     .stApp [data-testid="stElementContainer"]:has(iframe[height="0"]), .stApp .stElementContainer:has(iframe[height="0"]) {
         position:absolute !important; height:0 !important; margin:0 !important; overflow:hidden !important; visibility:hidden !important;
     }
+
+    /* ---- v11 mailbox-connected panel ------------------------------------
+       One card: identity header (avatar, status, address, host/folder/count
+       chips, Live badge), a short note, then the action row. Replaces the old
+       status card + separate button box. Delete this block and restore the
+       old markup to go back. ------------------------------------------- */
+    .stApp .st-key-imap_connected_panel {
+        --tone:#34d399; position:relative; overflow:hidden; gap:14px !important;
+        padding:22px 24px 22px 28px !important; margin:4px 0 14px 0 !important;
+        border:1px solid #243046 !important; border-radius:16px !important;
+        background:
+            radial-gradient(60% 120% at 0% 0%, rgba(52,211,153,.10), transparent 62%),
+            radial-gradient(45% 100% at 100% 0%, rgba(76,141,255,.07), transparent 70%),
+            linear-gradient(180deg,#101826,#0b111a) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8) !important;
+    }
+    .stApp .st-key-imap_connected_panel::before {
+        content:""; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0;
+        background:linear-gradient(180deg,#34d399,rgba(52,211,153,.15)); pointer-events:none;
+    }
+    .stApp .st-key-imap_connected_panel [data-testid="stMarkdown"],
+    .stApp .st-key-imap_connected_panel [data-testid="stMarkdownContainer"] {margin-bottom:0 !important;}
+
+    .mbx-head {display:flex; align-items:center; gap:16px;}
+    .mbx-avatar {
+        flex:0 0 48px; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+        font:750 20px/1 Inter,"Segoe UI",sans-serif; color:#d9fbee;
+        background:linear-gradient(145deg,rgba(52,211,153,.34),rgba(52,211,153,.10)); border:1px solid rgba(52,211,153,.5);
+        box-shadow:0 8px 18px -10px rgba(52,211,153,.8), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .mbx-text {flex:1 1 auto; min-width:0;}
+    .mbx-eyebrow {display:flex; align-items:center; gap:8px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; color:#34d399;}
+    .mbx-dot {width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.8); animation:mbxPulse 2.4s ease-in-out infinite;}
+    @keyframes mbxPulse {0%,100% {box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.8);} 50% {box-shadow:0 0 0 6px rgba(52,211,153,.08), 0 0 14px rgba(52,211,153,.5);}}
+    .mbx-title {margin-top:8px; font:750 20px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff; overflow-wrap:anywhere;}
+    .mbx-chips {display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+    .mbx-chips span {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.05em; padding:5px 9px; border-radius:999px; color:#9fb3c8; border:1px solid #2a3750; background:rgba(255,255,255,.025);}
+    .mbx-chips span:nth-child(1) {color:#9dbcff; border-color:rgba(76,141,255,.4); background:rgba(76,141,255,.09);}
+    .mbx-chips span:nth-child(2) {color:#ecc088; border-color:rgba(224,164,88,.4); background:rgba(224,164,88,.09);}
+    .mbx-chips span:nth-child(3) {color:#86d9bf; border-color:rgba(79,195,161,.4); background:rgba(79,195,161,.09);}
+    .mbx-badge {flex:0 0 auto; align-self:flex-start; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; padding:7px 11px; border-radius:999px; color:#34d399; border:1px solid rgba(52,211,153,.4); background:rgba(52,211,153,.10);}
+    .mbx-note {margin-top:14px; padding:12px 14px; border-radius:12px; border:1px dashed #2a3750; background:rgba(255,255,255,.02); font-size:12.5px; line-height:1.6; color:#8d99ac;}
+
+    /* action row */
+    .stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:12px !important; align-items:stretch !important;}
+    .stApp .st-key-imap_connected_panel .stButton button {
+        min-height:48px !important; border-radius:12px !important; font:650 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important;
+        transition:background .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease) !important;
+    }
+    .stApp .st-key-imap_connected_panel .stButton button:hover {transform:translateY(-1px) !important;}
+    .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button {
+        background:linear-gradient(180deg,#1f3a66,#16264a) padding-box, linear-gradient(115deg,#3b82f6,#6366f1 60%,#a78bfa) border-box !important;
+        border:1px solid transparent !important; color:#fff !important;
+        box-shadow:0 12px 24px -16px rgba(99,102,241,.9), inset 0 1px 0 rgba(255,255,255,.09) !important;
+    }
+    .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button:hover {
+        background:linear-gradient(180deg,#27487f,#1b2f5c) padding-box, linear-gradient(115deg,#5b9bf8,#7c7ff3 60%,#b9a6ff) border-box !important;
+        box-shadow:0 16px 28px -14px rgba(99,102,241,1), inset 0 1px 0 rgba(255,255,255,.12) !important;
+    }
+    .stApp .st-key-imap_connected_panel .st-key-imap_show_form_btn button {
+        background:rgba(76,141,255,.06) !important; border:1px solid rgba(76,141,255,.45) !important; color:#b9ceff !important;
+    }
+    .stApp .st-key-imap_connected_panel .st-key-imap_show_form_btn button:hover {
+        background:rgba(76,141,255,.14) !important; border-color:#6c9bff !important; color:#fff !important;
+    }
+    .stApp .st-key-imap_connected_panel .st-key-imap_disconnect_btn button {
+        background:rgba(239,90,90,.05) !important; border:1px solid rgba(239,90,90,.5) !important; color:#ff9d9d !important;
+    }
+    .stApp .st-key-imap_connected_panel .st-key-imap_disconnect_btn button:hover {
+        background:rgba(239,90,90,.14) !important; border-color:rgba(239,90,90,.9) !important; color:#ffd0d0 !important;
+    }
+    @media (max-width:760px) {
+        .mbx-head {flex-wrap:wrap;} .mbx-badge {display:none;}
+        .stApp .st-key-imap_connected_panel {padding:18px 16px 18px 20px !important;}
+    }
+    @media (prefers-reduced-motion: reduce) {.mbx-dot {animation:none;}}
 
     /* ---- v9 acquisition cards: aligned click-catcher + per-card hover ------
        Bug: the invisible button that sits on each card was lined up with a
@@ -5064,29 +5141,62 @@ st.markdown("<style>" + "".join(_nav_rules) + "</style>", unsafe_allow_html=True
 components.html(
     """<script>
     (function () {
-      var last = null;
+      var last = null, target = 0, raf = null, dragging = false;
+      function ease(box) {
+        // critically-damped glide towards `target`: fast start, soft landing
+        var d = target - box.scrollLeft;
+        if (Math.abs(d) < 0.5) { box.scrollLeft = target; raf = null; return; }
+        box.scrollLeft += d * 0.16;
+        raf = requestAnimationFrame(function () { ease(box); });
+      }
+      function glide(box, to) {
+        var max = box.scrollWidth - box.clientWidth;
+        target = Math.max(0, Math.min(max, to));
+        if (!raf) raf = requestAnimationFrame(function () { ease(box); });
+      }
+      function bind(box) {
+        box.style.scrollBehavior = "auto";          // our own easing replaces CSS smooth
+        box.addEventListener("wheel", function (e) {
+          var max = box.scrollWidth - box.clientWidth;
+          if (max <= 0) return;
+          var dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+          if (e.deltaMode === 1) dx *= 32;           // line -> px
+          var base = raf ? target : box.scrollLeft;
+          if ((dx > 0 && base < max - 1) || (dx < 0 && base > 1)) {
+            glide(box, base + dx * 1.4); e.preventDefault();
+          }
+        }, { passive: false });
+        var sx = 0, sl = 0, moved = false;
+        box.addEventListener("pointerdown", function (e) {
+          if (e.pointerType === "touch" || e.button !== 0) return;
+          dragging = true; moved = false; sx = e.clientX; sl = box.scrollLeft;
+        });
+        window.parent.addEventListener("pointermove", function (e) {
+          if (!dragging) return;
+          var dx = e.clientX - sx;
+          if (Math.abs(dx) > 4) { moved = true; box.style.cursor = "grabbing"; }
+          if (moved) { box.scrollLeft = sl - dx; target = box.scrollLeft; }
+        });
+        window.parent.addEventListener("pointerup", function () {
+          dragging = false; box.style.cursor = "";
+        });
+        // a drag must not count as a tab click
+        box.addEventListener("click", function (e) {
+          if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+        }, true);
+      }
       function tick() {
         try {
           var d = window.parent.document;
           var box = d.querySelector('.st-key-topnav [role="radiogroup"]');
           if (!box) return;
-          if (!box.dataset.navWheel) {
-            box.dataset.navWheel = "1";
-            box.addEventListener("wheel", function (e) {
-              if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-              var max = box.scrollWidth - box.clientWidth;
-              if (max <= 0) return;
-              if ((e.deltaY > 0 && box.scrollLeft < max - 1) || (e.deltaY < 0 && box.scrollLeft > 0)) {
-                box.scrollLeft += e.deltaY; e.preventDefault();
-              }
-            }, { passive: false });
-          }
+          if (!box.dataset.navWheel) { box.dataset.navWheel = "1"; bind(box); }
           var act = box.querySelector("label:has(input:checked)");
           var key = act ? act.innerText : null;
           if (act && key !== last) {
             last = key;
             var x = act.getBoundingClientRect().left - box.getBoundingClientRect().left + box.scrollLeft;
-            box.scrollTo({ left: Math.max(0, x - (box.clientWidth - act.offsetWidth) / 2), behavior: "smooth" });
+            glide(box, x - (box.clientWidth - act.offsetWidth) / 2);
           }
         } catch (err) {}
       }
@@ -6444,30 +6554,29 @@ if active_panel == "Dashboard":
 
         if mailbox_loaded and not show_connection_form:
             _cfg_summary = st.session_state.get("live_mailbox_config", {}) or {}
-            st.markdown(f"""
-            <div class="stage-card stage-card-success stage-card-attached">
-              <div class="stage-label">MAILBOX CONNECTED</div>
-              <div class="stage-title">{html.escape(str(_cfg_summary.get("user", "")))} &middot; folder: {html.escape(str(_cfg_summary.get("folder", "INBOX")))}</div>
-              <div class="stage-help">{len(st.session_state.get("live_mailbox_messages", []))} message headers loaded from {html.escape(str(_cfg_summary.get("host", "")))}. Connection details are hidden while you work &mdash; use the buttons below to change them.</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Standalone quick-launch: just the "run the full pipeline on the
-            # last 10 emails" action (none of the copilot chat's other
-            # shortcuts, history, or text box) sitting right here beside the
-            # mailbox controls -- so it's visible the moment the mailbox
-            # connects, with nothing to scroll to, select, or open in the
-            # sidebar first. Sits in its own bordered container that visually
-            # continues the "MAILBOX CONNECTED" card above it (attached top
-            # edge, same accent spine) so the card + its actions read as one
-            # panel instead of a card with three loose buttons drifting below.
-            with st.container(key="imap_connected_actions"):
-                st.caption(
-                    "Full Report runs machine analysis, AI threat analysis and semantic origin "
-                    "correlation on the 10 newest messages, then opens the Forensic Report ready "
-                    "to download — no need to pick a message below."
-                )
-                _cc1, _cc2, _cc3 = st.columns([3, 1.6, 1.3])
+            _mbx_user = str(_cfg_summary.get("user", ""))
+            _mbx_n = len(st.session_state.get("live_mailbox_messages", []))
+            _mbx_initial = html.escape((_mbx_user[:1] or "?").upper())
+            # One panel (header + note + actions) instead of a card with a
+            # second box stacked under it.
+            with st.container(key="imap_connected_panel"):
+                st.markdown(f"""
+                <div class="mbx-head">
+                  <div class="mbx-avatar">{_mbx_initial}</div>
+                  <div class="mbx-text">
+                    <div class="mbx-eyebrow"><span class="mbx-dot"></span>Mailbox connected</div>
+                    <div class="mbx-title">{html.escape(_mbx_user)}</div>
+                    <div class="mbx-chips">
+                      <span>{html.escape(str(_cfg_summary.get("host", "")))}</span>
+                      <span>folder: {html.escape(str(_cfg_summary.get("folder", "INBOX")))}</span>
+                      <span>{_mbx_n} headers loaded</span>
+                    </div>
+                  </div>
+                  <div class="mbx-badge">&#10003; Live</div>
+                </div>
+                <div class="mbx-note">Full Report runs machine analysis, AI threat analysis and semantic origin correlation on the {min(_mbx_n, 10) or 10} newest messages, then opens the Forensic Report ready to download &mdash; no need to pick a message below. Connection details are hidden while you work.</div>
+                """, unsafe_allow_html=True)
+                _cc1, _cc2, _cc3 = st.columns([3, 1.4, 1.2])
                 with _cc1:
                     if st.button(
                         "Synapse Copilot — Full Report (10 Emails)",
