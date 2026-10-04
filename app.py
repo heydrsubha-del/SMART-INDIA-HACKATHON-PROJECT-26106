@@ -6012,7 +6012,7 @@ st.markdown(r"""
 # Typography: Inter was already named all over this stylesheet but never actually
 # loaded, so text fell back to a mix of Segoe UI / Streamlit's own font. Loading
 # it makes the whole UI one consistent face. CSS only -- no logic touched.
-st.markdown("""<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');</style>""", unsafe_allow_html=True)
+st.markdown("""<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500..800&display=swap');</style>""", unsafe_allow_html=True)
 st.markdown(r"""
 <style>
 .stApp,
@@ -6032,6 +6032,26 @@ st.markdown(r"""
 /* icon fonts must never be touched */
 .stApp [data-testid="stIconMaterial"], .stApp .material-symbols-rounded,
 .stApp [class*="material-symbols"], .stApp [class*="material-icons"] {font-size-adjust:none !important;}
+</style>
+""", unsafe_allow_html=True)
+
+# Gentleman touch: a refined serif (Source Serif 4) for headline titles only; every
+# label, table, button and tag stays in Inter. Sizes are untouched and the serif is
+# size-normalised, so no title grows wider than before.
+st.markdown(r"""
+<style>
+.stApp .topbar-title,
+.stApp .part-banner .pb-title,
+.stApp .dossier-head .dh-title,
+.stApp .sec-head .sh-title,
+.stApp .num-head .nh-title,
+.stApp .acq2-title {
+  font-family:"Source Serif 4","Source Serif Pro",Georgia,"Times New Roman",serif !important;
+  font-size-adjust:0.47; font-optical-sizing:auto;
+}
+.stApp .topbar-title {font-weight:700; letter-spacing:-.005em;}
+.stApp .part-banner .pb-title {font-weight:700; letter-spacing:-.005em;}
+.stApp .dossier-head .dh-title, .stApp .sec-head .sh-title, .stApp .num-head .nh-title, .stApp .acq2-title {font-weight:650; letter-spacing:0;}
 </style>
 """, unsafe_allow_html=True)
 
