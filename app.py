@@ -6009,6 +6009,32 @@ st.markdown(r"""
 </style>
 """, unsafe_allow_html=True)
 
+# Typography: Inter was already named all over this stylesheet but never actually
+# loaded, so text fell back to a mix of Segoe UI / Streamlit's own font. Loading
+# it makes the whole UI one consistent face. CSS only -- no logic touched.
+st.markdown("""<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');</style>""", unsafe_allow_html=True)
+st.markdown(r"""
+<style>
+.stApp,
+.stApp [data-testid="stAppViewContainer"], .stApp [data-testid="stSidebar"], .stApp [data-testid="stMain"],
+.stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"],
+.stApp [data-testid="stMetric"], .stApp [data-testid="stMetricValue"], .stApp [data-testid="stMetricLabel"],
+.stApp [data-baseweb="tab"], .stApp [data-baseweb="select"], .stApp [data-baseweb="input"], .stApp [data-baseweb="textarea"],
+[data-baseweb="popover"], [data-baseweb="menu"],
+.stApp .stButton button, .stApp .stDownloadButton button, .stApp .stTextInput input, .stApp .stTextArea textarea,
+.stApp .stNumberInput input, .stApp [data-testid="stExpander"] summary, .stApp [data-testid="stAlert"] {
+  font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif !important;
+  /* Inter has a taller x-height than the fonts it replaces; normalising it keeps
+     every string the same width as before, so nothing wraps, clips or shifts. */
+  font-size-adjust:0.5;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;
+}
+/* icon fonts must never be touched */
+.stApp [data-testid="stIconMaterial"], .stApp .material-symbols-rounded,
+.stApp [class*="material-symbols"], .stApp [class*="material-icons"] {font-size-adjust:none !important;}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown(
     f"""<div class="topbar-shell">
       <div class="topbar-brand">
