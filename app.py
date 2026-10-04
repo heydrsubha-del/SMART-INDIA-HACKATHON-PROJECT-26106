@@ -6060,6 +6060,90 @@ st.markdown(r"""
 @media (prefers-reduced-motion:reduce) {
   .stApp .topbar-status-dot, .stApp .part-banner .pb-scope::before {animation:none !important;}
 }
+
+/* ============ TOP BANNER v4: sized card + glass redesign ============
+   Fixes the size: the banner is a normal in-flow card exactly as wide as the
+   content column (no negative-margin bleed), with a fixed minimum height and
+   a title that scales down instead of wrapping to three lines. The old
+   3.5rem top padding is now the page's own top padding, so the Streamlit
+   toolbar still sits clear above it. Markup is untouched.
+   Delete this block to go back to v3. ------------------------------------ */
+.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:3.5rem !important;}
+.stApp .topbar-shell {
+  --tone:#4c8dff;
+  box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-height:150px;
+  margin:0 0 22px 0 !important; padding:26px 30px !important; gap:26px 32px !important;
+  display:flex !important; flex-wrap:wrap !important; align-items:center !important; justify-content:space-between !important;
+  border:1px solid #243046 !important; border-radius:18px !important; overflow:hidden !important;
+  background:
+    radial-gradient(55% 150% at 0% 0%, rgba(76,141,255,.16), transparent 66%),
+    radial-gradient(45% 140% at 100% 100%, rgba(212,154,102,.10), transparent 70%),
+    linear-gradient(180deg,#111a29,#0a1019) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 18px 40px -24px rgba(0,0,0,.9) !important;
+}
+/* faint engineering grid behind the text, fading out to the right */
+.stApp .topbar-shell::before {
+  content:"" !important; position:absolute; inset:0 !important; height:auto !important; top:0 !important; left:0 !important; right:0 !important; z-index:0; pointer-events:none;
+  background:
+    linear-gradient(90deg,#4c8dff 0%,#8b7cff 28%,#34d399 54%,#d49a66 80%,#e0634a 100%) top/100% 2px no-repeat,
+    linear-gradient(rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px,
+    linear-gradient(90deg, rgba(120,160,220,.05) 1px, transparent 1px) 0 0/34px 34px;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+}
+.stApp .topbar-shell::after {opacity:.9;}
+.stApp .topbar-brand {position:relative; z-index:1; flex:1 1 560px !important; min-width:0 !important; gap:22px !important; align-items:center !important;}
+.stApp .topbar-brand > div:last-child {min-width:0;}
+
+.stApp .topbar-logo {
+  position:relative; width:72px !important; height:72px !important; flex:0 0 72px !important; padding:9px !important; border-radius:20px !important;
+  background:radial-gradient(circle at 35% 28%, rgba(76,141,255,.30), rgba(8,13,24,.92) 72%) !important;
+  border:1px solid rgba(76,141,255,.55) !important;
+  box-shadow:0 0 0 5px rgba(76,141,255,.07), 0 16px 30px -14px rgba(76,141,255,.85), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  animation:tbGlow 3.4s ease-in-out infinite;
+}
+@keyframes tbGlow {
+  0%,100% {box-shadow:0 0 0 5px rgba(76,141,255,.07), 0 16px 30px -14px rgba(76,141,255,.85), inset 0 1px 0 rgba(255,255,255,.10);}
+  50% {box-shadow:0 0 0 8px rgba(76,141,255,.03), 0 18px 34px -12px rgba(139,124,255,.85), inset 0 1px 0 rgba(255,255,255,.10);}
+}
+
+.stApp .topbar-kicker {
+  display:flex; align-items:center; gap:10px; margin-bottom:9px !important;
+  font:700 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; text-transform:uppercase; color:#7fb0ff !important;
+}
+.stApp .topbar-kicker::before {content:""; width:7px; height:7px; border-radius:50%; background:#4c8dff; box-shadow:0 0 0 3px rgba(76,141,255,.22), 0 0 10px rgba(76,141,255,.9);}
+.stApp .topbar-title {
+  font:800 clamp(21px, 2.05vw, 30px)/1.18 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.02em !important;
+  background:linear-gradient(180deg,#ffffff 35%,#a9c3f2); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent !important; text-shadow:none !important; max-width:34ch;
+}
+.stApp .topbar-subtitle {margin-top:10px !important; max-width:78ch; font-size:12.5px !important; line-height:1.6 !important; color:#8d99ac !important;}
+
+/* session panel */
+.stApp .topbar-status-wrap {
+  position:relative; z-index:1; flex:0 0 292px !important; width:292px !important; padding:4px 18px !important; border-radius:16px !important;
+  border:1px solid #2a3750 !important; backdrop-filter:blur(6px);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 28px -20px rgba(0,0,0,.9) !important;
+}
+.stApp .topbar-account-chip {border-color:#2a3750 !important; background:rgba(255,255,255,.04) !important;}
+.stApp .topbar-account-avatar {background:linear-gradient(145deg,#4c8dff,#8b7cff) !important; color:#fff !important; font-weight:750;}
+.stApp .topbar-status-pill {color:#6ee7b7;}
+.stApp .topbar-status-online {color:#6ee7b7 !important;}
+.stApp .topbar-status-dot {background:#34d399 !important; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9) !important;}
+.stApp .topbar-status-time {color:#9fb3c8 !important;}
+.stApp .topbar-actions::before, .stApp .topbar-status-pill::before, .stApp .topbar-status-time::before {color:#7f98b3;}
+
+@media (max-width:1000px) {
+  .stApp .topbar-shell {padding:22px 20px !important; min-height:0;}
+  .stApp .topbar-status-wrap {flex:1 1 100% !important; width:100% !important;}
+  .stApp .topbar-title {max-width:none;}
+}
+@media (max-width:560px) {
+  .stApp .topbar-logo {width:56px !important; height:56px !important; flex-basis:56px !important; border-radius:16px !important;}
+  .stApp .topbar-subtitle {display:none;}
+}
+@media (prefers-reduced-motion:reduce) {.stApp .topbar-logo {animation:none !important;}}
 </style>
 """, unsafe_allow_html=True)
 
