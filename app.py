@@ -2326,7 +2326,7 @@ st.markdown(
     .polished-table-wrap::before {
         content:""; display:block; position:sticky; top:0; z-index:3;
         height:2px; margin-bottom:-2px; pointer-events:none;
-        background:linear-gradient(90deg,#2fb68e 0%,#8b5cf6 28%,#db2777 55%,#f59e0b 78%,#14b8a6 100%);
+        background:linear-gradient(90deg,#2fb68e,#8b5cf6);
         opacity:.9;
     }
     .polished-table-wrap::-webkit-scrollbar {width:8px; height:8px;}
@@ -4607,7 +4607,7 @@ st.markdown(
     }
     .stApp .st-key-topnav::before {
         content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; opacity:.85; pointer-events:none;
-        background:linear-gradient(90deg,#4c8dff 0%,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a 100%);
+        background:linear-gradient(90deg,#4c8dff,#8b7cff);
     }
     /* slim scroll indicator (native bar is hidden): --nav-w = visible fraction,
        --nav-p = scroll position 0..1, --nav-on = 1 only when the strip overflows.
@@ -5241,7 +5241,7 @@ st.markdown(
                    linear-gradient(135deg,rgba(217,163,95,.55),rgba(148,163,184,.14) 34%,rgba(148,163,184,.14) 66%,rgba(139,124,246,.5)) border-box !important;
         box-shadow:0 14px 34px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.03) !important;
     }
-    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e 0%,#d9a35f 30%,#e0708c 58%,#8b7cf6 82%,#38b2c8 100%) !important;}
+    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e,#38b2c8) !important;}
     table.polished-table thead th {background:linear-gradient(180deg,#171d27,#11161e) !important; color:#a3adbb !important;}
     table.polished-table thead th {--tc:#2fb68e;}
     table.polished-table thead th:nth-child(5n+2) {--tc:#d9a35f !important;}
@@ -5455,7 +5455,7 @@ st.markdown(
         font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#8b96a5;
     }
     .pt-foot-dot {width:6px; height:6px; border-radius:50%; background:var(--tone, var(--panel-tone, #2fb68e)); box-shadow:0 0 0 3px rgba(148,163,184,.14);}
-    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e 0%,#d9a35f 28%,#e0708c 55%,#8b7cf6 80%,#38b2c8 100%) !important;}
+    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e,#38b2c8) !important;}
     table.polished-table thead th {padding:14px 18px 12px !important;}
     table.polished-table thead th::before {background:var(--tc) !important;}
     table.polished-table thead th:nth-child(5n+1) {--tc:#2fb68e !important;}
