@@ -5193,6 +5193,7 @@ st.markdown(
     .st-key-inbox_list::-webkit-scrollbar {width:8px;}
     .st-key-inbox_list::-webkit-scrollbar-thumb {background:rgba(148,163,184,.28); border-radius:8px;}
     .st-key-inbox_list::-webkit-scrollbar-thumb:hover {background:var(--panel-tone, #2fb68e);}
+
     /* ---- Tables: rich cells ---- */
     .polished-table-wrap {
         background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
@@ -5399,6 +5400,65 @@ st.markdown(
     }
     .st-key-single_email_select [data-baseweb="select"] > div {border-color:color-mix(in srgb,var(--tone) 35%,var(--line-strong)) !important;}
     .st-key-single_email_select svg {color:var(--tone) !important;}
+    /* ==================================================================
+       ROW-CARD TABLE SYSTEM -- every polished table now shares the Inbox
+       design: fixed-height rows, per-row colour (--rt: severity colour or a
+       hash-picked palette colour), edge bar that grows on hover, avatar
+       senders, stacked dates, colour chips, row-count footer.
+       ================================================================== */
+    .polished-table-shell {margin:8px 0;}
+    .polished-table-shell .polished-table-wrap {margin:0 !important; border-bottom-left-radius:0 !important; border-bottom-right-radius:0 !important; border-bottom:0 !important;}
+    .pt-foot {
+        display:flex; align-items:center; gap:9px; padding:8px 16px; border:1px solid var(--line-strong); border-top:1px solid rgba(148,163,184,.12);
+        border-radius:0 0 14px 14px; background:linear-gradient(180deg,#0f141b,#0b0f15);
+        font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#8b96a5;
+    }
+    .pt-foot-dot {width:6px; height:6px; border-radius:50%; background:var(--tone, var(--panel-tone, #2fb68e)); box-shadow:0 0 0 3px rgba(148,163,184,.14);}
+    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e 0%,#d9a35f 28%,#e0708c 55%,#8b7cf6 80%,#38b2c8 100%) !important;}
+    table.polished-table thead th {padding:14px 18px 12px !important;}
+    table.polished-table thead th::before {background:var(--tc) !important;}
+    table.polished-table thead th:nth-child(5n+1) {--tc:#2fb68e !important;}
+    table.polished-table thead th:nth-child(5n+2) {--tc:#d9a35f !important;}
+    table.polished-table thead th:nth-child(5n+3) {--tc:#e0708c !important;}
+    table.polished-table thead th:nth-child(5n+4) {--tc:#8b7cf6 !important;}
+    table.polished-table thead th:nth-child(5n+5) {--tc:#38b2c8 !important;}
+    .pt-toned table.polished-table thead th:nth-child(n) {--tc:inherit;}
+    .pt-toned table.polished-table thead th:nth-child(5n+1) {--tc:#2fb68e !important;}
+    .pt-toned table.polished-table thead th:nth-child(5n+2) {--tc:#d9a35f !important;}
+    .pt-toned table.polished-table thead th:nth-child(5n+3) {--tc:#e0708c !important;}
+    .pt-toned table.polished-table thead th:nth-child(5n+4) {--tc:#8b7cf6 !important;}
+    .pt-toned table.polished-table thead th:nth-child(5n+5) {--tc:#38b2c8 !important;}
+    table.polished-table tbody tr {--rt:#2fb68e;}
+    table.polished-table tbody td {padding:12px 18px !important; height:56px; box-sizing:border-box; border-bottom:1px solid rgba(148,163,184,.10) !important;}
+    table.polished-table tbody tr:last-child td {border-bottom:0 !important;}
+    table.polished-table tbody tr:nth-child(even) {background:transparent !important;}
+    table.polished-table tbody tr:hover, .pt-toned table.polished-table tbody tr:hover {
+        background:linear-gradient(90deg,rgba(255,255,255,.06),transparent 85%) !important;
+        background:linear-gradient(90deg,color-mix(in srgb,var(--rt) 16%,transparent),transparent 88%) !important;
+    }
+    table.polished-table tbody td:first-child {position:relative; color:#eaf0f8 !important; font-weight:600 !important; background-image:none !important;}
+    table.polished-table tbody td:first-child::before {
+        content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0;
+        background:var(--rt); opacity:.4; transition:all .18s var(--ease);
+    }
+    table.polished-table tbody tr:hover td:first-child::before {opacity:1; top:0; bottom:0;}
+    table.polished-table tbody tr:hover td:first-child, .pt-toned table.polished-table tbody tr:hover td:first-child {background-image:none !important;}
+    .pt-toned table.polished-table tbody td:first-child {color:#eaf0f8 !important;}
+    .pt-idx {color:var(--rt,#d9a35f); background:rgba(217,163,95,.10); background:color-mix(in srgb,var(--rt,#d9a35f) 13%,transparent); border:1px solid color-mix(in srgb,var(--rt,#d9a35f) 38%,transparent); padding:5px 9px; min-width:30px;}
+    .pt-from {display:flex; align-items:center; gap:12px; min-width:200px;}
+    .pt-av {flex:none; width:34px; height:34px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font:800 14px/1 Inter,sans-serif; color:#0b0e14; background:linear-gradient(145deg,var(--av),color-mix(in srgb,var(--av) 60%,#000)); box-shadow:0 6px 16px -8px var(--av);}
+    .pt-fromtxt {display:flex; flex-direction:column; gap:3px; min-width:0;}
+    .pt-fromtxt b {font:650 13.5px/1.2 Inter,sans-serif; color:#eef2f7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .pt-fromtxt i {font:500 11.5px/1.2 'JetBrains Mono',Consolas,monospace; font-style:normal; color:#8b96a5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .pt-date {display:flex; flex-direction:column; gap:3px; white-space:nowrap;}
+    .pt-date b {font:650 12.5px/1.2 Inter,sans-serif; color:#cfd7e3; font-variant-numeric:tabular-nums;}
+    .pt-date i {font:500 11px/1.2 'JetBrains Mono',Consolas,monospace; font-style:normal; color:#8b96a5;}
+    .pt-subj {font:600 13.5px/1.4 Inter,sans-serif; color:#e2e8f1;}
+    .pt-bar-fill {box-shadow:0 0 10px -2px var(--rt);}
+
+    .inbox-row .ir-tag {display:inline-block; margin-right:9px; padding:2px 8px; border-radius:6px; vertical-align:1px; font:700 9.5px/1.4 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--t); background:rgba(148,163,184,.1); background:color-mix(in srgb,var(--t) 14%,transparent); border:1px solid color-mix(in srgb,var(--t) 40%,transparent);}
+    .inbox-row .ir-av {border-radius:12px; box-shadow:0 8px 18px -8px var(--tone), inset 0 1px 0 rgba(255,255,255,.25);}
+    .inbox-row.is-sel .ir-subj {color:#fff;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -6060,12 +6120,16 @@ def _settings():
     _render_polished_table(pd.DataFrame([{"Score ≥": t, "Level": n} for t, n, _ in C.RISK_LEVELS]))
 
     st.markdown("##### Reference lists")
-    st.write(f"Known brands tracked: **{len(C.KNOWN_BRANDS)}**")
-    st.write(f"Freemail domains tracked: **{len(C.FREEMAIL_DOMAINS)}**")
-    st.write(f"URL shorteners tracked: **{len(C.URL_SHORTENERS)}**")
-
-    st.markdown("##### Google Sign-In")
-    st.write("Configured" if GOOGLE_OAUTH_READY and oauth_available() else "Not configured")
+    _g_ok = bool(GOOGLE_OAUTH_READY and oauth_available())
+    st.markdown(
+        '<div class="inbox-stats">'
+        f'<div class="is-card" style="--tone:#d9a35f;"><span>Known brands tracked</span><b>{len(C.KNOWN_BRANDS)}</b></div>'
+        f'<div class="is-card" style="--tone:#38b2c8;"><span>Freemail domains</span><b>{len(C.FREEMAIL_DOMAINS)}</b></div>'
+        f'<div class="is-card" style="--tone:#e0708c;"><span>URL shorteners</span><b>{len(C.URL_SHORTENERS)}</b></div>'
+        f'<div class="is-card" style="--tone:{"#2fb68e" if _g_ok else "#8b96a5"};"><span>Google Sign-In</span><b>{"Configured" if _g_ok else "Not configured"}</b></div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
 def _about():
     st.subheader("About ALGORITHMISTIC")
@@ -6786,6 +6850,9 @@ def get_email_date(email_text):
         pass
     return None
 
+import hashlib
+from email.utils import parseaddr as _pt_parseaddr
+_PT_AV = ["#2fb68e", "#d9a35f", "#8b7cf6", "#e0708c", "#38b2c8", "#a3c94a", "#f08a4b", "#e879b9"]
 _PT_GOOD = {"PASS", "OK", "CLEAN", "SAFE", "NO", "NOT DETECTED", "NONE", "LOW", "TRUSTED", "VALID"}
 _PT_BAD = {"FAIL", "FAILED", "DETECTED", "CRITICAL", "MALICIOUS", "INFECTED", "HIGH", "SPOOFED", "PHISHING"}
 _PT_WARN = {"SOFTFAIL", "SUSPICIOUS", "MEDIUM", "WARN", "WARNING", "NEUTRAL", "CAUTION"}
@@ -6806,7 +6873,7 @@ def _pt_tone(text):
     return "mute"
 
 
-def _pt_cell(col, v, row_level=""):
+def _pt_cell(col, v, row_level="", colmax=None, is_first=False):
     """One rich table cell: status pill, score bar, IP chip, index chip, or plain text.
     Presentation only -- the displayed text is always the original value."""
     text = "" if (v is None or (isinstance(v, float) and pd.isna(v))) else str(v)
@@ -6840,6 +6907,28 @@ def _pt_cell(col, v, row_level=""):
             return (f'<td><div class="pt-bar"><div class="pt-bar-track"><div class="pt-bar-fill" '
                     f'style="width:{pct}%;background:{color};"></div></div>'
                     f'<span class="pt-bar-num">{esc}</span></div></td>')
+    if key in ("weight", "points", "count", "hits", "occurrences") and colmax and colmax.get(col):
+        try:
+            num = float(text)
+            pct = max(0.0, min(100.0, abs(num) / colmax[col] * 100.0))
+            return (f'<td><div class="pt-bar"><div class="pt-bar-track"><div class="pt-bar-fill" '
+                    f'style="width:{pct:.0f}%;background:linear-gradient(90deg,var(--rt),color-mix(in srgb,var(--rt) 55%,#fff));"></div></div>'
+                    f'<span class="pt-bar-num">{esc}</span></div></td>')
+        except (TypeError, ValueError):
+            pass
+    if key in ("from", "sender", "from address", "sender address", "from_addr", "email address") and text:
+        _n, _a = _pt_parseaddr(text)
+        _n = _n or (_a.split("@")[0] if _a else text)
+        _c = _PT_AV[int(hashlib.md5((_a or _n).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_PT_AV)]
+        return (f'<td><div class="pt-from" style="--av:{_c};"><span class="pt-av">{html.escape((_n[:1] or "?").upper())}</span>'
+                f'<span class="pt-fromtxt"><b>{html.escape(_n)}</b>' + (f'<i>{html.escape(_a)}</i>' if _a else '') + '</span></div></td>')
+    if re.match(r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}", text) and key not in ("subject", "title"):
+        _d, _t = re.split(r"[ T]", text.strip(), 1)
+        return f'<td><div class="pt-date"><b>{html.escape(_d)}</b><i>{html.escape(_t[:8])}</i></div></td>'
+    if key in ("subject", "title", "signal", "name") and text:
+        return f'<td class="pt-wrap"><span class="pt-subj">{esc}</span></td>'
+    if is_first and 0 < len(text) <= 6 and key not in ("origin ip",):
+        return f'<td><span class="pt-idx">{esc}</span></td>'
     if key in ("origin ip", "ip", "ip address", "hop ip") and text:
         return f'<td><span class="ip-chip">{esc}</span></td>'
     if key in ("#", "email #", "row #", "row", "no.", "hop"):
@@ -6854,18 +6943,32 @@ def _pt_cell(col, v, row_level=""):
 def _polished_table_html(df, max_height=None, tone=None):
     cols = list(df.columns)
     thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
-    level_col = next((c for c in cols if str(c).strip().lower() in ("verdict", "level")), None)
+    level_col = next((c for c in cols if str(c).strip().lower() in ("verdict", "level", "severity")), None)
+    colmax = {}
+    for c in cols:
+        if str(c).strip().lower() in ("weight", "points", "count", "hits", "occurrences"):
+            try:
+                colmax[c] = max(abs(float(x)) for x in df[c].tolist()) or None
+            except (TypeError, ValueError):
+                pass
     body_rows = []
     for _, row in df.iterrows():
         lvl = str(row[level_col]).upper() if level_col is not None else ""
-        body_rows.append("<tr>" + "".join(_pt_cell(c, row[c], lvl) for c in cols) + "</tr>")
+        rt = _LEVEL_MARKER_COLORS.get(lvl)
+        if not rt:
+            seed = str(row[cols[0]]) if cols else ""
+            rt = _PT_AV[int(hashlib.md5(seed.encode("utf-8", "ignore")).hexdigest(), 16) % len(_PT_AV)]
+        cells = "".join(_pt_cell(c, row[c], lvl, colmax, is_first=(i == 0)) for i, c in enumerate(cols))
+        body_rows.append(f'<tr style="--rt:{rt};">{cells}</tr>')
     wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
     if tone:
         wrap_style = f' style="--tone:{tone};' + (f'max-height:{int(max_height)}px;overflow-y:auto;' if max_height else '') + '"'
+    n = len(df)
     return (
-        f'<div class="polished-table-wrap{" pt-toned" if tone else ""}"{wrap_style}>'
+        f'<div class="polished-table-shell"><div class="polished-table-wrap{" pt-toned" if tone else ""}"{wrap_style}>'
         f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
         f'<tbody>{"".join(body_rows)}</tbody></table></div>'
+        f'<div class="pt-foot"><span class="pt-foot-dot"></span>{n} row{"s" if n != 1 else ""}</div></div>'
     )
 
 
@@ -6912,6 +7015,7 @@ def _render_email_results_table(df, height=300):
     for _, row in df.iterrows():
         tds = []
         verdict_key = str(row.get("Verdict", "")).upper()
+        _rt = _LEVEL_MARKER_COLORS.get(verdict_key, "#2fb68e")
         for c in cols:
             v = row[c]
             text = "" if (v is None or (isinstance(v, float) and pd.isna(v))) else str(v)
@@ -6941,7 +7045,7 @@ def _render_email_results_table(df, height=300):
                 tds.append(f'<td><span class="row-chip">{html.escape(text)}</span></td>')
             else:
                 tds.append(f"<td>{html.escape(text)}</td>")
-        body_rows.append(f"<tr>{''.join(tds)}</tr>")
+        body_rows.append(f'<tr style="--rt:{_rt};">{"".join(tds)}</tr>')
     tbody = "".join(body_rows)
     st.markdown(
         f'<div class="polished-table-wrap pt-toned" style="--tone:{_panel_hex()};max-height:{int(height)}px;overflow-y:auto;">'
@@ -7946,6 +8050,20 @@ if active_panel == "Dashboard":
                 except Exception:
                     return str(_txt), "", ""
 
+            _TAGS = (
+                (("security", "alert", "suspicious", "unusual", "blocked", "breach"), "Security", "#d9a35f"),
+                (("password", "verify", "sign-in", "sign in", "login", "2-step", "code"), "Account", "#8b7cf6"),
+                (("invoice", "payment", "receipt", "order", "billing", "refund"), "Billing", "#e0708c"),
+                (("shared", "invite", "access", "permission", "terms", "policy"), "Access", "#38b2c8"),
+            )
+
+            def _tag_for(_subj):
+                _low = str(_subj).lower()
+                for _keys, _lab, _c in _TAGS:
+                    if any(_k in _low for _k in _keys):
+                        return f'<span class="ir-tag" style="--t:{_c};">{_lab}</span>'
+                return ""
+
             _senders = {}
             for _r in display_rows:
                 _n, _a = _parseaddr(str(_r["From"]))
@@ -7984,7 +8102,7 @@ if active_panel == "Dashboard":
                             f'<span class="ir-no">{int(_r["No."])}</span>'
                             f'<span class="ir-from"><span class="ir-av">{html.escape((_name[:1] or "?").upper())}</span>'
                             f'<span class="ir-fromtxt"><b>{html.escape(_name)}</b><i>{html.escape(_addr)}</i></span></span>'
-                            f'<span class="ir-subj">{html.escape(str(_r["Subject"]))}</span>'
+                            f'<span class="ir-subj">{_tag_for(_r["Subject"])}{html.escape(str(_r["Subject"]))}</span>'
                             f'<span class="ir-date"><b>{html.escape(_d1)}</b><i>{html.escape(_d2)}{" · " + html.escape(_rel) if _rel else ""}</i></span>'
                             f'<span class="ir-go">{"Selected" if _is_sel else "Open"} <em>&rsaquo;</em></span>'
                             '</div>',
