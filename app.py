@@ -2261,57 +2261,94 @@ st.markdown(
        (see .st-key-topnav) -- styled below via the proven, version-proof
        label:has(input:checked) pattern instead of guessing at BaseWeb's
        DOM. */
-    .stDataFrame {border:1px solid #203b57 !important; border-radius:var(--r-md) !important; overflow:hidden !important; box-shadow:var(--shadow-sm) !important;}
+    .stDataFrame {border:1px solid rgba(148,163,184,.18) !important; border-radius:14px !important; overflow:hidden !important; box-shadow:0 14px 34px -18px rgba(91,141,239,.4) !important;}
 
-    /* Polished static table -- used in place of st.dataframe wherever the
-       table is a plain read-only grid (no row-click selection, no
-       column_config widgets). st.dataframe renders those onto a canvas,
-       so it can never pick up the app's own dark theme (font, colors,
-       hover, spacing) no matter what CSS targets it -- it just sits there
-       looking like an unstyled default grid next to everything else that
-       *is* themed. This is real HTML/CSS instead, so it matches. */
+    /* ------------------------------------------------------------------
+       TABLE SYSTEM v3 -- "aurora glass" data tables.
+         * Frame   : dark glass with a gradient hairline edge (blue at the
+                     top-left corner, rose at the bottom-right, quiet in
+                     between) and a soft blue under-glow.
+         * Strip   : a 2px multi-colour aurora line pinned to the top edge
+                     (stays put while the table scrolls under it).
+         * Header  : gradient glass band, small muted caps, and a colour
+                     dot per column (blue / violet / teal / amber / rose).
+         * Rows    : comfortable height, hairline dividers, and on hover a
+                     soft left-to-right colour wash plus a gradient edge
+                     bar on the first cell.
+         * Cells   : status-dot verdict pills, glossy score bars, index
+                     and IP chips. Tabular numerals throughout.
+       All tones are muted (no neon). Colour lives in the data plus these
+       small accents. st.dataframe is canvas-drawn and can't be restyled
+       with CSS, so only its frame is softened above.
+       ------------------------------------------------------------------ */
     .polished-table-wrap {
-        border:1px solid #203b57;
-        border-radius:var(--r-md);
+        position:relative;
+        border:1px solid transparent;
+        border-radius:14px;
         overflow:hidden;
-        box-shadow:var(--shadow-sm);
-        background:linear-gradient(180deg,#0b1524,#091120);
-        margin:6px 0 4px 0;
+        background:linear-gradient(180deg,#0c1320,#090f19) padding-box, linear-gradient(135deg,rgba(91,141,239,.6),rgba(148,163,184,.13) 34%,rgba(148,163,184,.13) 66%,rgba(224,112,140,.5)) border-box !important;
+        background-origin:border-box !important;
+        background-clip:padding-box, border-box !important;
+        box-shadow:0 14px 34px -18px rgba(91,141,239,.4), inset 0 1px 0 rgba(255,255,255,.03);
+        margin:8px 0 8px 0;
     }
     .polished-table-wrap[style*="overflow-y:auto"] {overflow:auto;}
+    .polished-table-wrap::before {
+        content:""; display:block; position:sticky; top:0; z-index:3;
+        height:2px; margin-bottom:-2px; pointer-events:none;
+        background:linear-gradient(90deg,#3b82f6 0%,#8b5cf6 28%,#db2777 55%,#f59e0b 78%,#14b8a6 100%);
+        opacity:.9;
+    }
+    .polished-table-wrap::-webkit-scrollbar {width:8px; height:8px;}
+    .polished-table-wrap::-webkit-scrollbar-thumb {background:rgba(148,163,184,.25); border-radius:8px;}
+    .polished-table-wrap::-webkit-scrollbar-track {background:transparent;}
     table.polished-table {
         width:100%;
-        border-collapse:collapse;
+        border-collapse:separate; border-spacing:0;
         font-family:Inter,"Segoe UI",Arial,sans-serif;
-        font-size:13.5px;
+        font-size:13px; line-height:1.4;
+        font-variant-numeric:tabular-nums;
     }
     table.polished-table thead th {
         position:sticky; top:0; z-index:1;
         text-align:left;
-        padding:11px 16px;
-        background:linear-gradient(180deg,#132a42,#0f2135);
-        color:#9fd6f5;
-        font-size:11.5px;
-        font-weight:750;
-        letter-spacing:.55px;
-        text-transform:uppercase;
-        border-bottom:2px solid rgba(59,130,246,.35);
+        padding:12px 16px 10px;
+        background:linear-gradient(180deg,#131d32,#0e1729);
+        color:#9fb0c6;
+        font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+        border-bottom:1px solid rgba(148,163,184,.2);
         white-space:nowrap;
+        --tc:#5b8def;
     }
+    table.polished-table thead th::before {
+        content:""; display:inline-block; vertical-align:middle; margin:-2px 9px 0 0;
+        width:6px; height:6px; border-radius:50%; background:var(--tc);
+        box-shadow:0 0 0 3px rgba(148,163,184,.14);
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--tc) 24%, transparent);
+    }
+    table.polished-table thead th:nth-child(5n+2) {--tc:#8b7cf6;}
+    table.polished-table thead th:nth-child(5n+3) {--tc:#38b2a3;}
+    table.polished-table thead th:nth-child(5n+4) {--tc:#e0a050;}
+    table.polished-table thead th:nth-child(5n+5) {--tc:#e0708c;}
     table.polished-table tbody td {
-        padding:10px 16px;
-        color:var(--text);
-        border-bottom:1px solid #16283c;
-        vertical-align:top;
+        padding:7px 16px;
+        color:#cbd6e4;
+        border-bottom:1px solid rgba(148,163,184,.08);
+        vertical-align:middle;
     }
     table.polished-table tbody tr:last-child td {border-bottom:none;}
-    table.polished-table tbody tr:nth-child(even) {background:rgba(255,255,255,.014);}
-    table.polished-table tbody tr {transition:background .12s var(--ease);}
-    table.polished-table tbody tr:hover {background:rgba(59,130,246,.10);}
-    table.polished-table tbody td:first-child {color:#cfe3f5; font-weight:600;}
+    table.polished-table tbody tr:nth-child(even) {background:rgba(148,163,184,.02);}
+    table.polished-table tbody tr {transition:background .2s var(--ease);}
+    table.polished-table tbody tr:hover {
+        background:linear-gradient(90deg, rgba(91,141,239,.14), rgba(139,124,246,.07) 45%, rgba(148,163,184,0) 88%);
+    }
+    table.polished-table tbody tr:hover td:first-child {
+        background:linear-gradient(180deg,#5b8def,#8b7cf6) left center / 3px 62% no-repeat;
+    }
+    table.polished-table tbody td:first-child {color:#eaf0f8; font-weight:600;}
     .polished-table-empty {
         padding:16px; text-align:center; color:var(--muted); font-size:13px;
-        border:1px dashed #203b57; border-radius:var(--r-md); background:#0a121f;
+        border:1px dashed rgba(148,163,184,.25); border-radius:14px; background:#0a111b;
     }
     hr {border-color:#20364f !important;}
     .stMarkdown code {background:#07131f !important; color:#9beaff !important;}
@@ -3388,13 +3425,14 @@ st.markdown(
        coloured bar + coloured pill, both keyed off the same severity
        colours the map markers already use, so LOW/MEDIUM/HIGH/CRITICAL
        mean the same colour everywhere in the app. */
-    .email-score-cell {display:flex; align-items:center; gap:10px; min-width:130px;}
-    .email-score-track {flex:1; height:6px; border-radius:4px; background:#121f30; overflow:hidden;}
-    .email-score-fill {height:100%; border-radius:4px; transition:width .3s var(--ease);}
-    .email-score-num {font-variant-numeric:tabular-nums; font-weight:750; font-size:12.5px; min-width:34px; text-align:right; color:#dfeaf4;}
-    .verdict-pill {display:inline-block; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12.5px; color:#9fd6f5; background:rgba(59,130,246,.09); padding:2px 8px; border-radius:6px; white-space:nowrap;}
-    .row-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#7c93ac; font-weight:700;}
+    .email-score-cell {display:flex; align-items:center; gap:11px; min-width:130px;}
+    .email-score-track {flex:1; height:6px; border-radius:6px; background:rgba(148,163,184,.13); box-shadow:inset 0 1px 2px rgba(0,0,0,.45); overflow:hidden;}
+    .email-score-fill {height:100%; border-radius:6px; transition:width .3s var(--ease); filter:saturate(.85); background-image:linear-gradient(90deg, rgba(0,0,0,.22) 0%, rgba(255,255,255,.26) 100%) !important;}
+    .email-score-num {font-variant-numeric:tabular-nums; font-weight:700; font-size:12.5px; min-width:34px; text-align:right; color:#e6edf7;}
+    .verdict-pill {display:inline-flex; align-items:center; gap:7px; padding:2px 10px 2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; filter:saturate(.85);}
+    .verdict-pill::before {content:""; width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(148,163,184,.16); box-shadow:0 0 0 3px color-mix(in srgb, currentColor 24%, transparent);}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#b4c8e6; background:linear-gradient(180deg,rgba(91,141,239,.12),rgba(91,141,239,.05)); border:1px solid rgba(91,141,239,.22); padding:1px 8px; border-radius:7px; white-space:nowrap;}
+    .row-chip {display:inline-block; min-width:26px; text-align:center; font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:11px; color:#9fb0c6; font-weight:700; background:linear-gradient(180deg,rgba(148,163,184,.16),rgba(148,163,184,.06)); border:1px solid rgba(148,163,184,.2); border-radius:7px; padding:2px 8px;}
 
     /* ------------------------------------------------------------------
        DASHBOARD SECTION HEADER -- replaces the bare st.caption("MIDDLE
@@ -3551,7 +3589,7 @@ st.markdown(
     [data-testid="stExpander"] summary:hover {color:#ffffff;}
 
     /* Tables, code, uploader. */
-    .stDataFrame {border:1px solid var(--line-strong) !important;}
+    .stDataFrame {border:1px solid rgba(148,163,184,.18) !important;}
     [data-testid="stCode"], .stCodeBlock {border:1px solid var(--line) !important; border-radius:var(--r-md) !important;}
     .stFileUploader {background:var(--surface-sunken) !important; border:1px dashed rgba(59,130,246,.4) !important; transition:border-color .15s var(--ease), background .15s var(--ease);}
     .stFileUploader:hover {border-color:var(--cyan) !important; background:var(--panel) !important;}
@@ -6010,9 +6048,10 @@ def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_ro
         st_folium(m, width="stretch", height=height, returned_objects=[], key=f"{key_prefix}_all_hops_map")
 
     # ---- details table under the map ----
-    th = ("padding:9px 12px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.9px;"
-          "text-transform:uppercase;color:#8fb4e8;background:rgba(20,36,60,.9);")
-    td = "padding:9px 12px;border-top:1px solid rgba(255,255,255,.07);vertical-align:middle;"
+    th = ("padding:11px 12px 9px;text-align:left;font:700 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.13em;"
+          "text-transform:uppercase;color:#9fb0c6;background:linear-gradient(180deg,#131d32,#0e1729);"
+          "border-bottom:1px solid rgba(148,163,184,.2);")
+    td = "padding:9px 12px;border-top:1px solid rgba(148,163,184,.08);vertical-align:middle;"
     cut = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
     body = ""
     for n in sorted(info):
@@ -6032,8 +6071,9 @@ def _render_all_hops_map(cases, key_prefix, height=560, max_emails=10, source_ro
             f'<td style="{td}">{shared}</td></tr>'
         )
     table = (
-        '<div style="margin-top:10px;border:1px solid rgba(110,170,255,.2);border-radius:12px;overflow:hidden;'
-        'background:rgba(12,22,38,.65);">'
+        '<div style="margin-top:10px;border:1px solid transparent;border-radius:14px;overflow:hidden;'
+        'background:linear-gradient(180deg,#0c1320,#090f19) padding-box, linear-gradient(135deg,rgba(91,141,239,.6),rgba(148,163,184,.13) 34%,rgba(148,163,184,.13) 66%,rgba(224,112,140,.5)) border-box;background-origin:border-box;background-clip:padding-box,border-box;'
+        'box-shadow:0 14px 34px -18px rgba(91,141,239,.4);">'
         '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font:13px/1.35 Inter,Segoe UI,sans-serif;color:#e6eefc;">'
         '<colgroup><col style="width:56px"><col style="width:23%"><col style="width:29%"><col style="width:22%">'
         '<col style="width:64px"><col></colgroup>'
