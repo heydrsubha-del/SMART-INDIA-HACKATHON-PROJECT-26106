@@ -369,6 +369,35 @@ def _message_body_text(raw_bytes):
     except Exception as exc:
         return f"(Could not read the message body: {exc})"
 
+_MAILBOX_TONES = {"emerald": "#2fb68e", "violet": "#8b7cf6", "rose": "#e0708c", "sky": "#38bdf8"}
+
+
+def _mail_box(key, kicker, title, body, height, chips=(), tone="emerald", sub="", widget_key=None, label=None):
+    """Read-only message box styled like the single-email dossier cards and the
+    workflow nav: rounded glass card, multi-colour spine, mono kicker, bold
+    title and one coloured chip per fact. CSS lives under st-key-mailbox_*."""
+    _chip_html = "".join(
+        "<span class='mb-chip' style='--c:{}'>{}</span>".format(html.escape(c), html.escape(t))
+        for t, c in chips
+    )
+    _head = (
+        "<div class='mb-head'><div class='mb-left'>"
+        "<div class='mb-kicker'><i></i>{k}</div>"
+        "<div class='mb-title'>{t}</div>{s}</div>"
+        "<div class='mb-chips'>{c}</div></div>"
+    ).format(
+        k=html.escape(kicker), t=html.escape(title),
+        s=("<div class='mb-sub'>" + html.escape(sub) + "</div>") if sub else "",
+        c=_chip_html,
+    )
+    with st.container(key="mailbox_{}_{}".format(tone, key)):
+        st.markdown(_head, unsafe_allow_html=True)
+        st.text_area(
+            label or title, value=body, height=height, disabled=True,
+            label_visibility="collapsed", key=widget_key or ("mb_" + str(key)),
+        )
+
+
 
 def _start_prefetch(cfg, uids):
     """Fetch the newest message bodies in the background over one session."""
@@ -5459,6 +5488,92 @@ st.markdown(
     .inbox-row .ir-tag {display:inline-block; margin-right:9px; padding:2px 8px; border-radius:6px; vertical-align:1px; font:700 9.5px/1.4 ui-monospace,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--t); background:rgba(148,163,184,.1); background:color-mix(in srgb,var(--t) 14%,transparent); border:1px solid color-mix(in srgb,var(--t) 40%,transparent);}
     .inbox-row .ir-av {border-radius:12px; box-shadow:0 8px 18px -8px var(--tone), inset 0 1px 0 rgba(255,255,255,.25);}
     .inbox-row.is-sel .ir-subj {color:#fff;}
+
+    /* ==================================================================
+       MAIL BOX v3 -- every message / body box (Live IMAP body, Deep Dive,
+       Dossier, Body as analysed) now reads like the single-email dossier
+       cards, wearing the workflow-nav palette: rounded glass card, a
+       blue>violet>green>amber>red spine, mono kicker, bold title and one
+       coloured chip per fact. Tone colour (--box) drives the kicker, glow
+       and scrollbar. Built by _mail_box(); delete this block to revert.
+       ================================================================== */
+    .stApp [class*="st-key-mailbox_"] {
+        --box:#2fb68e; position:relative; overflow:hidden; gap:0 !important;
+        margin:6px 0 16px 0; padding:0 !important;
+        border:1px solid #243046; border-radius:16px;
+        background:
+            radial-gradient(50% 140% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
+            radial-gradient(40% 140% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
+            linear-gradient(180deg,#101826,#0a1019);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -18px rgba(0,0,0,.8);
+    }
+    .stApp [class*="st-key-mailbox_emerald_"] {--box:#2fb68e;}
+    .stApp [class*="st-key-mailbox_violet_"] {--box:#8b7cf6;}
+    .stApp [class*="st-key-mailbox_rose_"] {--box:#e0708c;}
+    .stApp [class*="st-key-mailbox_sky_"] {--box:#38bdf8;}
+    /* multi-colour spine, same stops as the nav strip */
+    .stApp [class*="st-key-mailbox_"]::before {
+        content:""; position:absolute; left:0; top:0; bottom:0; width:4px; z-index:3; pointer-events:none;
+        background:linear-gradient(180deg,#4c8dff 0%,#8b7cff 28%,#34d399 55%,#d49a66 80%,#e0634a 100%);
+        box-shadow:0 0 14px -2px rgba(139,124,255,.55);
+    }
+    .stApp [class*="st-key-mailbox_"] [data-testid="stElementContainer"],
+    .stApp [class*="st-key-mailbox_"] .stMarkdown {margin:0 !important; width:100% !important;}
+
+    .mb-head {
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 18px;
+        padding:16px 20px 14px 26px; position:relative;
+        border-bottom:1px solid rgba(148,163,184,.13);
+        background:linear-gradient(90deg, color-mix(in srgb,var(--box) 11%, transparent), transparent 62%);
+    }
+    .mb-head::after {
+        content:""; position:absolute; left:26px; bottom:-1px; width:72px; height:2px; border-radius:2px;
+        background:var(--box); box-shadow:0 0 12px var(--box);
+    }
+    .mb-left {min-width:0;}
+    .mb-kicker {
+        display:flex; align-items:center; gap:9px; font:700 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace;
+        letter-spacing:.2em; text-transform:uppercase; color:var(--box);
+    }
+    .mb-kicker i {display:inline-block; width:22px; height:1px; background:var(--box); opacity:.7;}
+    .mb-title {font:750 21px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff; margin-top:8px;}
+    .mb-sub {font:500 12.5px/1.3 Inter,"Segoe UI",sans-serif; color:#8b98ab; margin-top:4px;}
+    .mb-chips {display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+    .mb-chip {
+        display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px;
+        font:700 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.1em; text-transform:uppercase;
+        color:var(--c); background:color-mix(in srgb,var(--c) 11%, transparent);
+        border:1px solid color-mix(in srgb,var(--c) 40%, transparent);
+    }
+    .mb-chip::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--c); box-shadow:0 0 8px var(--c);}
+
+    /* the text area inside the card: no box of its own */
+    .stApp [class*="st-key-mailbox_"] .stTextArea {margin:0 !important;}
+    .stApp [class*="st-key-mailbox_"] [data-testid="stTextAreaRootElement"],
+    .stApp [class*="st-key-mailbox_"] .stTextArea [data-baseweb="textarea"],
+    .stApp [class*="st-key-mailbox_"] .stTextArea [data-baseweb="base-input"] {
+        background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;
+    }
+    .stApp [class*="st-key-mailbox_"] .stTextArea textarea,
+    .stApp [class*="st-key-mailbox_"] .stTextArea textarea:disabled {
+        padding:18px 22px 20px 28px !important; font-size:13px !important; line-height:1.7 !important;
+        color:#d6dce6 !important; -webkit-text-fill-color:#d6dce6 !important; background:transparent !important;
+        scrollbar-color:var(--box) transparent;
+    }
+    .stApp [class*="st-key-mailbox_"] .stTextArea textarea::-webkit-scrollbar-thumb {background:color-mix(in srgb,var(--box) 55%, transparent); background-clip:padding-box;}
+
+    /* hop lines and plain text boxes follow the same card language */
+    .stApp [data-testid="stCode"], .stApp .stCodeBlock, .stApp [data-testid="stText"], .stApp .stText {
+        position:relative; overflow:hidden; border:1px solid #243046 !important; border-left-width:1px !important;
+        border-radius:12px !important;
+    }
+    .stApp [data-testid="stCode"]::before, .stApp .stCodeBlock::before, .stApp [data-testid="stText"]::before, .stApp .stText::before {
+        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; z-index:2; pointer-events:none;
+        background:linear-gradient(180deg,#4c8dff,#8b7cff 30%,#34d399 55%,#d49a66 80%,#e0634a);
+    }
+    @media (max-width:640px) {
+        .mb-head {padding:14px 14px 12px 20px;} .mb-title {font-size:18px;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -8160,10 +8275,13 @@ if active_panel == "Dashboard":
 
             if already_loaded:
                 _raw_now = bytes(st.session_state["live_selected_raw"])
-                st.text_area(
-                    f"Message body · Email #{_sel_idx + 1} · {len(_raw_now):,} bytes",
-                    value=_message_body_text(_raw_now), height=320, disabled=True,
-                    key=f"imap_body_{selected_uid}",
+                _mail_box(
+                    key=str(selected_uid), kicker="Message body", title=f"Email #{_sel_idx + 1}",
+                    body=_message_body_text(_raw_now), height=320, tone="emerald",
+                    sub="Decoded text of the selected message",
+                    chips=[(f"{len(_raw_now):,} bytes", "#d9a35f"), ("Read-only", "#8b7cf6")],
+                    widget_key=f"imap_body_{selected_uid}",
+                    label=f"Message body · Email #{_sel_idx + 1} · {len(_raw_now):,} bytes",
                 )
 
             # A completed "Analyze 10 Recent Emails" batch pipeline run (see
@@ -8499,7 +8617,13 @@ if active_panel == "Dashboard":
                     dd_p = dd_res.get("parsed", {})
 
                     st.markdown("##### Extracted Message Content")
-                    st.text_area("Deep Dive Content", dd_p.get('body_text', 'No body text extracted.')[:4000], height=180, disabled=True, label_visibility="collapsed", key=f"dd_body_{selected_row}")
+                    _dd_txt = dd_p.get('body_text', 'No body text extracted.')[:4000]
+                    _mail_box(
+                        key=str(selected_row), kicker="Extracted content", title="Message text",
+                        body=_dd_txt, height=180, tone="violet",
+                        chips=[(f"{len(_dd_txt):,} chars", "#d9a35f"), ("Read-only", "#38bdf8")],
+                        widget_key=f"dd_body_{selected_row}", label="Deep Dive Content",
+                    )
 
                 with col_dock:
                     with st.container(border=True, key="bulk_command_dock"):
@@ -9409,7 +9533,13 @@ if active_panel == "Classification":
         c1, c2 = st.columns([1, 1])
         c1.text_input("From", parsed.get("from_addr", ""), disabled=True)
         c2.text_input("Subject", parsed.get("subject", ""), disabled=True)
-        st.text_area("Body as analysed", parsed.get("body_text", "")[:4000], height=240, disabled=True, key="analysed_body")
+        _an_txt = parsed.get("body_text", "")[:4000]
+        _mail_box(
+            key="analysed", kicker="Body as analysed", title="Text the model read",
+            body=_an_txt, height=240, tone="rose",
+            chips=[(f"{len(_an_txt):,} chars", "#d9a35f"), ("Read-only", "#8b7cf6")],
+            widget_key="analysed_body", label="Body as analysed",
+        )
 
     panel(_classification, "Classification")
 
@@ -10757,7 +10887,13 @@ if active_panel == "Forensic Report":
             }]))
 
             _num_head(2, "Extracted Message Content", "#38bdf8", "Decoded body text, first 4,000 characters")
-            st.text_area("Dossier Message Content", sel_p.get("body_text", "No body text extracted.")[:4000], height=180, disabled=True, label_visibility="collapsed", key=f"dossier_body_{sel_pos}")
+            _ds_txt = sel_p.get("body_text", "No body text extracted.")[:4000]
+            _mail_box(
+                key=str(sel_pos), kicker="Message content", title="Decoded body",
+                body=_ds_txt, height=180, tone="sky",
+                chips=[(f"{len(_ds_txt):,} chars", "#d9a35f"), ("Read-only", "#8b7cf6")],
+                widget_key=f"dossier_body_{sel_pos}", label="Dossier Message Content",
+            )
 
             _num_head(3, "Authentication & Header Intelligence", "#34d399", "SPF, DKIM, DMARC and header anomalies")
             _render_polished_table(tone="#34d399", df=pd.DataFrame([{
