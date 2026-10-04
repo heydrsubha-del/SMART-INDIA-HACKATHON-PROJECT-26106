@@ -5536,6 +5536,120 @@ st.markdown(
     @media (max-width:640px) {
         .stApp .mb-head {padding:12px 14px 11px 18px;} .stApp .mb-title {font-size:16px;}
     }
+
+    /* ==================================================================
+       SURFACE v5 -- same calm card language as the message viewers, applied
+       to: Dashboard "Origin & Correlation" (map + graph cards), the right
+       Threat Summary dock, the Origin & Route stat boxes / infra card and
+       every section header (Origin & Route, Correlation, ...). One accent
+       per card, neutral chips, no glow / gradient washes. Delete this block
+       to revert.
+       ================================================================== */
+    /* --- shared header strip + body (panel-card-head / body) --- */
+    .stApp .panel-card-head {
+        display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+        padding:11px 16px 11px 20px !important; background:#121923 !important;
+        border:1px solid #232d3b !important; border-radius:10px 10px 0 0 !important;
+        color:var(--tone) !important; box-shadow:none !important;
+        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase;
+    }
+    .stApp .panel-card-head::before {top:0 !important; bottom:0 !important; width:3px !important; border-radius:10px 0 0 0 !important; background:var(--tone) !important;}
+    .stApp .panel-card-head > :last-child:not(:first-child) {
+        padding:5px 10px; border-radius:6px; background:#18202c; border:1px solid #2a3546;
+        font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.04em !important;
+        color:#b4bfce !important; text-transform:none;
+    }
+    .stApp .panel-card-body {
+        padding:14px 16px 15px 20px !important; background:#0e141c !important; color:#cfd6e1;
+        border:1px solid #232d3b !important; border-top:0 !important; border-radius:0 0 10px 10px !important; box-shadow:none !important;
+    }
+    .stApp .panel-card-body::before {top:0 !important; bottom:0 !important; width:3px !important; border-radius:0 0 0 10px !important; background:var(--tone) !important;}
+    .stApp .kv {display:flex; flex-direction:column;}
+    .stApp .kv-row {display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:7px 0; border-bottom:1px solid #1b2431; font-size:12.5px; line-height:1.4;}
+    .stApp .kv-row:last-child {border-bottom:0; padding-bottom:0;} .stApp .kv-row:first-child {padding-top:0;}
+    .stApp .kv-row span {color:#8793a5; flex:0 0 auto; font-size:11.5px;}
+    .stApp .kv-row b {color:#e6ebf2; font-weight:600; text-align:right; min-width:0; overflow-wrap:anywhere;}
+
+    /* --- Dashboard: Origin & Correlation cards --- */
+    .stApp .st-key-dash_map_card, .stApp .st-key-dash_graph_card {
+        --ac:#2fb68e; position:relative; overflow:hidden; margin:0 0 16px 0;
+        padding:16px 20px 18px 23px !important; background:#0e141c !important;
+        border:1px solid #232d3b !important; border-radius:12px !important; box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important;
+    }
+    .stApp .st-key-dash_graph_card {--ac:#8b7cf6;}
+    .stApp .st-key-dash_map_card::before, .stApp .st-key-dash_graph_card::before {
+        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac); z-index:3; pointer-events:none;
+    }
+    .stApp .st-key-dash_map_card .panel-card-head, .stApp .st-key-dash_graph_card .panel-card-head {
+        --tone:var(--ac); margin:-16px -20px 16px -23px !important; border-width:0 0 1px 0 !important; border-radius:0 !important;
+        padding:14px 20px 13px 23px !important;
+    }
+    .stApp .st-key-dash_map_card .panel-card-head::before, .stApp .st-key-dash_graph_card .panel-card-head::before {display:none !important;}
+    .stApp .st-key-dash_map_card iframe {border-radius:8px; border:1px solid #232d3b;}
+    .stApp .st-key-dash_map_card [data-testid="stMarkdownContainer"], .stApp .st-key-dash_graph_card [data-testid="stMarkdownContainer"] {overflow:visible !important;}
+
+    /* --- Right dock: Threat Summary --- */
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock {
+        --ac:#38bdf8; overflow:hidden; background:#0c121a !important;
+        border:1px solid #232d3b !important; border-radius:12px !important;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; padding:20px 16px 22px 20px !important;
+    }
+    .stApp .st-key-right_summary_pane::before, .stApp .st-key-bulk_command_dock::before {
+        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac); z-index:3; pointer-events:none;
+    }
+    .stApp .rd-head {padding:0 0 4px 0;}
+    .stApp .rd-kicker, .stApp .right-dock-title {
+        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.16em !important;
+        text-transform:uppercase; color:var(--ac) !important;
+    }
+    .stApp .rd-title {display:flex; align-items:baseline; gap:12px; margin-top:7px; font:750 22px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
+    .stApp .rd-score {font:600 11px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.04em; color:#b4bfce; padding:5px 9px; border-radius:6px; background:#18202c; border:1px solid #2a3546;}
+    .stApp .st-key-toggle_right_summary_open button {
+        background:#121923 !important; border:1px solid #232d3b !important; color:#8793a5 !important; border-radius:8px !important; box-shadow:none !important;
+    }
+    .stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--ac) !important; color:#fff !important;}
+    .stApp .st-key-right_dock_reopen button {background:#121923 !important; border:1px solid #232d3b !important; border-right:0 !important; color:#cfd6e1 !important; box-shadow:-6px 0 18px rgba(0,0,0,.35) !important;}
+    .stApp .st-key-right_dock_reopen button:hover {color:#fff !important; border-color:#38bdf8 !important;}
+    .stApp .st-key-right_summary_pane .panel-card-head, .stApp .st-key-bulk_command_dock .panel-card-head {margin-top:14px;}
+    .stApp .st-key-right_dock_metrics_body, .stApp .st-key-dd_dock_metrics_body {
+        --tone:#38bdf8; background:#0e141c !important; border:1px solid #232d3b !important; border-top:0 !important;
+        border-radius:0 0 10px 10px !important; padding:14px 12px 2px 18px !important; box-shadow:none !important;
+    }
+    .stApp .st-key-right_dock_metrics_body::before, .stApp .st-key-dd_dock_metrics_body::before {top:0 !important; bottom:0 !important; border-radius:0 0 0 10px !important; background:#38bdf8 !important;}
+    .stApp .st-key-right_summary_pane div[data-testid="stMetric"], .stApp .st-key-bulk_command_dock div[data-testid="stMetric"] {
+        background:#121923 !important; border:1px solid #232d3b !important; border-radius:8px !important; box-shadow:none !important; padding:11px 12px !important;
+    }
+    .stApp .st-key-right_summary_pane div[data-testid="stMetric"]::before, .stApp .st-key-bulk_command_dock div[data-testid="stMetric"]::before {display:none !important;}
+    .stApp .st-key-right_summary_pane div[data-testid="stMetricLabel"] p::before, .stApp .st-key-bulk_command_dock div[data-testid="stMetricLabel"] p::before {display:none;}
+    .stApp .threattype-row {gap:12px; margin:11px 0; color:#b4bfce;}
+    .stApp .threattype-row .bar-track {height:6px; background:#18202c;}
+    .stApp .threattype-row .bar-fill {background:#d9a35f !important;}
+    .stApp .threattype-row .pct {font:600 11.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; color:#e6ebf2; min-width:34px; text-align:right;}
+
+    /* --- Origin & Route: stat boxes + infrastructure card --- */
+    .stApp .st-key-geo_vpn_box, .stApp .st-key-geo_trust_box, .stApp .st-key-geo_tor_box {
+        --ac:#8b7cf6; position:relative; overflow:hidden; background:#0e141c !important;
+        border:1px solid #232d3b !important; border-radius:10px !important; padding:13px 16px 13px 20px !important; box-shadow:none !important;
+    }
+    .stApp .st-key-geo_trust_box {--ac:#2fb68e;} .stApp .st-key-geo_tor_box {--ac:#d9a35f;}
+    .stApp .st-key-geo_vpn_box::before, .stApp .st-key-geo_trust_box::before, .stApp .st-key-geo_tor_box::before {
+        content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ac);
+    }
+    .stApp .st-key-geo_vpn_box [data-testid="stCaptionContainer"], .stApp .st-key-geo_trust_box [data-testid="stCaptionContainer"], .stApp .st-key-geo_tor_box [data-testid="stCaptionContainer"] {
+        font:600 10.5px/1.2 ui-monospace,'JetBrains Mono',Consolas,monospace !important; letter-spacing:.14em; text-transform:uppercase; color:var(--ac) !important;
+    }
+    .stApp .st-key-bulk_infra_scan {
+        --tone:#22d3ee; background:#0e141c !important; border:1px solid #232d3b !important; border-radius:12px !important;
+        box-shadow:0 8px 24px -16px rgba(0,0,0,.7) !important; overflow:hidden;
+    }
+    .stApp .st-key-bulk_infra_scan:hover {border-color:#2c3a4d !important; background:#0e141c !important;}
+    .stApp .st-key-bulk_infra_scan::before {top:0 !important; bottom:0 !important; border-radius:0 !important; background:var(--tone) !important;}
+
+    /* --- section headers (Origin & Route, Correlation, ...) --- */
+    .stApp .sec-head {margin:28px 0 14px 0 !important; padding:0 0 10px 14px !important; border-bottom:1px solid #232d3b !important;}
+    .stApp .sec-head::before {top:1px !important; bottom:11px !important; width:3px !important; border-radius:2px !important; background:var(--tone) !important;}
+    .stApp .sec-head .sh-title {font:650 16px/1.3 Inter,"Segoe UI",sans-serif; color:#f1f5fa;}
+    .stApp .sec-head .sh-sub {color:#8793a5;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -8873,7 +8987,14 @@ if active_panel == "Dashboard":
                 with st.container(border=True, key="right_summary_pane"):
                     _dock_h_l, _dock_h_r = st.columns([4.2, 1])
                     with _dock_h_l:
-                        st.markdown('<div class="right-dock-title">THREAT SUMMARY</div>', unsafe_allow_html=True)
+                        _rd_lvl = str(result.get("level", "UNKNOWN")).upper()
+                        _rd_col = _LEVEL_MARKER_COLORS.get(_rd_lvl, "#8b96a5")
+                        st.markdown(
+                            '<div class="rd-head"><div class="rd-kicker">Threat summary</div>'
+                            '<div class="rd-title"><span style="color:' + _rd_col + ';">' + html.escape(_rd_lvl) + '</span>'
+                            '<span class="rd-score">' + f"{float(result.get('score', 0)):.1f}" + ' / 100</span></div></div>',
+                            unsafe_allow_html=True,
+                        )
                     with _dock_h_r:
                         if st.button(
                             "✕",
@@ -8901,17 +9022,23 @@ if active_panel == "Dashboard":
                         rc4.metric("Anomalies", anomaly_count)
 
                     st.markdown('<div class="panel-card-head panel-card-head-violet" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
+                    _inv_rows = [
+                        ("From", sel_p.get("from_addr", "Unknown")),
+                        ("Subject", sel_p.get("subject", "No Subject")),
+                        ("Date", sel_p.get("date", "Unknown")),
+                        ("Origin IP", origin.get("ip", "Unknown")),
+                        ("Infrastructure", origin.get("infra_label", "Unknown")),
+                        ("Attachments", len(sel_p.get("attachments", []) or [])),
+                        ("Links", len((result.get("iocs", {}) or {}).get("urls", []) or [])),
+                        ("Verdict", str(result.get("level", "UNKNOWN")).upper()),
+                    ]
                     st.markdown(
-                        f"""<div class="panel-card-body panel-card-body-violet">
-                            <b>From:</b> {sel_p.get('from_addr','Unknown')}<br>
-                            <b>Subject:</b> {sel_p.get('subject','No Subject')}<br>
-                            <b>Date:</b> {sel_p.get('date','Unknown')}<br>
-                            <b>Origin IP:</b> {origin.get('ip','Unknown')}<br>
-                            <b>Infrastructure:</b> {origin.get('infra_label','Unknown')}<br>
-                            <b>Attachments:</b> {len(sel_p.get('attachments', []) or [])}<br>
-                            <b>Links:</b> {len((result.get('iocs',{}) or {}).get('urls', []) or [])}<br>
-                            <b>Verdict:</b> {str(result.get('level','UNKNOWN')).upper()}
-                        </div>""",
+                        '<div class="panel-card-body panel-card-body-violet"><div class="kv">'
+                        + "".join(
+                            '<div class="kv-row"><span>{}</span><b>{}</b></div>'.format(html.escape(str(k)), html.escape(str(v)))
+                            for k, v in _inv_rows
+                        )
+                        + "</div></div>",
                         unsafe_allow_html=True,
                     )
 
@@ -9649,7 +9776,7 @@ if active_panel == "Origin & Route":
         # row fixes that.
         vpn_box, trust_box, tor_box = st.columns(3)
         with vpn_box:
-            with st.container(border=True):
+            with st.container(border=True, key="geo_vpn_box"):
                 st.caption("VPN Masking")
                 # Direct answer to "is VPN/proxy/Tor masking present on this
                 # message at all" -- independent of whether that's normal
@@ -9660,11 +9787,11 @@ if active_panel == "Origin & Route":
                 else:
                     st.markdown(" **Not detected**")
         with trust_box:
-            with st.container(border=True):
+            with st.container(border=True, key="geo_trust_box"):
                 st.caption("Network Trust")
                 st.markdown(f"**{_nt['badge']}**")
         with tor_box:
-            with st.container(border=True):
+            with st.container(border=True, key="geo_tor_box"):
                 st.caption("Tor Exit Confirmation")
                 # Separate signal from VPN Masking above: that box is the
                 # `infra` keyword heuristic (ISP/org string guess). This one
