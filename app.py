@@ -3940,6 +3940,76 @@ st.markdown(
     }
     [data-testid="stExpander"] summary {font-weight:650; letter-spacing:-.005em;}
 
+    /* ==================================================================
+       ACQUISITION MODE SWITCH v4
+       Two channel tiles, laid out vertically: a mono channel tag and a
+       real on/off switch on top, title + one-line description in the
+       middle, capability chips along the bottom, and a large ghost icon
+       as a watermark. Active = tone-filled with a full-width top bar and
+       the switch turned on; standby = flat, quiet, switch off. Replaces
+       the old icon-tile + ring card (.mode-card). The invisible button
+       (.st-key-acq_pick_*) is stacked on the tile, sized from --acq-h.
+       ================================================================== */
+    .mode-select-heading {
+        font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important;
+        text-transform:uppercase; color:var(--muted) !important; margin:6px 0 12px 2px !important;
+    }
+    :root {--acq-h:158px;}
+    .acq2 {
+        --tone:var(--cyan);
+        position:relative; overflow:hidden; box-sizing:border-box; height:var(--acq-h);
+        display:flex; flex-direction:column; padding:16px 20px 16px 20px;
+        border:1px solid var(--line-strong); border-radius:14px;
+        background:linear-gradient(180deg, var(--panel), var(--panel-3));
+        transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease);
+    }
+    .acq2-blue {--tone:#4c8dff;}
+    .acq2-copper {--tone:#d49a66;}
+    .acq2::before {                      /* top bar: hairline when idle, solid when active */
+        content:""; position:absolute; left:0; right:0; top:0; height:2px;
+        background:var(--line-strong); transition:background .18s var(--ease), height .18s var(--ease);
+    }
+    .acq2:hover {border-color:color-mix(in srgb, var(--tone) 45%, var(--line-strong));}
+    .acq2-top {position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+    .acq2-tag {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);}
+    .acq2-state {display:inline-flex; align-items:center; gap:9px;}
+    .acq2-state-txt {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+    .acq2-sw {position:relative; width:32px; height:18px; border-radius:999px; background:#262f3c; border:1px solid var(--line-strong); transition:background .18s var(--ease), border-color .18s var(--ease);}
+    .acq2-sw i {position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#76818f; transition:left .18s var(--ease), background .18s var(--ease);}
+    .acq2-title {position:relative; z-index:1; margin-top:14px; font:750 18px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#c9d2de;}
+    .acq2-sub {position:relative; z-index:1; margin-top:4px; max-width:46ch; font-size:12.5px; line-height:1.5; color:#7d8896;}
+    .acq2-chips {position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:6px; margin-top:auto;}
+    .acq2-chip {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px; border:1px solid var(--line-strong); color:#8b96a5; background:rgba(255,255,255,.02);}
+    .acq2-ghost {position:absolute; right:-6px; bottom:-14px; width:104px; height:104px; color:var(--tone); opacity:.07; pointer-events:none; transition:opacity .18s var(--ease);}
+    .acq2-ghost svg {width:100%; height:100%;}
+
+    .acq2-on {
+        border-color:color-mix(in srgb, var(--tone) 60%, var(--line-strong));
+        background:
+            radial-gradient(90% 120% at 100% 100%, color-mix(in srgb, var(--tone) 17%, transparent) 0%, transparent 62%),
+            linear-gradient(180deg, var(--panel-2), var(--panel));
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 12%, transparent);
+    }
+    .acq2-on::before {height:3px; background:var(--tone);}
+    .acq2-on .acq2-tag, .acq2-on .acq2-state-txt {color:var(--tone);}
+    .acq2-on .acq2-sw {background:color-mix(in srgb, var(--tone) 35%, #12171f); border-color:color-mix(in srgb, var(--tone) 70%, transparent);}
+    .acq2-on .acq2-sw i {left:16px; background:var(--tone);}
+    .acq2-on .acq2-title {color:#ffffff;}
+    .acq2-on .acq2-sub {color:#a3aebb;}
+    .acq2-on .acq2-chip {color:var(--tone); border-color:color-mix(in srgb, var(--tone) 40%, transparent); background:color-mix(in srgb, var(--tone) 8%, transparent);}
+    .acq2-on .acq2-ghost {opacity:.13;}
+
+    /* click-catcher: exactly covers the tile (tile height + the 1rem flow gap) */
+    .st-key-acq_pick_live, .st-key-acq_pick_upload {
+        margin-top:calc(-1 * (var(--acq-h) + 1rem)) !important; position:relative !important; z-index:5 !important;
+    }
+    .st-key-acq_pick_live button, .st-key-acq_pick_upload button {height:var(--acq-h) !important;}
+    @media (max-width: 900px) {
+        .st-key-acq_pick_live, .st-key-acq_pick_upload {margin-top:calc(-1 * (var(--acq-h) + 1rem)) !important;}
+        .st-key-acq_pick_live button, .st-key-acq_pick_upload button {height:var(--acq-h) !important;}
+    }
+    @media (prefers-reduced-motion: reduce) {.acq2, .acq2::before, .acq2-sw, .acq2-sw i {transition:none !important;}}
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
@@ -5405,15 +5475,28 @@ if active_panel == "Dashboard":
 
     st.markdown('<div class="mode-select-heading">Select threat acquisition mode</div>', unsafe_allow_html=True)
     _mc_live, _mc_upload = st.columns(2)
+    BOLT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>'
+    UPLOAD_SVG = '<svg viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg>'
+
+    def _acq_card(tone, tag, title, sub, chips, svg, active):
+        _chips = "".join(f'<span class="acq2-chip">{c}</span>' for c in chips)
+        return (
+            f'<div class="acq2 acq2-{tone} {"acq2-on" if active else ""}">'
+            f'<div class="acq2-top"><span class="acq2-tag">{tag}</span>'
+            f'<span class="acq2-state"><span class="acq2-state-txt">{"Active" if active else "Standby"}</span>'
+            f'<span class="acq2-sw"><i></i></span></span></div>'
+            f'<div class="acq2-title">{title}</div>'
+            f'<div class="acq2-sub">{sub}</div>'
+            f'<div class="acq2-chips">{_chips}</div>'
+            f'<div class="acq2-ghost">{svg}</div>'
+            f'</div>'
+        )
+
     with _mc_live:
         st.markdown(
-            f"""<div class="mode-card mode-card-live {'mode-card-active' if input_mode == _LIVE_OPT else ''}">
-                <div class="mode-card-icon mode-card-icon-blue"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
-                <div>
-                    <div class="mode-card-title">Live IMAP mailbox interceptor</div>
-                    <div class="mode-card-sub">Read-only, connects directly to the mailbox</div>
-                </div>
-            </div>""",
+            _acq_card("blue", "Channel A &middot; Live", "Live IMAP mailbox interceptor",
+                      "Connects straight to the mailbox and pulls messages in real time.",
+                      ["Read-only", "IMAP over SSL"], BOLT_SVG, input_mode == _LIVE_OPT),
             unsafe_allow_html=True,
         )
         if st.button("Use live IMAP mailbox interceptor", key="acq_pick_live", use_container_width=True):
@@ -5421,13 +5504,9 @@ if active_panel == "Dashboard":
             st.rerun()
     with _mc_upload:
         st.markdown(
-            f"""<div class="mode-card mode-card-upload {'mode-card-active' if input_mode == _UPLOAD_OPT else ''}">
-                <div class="mode-card-icon mode-card-icon-neutral"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg></div>
-                <div>
-                    <div class="mode-card-title">Evidence file upload</div>
-                    <div class="mode-card-sub">.eml, .txt, .csv batch import</div>
-                </div>
-            </div>""",
+            _acq_card("copper", "Channel B &middot; Batch", "Evidence file upload",
+                      "Analyse saved evidence offline, one message or a whole export.",
+                      [".eml", ".txt", ".csv"], UPLOAD_SVG, input_mode == _UPLOAD_OPT),
             unsafe_allow_html=True,
         )
         if st.button("Use evidence file upload", key="acq_pick_upload", use_container_width=True):
