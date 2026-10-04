@@ -1008,8 +1008,30 @@ _OAUTH_RELAY_GATE_HTML = """
     function finish() {
         if (done) return; done = true;
         say('Signed in. Returning to the app...');
+        // Plan A: a plain close(). Works as long as this popup's session
+        // history is still exactly 1 entry long -- but Google's own login
+        // pages add several entries as you sign in, so by the time we get
+        // here Chrome/Firefox usually refuse this silently (an anti-abuse
+        // rule: script may only auto-close a window it opened AND that
+        // never navigated elsewhere).
         try { pw.top.close(); } catch (e) {}
-        setTimeout(function () { say('Signed in. You can close this window.'); }, 700);
+        try { pw.close(); } catch (e) {}
+        setTimeout(function () {
+            if (pw.closed) return;
+            // Plan B: the standard workaround for that exact rule --
+            // re-opening the window "onto itself" resets its session
+            // history to a single entry, which satisfies the same check
+            // and lets close() succeed immediately after.
+            try { pw.open('', '_self'); } catch (e) {}
+            try { pw.top.close(); } catch (e) {}
+            try { pw.close(); } catch (e) {}
+            setTimeout(function () {
+                if (pw.closed) return;
+                // Neither worked (some browsers block even Plan B) -- the
+                // only thing left is asking for one manual click.
+                say('Signed in. You can close this window.');
+            }, 250);
+        }, 300);
     }
     if (!framed()) { local(); return; }
     try { ch = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
