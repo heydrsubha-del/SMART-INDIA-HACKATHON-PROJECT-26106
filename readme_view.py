@@ -7,7 +7,7 @@ GitHub-only features are converted for Streamlit:
   * ```mermaid blocks           -> real diagram via Mermaid.js
   * > [!NOTE] / [!TIP] / ...    -> st.info / st.success / st.warning / st.error
   * <details><summary>          -> st.expander
-  * heading anchors             -> GitHub-compatible ids, so "#-installation" links work
+  * heading anchors             -> GitHub-compatible ids, so "#-installation links work
   * animated banners / images   -> scaled to fit the page width (no horizontal overflow)
 
 Usage:
@@ -47,17 +47,20 @@ _ALERTS = {
     "CAUTION":   ("error",   "🛑", "Caution"),
 }
 
-# Make capsule-render banners taller in Streamlit only (README on GitHub is untouched).
-CAPSULE_HEIGHT_SCALE = 1.5   # try 1.3 to 2.0
+# Banner height multiplier applied to the capsule-render URL (Streamlit only,
+# the README on GitHub is untouched). 1.0 = the banner's natural proportions.
+# Raise it (1.2 - 1.5) for a taller banner.
+CAPSULE_HEIGHT_SCALE = 1.0
 _CAPSULE_RE = re.compile(
     r"(https://capsule-render\.vercel\.app/api\?[^\"'\s)]*?)height=(\d+)"
 )
 
-# The banner now stretches to the full page width. Because the image keeps its
-# aspect ratio it also grows taller on wide screens, so cap its height here.
-# If the banner is taller than this, it is cropped slightly (top edge) instead
-# of getting huge. Set to 0 to disable the cap.
-BANNER_MAX_HEIGHT_PX = 380
+# The banner fills the page width. Its on-screen height follows the screen
+# width but stays between a minimum and a maximum. If the natural image is
+# taller than this, it is cropped EQUALLY from top and bottom, so the title
+# (which sits in the vertical middle) is never cut off.
+#   clamp(min, preferred, max)
+BANNER_HEIGHT_CSS = "clamp(190px, 22vw, 320px)"
 
 # Injected once at the top of the About page. CSS !important beats any
 # width="..." attribute or inline style coming from the README's HTML.
@@ -75,10 +78,11 @@ _FIT_CSS = """<style>
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
-  height: auto !important;
+  height: __BANNER_HEIGHT__ !important;
+  object-fit: cover !important;
+  object-position: center center !important;
   margin: 0 auto !important;
   box-sizing: border-box;
-  __BANNER_CAP__
 }
 /* Wrappers around the banner must not shrink it */
 .stMarkdown a:has(> img[src*="capsule-render"]),
@@ -125,13 +129,7 @@ iframe[title*="components"] {
 
 
 def _fit_css() -> str:
-    cap = (
-        f"max-height: {int(BANNER_MAX_HEIGHT_PX)}px !important; "
-        "object-fit: cover !important; object-position: center bottom !important;"
-        if BANNER_MAX_HEIGHT_PX and BANNER_MAX_HEIGHT_PX > 0
-        else ""
-    )
-    return _FIT_CSS.replace("__BANNER_CAP__", cap)
+    return _FIT_CSS.replace("__BANNER_HEIGHT__", BANNER_HEIGHT_CSS)
 
 
 def _scale_capsule(text: str) -> str:
