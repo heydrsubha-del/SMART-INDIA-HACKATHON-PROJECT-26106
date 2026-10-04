@@ -4628,6 +4628,157 @@ st.markdown(
 
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
 
+    /* ---- v11 sidebar ------------------------------------------------------
+       Same language as the main panels: graphite glass, thin blue/violet
+       glow, per-section colours, an icon on every item. Hover tints the row
+       in its own colour and nudges it; the active row is a solid tinted key
+       with a coloured edge, a glowing spine and a lit dot. Per-item colour
+       and icon come from _SB_NAV_STYLE (Python, just above the sidebar).
+       Delete this block to go back to the old violet sidebar. ------------- */
+    .stApp [data-testid="stSidebar"] {
+        background:
+            radial-gradient(90% 36% at 0% 0%, rgba(76,141,255,.11), transparent 70%),
+            radial-gradient(80% 32% at 100% 100%, rgba(139,124,255,.08), transparent 70%),
+            linear-gradient(180deg,#0c1322 0%,#080d16 60%,#070b12 100%) !important;
+        border-right:1px solid #1a2538 !important;
+        box-shadow:inset -1px 0 0 rgba(255,255,255,.02), 18px 0 40px -30px rgba(0,0,0,.9) !important;
+        scrollbar-color:#2a3750 transparent;
+    }
+    .stApp [data-testid="stSidebar"] > div {background:transparent !important;}
+
+    /* brand card */
+    .stApp .sidebar-brand-v2 {
+        position:relative; overflow:hidden; margin:6px 0 10px 0; padding:15px 14px 14px 14px;
+        border:1px solid #243046; border-bottom:1px solid #243046; border-radius:16px;
+        background:
+            radial-gradient(90% 130% at 0% 0%, rgba(76,141,255,.16), transparent 62%),
+            linear-gradient(180deg,#101826,#0b111a);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 28px -20px rgba(0,0,0,.9);
+    }
+    .stApp .sidebar-brand-v2::before {
+        content:""; position:absolute; left:0; right:0; top:0; height:2px; opacity:.9;
+        background:linear-gradient(90deg,#4c8dff,#8b7cff 45%,#d49a66 80%,#e0634a);
+    }
+    .stApp .sidebar-brand-v2 .brand-row {gap:12px;}
+    .stApp .sidebar-brand-v2 .brand-mark {
+        width:44px; height:44px; flex:0 0 44px; border-radius:13px; border:1px solid rgba(76,141,255,.5);
+        background:linear-gradient(145deg,#15233b,#0c1524);
+        box-shadow:0 0 0 3px rgba(76,141,255,.10), 0 10px 20px -10px rgba(76,141,255,.8), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .stApp .sidebar-brand-v2 .brand-text .name {
+        font:800 15.5px/1.1 Inter,"Segoe UI",sans-serif; letter-spacing:.14em;
+        background:linear-gradient(180deg,#fff 30%,#a9c3f2); -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent; color:transparent !important;
+    }
+    .stApp .sidebar-brand-v2 .brand-text .role {font:600 9px/1.3 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#7f98b3 !important; margin-top:5px;}
+    .stApp .sidebar-brand-v2 .brand-meta {
+        display:inline-flex; align-items:center; gap:8px; margin-top:13px; padding:6px 11px; border-radius:999px;
+        font:700 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
+        color:#6ee7b7 !important; border:1px solid rgba(52,211,153,.38); background:rgba(52,211,153,.08);
+    }
+    .stApp .sidebar-brand-v2 .brand-dot {width:6px; height:6px; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9);}
+
+    /* section headers */
+    .stApp .sidebar-group-label {--g:#4c8dff; margin:22px 4px 8px 4px !important; gap:10px !important;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important;
+        color:color-mix(in srgb, var(--g) 62%, #8d99ac) !important;}
+    .stApp .sidebar-group-label.sidebar-group-green {--g:#34d399;}
+    .stApp .sidebar-group-label.sidebar-group-violet {--g:#a78bfa;}
+    .stApp .sidebar-group-label.sidebar-group-rose {--g:#fb7185;}
+    .stApp .sidebar-group-label.sidebar-group-slate {--g:#94a3b8;}
+    .stApp .sidebar-group-label .grp-index {
+        color:var(--g) !important; font:700 9.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.04em;
+        padding:4px 6px !important; border-radius:999px !important;
+        border:1px solid color-mix(in srgb, var(--g) 50%, transparent) !important;
+        background:color-mix(in srgb, var(--g) 13%, #0a111b) !important;
+    }
+    .stApp .sidebar-group-label:after {
+        background:linear-gradient(90deg, color-mix(in srgb, var(--g) 50%, transparent), transparent) !important;
+    }
+
+    /* nav rows */
+    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.2rem !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {
+        position:relative !important; min-height:42px !important; padding:9px 12px !important; border-radius:12px !important;
+        border:1px solid transparent !important; background:transparent !important; box-shadow:none !important;
+        color:#a9b6c8 !important; transform:none !important; overflow:hidden !important;
+        transition:background .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {
+        display:flex !important; align-items:center !important; gap:12px; width:100% !important; margin:0 !important;
+        font:600 14px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:.005em !important; color:#a9b6c8 !important;
+        transition:color .2s var(--ease);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {
+        content:""; flex:0 0 18px; width:18px; height:18px; background-color:var(--c,#4c8dff); opacity:.78;
+        -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
+        -webkit-mask-size:contain; mask-size:contain;
+        transition:opacity .2s var(--ease), transform .25s var(--ease), filter .25s var(--ease);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::after {
+        content:"\203A"; margin-left:auto; font-size:20px; line-height:1; color:var(--c,#4c8dff);
+        opacity:0; transform:translateX(-6px); transition:opacity .2s var(--ease), transform .2s var(--ease);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button::before {
+        content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0;
+        background:var(--c,#4c8dff); opacity:0; transform:scaleY(.3);
+        transition:opacity .2s var(--ease), transform .2s var(--ease);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover {
+        background:color-mix(in srgb, var(--c,#4c8dff) 10%, transparent) !important;
+        border-color:color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
+        transform:translateX(2px) !important; padding-left:12px !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p {color:#fff !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p::before {opacity:1; transform:scale(1.14);}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p::after {opacity:.85; transform:none;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover::before {opacity:.55; transform:scaleY(.7);}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:active {transform:scale(.985) !important; transition-duration:.08s !important;}
+
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {
+        background:
+            linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 26%, #0f1724), color-mix(in srgb, var(--c,#4c8dff) 7%, #0b111a)) padding-box,
+            linear-gradient(120deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 14%, transparent) 75%) border-box !important;
+        border:1px solid transparent !important; padding-left:12px !important; transform:none !important;
+        box-shadow:0 12px 22px -16px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.07) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p {color:#fff !important; font-weight:700 !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::before {opacity:1; filter:drop-shadow(0 0 6px var(--c,#4c8dff));}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::after {
+        content:""; width:7px; height:7px; border-radius:50%; background:var(--c,#4c8dff); opacity:1; transform:none; margin-right:2px;
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--c,#4c8dff) 25%, transparent), 0 0 10px var(--c,#4c8dff);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before {
+        opacity:1 !important; transform:scaleY(1) !important; box-shadow:0 0 10px var(--c,#4c8dff);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]:hover {transform:none !important;}
+
+    /* status card */
+    .stApp .sidebar-status-card-v2 {
+        margin-top:22px; padding:15px 15px 12px 17px; border:1px solid #243046; border-radius:16px;
+        background:
+            radial-gradient(80% 120% at 0% 0%, rgba(52,211,153,.10), transparent 62%),
+            linear-gradient(180deg,#101826,#0b111a);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 28px -20px rgba(0,0,0,.9);
+    }
+    .stApp .sidebar-status-card-v2:hover {border-color:#2f4363; box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 16px 30px -18px rgba(0,0,0,.95);}
+    .stApp .sidebar-status-card-v2:before {top:16px; bottom:16px; width:3px; border-radius:0 3px 3px 0; background:linear-gradient(180deg,#34d399,rgba(52,211,153,.15));}
+    .stApp .sidebar-status-card-v2 .ssc-head {gap:9px; margin-bottom:12px;}
+    .stApp .sidebar-status-card-v2 .ssc-pulse {background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.22), 0 0 10px rgba(52,211,153,.9);}
+    .stApp .sidebar-status-card-v2 .ssc-title {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; color:#6ee7b7 !important;}
+    .stApp .sidebar-status-card-v2 .ssc-grid {gap:10px;}
+    .stApp .sidebar-status-card-v2 .ssc-tile {padding:11px 12px; border-radius:12px; border:1px solid rgba(76,141,255,.3); background:rgba(76,141,255,.06);}
+    .stApp .sidebar-status-card-v2 .ssc-tile:hover {border-color:#4c8dff; transform:translateY(-1px);}
+    .stApp .sidebar-status-card-v2 .ssc-tile-value {font:750 23px/1.1 Inter,"Segoe UI",sans-serif; color:#9dbcff !important;}
+    .stApp .sidebar-status-card-v2 .ssc-tile-label {font-size:10px; color:#8d99ac !important; margin-top:4px; letter-spacing:.02em;}
+    .stApp .sidebar-status-card-v2 .ssc-tile-alert {border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.06);}
+    .stApp .sidebar-status-card-v2 .ssc-tile-alert:hover {border-color:#fb7185;}
+    .stApp .sidebar-status-card-v2 .ssc-tile-alert .ssc-tile-value {color:#fda4af !important;}
+    .stApp .sidebar-status-card-v2 .ssc-foot {margin-top:12px; padding-top:9px; border-top:1px solid #1d2a3f; font:500 9.5px/1.2 ui-monospace,Consolas,monospace; letter-spacing:.06em; color:#6f8aa5 !important;}
+    @media (prefers-reduced-motion: reduce) {
+        .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button, .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {transition:none !important;}
+    }
+
     /* ---- v11 mailbox-connected panel ------------------------------------
        One card: identity header (avatar, status, address, host/folder/count
        chips, Live badge), a short note, then the action row. Replaces the old
@@ -4833,6 +4984,47 @@ _has_evidence_loaded = bool(st.session_state.get("live_mailbox_messages")) or bo
     st.session_state.get("stored_evidence_file")
 )
 
+# Sidebar nav: per-item colour (follows the section) + icon. Buttons carry
+# stable keys, so Streamlit exposes them as .st-key-<key>; the rules are
+# generated here so the SVG masks stay readable.
+import urllib.parse as _sb_up
+_SB_BLUE, _SB_GREEN, _SB_VIOLET, _SB_ROSE, _SB_SLATE = "#4c8dff", "#34d399", "#a78bfa", "#fb7185", "#94a3b8"
+_SB_ICONS = {
+    "grid": "<rect x='3' y='3' width='7' height='9' rx='1.5'/><rect x='14' y='3' width='7' height='5' rx='1.5'/><rect x='14' y='12' width='7' height='9' rx='1.5'/><rect x='3' y='16' width='7' height='5' rx='1.5'/>",
+    "upload": "<path d='M12 16V4M7 9l5-5 5 5'/><path d='M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/>",
+    "mail": "<rect x='3' y='5' width='18' height='14' rx='2.5'/><path d='M3.5 7.5l8.5 6 8.5-6'/>",
+    "chip": "<rect x='6' y='6' width='12' height='12' rx='2'/><path d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/>",
+    "radiate": "<circle cx='12' cy='12' r='3'/><path d='M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'/>",
+    "globe": "<circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/>",
+    "network": "<circle cx='6' cy='6' r='2.5'/><circle cx='18' cy='7' r='2.5'/><circle cx='12' cy='18' r='2.5'/><path d='M8.5 6.3l7 .6M7.3 8.3l3.6 7.4M16.8 9.3l-3.6 6.4'/>",
+    "bars": "<path d='M4 20V10M10 20V4M16 20v-7M22 20H2'/>",
+    "clock": "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/>",
+    "search": "<circle cx='11' cy='11' r='7'/><path d='M21 21l-4.3-4.3'/>",
+    "feed": "<path d='M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16'/><circle cx='5' cy='19' r='1.2'/>",
+    "bug": "<path d='M12 21a5 5 0 0 1-5-5v-4a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z'/><path d='M12 7V4M7 12H3M21 12h-4M8 8L5 5M16 8l3-3M8 18l-3 3M16 18l3 3'/>",
+    "sliders": "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/><circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>",
+    "info": "<circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 8h.01'/>",
+}
+_SB_NAV_STYLE = {
+    "nav_dash_top": (_SB_BLUE, "grid"), "nav_upload": (_SB_BLUE, "upload"), "nav_live": (_SB_BLUE, "mail"),
+    "nav_ai_copilot_side": (_SB_BLUE, "chip"), "nav_nomic_side": (_SB_BLUE, "radiate"),
+    "nav_map_side": (_SB_GREEN, "globe"), "nav_graph_side": (_SB_GREEN, "network"), "nav_analytics_side": (_SB_GREEN, "bars"),
+    "nav_history_side": (_SB_VIOLET, "clock"), "nav_ioc_side": (_SB_VIOLET, "search"), "nav_urlhaus_side": (_SB_VIOLET, "feed"),
+    "nav_av_side": (_SB_ROSE, "bug"),
+    "nav_settings_side": (_SB_SLATE, "sliders"), "nav_about_side": (_SB_SLATE, "info"),
+}
+_sb_rules = []
+for _sk, (_sc, _si) in _SB_NAV_STYLE.items():
+    _suri = "data:image/svg+xml," + _sb_up.quote(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' "
+        "stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>" + _SB_ICONS[_si] + "</svg>",
+        safe="/:=' ()",
+    )
+    _ssel = '.stApp [data-testid="stSidebar"] .st-key-' + _sk
+    _sb_rules.append(_ssel + "{--c:" + _sc + ";}")
+    _sb_rules.append(_ssel + ' button p::before{-webkit-mask-image:url("' + _suri + '");mask-image:url("' + _suri + '");}')
+st.markdown("<style>" + "".join(_sb_rules) + "</style>", unsafe_allow_html=True)
+
 with st.sidebar:
     st.markdown(
         f"""<div class="sidebar-brand-v2">
@@ -4948,7 +5140,7 @@ with st.sidebar:
 
     _nav_group("System", accent="slate")
     _nav_button("Settings", "Settings", key="nav_settings_side")
-    _nav_button("ℹ About", "About", key="nav_about_side")
+    _nav_button("About", "About", key="nav_about_side")
 
     if MULTIUSER:
         st.caption("Your emails, results and Google sign-in are private to this browser session.")
