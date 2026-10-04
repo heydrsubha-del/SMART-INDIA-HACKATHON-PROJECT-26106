@@ -827,6 +827,29 @@ components.html(
         function isFramed() {
             try { return window.parent.top !== window.parent; } catch (e) { return true; }
         }
+        // This script runs in a sandboxed iframe, and browsers do not let a
+        // sandboxed iframe navigate the page that CONTAINS it -- so
+        // `window.parent.location.href = ...` is silently ignored. A link
+        // element that belongs to the app frame's own document, clicked with
+        // target="_self", navigates that frame as itself, which is allowed.
+        // (A tiny script injected into the app frame is the backup if the
+        // click is somehow ignored; if the navigation worked, it never runs.)
+        function navigateAppFrame(url) {
+            try {
+                var a = doc.createElement('a');
+                a.href = url; a.target = '_self'; a.rel = 'noopener';
+                a.style.display = 'none';
+                doc.body.appendChild(a);
+                a.click();
+            } catch (e) {}
+            setTimeout(function () {
+                try {
+                    var sc = doc.createElement('script');
+                    sc.textContent = 'window.location.href = ' + JSON.stringify(url) + ';';
+                    doc.head.appendChild(sc);
+                } catch (e) {}
+            }, 800);
+        }
         var waitingSince = 0;   // set when THIS tab launched a sign-in window
         var channel = null;
         try { channel = new BroadcastChannel('sih26106_oauth_relay'); } catch (e) {}
@@ -840,7 +863,8 @@ components.html(
                 try {
                     var p = new URLSearchParams(d.search || '');
                     p.set('sih_relayed', '1');
-                    window.parent.location.href = window.parent.location.pathname + '?' + p.toString();
+                    var loc = window.parent.location;
+                    navigateAppFrame(loc.origin + loc.pathname + '?' + p.toString());
                 } catch (e) {}
             };
         }
@@ -927,18 +951,48 @@ _OAUTH_RELAY_GATE_HTML = """
      color:#8b96a5;text-align:center;padding:28px 12px;">Completing sign-in&hellip;</div>
 <script>
 (function () {
-    var pw = window.parent, done = false, acked = false, ch = null;
+    var pw = window.parent, doc = pw.document, done = false, acked = false, ch = null;
     function say(t) { var m = document.getElementById('m'); if (m) m.textContent = t; }
     function framed() { try { return pw.top !== pw; } catch (e) { return true; } }
+    // A sandboxed iframe (this page) may not navigate the frame that
+    // contains it, so go through a link owned by that frame's own document.
+    function go(url) {
+        try {
+            var a = doc.createElement('a');
+            a.href = url; a.target = '_self'; a.rel = 'noopener';
+            a.style.display = 'none';
+            doc.body.appendChild(a);
+            a.click();
+        } catch (e) {}
+        setTimeout(function () {
+            try {
+                var sc = doc.createElement('script');
+                sc.textContent = 'window.location.href = ' + JSON.stringify(url) + ';';
+                doc.head.appendChild(sc);
+            } catch (e) {}
+        }, 800);
+    }
     function local() {
         if (done) return; done = true;
         var p = new URLSearchParams(pw.location.search);
         p.set('sih_local', '1');
-        pw.location.href = pw.location.pathname + '?' + p.toString();
+        var url = pw.location.origin + pw.location.pathname + '?' + p.toString();
+        go(url);
+        // Never leave the user staring at "Completing sign-in" forever.
+        setTimeout(function () {
+            var m = document.getElementById('m');
+            if (!m) return;
+            m.innerHTML = 'Could not finish automatically. ';
+            var l = document.createElement('a');
+            l.href = url; l.target = '_blank'; l.rel = 'noopener';
+            l.textContent = 'Continue sign-in';
+            l.style.color = '#8fb4ff';
+            m.appendChild(l);
+        }, 5000);
     }
     function finish() {
         if (done) return; done = true;
-        say('Signed in \u2014 returning to the app\u2026');
+        say('Signed in. Returning to the app...');
         try { pw.top.close(); } catch (e) {}
         setTimeout(function () { say('Signed in. You can close this window.'); }, 700);
     }
@@ -949,8 +1003,8 @@ _OAUTH_RELAY_GATE_HTML = """
         var d = ev.data || {};
         if (d.type === 'oauth_ack') { acked = true; finish(); }
     };
-    ch.postMessage({ type: 'oauth_return', search: pw.location.search });
     setTimeout(function () { if (!acked) local(); }, 2000);
+    try { ch.postMessage({ type: 'oauth_return', search: pw.location.search }); } catch (e) {}
 })();
 </script>
 """
