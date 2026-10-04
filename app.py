@@ -6377,13 +6377,6 @@ def _about():
     st.success("readme_view active")
     render_readme()
 
-    try:
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"), encoding="utf-8") as fh:
-            st.markdown(fh.read())
-    except Exception:
-        st.info("README.md was not found alongside app.py.")
-
-
 # --------------------------------------------------------------------------
 # Shared hop-map helpers -- used by both the Dashboard preview map and the
 # Origin & Route panel's main map. Both need the same toggle: look at every
