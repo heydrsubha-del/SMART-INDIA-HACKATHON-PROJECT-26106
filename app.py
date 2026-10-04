@@ -1006,7 +1006,10 @@ _OAUTH_RELAY_GATE_HTML = """
 </div>
 <script>
 (function () {
+    var pw = window.parent, doc = null, done = false, acked = false, ch = null;
+    try { doc = pw.document; } catch (e) {}
     var _elIcon = document.getElementById('gi'), _elTitle = document.getElementById('gt'), _elBtn = document.getElementById('gb');
+    function say(t) { var m = document.getElementById('m'); if (m) m.textContent = t; }
     function setStage(title, sub, opts) {
         opts = opts || {};
         if (_elTitle) _elTitle.textContent = title;
@@ -1018,9 +1021,6 @@ _OAUTH_RELAY_GATE_HTML = """
         }
         if (opts.showButton && _elBtn) _elBtn.style.display = 'block';
     }
-(function () {
-    var pw = window.parent, doc = pw.document, done = false, acked = false, ch = null;
-    function say(t) { var m = document.getElementById('m'); if (m) m.textContent = t; }
 
     function framed() { try { return pw.top !== pw; } catch (e) { return true; } }
     // A sandboxed iframe (this page) may not navigate the frame that
@@ -1047,7 +1047,7 @@ _OAUTH_RELAY_GATE_HTML = """
     }
     function local() {
         if (done) return; done = true;
-        setStage('Completing sign-in', 'One moment&hellip;');
+        setStage('Completing sign-in', 'One moment\\u2026');
         var p = new URLSearchParams(pw.location.search);
         p.set('sih_local', '1');
         var url = pw.location.origin + pw.location.pathname + '?' + p.toString();
@@ -1066,7 +1066,7 @@ _OAUTH_RELAY_GATE_HTML = """
     }
     function finish() {
         if (done) return; done = true;
-        setStage('Signed in', 'Returning you to the app&hellip;');
+        setStage('Signed in', 'Returning you to the app\\u2026');
         // Bring the original tab to the front right away -- some browsers
         // (current Chrome included) now permanently refuse a scripted
         // close() on a popup once it has navigated through more than one
