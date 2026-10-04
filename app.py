@@ -2991,19 +2991,19 @@ st.markdown(
         display:none !important;
     }
     .stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:2rem !important;}
+    /* ================= TOP BANNER =================
+       Same card language as every stage-card / part-banner in the rest of
+       the app: flat graphite panel, one 1px border, ONE solid accent
+       color on the left edge (not a multi-color top line) -- so this
+       reads as the same design system as the module banners below it,
+       not a separate "hero" treatment. */
     .topbar-shell {
         display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px;
-        background:
-            radial-gradient(60% 160% at 100% 0%, rgba(76,141,255,.10), transparent 65%),
-            linear-gradient(180deg,#161c26 0%,#0d1219 100%);
-        border:1px solid #263140; border-radius:var(--r-lg);
-        min-height:260px; padding:40px; margin-top:8px; margin-bottom:20px;
-        box-shadow:0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
+        background:linear-gradient(180deg,var(--panel-2),var(--panel));
+        border:1px solid var(--line-strong); border-left:4px solid var(--cyan); border-radius:var(--r-lg);
+        min-height:150px; padding:28px 32px; margin-top:8px; margin-bottom:20px;
+        box-shadow:0 10px 26px rgba(0,0,0,.26);
         position:relative; overflow:hidden;
-    }
-    .topbar-shell::before {
-        content:""; position:absolute; left:0; right:0; top:0; height:3px; z-index:2; pointer-events:none;
-        background:linear-gradient(90deg,#4c8dff,#8b7cff);
     }
     /* Network/globe background graphic (image itself set in a small
        separate <style> tag right before this markup, since the big
@@ -3016,58 +3016,53 @@ st.markdown(
         background-repeat:no-repeat; background-position:right center; background-size:cover;
         -webkit-mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.85) 42%, rgba(0,0,0,1) 100%);
         mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.85) 42%, rgba(0,0,0,1) 100%);
-        pointer-events:none; z-index:0;
+        opacity:.55; pointer-events:none; z-index:0;
     }
     .topbar-brand, .topbar-status-wrap {position:relative; z-index:1;}
     .topbar-brand {display:flex; align-items:center; gap:18px; min-width:0; flex:1 1 420px;}
     .topbar-logo {
-        width:56px; height:56px; flex:0 0 56px; border-radius:15px;
-        background:radial-gradient(circle at 35% 30%, rgba(139,124,246,.22), transparent 70%);
-        box-shadow:0 0 0 1px rgba(139,124,246,.28), 0 8px 20px rgba(0,0,0,.3);
+        width:52px; height:52px; flex:0 0 52px; border-radius:13px;
+        background:var(--panel-3); border:1px solid var(--line-strong);
         display:flex; align-items:center; justify-content:center; padding:7px;
     }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
     .topbar-brand > div:last-child {min-width:0;}
     .topbar-kicker {font-size:11px; font-weight:800; letter-spacing:1.6px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
     .topbar-title {
-        font-size:26px; font-weight:850; letter-spacing:-.01em; color:#f3f6fb; line-height:1.25;
-        text-shadow:0 2px 14px rgba(0,0,0,.35);
+        font-size:24px; font-weight:800; letter-spacing:-.01em; color:#f3f6fb; line-height:1.25;
     }
-    .topbar-subtitle {font-size:12.5px; color:#8d99ac; line-height:1.55; margin-top:6px; max-width:74ch;}
-    /* Right side: one row holding the account chip and the status pill
-       together, instead of a stacked labelled "session panel". */
+    .topbar-subtitle {font-size:12.5px; color:var(--muted); line-height:1.55; margin-top:6px; max-width:74ch;}
+    /* Right side: two matching pills -- same shape, same border weight,
+       just different accent colors -- instead of a chip that used to pair
+       an avatar-style circle with a "?" and a separate pill style. */
     .topbar-status-wrap {display:flex; align-items:center; gap:10px; flex:0 0 auto;}
-    .topbar-actions {display:flex; align-items:center;}
+    .topbar-account-chip, .topbar-status-pill {
+        display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:650; white-space:nowrap;
+        border-radius:999px; padding:7px 14px;
+    }
     .topbar-account-chip {
-        display:flex; align-items:center; gap:8px;
-        background:linear-gradient(180deg,#10151c,#0b0f15); border:1px solid #2a3444;
-        border-radius:999px; padding:5px 14px 5px 5px; max-width:230px;
+        background:var(--panel-3); border:1px solid var(--line-strong); color:var(--text); max-width:230px;
     }
+    .topbar-account-chip-empty {color:var(--muted); font-weight:600;}
     .topbar-account-avatar {
-        width:24px; height:24px; border-radius:50%; flex:0 0 24px;
+        width:20px; height:20px; border-radius:50%; flex:0 0 20px;
         display:flex; align-items:center; justify-content:center;
-        background:var(--brand-gradient); color:#fff; font-weight:800; font-size:11px;
+        background:var(--brand-gradient); color:#fff; font-weight:800; font-size:10.5px;
     }
-    .topbar-account-email {
-        font-size:12.5px; color:var(--text); font-weight:600;
-        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .topbar-status-pill {
-        display:flex; align-items:center; gap:7px; font-size:11px; font-weight:650; color:#b9d2c3; white-space:nowrap;
-        background:rgba(111,174,140,.1); border:1px solid rgba(111,174,140,.3); border-radius:999px; padding:6px 13px;
-    }
+    .topbar-account-email {overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .topbar-status-pill {color:#b9d2c3; background:rgba(111,174,140,.1); border:1px solid rgba(111,174,140,.3);}
     .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
     @media (max-width:1000px) {
-        .topbar-shell {padding:26px 20px; min-height:220px;}
+        .topbar-shell {padding:22px 20px; min-height:0;}
         .topbar-subtitle {max-width:none;}
     }
     @media (max-width:640px) {
         /* Two rows total on a phone: brand row, then one compact row for
            account + status -- never the 4-5 line stack this used to be. */
-        .topbar-shell {padding:20px 16px; gap:12px; min-height:0;}
-        .topbar-logo {width:42px; height:42px; flex:0 0 42px; border-radius:12px;}
+        .topbar-shell {padding:18px 16px; gap:12px; min-height:0;}
+        .topbar-logo {width:40px; height:40px; flex:0 0 40px; border-radius:11px;}
         .topbar-kicker {font-size:9.5px; letter-spacing:1.2px;}
-        .topbar-title {font-size:18px; line-height:1.3;}
+        .topbar-title {font-size:17px; line-height:1.3;}
         .topbar-subtitle {display:none;}
         .topbar-status-wrap {width:100%; justify-content:space-between;}
         .topbar-account-email {max-width:34vw;}
@@ -5901,6 +5896,10 @@ _acct_email = (
 )
 _acct_initial = html.escape(_acct_email[:1].upper()) if _acct_email else "?"
 _acct_label = html.escape(_acct_email) if _acct_email else "Not signed in"
+_acct_chip_class = "" if _acct_email else " topbar-account-chip-empty"
+_acct_avatar_html = (
+    f'<span class="topbar-account-avatar">{_acct_initial}</span>' if _acct_email else ""
+)
 
 # Just the background-image url() for .topbar-shell::after, in its own
 # tiny interpolated <style> tag -- the main stylesheet above is one large
@@ -5965,11 +5964,8 @@ st.markdown(
         </div>
       </div>
       <div class="topbar-status-wrap">
-        <div class="topbar-actions">
-            <div class="topbar-account-chip" title="{_acct_label}">
-                <span class="topbar-account-avatar">{_acct_initial}</span>
-                <span class="topbar-account-email">{_acct_label}</span>
-            </div>
+        <div class="topbar-account-chip{_acct_chip_class}" title="{_acct_label}">{_acct_avatar_html}
+            <span class="topbar-account-email">{_acct_label}</span>
         </div>
         <div class="topbar-status-pill">
           <span class="topbar-status-dot"></span>
