@@ -5935,6 +5935,42 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
+/* ============ TOP BANNER: skin only (layout/markup untouched) ============
+   Same card language as the acquisition cards and module headers:
+   1px graphite border, solid accent bar on top, mono eyebrow, outlined
+   chips. No display/flex/order/position changes, so every element stays
+   exactly where it was. */
+.stApp .topbar-shell {
+  --tone:#4c8dff;
+  border:1px solid var(--line-strong,#313c4b); border-radius:14px;
+  background:
+    radial-gradient(90% 140% at 100% 100%, color-mix(in srgb,var(--tone) 12%,transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 8%,transparent), 0 14px 32px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.stApp .topbar-shell::before {
+  content:""; position:absolute; left:0; right:0; top:0; height:3px; z-index:2; pointer-events:none; background:var(--tone);
+}
+.stApp .topbar-logo {
+  background:rgba(255,255,255,.03); box-shadow:none;
+  border:1px solid color-mix(in srgb,var(--tone) 40%,var(--line-strong,#313c4b));
+}
+.stApp .topbar-kicker {
+  color:var(--tone); font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-shadow:none;
+}
+.stApp .topbar-title {font-weight:800; letter-spacing:-.015em; color:#fff; text-shadow:none;}
+.stApp .topbar-subtitle {color:#8b96a5;}
+.stApp .topbar-account-chip {
+  background:rgba(255,255,255,.03); border:1px solid var(--line-strong,#313c4b); box-shadow:none;
+}
+.stApp .topbar-account-avatar {background:var(--tone); color:#0b1220;}
+.stApp .topbar-status-pill {
+  border-radius:6px; font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
+  background:color-mix(in srgb,#3fb68b 8%,transparent); border:1px solid color-mix(in srgb,#3fb68b 40%,transparent);
+}
+.stApp .topbar-status-online {color:#3fb68b; font-weight:600;}
+.stApp .topbar-status-time {font-family:ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
+
 /* ======================= MODULE / PART BANNERS ======================= */
 .stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
 .stApp .part-banner .pb-main {min-width:0; flex:1 1 320px;}
