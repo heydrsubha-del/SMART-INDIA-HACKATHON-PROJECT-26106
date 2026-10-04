@@ -1262,8 +1262,8 @@ st.markdown(
            - dusty plum (--violet): AI/assistant surfaces, a second
              provider accent -- signals "a different kind of content"
            ------------------------------------------------------------- */
-        --cyan: #3b82f6;
-        --violet: #6366f1;
+        --cyan: #2fb68e;
+        --violet: #8b7cf6;
         --teal: #c98a5c;
         --green: #6fae8c;
         --amber: #c99a5b;
@@ -1282,21 +1282,21 @@ st.markdown(
         /* Calm, single-tone focus shadow for primary actions -- a soft
            blue lift instead of a saturated violet halo, so it reads as a
            clean product accent rather than a neon glow. */
-        --glow-violet: 0 0 0 1px rgba(59,130,246,.25), 0 6px 16px rgba(0,0,0,.24);
+        --glow-violet: 0 0 0 1px rgba(47,182,142,.25), 0 6px 16px rgba(0,0,0,.24);
         /* Signature brand accent: teal-green into dusty plum -- a real
            duotone (not two shades of the same hue) for every primary
            action / active state, muted enough to sit calmly on dark. */
-        --brand-gradient: linear-gradient(90deg,#3b82f6,#6366f1);
+        --brand-gradient: linear-gradient(90deg,#2fb68e,#8b7cf6);
         /* Action-button tokens -- the whole button family (primary = brand
            cyan-to-violet gradient key, secondary = graphite key) is tinted
            from here, so the look can be re-colored in one place without
            touching any rule. Was a flat teal; now the same punchier
            cyan-to-violet gradient the Synapse Copilot button used, applied
            app-wide so every primary button matches instead of just one. */
-        --act-1-top:#3b82f6; --act-1-bot:#6366f1; --act-1-border:rgba(99,102,241,.45); --act-1-text:#f2f5f8;
-        --act-1-top-hover:#5b9bf8; --act-1-bot-hover:#7c7ff3; --act-1-border-hover:rgba(99,102,241,.7);
+        --act-1-top:#2fb68e; --act-1-bot:#8b7cf6; --act-1-border:rgba(139,124,246,.45); --act-1-text:#f2f5f8;
+        --act-1-top-hover:#5b9bf8; --act-1-bot-hover:#7c7ff3; --act-1-border-hover:rgba(139,124,246,.7);
         --act-2-top:#161d2a; --act-2-bot:#0e141e; --act-2-border:#2a3444; --act-2-text:#dbe4ef;
-        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(59,130,246,.5);
+        --act-2-top-hover:#1b2432; --act-2-bot-hover:#111a26; --act-2-border-hover:rgba(47,182,142,.5);
         --ease: cubic-bezier(.4,0,.2,1);
         /* Streamlit's own stock theme color (a coral red, #FF4B4B by
            default) still drives focus/selected states on any BaseWeb
@@ -1324,7 +1324,7 @@ st.markdown(
     .stApp [role="combobox"]:focus,
     .stApp [role="combobox"][aria-expanded="true"] > div {
         border-color: var(--cyan) !important;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.14) !important;
+        box-shadow: 0 0 0 3px rgba(47,182,142,.14) !important;
         outline: none !important;
     }
     .stApp input:invalid, .stApp select:invalid, .stApp textarea:invalid,
@@ -1406,12 +1406,12 @@ st.markdown(
         position:fixed !important; top:14px !important; left:14px !important; z-index:999999 !important;
         background:#0c1929 !important; border:1px solid var(--cyan) !important; border-radius:8px !important;
         padding:9px 14px 9px 11px !important;
-        box-shadow:0 0 0 1px rgba(59,130,246,.25), 0 8px 22px rgba(0,0,0,.4) !important;
+        box-shadow:0 0 0 1px rgba(47,182,142,.25), 0 8px 22px rgba(0,0,0,.4) !important;
         transition:transform .15s var(--ease), box-shadow .15s var(--ease) !important;
     }
     [data-testid="collapsedControl"]:hover {
         transform:scale(1.04) !important;
-        box-shadow:0 0 0 1px rgba(59,130,246,.4), 0 10px 26px rgba(0,0,0,.45) !important;
+        box-shadow:0 0 0 1px rgba(47,182,142,.4), 0 10px 26px rgba(0,0,0,.45) !important;
     }
     /* The native arrow only ever means "open the nav" -- spell that out so
        it isn't mistaken for decoration and missed on a dark, busy header. */
@@ -1430,9 +1430,9 @@ st.markdown(
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {
         background:
-            radial-gradient(circle at 12% -8%, rgba(59,130,246,.05), transparent 28%),
+            radial-gradient(circle at 12% -8%, rgba(47,182,142,.05), transparent 28%),
             radial-gradient(circle at 92% 0%, rgba(19,139,181,.045), transparent 26%),
-            radial-gradient(circle at 55% 105%, rgba(59,130,246,.025), transparent 32%),
+            radial-gradient(circle at 55% 105%, rgba(47,182,142,.025), transparent 32%),
             var(--bg) !important;
         color: var(--text) !important;
     }
@@ -1452,8 +1452,8 @@ st.markdown(
     h1,h2,h3,h4,h5,h6 {color:var(--text) !important; font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:750 !important;}
     [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {color:var(--muted) !important;}
 
-    [data-testid="stSidebar"] {background:#06101c !important; border-right:1px solid var(--line) !important;}
-    [data-testid="stSidebar"] > div {background:#06101c !important;}
+    [data-testid="stSidebar"] {background:#0b0f14 !important; border-right:1px solid var(--line) !important;}
+    [data-testid="stSidebar"] > div {background:#0b0f14 !important;}
     [data-testid="stSidebar"] * {color:#ccd9e7 !important;}
 
 
@@ -1537,7 +1537,7 @@ st.markdown(
         display:inline-flex !important; align-items:center !important;
         color:var(--cyan) !important; font-size:10px !important; font-weight:800 !important;
         letter-spacing:1.5px !important; text-transform:uppercase !important;
-        background:rgba(59,130,246,.08) !important; border:1px solid rgba(59,130,246,.22) !important;
+        background:rgba(47,182,142,.08) !important; border:1px solid rgba(47,182,142,.22) !important;
         border-radius:20px !important; padding:3px 10px !important;
     }
     .stage-card-success .stage-label {color:var(--green) !important; background:rgba(47,206,135,.10) !important; border-color:rgba(47,206,135,.28) !important;}
@@ -1551,10 +1551,10 @@ st.markdown(
        (connect), violet (authenticate), amber (scope) -- carried through
        the spine, the corner glow and the step pill, so the steps are
        visually distinct while still reading as one family of card. */
-    .stage-card {background:linear-gradient(135deg, rgba(59,130,246,.05), var(--panel) 55%) !important;}
-    .stage-card-auth {border-left-color:#6366f1 !important; background:linear-gradient(135deg, rgba(99,102,241,.06), var(--panel) 55%) !important;}
-    .stage-card-auth:hover {border-color:rgba(99,102,241,.55) !important;}
-    .stage-card-auth .stage-label {color:#c2aee0 !important; background:rgba(99,102,241,.12) !important; border-color:rgba(99,102,241,.32) !important;}
+    .stage-card {background:linear-gradient(135deg, rgba(47,182,142,.05), var(--panel) 55%) !important;}
+    .stage-card-auth {border-left-color:#8b7cf6 !important; background:linear-gradient(135deg, rgba(139,124,246,.06), var(--panel) 55%) !important;}
+    .stage-card-auth:hover {border-color:rgba(139,124,246,.55) !important;}
+    .stage-card-auth .stage-label {color:#c2aee0 !important; background:rgba(139,124,246,.12) !important; border-color:rgba(139,124,246,.32) !important;}
     .stage-card-scope {border-left-color:#f4b23d !important; background:linear-gradient(135deg, rgba(244,178,61,.06), var(--panel) 55%) !important;}
     .stage-card-scope:hover {border-color:rgba(244,178,61,.55) !important;}
     .stage-card-scope .stage-label {color:#ffd98a !important; background:rgba(244,178,61,.12) !important; border-color:rgba(244,178,61,.32) !important;}
@@ -1581,7 +1581,7 @@ st.markdown(
        default colour). Primary is matched by `kind` OR `data-testid`
        because newer Streamlit builds dropped the `kind` attribute.
        ------------------------------------------------------------------ */
-    :is(.stButton, .stDownloadButton, .stFormSubmitButton) {--b1:#3b82f6; --b2:#7c3aed; --b3:#db2777;}
+    :is(.stButton, .stDownloadButton, .stFormSubmitButton) {--b1:#2fb68e; --b2:#7c3aed; --b3:#db2777;}
     .stDownloadButton {--b1:#0d9488; --b2:#0284c7; --b3:#4f46e5;}
     .stFormSubmitButton {--b1:#d97706; --b2:#e11d48; --b3:#a21caf;}
 
@@ -1683,27 +1683,27 @@ st.markdown(
        inside it change per email, so this survives switching emails. */
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton button {
         background:linear-gradient(180deg,#241a3d,#160f28) !important;
-        border:1px solid rgba(99,102,241,.55) !important;
+        border:1px solid rgba(139,124,246,.55) !important;
         color:#f1ecff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,124,246,.20), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(1) .stDownloadButton button:hover {
-        box-shadow:0 0 0 1px rgba(99,102,241,.35), 0 10px 26px rgba(99,102,241,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
+        box-shadow:0 0 0 1px rgba(139,124,246,.35), 0 10px 26px rgba(139,124,246,.30), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton button {
         background:linear-gradient(180deg,#0f3350,#0a2032) !important;
-        border:1px solid rgba(99,102,241,.5) !important;
+        border:1px solid rgba(139,124,246,.5) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,124,246,.18), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton button:hover {
-        box-shadow:0 0 0 1px rgba(99,102,241,.32), 0 10px 26px rgba(99,102,241,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+        box-shadow:0 0 0 1px rgba(139,124,246,.32), 0 10px 26px rgba(139,124,246,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         color:var(--act-1-text) !important;
         border:1px solid var(--act-1-border) !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(99,102,241,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(139,124,246,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
         font-weight:800 !important;
     }
     .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button:hover {
@@ -1782,12 +1782,12 @@ st.markdown(
     }
     .st-key-imap_reload_folder_btn .stButton button {
         background:transparent !important;
-        border:1px solid rgba(59,130,246,.4) !important;
+        border:1px solid rgba(47,182,142,.4) !important;
         color:#8fe9cf !important;
     }
     .st-key-imap_reload_folder_btn .stButton button:hover {
-        background:rgba(59,130,246,.1) !important;
-        border-color:rgba(59,130,246,.75) !important;
+        background:rgba(47,182,142,.1) !important;
+        border-color:rgba(47,182,142,.75) !important;
         color:#d4fbef !important;
     }
 
@@ -1865,7 +1865,7 @@ st.markdown(
     .stTextInput input:hover, .stNumberInput input:hover, textarea:hover {border-color:#3d8a6f !important;}
     .stTextInput input:focus, .stNumberInput input:focus, textarea:focus {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(59,130,246,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(47,182,142,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     /* Number input stepper (+/-) buttons -- previously unstyled and left on
        Streamlit's stock grey/red-focus default, which read as a jarring,
@@ -1918,7 +1918,7 @@ st.markdown(
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
         border-color:var(--cyan) !important;
-        box-shadow:0 0 0 3px rgba(59,130,246,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
+        box-shadow:0 0 0 3px rgba(47,182,142,.14), inset 0 1px 3px rgba(0,0,0,.3) !important;
     }
     .stSelectbox svg, .stMultiSelect svg {color:var(--cyan) !important;}
     div[data-baseweb="popover"] ul[role="listbox"] {
@@ -1930,7 +1930,7 @@ st.markdown(
     }
     div[data-baseweb="popover"] li[role="option"] {color:#dfeaf4 !important; border-radius:7px !important;}
     div[data-baseweb="popover"] li[role="option"]:hover,
-    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(59,130,246,.14) !important; color:#ffffff !important;}
+    div[data-baseweb="popover"] li[aria-selected="true"] {background:rgba(47,182,142,.14) !important; color:#ffffff !important;}
     /* Widget labels ("Mail provider", "IMAP server", "Port"...) previously
        rode on Streamlit's plain default text -- a touch brighter, a firm
        weight and tighter line-height reads as deliberate field labelling
@@ -1974,8 +1974,8 @@ st.markdown(
     .signin-card-icon {
         flex:0 0 44px !important; width:44px !important; height:44px !important; border-radius:12px !important;
         display:flex !important; align-items:center !important; justify-content:center !important;
-        background:linear-gradient(145deg, rgba(59,130,246,.24), rgba(59,130,246,.06)) !important;
-        border:1px solid rgba(59,130,246,.38) !important; font-size:19px !important;
+        background:linear-gradient(145deg, rgba(47,182,142,.24), rgba(47,182,142,.06)) !important;
+        border:1px solid rgba(47,182,142,.38) !important; font-size:19px !important;
         box-shadow:inset 0 0 0 1px rgba(255,255,255,.04) !important;
     }
     .signin-card-title {color:#f2f8ff !important; font-size:18px !important; font-weight:800 !important; line-height:1.3 !important;}
@@ -1994,15 +1994,15 @@ st.markdown(
        rounded-rectangle shape rather than a full pill. */
     .st-key-manual_login_btn {margin:14px 0 6px 0 !important;}
     .st-key-manual_login_btn button {
-        background:#3b82f6 !important; border:1px solid #3b82f6 !important;
+        background:#2fb68e !important; border:1px solid #2fb68e !important;
         color:#0d1a24 !important; font-weight:800 !important; font-size:15px !important;
         border-radius:12px !important; min-height:46px !important;
-        box-shadow:0 6px 16px rgba(59,130,246,.28) !important;
+        box-shadow:0 6px 16px rgba(47,182,142,.28) !important;
         transition:background .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease) !important;
     }
     .st-key-manual_login_btn button:hover {
         background:#7ba9cc !important; border-color:#7ba9cc !important;
-        box-shadow:0 8px 20px rgba(59,130,246,.4) !important; transform:translateY(-1px) !important;
+        box-shadow:0 8px 20px rgba(47,182,142,.4) !important; transform:translateY(-1px) !important;
         color:#0d1a24 !important;
     }
     /* "Custom" toggle -- an advanced/escape-hatch option almost nobody
@@ -2029,7 +2029,7 @@ st.markdown(
     .st-key-imap_custom_toggle_btn button:focus-visible,
     .st-key-imap_custom_toggle_btn button:active {
         background:transparent !important; border:none !important; box-shadow:none !important;
-        color:#bfe3ff !important; text-decoration:underline !important; transform:none !important;
+        color:#d5f5ea !important; text-decoration:underline !important; transform:none !important;
     }
     /* ------------------------------------------------------------------
        Segmented control -- every st.radio in the app.
@@ -2067,18 +2067,18 @@ st.markdown(
         background:rgba(255,255,255,.045) !important; color:#fff !important;
     }
     .stRadio [role="radiogroup"] label:has(input:checked) {
-        background:rgba(59,130,246,.16) !important;
+        background:rgba(47,182,142,.16) !important;
         background:color-mix(in srgb, var(--cyan) 18%, transparent) !important;
-        border-color:rgba(59,130,246,.5) !important;
+        border-color:rgba(47,182,142,.5) !important;
         border-color:color-mix(in srgb, var(--cyan) 55%, transparent) !important;
     }
     .stRadio [role="radiogroup"] label:has(input:checked) p {color:#ffffff !important; font-weight:700 !important;}
-    .stFileUploader {background:#091625 !important; border:1px dashed #31584f !important; border-radius:12px !important;}
+    .stFileUploader {background:#0e1319 !important; border:1px dashed #31584f !important; border-radius:12px !important;}
     .stFileUploader section {background:transparent !important;}
 
     div[data-testid="stMetric"] {
-        background:linear-gradient(180deg,#102238,#0c1b2d) !important;
-        border:1px solid #213c37 !important;
+        background:linear-gradient(180deg,#151b24,#121820) !important;
+        border:1px solid #2a3342 !important;
         border-radius:var(--r-md) !important;
         padding:13px 15px !important;
         box-shadow:var(--shadow-sm) !important;
@@ -2113,8 +2113,8 @@ st.markdown(
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:before {
         background:linear-gradient(90deg, var(--green), transparent 95%) !important;
     }
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:hover {border-color:rgba(59,130,246,.45) !important;}
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:hover {border-color:rgba(99,102,241,.5) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+1) div[data-testid="stMetric"]:hover {border-color:rgba(47,182,142,.45) !important;}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+2) div[data-testid="stMetric"]:hover {border-color:rgba(139,124,246,.5) !important;}
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+3) div[data-testid="stMetric"]:hover {border-color:rgba(244,178,61,.5) !important;}
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-of-type(4n+4) div[data-testid="stMetric"]:hover {border-color:rgba(47,206,135,.5) !important;}
     div[data-testid="stMetricLabel"] {color:#7d94ad !important;}
@@ -2154,7 +2154,7 @@ st.markdown(
     [data-testid="stAlertContentInfo"] {color:#bfe9ff !important;}
     [data-testid="stAlertContentWarning"] {color:#ffe3a3 !important;}
     [data-testid="stAlertContentError"] {color:#ffb4bc !important;}
-    [data-testid="stExpander"] {background:#0b1828 !important; border:1px solid #1e3954 !important; border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
+    [data-testid="stExpander"] {background:#10151c !important; border:1px solid #1e3954 !important; border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important; transition:border-color .15s var(--ease) !important;}
     [data-testid="stExpander"]:hover {border-color:#2c5877 !important; border-left-color:var(--violet) !important;}
 
     /* "Custom IMAP server" toggle: this is a one-off setting most people
@@ -2169,7 +2169,7 @@ st.markdown(
     }
     .st-key-imap_custom_server_wrap [data-testid="stExpander"] summary {
         display:inline-flex !important; width:fit-content !important;
-        background:#0b1828 !important; border:1px solid #3a3358 !important;
+        background:#10151c !important; border:1px solid #3a3358 !important;
         border-radius:999px !important; padding:6px 14px !important;
         font-size:12.5px !important; color:#c2aee0 !important;
     }
@@ -2181,7 +2181,7 @@ st.markdown(
     }
     .st-key-imap_custom_server_wrap [data-testid="stExpander"] > div:last-child {
         margin-top:8px !important; padding:12px !important;
-        background:#0b1828 !important; border:1px solid #1e3954 !important;
+        background:#10151c !important; border:1px solid #1e3954 !important;
         border-left:3px solid var(--violet) !important; border-radius:var(--r-md) !important;
     }
 
@@ -2237,8 +2237,8 @@ st.markdown(
        row that's otherwise teal / terracotta / plum. */
     .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_ya {border-top-color:#a6947c !important;}
     .auth-option-label-violet {color:#c2b29a !important;}
-    .st-key-auth_google_box:hover {border-color:rgba(59,130,246,.4) !important;}
-    .st-key-auth_google_box {border-top-color:#3b82f6 !important;}
+    .st-key-auth_google_box:hover {border-color:rgba(47,182,142,.4) !important;}
+    .st-key-auth_google_box {border-top-color:#2fb68e !important;}
     .auth-option-label-cyan {color:#8fc2b8 !important;}
     /* Each provider gets a genuinely different hue from the app's own
        palette, muted enough that no single card pops as a bright outline:
@@ -2261,7 +2261,7 @@ st.markdown(
        (see .st-key-topnav) -- styled below via the proven, version-proof
        label:has(input:checked) pattern instead of guessing at BaseWeb's
        DOM. */
-    .stDataFrame {border:1px solid rgba(148,163,184,.18) !important; border-radius:14px !important; overflow:hidden !important; box-shadow:0 14px 34px -18px rgba(91,141,239,.4) !important;}
+    .stDataFrame {border:1px solid rgba(148,163,184,.18) !important; border-radius:14px !important; overflow:hidden !important; box-shadow:0 14px 34px -18px rgba(47,182,142,.4) !important;}
 
     /* ------------------------------------------------------------------
        TABLE SYSTEM v3 -- "aurora glass" data tables.
@@ -2286,17 +2286,17 @@ st.markdown(
         border:1px solid transparent;
         border-radius:14px;
         overflow:hidden;
-        background:linear-gradient(180deg,#0c1320,#090f19) padding-box, linear-gradient(135deg,rgba(91,141,239,.6),rgba(148,163,184,.13) 34%,rgba(148,163,184,.13) 66%,rgba(224,112,140,.5)) border-box !important;
+        background:linear-gradient(180deg,#11161e,#0d1117) padding-box, linear-gradient(135deg,rgba(47,182,142,.6),rgba(148,163,184,.13) 34%,rgba(148,163,184,.13) 66%,rgba(224,112,140,.5)) border-box !important;
         background-origin:border-box !important;
         background-clip:padding-box, border-box !important;
-        box-shadow:0 14px 34px -18px rgba(91,141,239,.4), inset 0 1px 0 rgba(255,255,255,.03);
+        box-shadow:0 14px 34px -18px rgba(47,182,142,.4), inset 0 1px 0 rgba(255,255,255,.03);
         margin:8px 0 8px 0;
     }
     .polished-table-wrap[style*="overflow-y:auto"] {overflow:auto;}
     .polished-table-wrap::before {
         content:""; display:block; position:sticky; top:0; z-index:3;
         height:2px; margin-bottom:-2px; pointer-events:none;
-        background:linear-gradient(90deg,#3b82f6 0%,#8b5cf6 28%,#db2777 55%,#f59e0b 78%,#14b8a6 100%);
+        background:linear-gradient(90deg,#2fb68e 0%,#8b5cf6 28%,#db2777 55%,#f59e0b 78%,#14b8a6 100%);
         opacity:.9;
     }
     .polished-table-wrap::-webkit-scrollbar {width:8px; height:8px;}
@@ -2313,12 +2313,12 @@ st.markdown(
         position:sticky; top:0; z-index:1;
         text-align:left;
         padding:12px 16px 10px;
-        background:linear-gradient(180deg,#131d32,#0e1729);
-        color:#9fb0c6;
+        background:linear-gradient(180deg,#171d27,#10151d);
+        color:#a3adbb;
         font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
         border-bottom:1px solid rgba(148,163,184,.2);
         white-space:nowrap;
-        --tc:#5b8def;
+        --tc:#2fb68e;
     }
     table.polished-table thead th::before {
         content:""; display:inline-block; vertical-align:middle; margin:-2px 9px 0 0;
@@ -2340,26 +2340,26 @@ st.markdown(
     table.polished-table tbody tr:nth-child(even) {background:rgba(148,163,184,.02);}
     table.polished-table tbody tr {transition:background .2s var(--ease);}
     table.polished-table tbody tr:hover {
-        background:linear-gradient(90deg, rgba(91,141,239,.14), rgba(139,124,246,.07) 45%, rgba(148,163,184,0) 88%);
+        background:linear-gradient(90deg, rgba(47,182,142,.14), rgba(139,124,246,.07) 45%, rgba(148,163,184,0) 88%);
     }
     table.polished-table tbody tr:hover td:first-child {
-        background:linear-gradient(180deg,#5b8def,#8b7cf6) left center / 3px 62% no-repeat;
+        background:linear-gradient(180deg,#2fb68e,#8b7cf6) left center / 3px 62% no-repeat;
     }
     table.polished-table tbody td:first-child {color:#eaf0f8; font-weight:600;}
     .polished-table-empty {
         padding:16px; text-align:center; color:var(--muted); font-size:13px;
-        border:1px dashed rgba(148,163,184,.25); border-radius:14px; background:#0a111b;
+        border:1px dashed rgba(148,163,184,.25); border-radius:14px; background:#0e1319;
     }
-    hr {border-color:#20364f !important;}
-    .stMarkdown code {background:#07131f !important; color:#9beaff !important;}
+    hr {border-color:#273140 !important;}
+    .stMarkdown code {background:#0b1016 !important; color:#7fe0c6 !important;}
 
     /* Flat, clean product background -- a couple of very soft glows over
        plain navy, no grid/scanline texture, so the surface reads as a
        polished SaaS console rather than an industrial SCADA panel. */
     .stApp {
         background:
-            radial-gradient(circle at 15% 0%, rgba(59,130,246,.035), transparent 26%),
-            radial-gradient(circle at 100% 15%, rgba(59,130,246,.03), transparent 30%),
+            radial-gradient(circle at 15% 0%, rgba(47,182,142,.035), transparent 26%),
+            radial-gradient(circle at 100% 15%, rgba(47,182,142,.03), transparent 30%),
             var(--bg) !important;
         background-size: auto !important;
     }
@@ -2631,7 +2631,7 @@ st.markdown(
     .st-key-input_mode_radio label:has(input:checked) {
         border-color:var(--cyan) !important;
         background:linear-gradient(180deg,#122b46,#0e1f34) !important;
-        box-shadow:0 0 0 3px rgba(59,130,246,.14) !important;
+        box-shadow:0 0 0 3px rgba(47,182,142,.14) !important;
     }
     .st-key-input_mode_radio label:has(input:checked) p {color:#eef5ff !important;}
 
@@ -2659,7 +2659,7 @@ st.markdown(
        floating in it. */
     .mode-card::before {
         content:""; position:absolute; inset:0; pointer-events:none;
-        background:radial-gradient(160px 110px at -10px -30px, var(--mode-glow, rgba(59,130,246,.16)), transparent 72%);
+        background:radial-gradient(160px 110px at -10px -30px, var(--mode-glow, rgba(47,182,142,.16)), transparent 72%);
         opacity:.9;
     }
     .mode-card-live {--mode-accent:rgba(147,167,255,.55); --mode-glow:rgba(147,167,255,.22);}
@@ -2695,9 +2695,9 @@ st.markdown(
         transform:translateY(-2px); box-shadow:0 14px 30px rgba(0,0,0,.26);
     }
     @keyframes modeCardSelect {
-        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(59,130,246,.0);}
+        0%   {transform:scale(.97); box-shadow:0 0 0 0 rgba(47,182,142,.0);}
         55%  {transform:scale(1.012);}
-        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(59,130,246,.4), 0 14px 32px rgba(59,130,246,.10);}
+        100% {transform:scale(1); box-shadow:0 0 0 1px rgba(47,182,142,.4), 0 14px 32px rgba(47,182,142,.10);}
     }
     @keyframes modeCardIconPop {
         0%   {transform:scale(.75) rotate(-6deg);}
@@ -2707,8 +2707,8 @@ st.markdown(
     .mode-card-active {
         border-left-color:var(--cyan) !important;
         border-color:var(--cyan) !important;
-        background:linear-gradient(155deg, rgba(59,130,246,.14), var(--panel-2) 62%) !important;
-        box-shadow:0 0 0 1px rgba(59,130,246,.4), 0 14px 32px rgba(59,130,246,.10) !important;
+        background:linear-gradient(155deg, rgba(47,182,142,.14), var(--panel-2) 62%) !important;
+        box-shadow:0 0 0 1px rgba(47,182,142,.4), 0 14px 32px rgba(47,182,142,.10) !important;
         animation:modeCardSelect .4s var(--ease);
         padding-right:20px !important;
     }
@@ -2762,7 +2762,7 @@ st.markdown(
         font-family:"Consolas","Cascadia Code",monospace !important;
         font-size:13px !important;
         letter-spacing:.15px !important;
-        box-shadow:inset 0 0 18px rgba(59,130,246,.03) !important;
+        box-shadow:inset 0 0 18px rgba(47,182,142,.03) !important;
     }
     .feedback-icon { font-weight:900 !important; margin-right:9px !important; }
     .feedback-cursor { animation:feedbackBlink .8s steps(1) infinite; }
@@ -2772,7 +2772,7 @@ st.markdown(
         position:relative; overflow:hidden; margin:6px 0 14px 0; padding:18px 20px 16px;
         border:1px solid #3d3168; border-left:3px solid var(--violet); border-radius:var(--r-lg);
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%);
-        box-shadow:inset 0 0 26px rgba(59,130,246,.05),0 14px 34px rgba(0,0,0,.20);
+        box-shadow:inset 0 0 26px rgba(47,182,142,.05),0 14px 34px rgba(0,0,0,.20);
     }
     .ai-console-status {font:800 9px/1.3 monospace; letter-spacing:1.4px; color:#9584b8; text-transform:uppercase;}
     .ai-pulse {display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(47,206,135,.8);margin-right:7px;}
@@ -2781,7 +2781,7 @@ st.markdown(
     .ai-console-track {margin-top:13px;height:2px;background:#241c3c;position:relative;overflow:hidden;}
     .ai-console-track span {display:block;width:36%;height:100%;background:linear-gradient(90deg,transparent,var(--violet),transparent);animation:aiSweep 2.8s linear infinite;}
     @keyframes aiSweep {0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
-    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(59,130,246,.05),0 12px 28px rgba(0,0,0,.2);}
+    .ai-report-frame {border:1px solid #3d3168;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(180deg,#0f0c1e,#0a0816);box-shadow:inset 0 0 30px rgba(47,182,142,.05),0 12px 28px rgba(0,0,0,.2);}
     .ai-report-bar {display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-bottom:1px solid #2a2140;background:#150f24;color:#c9a8ff;font:900 10px/1.2 monospace;letter-spacing:1px;}
     .ai-report-chip {padding:4px 9px;border:1px solid #4a3a7a;background:#1c1530;color:#c9a8ff;border-radius:999px;}
     .ai-report-body {padding:18px 20px;color:#e2dcf0;font-size:14px;line-height:1.78;white-space:normal;}
@@ -2817,7 +2817,7 @@ st.markdown(
     .st-key-topnav, .st-key-topnav [data-testid="stRadio"] {min-width:0 !important;}
     .st-key-topnav::after {
         content:""; position:absolute; left:12px; right:12px; bottom:0; height:2px;
-        background:linear-gradient(90deg,#3b82f6 0%,rgba(59,130,246,.12) 60%,transparent 100%);
+        background:linear-gradient(90deg,#2fb68e 0%,rgba(47,182,142,.12) 60%,transparent 100%);
         border-radius:2px; pointer-events:none;
     }
     .st-key-topnav .stRadio > div {
@@ -2840,7 +2840,7 @@ st.markdown(
         scroll-padding-inline:12px !important;
         -webkit-overflow-scrolling:touch !important;
         scrollbar-width:thin !important;
-        scrollbar-color:rgba(59,130,246,.4) transparent !important;
+        scrollbar-color:rgba(47,182,142,.4) transparent !important;
         /* Scroll-shadow trick: the two "cover" gradients scroll with the
            content (background-attachment:local) and cancel themselves
            out at the true start/end, while the two dark gradients stay
@@ -2859,10 +2859,10 @@ st.markdown(
     .st-key-topnav .stRadio > div::-webkit-scrollbar {height:5px !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-track {background:transparent !important;}
     .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb {
-        background:rgba(59,130,246,.4) !important; border-radius:6px !important;
+        background:rgba(47,182,142,.4) !important; border-radius:6px !important;
         transition:background .25s ease !important;
     }
-    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(59,130,246,.7) !important;}
+    .st-key-topnav .stRadio > div::-webkit-scrollbar-thumb:hover {background:rgba(47,182,142,.7) !important;}
 
     /* Roomier pills with no leading radio dot -- this bar behaves like a
        tab strip, not a checklist, so each item is one clean text chip. */
@@ -2888,7 +2888,7 @@ st.markdown(
     .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
-        box-shadow:0 2px 8px rgba(99,102,241,.35) !important;
+        box-shadow:0 2px 8px rgba(139,124,246,.35) !important;
         transform:translateY(-1px) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
@@ -2985,8 +2985,8 @@ st.markdown(
        there's one prominent header, not two stacked bars. */
     .topbar-logo {
         width:64px; height:64px; flex:0 0 64px; border-radius:16px;
-        background:radial-gradient(circle at 35% 30%, rgba(99,102,241,.22), transparent 70%);
-        box-shadow:0 0 0 1px rgba(99,102,241,.28), 0 8px 20px rgba(0,0,0,.3);
+        background:radial-gradient(circle at 35% 30%, rgba(139,124,246,.22), transparent 70%);
+        box-shadow:0 0 0 1px rgba(139,124,246,.28), 0 8px 20px rgba(0,0,0,.3);
         display:flex; align-items:center; justify-content:center; padding:8px;
     }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
@@ -2994,14 +2994,14 @@ st.markdown(
     .topbar-icon-btn {
         width:36px; height:36px; border-radius:50%;
         display:flex; align-items:center; justify-content:center;
-        background:linear-gradient(180deg,#0d1420,#0a0f18); border:1px solid #1e3350;
+        background:linear-gradient(180deg,#10151c,#0b0f15); border:1px solid #2a3444;
         color:#9fb4cc; cursor:pointer; transition:border-color .18s var(--ease), color .18s var(--ease);
         padding:0;
     }
     .topbar-icon-btn:hover {border-color:var(--cyan); color:#eaf1ff;}
     .topbar-account-chip {
         display:flex; align-items:center; gap:8px;
-        background:linear-gradient(180deg,#0d1420,#0a0f18); border:1px solid #1e3350;
+        background:linear-gradient(180deg,#10151c,#0b0f15); border:1px solid #2a3444;
         border-radius:999px; padding:5px 14px 5px 5px;
         max-width:230px;
     }
@@ -3080,8 +3080,8 @@ st.markdown(
        (rose, a distinct warning-adjacent hue not used elsewhere in the
        sidebar), System (neutral slate -- settings/about, deliberately
        the quietest one). */
-    .sidebar-group-teal .grp-index {color:var(--teal) !important; border-color:rgba(59,130,246,.4) !important;}
-    .sidebar-group-teal:after {background:linear-gradient(90deg,rgba(59,130,246,.4),transparent) !important;}
+    .sidebar-group-teal .grp-index {color:var(--teal) !important; border-color:rgba(47,182,142,.4) !important;}
+    .sidebar-group-teal:after {background:linear-gradient(90deg,rgba(47,182,142,.4),transparent) !important;}
     .sidebar-group-green .grp-index {color:#7be0a8 !important; border-color:rgba(47,206,135,.4) !important;}
     .sidebar-group-green:after {background:linear-gradient(90deg,rgba(47,206,135,.4),transparent) !important;}
     .sidebar-group-violet .grp-index {color:#d9c7ff !important; border-color:rgba(178,91,240,.4) !important;}
@@ -3152,10 +3152,10 @@ st.markdown(
     .sidebar-status-card-v2 {
         margin-top:16px; padding:13px 13px 11px; border:1px solid #1b465a; position:relative; overflow:hidden;
         background:linear-gradient(180deg,#101f33 0%,#0c1a2a 100%); border-radius:var(--r-lg);
-        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(59,130,246,.02);
+        box-shadow:0 8px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(47,182,142,.02);
         transition:border-color .2s var(--ease), box-shadow .2s var(--ease);
     }
-    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(59,130,246,.04);}
+    .sidebar-status-card-v2:hover {border-color:#2c5877; box-shadow:0 10px 24px rgba(0,0,0,.26), inset 0 0 26px rgba(47,182,142,.04);}
     .sidebar-status-card-v2:before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--green),transparent 80%);}
     .ssc-head {display:flex; align-items:center; gap:7px; margin-bottom:10px;}
     .ssc-pulse {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px rgba(47,206,135,.8); animation:sbPulse 2.2s ease-in-out infinite; flex:0 0 7px;}
@@ -3309,7 +3309,7 @@ st.markdown(
         border:1px solid var(--line-strong) !important;
         border-left:3px solid var(--teal) !important;
         border-radius:var(--r-lg) !important;
-        background:linear-gradient(180deg,#0f1622 0%,#0a0f18 100%) !important;
+        background:linear-gradient(180deg,#0f1622 0%,#0b0f15 100%) !important;
         padding:14px 18px 16px 18px !important;
     }
     .infra-scan-head {margin-bottom:6px;}
@@ -3325,8 +3325,8 @@ st.markdown(
        state. Minimal and consistent with every other tab strip in the app. */
     .st-key-bulk_infra_scan [data-testid="stRadio"] > div {
         display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
-        background:linear-gradient(180deg,#081726,#060f1a) !important;
-        border:1px solid #1c3a55 !important;
+        background:linear-gradient(180deg,#0c1117,#0a0e13) !important;
+        border:1px solid #2a3444 !important;
         padding:6px !important;
         border-radius:var(--r-md) !important;
     }
@@ -3352,12 +3352,12 @@ st.markdown(
        copy-paste twin of the other view's. */
     .st-key-run_vpn_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#123a5c,#0c283f) !important;
-        border:1px solid rgba(59,130,246,.55) !important;
+        border:1px solid rgba(47,182,142,.55) !important;
         color:#eaf6ff !important;
-        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(59,130,246,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(47,182,142,.22), inset 0 1px 0 rgba(255,255,255,.10) !important;
     }
     .st-key-run_vpn_bulk_scan button[kind^="primary"]:hover {
-        box-shadow:0 0 0 1px rgba(59,130,246,.35), 0 10px 26px rgba(59,130,246,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        box-shadow:0 0 0 1px rgba(47,182,142,.35), 0 10px 26px rgba(47,182,142,.32), inset 0 1px 0 rgba(255,255,255,.16) !important;
     }
     .st-key-run_tor_bulk_scan button[kind^="primary"] {
         background:linear-gradient(180deg,#291c47,#190f2b) !important;
@@ -3397,8 +3397,8 @@ st.markdown(
     }
     .st-key-tech_logs_tabs [data-testid="stRadio"] > div {
         display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
-        background:linear-gradient(180deg,#0d1420,#0a0f18) !important;
-        border:1px solid #1e3350 !important;
+        background:linear-gradient(180deg,#10151c,#0b0f15) !important;
+        border:1px solid #2a3444 !important;
         padding:6px !important;
         border-radius:var(--r-md) !important;
     }
@@ -3431,8 +3431,8 @@ st.markdown(
     .email-score-num {font-variant-numeric:tabular-nums; font-weight:700; font-size:12.5px; min-width:34px; text-align:right; color:#e6edf7;}
     .verdict-pill {display:inline-flex; align-items:center; gap:7px; padding:2px 10px 2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; filter:saturate(.85);}
     .verdict-pill::before {content:""; width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(148,163,184,.16); box-shadow:0 0 0 3px color-mix(in srgb, currentColor 24%, transparent);}
-    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#b4c8e6; background:linear-gradient(180deg,rgba(91,141,239,.12),rgba(91,141,239,.05)); border:1px solid rgba(91,141,239,.22); padding:1px 8px; border-radius:7px; white-space:nowrap;}
-    .row-chip {display:inline-block; min-width:26px; text-align:center; font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:11px; color:#9fb0c6; font-weight:700; background:linear-gradient(180deg,rgba(148,163,184,.16),rgba(148,163,184,.06)); border:1px solid rgba(148,163,184,.2); border-radius:7px; padding:2px 8px;}
+    .ip-chip {font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:12px; color:#c3ccd8; background:linear-gradient(180deg,rgba(47,182,142,.12),rgba(47,182,142,.05)); border:1px solid rgba(47,182,142,.22); padding:1px 8px; border-radius:7px; white-space:nowrap;}
+    .row-chip {display:inline-block; min-width:26px; text-align:center; font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; font-size:11px; color:#a3adbb; font-weight:700; background:linear-gradient(180deg,rgba(148,163,184,.16),rgba(148,163,184,.06)); border:1px solid rgba(148,163,184,.2); border-radius:7px; padding:2px 8px;}
 
     /* ------------------------------------------------------------------
        DASHBOARD SECTION HEADER -- replaces the bare st.caption("MIDDLE
@@ -3452,7 +3452,7 @@ st.markdown(
     }
     .dash-section-title .dash-section-dot {
         width:7px; height:7px; border-radius:50%; background:var(--cyan);
-        box-shadow:0 0 10px rgba(59,130,246,.75); flex:0 0 7px;
+        box-shadow:0 0 10px rgba(47,182,142,.75); flex:0 0 7px;
     }
     .dash-section-title .dash-section-sub {
         color:#6f8aa3; font-weight:600; letter-spacing:.3px; text-transform:none; font-size:11px;
@@ -3535,18 +3535,18 @@ st.markdown(
 
     /* =================================================================
        DESIGN POLISH LAYER (last on purpose, CSS only)
-       One pass that pulls the leftover navy hard-codes (#06101c, #0b1828,
-       #102238, #203b57 ...) onto the same graphite tokens the rest of the
+       One pass that pulls the leftover navy hard-codes (#0b0f14, #10151c,
+       #151b24, #2a3342 ...) onto the same graphite tokens the rest of the
        app already uses, and gives every component the same radius, border,
        hover and focus behavior. Severity colors, layout, widths and
        behavior are untouched.
        ================================================================= */
     :root {
-        --ring: 0 0 0 3px rgba(59,130,246,.18);
+        --ring: 0 0 0 3px rgba(47,182,142,.18);
         --surface-sunken: var(--panel-3);
     }
     .stApp {-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;}
-    ::selection {background:rgba(59,130,246,.35); color:#ffffff;}
+    ::selection {background:rgba(47,182,142,.35); color:#ffffff;}
 
     /* Chrome: sidebar and scrollbars join the graphite palette. */
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div {background:var(--panel-3) !important;}
@@ -3560,7 +3560,7 @@ st.markdown(
     /* Typography rhythm. */
     h1, h2, h3 {letter-spacing:-.01em !important;}
     .stCaption, [data-testid="stCaptionContainer"] {color:var(--muted) !important; line-height:1.55 !important;}
-    .stMarkdown a:where(:not([class])) {color:var(--cyan); text-decoration-color:rgba(59,130,246,.4); text-underline-offset:3px; transition:color .15s var(--ease);}
+    .stMarkdown a:where(:not([class])) {color:var(--cyan); text-decoration-color:rgba(47,182,142,.4); text-underline-offset:3px; transition:color .15s var(--ease);}
     .stMarkdown a:where(:not([class])):hover {color:#8ab4f8;}
     hr {border-color:var(--line) !important;}
 
@@ -3591,7 +3591,7 @@ st.markdown(
     /* Tables, code, uploader. */
     .stDataFrame {border:1px solid rgba(148,163,184,.18) !important;}
     [data-testid="stCode"], .stCodeBlock {border:1px solid var(--line) !important; border-radius:var(--r-md) !important;}
-    .stFileUploader {background:var(--surface-sunken) !important; border:1px dashed rgba(59,130,246,.4) !important; transition:border-color .15s var(--ease), background .15s var(--ease);}
+    .stFileUploader {background:var(--surface-sunken) !important; border:1px dashed rgba(47,182,142,.4) !important; transition:border-color .15s var(--ease), background .15s var(--ease);}
     .stFileUploader:hover {border-color:var(--cyan) !important; background:var(--panel) !important;}
 
     /* Floating layers: dropdowns, tooltips, toasts. */
@@ -3618,15 +3618,15 @@ st.markdown(
         margin-left:auto; font:800 10px/1 ui-monospace,Consolas,monospace; letter-spacing:1.4px;
         padding:7px 12px; border-radius:999px; border:1px solid var(--line-strong); color:#cbd5e1;
     }
-    .part-banner-batch {background:linear-gradient(135deg, rgba(59,130,246,.18), var(--panel) 62%); border-left:5px solid var(--cyan);}
+    .part-banner-batch {background:linear-gradient(135deg, rgba(47,182,142,.18), var(--panel) 62%); border-left:5px solid var(--cyan);}
     .part-banner-batch .pb-step {background:var(--brand-gradient);}
     .part-banner-single {background:linear-gradient(135deg, rgba(201,138,92,.20), var(--panel) 62%); border-left:5px solid var(--teal);}
     .part-banner-single .pb-step {background:linear-gradient(90deg,#c98a5c,#d9a35f);}
     .part-sep {display:flex; align-items:center; gap:14px; margin:64px 0 22px 0;}
     .part-sep::before, .part-sep::after {content:""; flex:1; height:2px; background:linear-gradient(90deg, transparent, var(--teal), transparent);}
     .part-sep span {font:800 11px/1 ui-monospace,Consolas,monospace; letter-spacing:2.2px; color:var(--teal); white-space:nowrap;}
-    .part-banner-ai {background:linear-gradient(135deg, rgba(99,102,241,.20), var(--panel) 62%); border-left:5px solid var(--violet);}
-    .part-banner-ai .pb-step {background:linear-gradient(90deg,#6366f1,#8b5cf6);}
+    .part-banner-ai {background:linear-gradient(135deg, rgba(139,124,246,.20), var(--panel) 62%); border-left:5px solid var(--violet);}
+    .part-banner-ai .pb-step {background:linear-gradient(90deg,#8b7cf6,#8b5cf6);}
     .part-banner-intel {background:linear-gradient(135deg, rgba(111,174,140,.18), var(--panel) 62%); border-left:5px solid var(--green);}
     .part-banner-intel .pb-step {background:linear-gradient(90deg,#4f9d78,#6fae8c);}
     .sec-head {
@@ -3782,7 +3782,7 @@ st.markdown(
     .st-key-bulk_infra_scan, .st-key-dash_map_graph_card {--tone:var(--teal);}
     .st-key-dd_dock_metrics_body {--tone:var(--teal);}
     .st-key-auth_password_box, .st-key-auth_password_box_ms, .st-key-auth_password_box_ya {--tone:#a6947c;}
-    .st-key-auth_google_box {--tone:#3b82f6;}
+    .st-key-auth_google_box {--tone:#2fb68e;}
     .st-key-auth_microsoft_box {--tone:#c98a5c;}
     .st-key-auth_yandex_box {--tone:#d65f45;}
 
@@ -4458,20 +4458,20 @@ st.markdown(
         min-height:44px !important; border-radius:10px !important;
         background:
             linear-gradient(180deg,#1b2638,#111926) padding-box,
-            linear-gradient(115deg,#3b82f6 0%,#6366f1 55%,#c98a5c 100%) border-box !important;
+            linear-gradient(115deg,#2fb68e 0%,#8b7cf6 55%,#c98a5c 100%) border-box !important;
         background-origin:border-box !important; background-clip:padding-box, border-box !important;
         border:1px solid transparent !important; color:#eef3fa !important;
         font:650 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.02em !important;
         box-shadow:0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06) !important;
     }
-    .st-key-manual_login_btn button::after {background:linear-gradient(115deg,#3b82f6,#6366f1) !important; border-radius:9px;}
+    .st-key-manual_login_btn button::after {background:linear-gradient(115deg,#2fb68e,#8b7cf6) !important; border-radius:9px;}
     .st-key-manual_login_btn button:hover {
         background:
             linear-gradient(180deg,#202d42,#131c2b) padding-box,
             linear-gradient(115deg,#5b9bf8 0%,#7c7ff3 55%,#d99a66 100%) border-box !important;
         background-origin:border-box !important; background-clip:padding-box, border-box !important;
         color:#fff !important; transform:translateY(-1px) !important;
-        box-shadow:0 10px 24px -12px rgba(99,102,241,.65), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        box-shadow:0 10px 24px -12px rgba(139,124,246,.65), inset 0 1px 0 rgba(255,255,255,.08) !important;
     }
     .st-key-manual_login_btn button:hover::after {opacity:.14 !important;}
 
@@ -4575,7 +4575,7 @@ st.markdown(
         content:"" !important; display:block !important; position:absolute; left:28px; right:28px; bottom:8px; height:3px; border-radius:3px;
         pointer-events:none; opacity:var(--nav-on,0); transition:opacity .25s var(--ease);
         background:
-            linear-gradient(90deg,#3b82f6,#8b7cff) no-repeat,
+            linear-gradient(90deg,#2fb68e,#8b7cff) no-repeat,
             rgba(255,255,255,.06);
         background-size:calc(var(--nav-w,1) * 100%) 100%, 100% 100%;
         background-position:calc(var(--nav-p,0) * 100%) 0, 0 0;
@@ -4729,7 +4729,7 @@ st.markdown(
         color:var(--g) !important; font:700 9.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.04em;
         padding:4px 6px !important; border-radius:999px !important;
         border:1px solid color-mix(in srgb, var(--g) 50%, transparent) !important;
-        background:color-mix(in srgb, var(--g) 13%, #0a111b) !important;
+        background:color-mix(in srgb, var(--g) 13%, #0e1319) !important;
     }
     .stApp .sidebar-group-label:after {
         background:linear-gradient(90deg, color-mix(in srgb, var(--g) 50%, transparent), transparent) !important;
@@ -4869,13 +4869,13 @@ st.markdown(
     }
     .stApp .st-key-imap_connected_panel .stButton button:hover {transform:translateY(-1px) !important;}
     .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button {
-        background:linear-gradient(180deg,#1f3a66,#16264a) padding-box, linear-gradient(115deg,#3b82f6,#6366f1 60%,#a78bfa) border-box !important;
+        background:linear-gradient(180deg,#1f3a66,#16264a) padding-box, linear-gradient(115deg,#2fb68e,#8b7cf6 60%,#a78bfa) border-box !important;
         border:1px solid transparent !important; color:#fff !important;
-        box-shadow:0 12px 24px -16px rgba(99,102,241,.9), inset 0 1px 0 rgba(255,255,255,.09) !important;
+        box-shadow:0 12px 24px -16px rgba(139,124,246,.9), inset 0 1px 0 rgba(255,255,255,.09) !important;
     }
     .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button:hover {
         background:linear-gradient(180deg,#27487f,#1b2f5c) padding-box, linear-gradient(115deg,#5b9bf8,#7c7ff3 60%,#b9a6ff) border-box !important;
-        box-shadow:0 16px 28px -14px rgba(99,102,241,1), inset 0 1px 0 rgba(255,255,255,.12) !important;
+        box-shadow:0 16px 28px -14px rgba(139,124,246,1), inset 0 1px 0 rgba(255,255,255,.12) !important;
     }
     .stApp .st-key-imap_connected_panel .st-key-imap_show_form_btn button {
         background:rgba(76,141,255,.06) !important; border:1px solid rgba(76,141,255,.45) !important; color:#b9ceff !important;
@@ -4997,7 +4997,136 @@ st.markdown(
     }
 
     /* Keyboard focus: one visible ring everywhere. */
-    .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
+    .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(47,182,142,.7); outline-offset:2px; border-radius:var(--r-sm);}
+
+    /* ==================================================================
+       FINAL DESIGN LAYER v2 (last on purpose, CSS only)
+       1. Palette: graphite base, no blue wash. One accent per job:
+          emerald = primary actions / focus, amber = brand + scan tools,
+          violet = AI surfaces, rose = alerts / map. Severity colours
+          (red / orange / amber / green) are untouched.
+       2. ONE two-option toggle (dot + pill, the Map-view look) used by
+          every [class*="st-key-seg_"] container -- each toggle owns its
+          own accent through --seg.
+       3. Tables: one rich cell system for every polished table.
+       ================================================================== */
+    :root {
+        --cyan:#2fb68e; --violet:#8b7cf6; --teal:#d49a63; --green:#6fae8c; --amber:#d9a35f; --red:#d9627a;
+        --ring:0 0 0 3px rgba(47,182,142,.20);
+        --brand-gradient:linear-gradient(90deg,#2fb68e,#d9a35f);
+        --act-1-top:#2fb68e; --act-1-bot:#1f8f70; --act-1-border:rgba(47,182,142,.55); --act-1-text:#f4fbf8;
+        --act-1-top-hover:#3cc79e; --act-1-bot-hover:#25a081; --act-1-border-hover:rgba(60,199,158,.8);
+        --act-2-border-hover:rgba(217,163,95,.55);
+        --glow-violet:0 0 0 1px rgba(47,182,142,.25), 0 6px 16px rgba(0,0,0,.28);
+    }
+    .stApp {
+        background:radial-gradient(circle at 12% 0%, rgba(217,163,95,.035), transparent 28%),
+                   radial-gradient(circle at 100% 12%, rgba(139,124,246,.03), transparent 30%), var(--bg) !important;
+    }
+    ::selection {background:rgba(217,163,95,.35); color:#fff;}
+
+    /* ---- Two-option toggle (shared by all seg_ containers) ---- */
+    .stApp [class*="st-key-seg_"] {--seg:#e0708c; margin:2px 0 14px 0;}
+    .stApp .st-key-seg_map_view       {--seg:#e0708c;}
+    .stApp .st-key-seg_corr_graph     {--seg:#8b7cf6;}
+    .stApp .st-key-seg_infra_scan     {--seg:#d9a35f;}
+    .stApp .st-key-seg_tech_logs      {--seg:#2fb68e;}
+    .stApp .st-key-seg_scan_count     {--seg:#38b2c8;}
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] {width:100% !important;}
+    .stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] {
+        display:flex !important; margin:0 0 8px 2px !important; padding:0 !important;
+        background:transparent !important; border:0 !important; min-height:0 !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] p {
+        font-size:11px !important; font-weight:700 !important; letter-spacing:.12em !important;
+        text-transform:uppercase !important; color:var(--muted) !important; margin:0 !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] {
+        display:flex !important; flex-wrap:wrap !important; align-items:center !important; gap:8px !important;
+        width:100% !important; padding:6px !important; box-sizing:border-box !important;
+        background:linear-gradient(180deg,#0e1319,#0b1016) !important;
+        border:1px solid var(--line-strong) !important; border-radius:14px !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 8px 22px -14px rgba(0,0,0,.7) !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {
+        flex:0 0 auto !important; display:flex !important; align-items:center !important; gap:10px !important;
+        justify-content:flex-start !important; text-align:left !important; white-space:nowrap !important;
+        min-height:0 !important; margin:0 !important; padding:10px 18px 10px 14px !important;
+        border-radius:10px !important; border:1px solid transparent !important; background:transparent !important;
+        color:#aab4c2 !important; cursor:pointer !important;
+        transition:background .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease), color .18s var(--ease) !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {
+        font-size:13.5px !important; font-weight:600 !important; letter-spacing:.1px !important;
+        color:inherit !important; white-space:nowrap !important; margin:0 !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {
+        background:rgba(255,255,255,.04) !important; color:#f1f5f9 !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+        background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)) !important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--seg) 20%,transparent),color-mix(in srgb,var(--seg) 8%,transparent)) !important;
+        border-color:var(--seg) !important;
+        border-color:color-mix(in srgb,var(--seg) 60%,transparent) !important;
+        box-shadow:0 6px 18px -10px var(--seg), inset 0 1px 0 rgba(255,255,255,.06) !important;
+        color:#ffffff !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#fff !important; font-weight:700 !important;}
+    /* the dot: quiet ring when off, filled accent with soft halo when on */
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {
+        border:2px solid #5d6877 !important; background:transparent !important; box-shadow:none !important;
+        border-radius:50% !important;
+    }
+    .stApp [class*="st-key-seg_"] [data-testid="stRadio"] label:has(input:checked) div:empty {
+        background:var(--seg) !important; border-color:var(--seg) !important;
+        box-shadow:0 0 0 4px rgba(255,255,255,.10), 0 0 12px 2px var(--seg) !important;
+        box-shadow:0 0 0 4px color-mix(in srgb,var(--seg) 22%,transparent), 0 0 12px 2px color-mix(in srgb,var(--seg) 70%,transparent) !important;
+    }
+    .stApp .st-key-seg_tech_logs [data-testid="stRadio"] [role="radiogroup"] label,
+    .stApp .st-key-seg_infra_scan [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
+
+    /* ---- Tables: rich cells ---- */
+    .polished-table-wrap {
+        background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
+                   linear-gradient(135deg,rgba(217,163,95,.55),rgba(148,163,184,.14) 34%,rgba(148,163,184,.14) 66%,rgba(139,124,246,.5)) border-box !important;
+        box-shadow:0 14px 34px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.03) !important;
+    }
+    .polished-table-wrap::before {background:linear-gradient(90deg,#2fb68e 0%,#d9a35f 30%,#e0708c 58%,#8b7cf6 82%,#38b2c8 100%) !important;}
+    table.polished-table thead th {background:linear-gradient(180deg,#171d27,#11161e) !important; color:#a3adbb !important;}
+    table.polished-table thead th {--tc:#2fb68e;}
+    table.polished-table thead th:nth-child(5n+2) {--tc:#d9a35f !important;}
+    table.polished-table thead th:nth-child(5n+3) {--tc:#8b7cf6 !important;}
+    table.polished-table thead th:nth-child(5n+4) {--tc:#e0708c !important;}
+    table.polished-table thead th:nth-child(5n+5) {--tc:#38b2c8 !important;}
+    table.polished-table tbody tr:hover {background:linear-gradient(90deg,rgba(217,163,95,.12),rgba(139,124,246,.06) 45%,rgba(148,163,184,0) 88%) !important;}
+    table.polished-table tbody tr:hover td:first-child {background:linear-gradient(180deg,#d9a35f,#e0708c) left center / 3px 62% no-repeat !important;}
+    table.polished-table tbody td {padding:9px 16px !important; vertical-align:middle !important;}
+    table.polished-table tbody td.pt-num {text-align:right; font-variant-numeric:tabular-nums;}
+    table.polished-table thead th.pt-num {text-align:right;}
+    table.polished-table tbody td.pt-wrap {white-space:normal; min-width:180px; max-width:520px; line-height:1.5;}
+    .ip-chip {background:linear-gradient(180deg,rgba(56,178,200,.14),rgba(56,178,200,.05)) !important; border:1px solid rgba(56,178,200,.3) !important; color:#bfe9f1 !important;}
+    .pt-pill {display:inline-flex; align-items:center; gap:7px; padding:3px 11px 3px 9px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap;}
+    .pt-pill::before {content:""; width:6px; height:6px; border-radius:50%; background:currentColor;}
+    .pt-pill.good {color:#4cc38a; background:rgba(76,195,138,.12); box-shadow:inset 0 0 0 1px rgba(76,195,138,.4);}
+    .pt-pill.bad  {color:#f0646e; background:rgba(240,100,110,.12); box-shadow:inset 0 0 0 1px rgba(240,100,110,.42);}
+    .pt-pill.warn {color:#e7a948; background:rgba(231,169,72,.12); box-shadow:inset 0 0 0 1px rgba(231,169,72,.42);}
+    .pt-pill.info {color:#38b2c8; background:rgba(56,178,200,.12); box-shadow:inset 0 0 0 1px rgba(56,178,200,.4);}
+    .pt-pill.mute {color:#98a3b3; background:rgba(152,163,179,.10); box-shadow:inset 0 0 0 1px rgba(152,163,179,.3);}
+    .pt-bar {display:flex; align-items:center; gap:10px; min-width:130px;}
+    .pt-bar-track {flex:1; height:6px; border-radius:6px; background:rgba(148,163,184,.14); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.5);}
+    .pt-bar-fill {height:100%; border-radius:6px;}
+    .pt-bar-num {font-weight:700; font-size:12.5px; min-width:44px; text-align:right; color:#e6edf7; font-variant-numeric:tabular-nums;}
+    .pt-idx {display:inline-block; min-width:26px; text-align:center; font:700 11px/1 'JetBrains Mono',Consolas,monospace; color:#d9a35f; background:rgba(217,163,95,.10); border:1px solid rgba(217,163,95,.3); border-radius:7px; padding:4px 8px;}
+    .pt-mono {font-family:'JetBrains Mono',Consolas,monospace; font-size:12px; color:#c3ccd8;}
+    .ai-report-body table.polished-table {margin:0;}
+    .ai-report-body .polished-table-wrap {margin:12px 0 16px 0;}
+    .ai-report-body table.polished-table tbody td {color:#d5dbe6;}
+
+    /* Link, focus and chrome colours that were hard-wired to blue. */
+    .stApp :is(a,[role="tab"],[role="radio"],summary):focus-visible {outline:2px solid rgba(217,163,95,.75) !important;}
+    .stFileUploader {border:1px dashed rgba(217,163,95,.4) !important;}
+    .stFileUploader:hover {border-color:var(--amber) !important;}
+    ::-webkit-scrollbar-thumb:hover {background:var(--amber) !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -5517,8 +5646,38 @@ def _ai_markdown_to_html(text):
             out.append("</ol>")
             in_ol = False
 
-    for line in lines:
+    def _split_row(raw_line):
+        return [c.strip() for c in raw_line.strip().strip("|").split("|")]
+
+    def _is_sep(raw_line):
+        t = raw_line.strip()
+        return t.count("|") >= 1 and bool(re.fullmatch(r"\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?", t))
+
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
         s = line.strip()
+        # Markdown pipe table -> same themed table used everywhere else.
+        if s.startswith("|") and idx + 1 < len(lines) and _is_sep(lines[idx + 1]):
+            close_lists()
+            header = _split_row(s)
+            idx += 2
+            rows = []
+            while idx < len(lines) and lines[idx].strip().startswith("|"):
+                cells = _split_row(lines[idx])
+                cells = (cells + [""] * len(header))[:len(header)]
+                rows.append([re.sub(r"[*_`]", "", c) for c in cells])
+                idx += 1
+            if rows:
+                seen = {}
+                uniq = []
+                for h in header:
+                    h = re.sub(r"[*_`]", "", h) or " "
+                    seen[h] = seen.get(h, 0) + 1
+                    uniq.append(h if seen[h] == 1 else f"{h} ({seen[h]})")
+                out.append(_polished_table_html(pd.DataFrame(rows, columns=uniq)))
+            continue
+        idx += 1
         if not s:
             close_lists()
             continue
@@ -6322,36 +6481,103 @@ def get_email_date(email_text):
         pass
     return None
 
+_PT_GOOD = {"PASS", "OK", "CLEAN", "SAFE", "NO", "NOT DETECTED", "NONE", "LOW", "TRUSTED", "VALID"}
+_PT_BAD = {"FAIL", "FAILED", "DETECTED", "CRITICAL", "MALICIOUS", "INFECTED", "HIGH", "SPOOFED", "PHISHING"}
+_PT_WARN = {"SOFTFAIL", "SUSPICIOUS", "MEDIUM", "WARN", "WARNING", "NEUTRAL", "CAUTION"}
+_PT_INFO = {"INFO", "INFORMATIONAL", "INFORMATION"}
+
+
+def _pt_tone(text):
+    """Colour family for a status-like cell; the same words always get the same colour."""
+    t = str(text).strip().upper()
+    if not t:
+        return "mute"
+    head = t.split(" ")[0].split("(")[0].strip(" —-·:")
+    for tone, words in (("bad", _PT_BAD), ("warn", _PT_WARN), ("good", _PT_GOOD), ("info", _PT_INFO)):
+        if t in words or head in words:
+            return tone
+    if t.startswith("YES"):
+        return "bad"
+    return "mute"
+
+
+def _pt_cell(col, v, row_level=""):
+    """One rich table cell: status pill, score bar, IP chip, index chip, or plain text.
+    Presentation only -- the displayed text is always the original value."""
+    text = "" if (v is None or (isinstance(v, float) and pd.isna(v))) else str(v)
+    esc = html.escape(text)
+    key = str(col).strip().lower()
+    if key in ("verdict", "severity", "level", "risk level"):
+        t = text.strip().upper()
+        color = _LEVEL_MARKER_COLORS.get(t)
+        if color:
+            return (f'<td><span class="pt-pill" style="color:{color};background:{color}1f;'
+                    f'box-shadow:inset 0 0 0 1px {color}66;">{html.escape(t)}</span></td>')
+        return f'<td><span class="pt-pill {_pt_tone(text)}">{html.escape(text.upper() or "-")}</span></td>'
+    if key in ("spf", "dkim", "dmarc", "bec impersonation", "vpn masking", "tor exit confirmed",
+               "network trust", "antivirus", "status", "result", "ml label", "classifier"):
+        if key in ("ml label", "classifier"):
+            low = text.strip().lower()
+            tone = "bad" if low.startswith(("phish", "malic", "spam")) else ("good" if low.startswith(("legit", "ham", "safe", "benign")) else "mute")
+        else:
+            tone = _pt_tone(text)
+        return f'<td><span class="pt-pill {tone}">{esc if len(text) > 22 else html.escape(text.upper())}</span></td>'
+    if key == "correlated":
+        tone = "warn" if text.strip().upper().startswith("YES") else "mute"
+        return f'<td><span class="pt-pill {tone}">{esc}</span></td>'
+    if key in ("score", "risk score", "threat score"):
+        m = re.match(r"\s*(-?\d+(?:\.\d+)?)", text)
+        if m:
+            num = float(m.group(1))
+            pct = max(0.0, min(100.0, num))
+            color = _LEVEL_MARKER_COLORS.get(str(row_level).upper()) or (
+                "#f0646e" if pct >= 75 else "#f2994a" if pct >= 50 else "#e7a948" if pct >= 25 else "#4cc38a")
+            return (f'<td><div class="pt-bar"><div class="pt-bar-track"><div class="pt-bar-fill" '
+                    f'style="width:{pct}%;background:{color};"></div></div>'
+                    f'<span class="pt-bar-num">{esc}</span></div></td>')
+    if key in ("origin ip", "ip", "ip address", "hop ip") and text:
+        return f'<td><span class="ip-chip">{esc}</span></td>'
+    if key in ("#", "email #", "row #", "row", "no.", "hop"):
+        return f'<td><span class="pt-idx">{esc}</span></td>'
+    if key in ("indicator", "sha-256", "hash", "domain", "url") and text:
+        return f'<td class="pt-wrap"><span class="pt-mono">{esc}</span></td>'
+    if key in ("detail", "details", "description", "subject", "title", "also seen in", "from") and len(text) > 40:
+        return f'<td class="pt-wrap">{esc}</td>'
+    return f"<td>{esc}</td>"
+
+
+def _polished_table_html(df, max_height=None):
+    cols = list(df.columns)
+    thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
+    level_col = next((c for c in cols if str(c).strip().lower() in ("verdict", "level")), None)
+    body_rows = []
+    for _, row in df.iterrows():
+        lvl = str(row[level_col]).upper() if level_col is not None else ""
+        body_rows.append("<tr>" + "".join(_pt_cell(c, row[c], lvl) for c in cols) + "</tr>")
+    wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
+    return (
+        f'<div class="polished-table-wrap"{wrap_style}>'
+        f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
+        f'<tbody>{"".join(body_rows)}</tbody></table></div>'
+    )
+
+
 def _render_polished_table(df, empty_text="No data available.", max_height=None):
     """Presentation-only replacement for st.dataframe on plain, read-only
     tables -- draws real themed HTML/CSS (see '.polished-table' in the
     global stylesheet) instead of Streamlit's own canvas-rendered grid,
     which never picks up the app's dark theme no matter what CSS targets
-    it. Never used on a table that needs on_select row-clicks or
-    column_config widgets (progress bars, etc.) -- those keep st.dataframe
-    since HTML can't reproduce that behavior. Renders exactly the rows/
-    columns handed to it; no data is added, dropped, or reordered."""
+    it. Cells are auto-styled by column name (verdict/severity pills,
+    SPF/DKIM/DMARC pass-fail pills, score bars, IP chips, index chips) so
+    every table in the app, including the whole Forensic Report, shares one
+    design. Never used on a table that needs on_select row-clicks or
+    column_config widgets -- those keep st.dataframe since HTML can't
+    reproduce that behavior. Renders exactly the rows/columns handed to it;
+    no data is added, dropped, or reordered."""
     if df is None or getattr(df, "empty", True):
         st.markdown(f'<div class="polished-table-empty">{html.escape(empty_text)}</div>', unsafe_allow_html=True)
         return
-    cols = list(df.columns)
-    thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
-    body_rows = []
-    for _, row in df.iterrows():
-        tds = []
-        for c in cols:
-            v = row[c]
-            text = "" if (v is None or (isinstance(v, float) and pd.isna(v))) else str(v)
-            tds.append(f"<td>{html.escape(text)}</td>")
-        body_rows.append(f"<tr>{''.join(tds)}</tr>")
-    tbody = "".join(body_rows)
-    wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
-    st.markdown(
-        f'<div class="polished-table-wrap"{wrap_style}>'
-        f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
-        f'<tbody>{tbody}</tbody></table></div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(_polished_table_html(df, max_height), unsafe_allow_html=True)
 
 
 def _render_email_results_table(df, height=300):
@@ -7554,7 +7780,7 @@ if active_panel == "Dashboard":
         so the command vocabulary is identical either way."""
 
         st.markdown("#### Technical Logs & Antivirus")
-        _tech_logs_container = st.container(key="tech_logs_tabs")
+        _tech_logs_container = st.container(key="seg_tech_logs")
         with _tech_logs_container:
             _tech_logs_view = st.radio(
                 "Technical Logs & Antivirus view", ["Email Results", "Antivirus Scan"],
@@ -8431,12 +8657,13 @@ if active_panel == "AI Threat Analysis":
                 "date cannot be read, CSV row order is used as the fallback."
             )
 
-            qwen_count = st.radio(
-                "Number of recent emails to scan (max 20)",
-                [10, 20],
-                horizontal=True,
-                key="qwen_recent_count",
-            )
+            with st.container(key="seg_scan_count"):
+                qwen_count = st.radio(
+                    "Number of recent emails to scan (max 20)",
+                    [10, 20],
+                    horizontal=True,
+                    key="qwen_recent_count",
+                )
 
             recent_candidates = []
             for idx, email_text in enumerate(data):
@@ -8826,9 +9053,10 @@ if active_panel == "Origin & Route":
             cases.append(current_case)
 
         _sec("Interactive Visual Hop Map", "Satellite view of every hop", "teal")
-        _geo_map_mode = st.radio(
-            "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="geo_map_mode_v2",
-        )
+        with st.container(key="seg_map_view"):
+            _geo_map_mode = st.radio(
+                "Map view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="geo_map_mode_v2",
+            )
 
         # The summary strip below (Origin IP / Infrastructure / VPN Masking /
         # Network Trust) always describes whichever email the map is showing.
@@ -9025,10 +9253,11 @@ if active_panel == "Origin & Route":
                 '</div>',
                 unsafe_allow_html=True,
             )
-            _bulk_infra_view = st.radio(
-                "Bulk infrastructure scan view", ["VPN / Datacenter", "Tor Exit Nodes"],
-                horizontal=True, label_visibility="collapsed", key="bulk_infra_scan_radio",
-            )
+            with st.container(key="seg_infra_scan"):
+                _bulk_infra_view = st.radio(
+                    "Bulk infrastructure scan view", ["VPN / Datacenter", "Tor Exit Nodes"],
+                    horizontal=True, label_visibility="collapsed", key="bulk_infra_scan_radio",
+                )
 
             if _bulk_infra_view == "VPN / Datacenter":
                 st.caption(
@@ -9535,9 +9764,10 @@ if active_panel == "Correlation":
         # Same switch as Origin & Route: the 10 most recent emails together,
         # or one email picked from the dropdown. (The metrics and the shared-
         # infrastructure table further down always cover every case.)
-        _corr_mode = st.radio(
-            "Graph view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="corr_graph_mode",
-        )
+        with st.container(key="seg_corr_graph"):
+            _corr_mode = st.radio(
+                "Graph view", [_MAP_MODE_ALL, _MAP_MODE_ONE], horizontal=True, key="corr_graph_mode",
+            )
         if _corr_mode == _MAP_MODE_ONE:
             graph_cases = [_pick_case_for_map(cases, result, case_name, key="corr_graph_email_pick", source_rows=data)]
         else:
