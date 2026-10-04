@@ -4595,12 +4595,38 @@ st.markdown(
        The collapsed widget title is hidden -- it was being styled as a tab.
        Delete this block (and the _NAV_STYLE generator) to go back. ------ */
 
+    /* The nav BOX is frosted glass (the tab buttons inside are untouched).
+       Layers, top to bottom: a slim accent edge on the left, a soft accent
+       glow at each end so the pane looks lit from within, a diagonal sheen,
+       and a translucent dark base. backdrop-filter blurs whatever sits
+       behind it; the hairline ring (::before) is brighter on the top-left
+       edge like light catching glass; inset highlights give the pane
+       thickness. Falls back to the translucent fills if a browser lacks
+       backdrop-filter. */
     .stApp .st-key-topnav {
         position:relative !important; overflow:hidden !important; display:flex !important; align-items:center !important;
         padding:14px 4px !important; margin:4px 0 8px 0 !important;
-        background:linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
-        border:1px solid var(--line-strong) !important; border-left:4px solid var(--cyan) !important; border-radius:var(--r-lg) !important;
-        box-shadow:0 10px 26px rgba(0,0,0,.26) !important;
+        background:
+            linear-gradient(180deg, transparent, var(--cyan) 22%, var(--cyan) 78%, transparent) left center / 3px 58% no-repeat,
+            radial-gradient(46% 170% at 0% 50%, color-mix(in srgb, var(--cyan) 22%, transparent), transparent 72%),
+            radial-gradient(40% 180% at 100% 0%, color-mix(in srgb, var(--violet) 15%, transparent), transparent 70%),
+            linear-gradient(115deg, rgba(255,255,255,.085) 0%, rgba(255,255,255,.022) 40%, rgba(255,255,255,.05) 100%),
+            rgba(14,19,27,.58) !important;
+        -webkit-backdrop-filter:blur(18px) saturate(155%) !important; backdrop-filter:blur(18px) saturate(155%) !important;
+        border:1px solid transparent !important; border-radius:var(--r-lg) !important;
+        box-shadow:
+            0 22px 44px -22px rgba(0,0,0,.72),
+            0 2px 6px rgba(0,0,0,.28),
+            inset 0 1px 0 rgba(255,255,255,.13),
+            inset 0 -1px 0 rgba(255,255,255,.035) !important;
+    }
+    .stApp .st-key-topnav::before {
+        content:"" !important; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; z-index:2;
+        background:linear-gradient(135deg,
+            rgba(255,255,255,.38) 0%, rgba(255,255,255,.07) 34%,
+            rgba(255,255,255,.04) 62%, color-mix(in srgb, var(--cyan) 55%, transparent) 100%);
+        -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite:xor; mask-composite:exclude;
     }
     /* slim scroll indicator (native bar is hidden): --nav-w = visible fraction,
        --nav-p = scroll position 0..1, --nav-on = 1 only when the strip overflows.
