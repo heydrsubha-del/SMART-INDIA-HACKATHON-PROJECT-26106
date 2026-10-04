@@ -5085,6 +5085,29 @@ st.markdown(
     .stApp .st-key-seg_tech_logs [data-testid="stRadio"] [role="radiogroup"] label,
     .stApp .st-key-seg_infra_scan [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
 
+
+    /* ==================================================================
+       APP-WIDE PANEL COLOUR (--panel-tone is set per open panel from the
+       nav bar colour): headings, expanders, native tables and sidebar
+       accents follow the page you are on, so every module has its own
+       identity instead of one shared hue.
+       ================================================================== */
+    .stApp {--panel-tone:#2fb68e;}
+    .stApp [data-testid="stMain"] h3, .stApp [data-testid="stMain"] h4,
+    .stApp section.main h3, .stApp section.main h4 {position:relative;}
+    .stApp [data-testid="stMain"] [data-testid="stMarkdownContainer"] h4::before,
+    .stApp [data-testid="stMain"] [data-testid="stHeading"] h3::before,
+    .stApp section.main [data-testid="stMarkdownContainer"] h4::before {
+        content:""; display:inline-block; width:4px; height:.95em; margin-right:11px; vertical-align:-.12em;
+        border-radius:3px; background:var(--panel-tone);
+        box-shadow:0 0 12px -2px var(--panel-tone);
+    }
+    .stApp [data-testid="stExpander"] {border-left:3px solid var(--panel-tone) !important;}
+    .stApp [data-testid="stExpander"] summary:hover {color:var(--panel-tone) !important;}
+    .stApp .stDataFrame {border-top:2px solid var(--panel-tone) !important;}
+    .stApp [data-testid="stMain"] [data-testid="stCaptionContainer"] strong {color:#e6ebf2;}
+    .stApp hr {border-color:transparent !important; height:1px; background:linear-gradient(90deg,var(--panel-tone),rgba(148,163,184,.18) 35%,transparent) !important; opacity:.7;}
+    .stApp .stAlert [data-testid="stAlertContainer"] {border-left-width:3px !important;}
     /* ---- Tables: rich cells ---- */
     .polished-table-wrap {
         background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
@@ -5204,6 +5227,93 @@ st.markdown(
         background:linear-gradient(180deg,#121821,#0d1218); border:1px solid var(--line-strong); border-left:3px solid #38b2c8;
         border-radius:10px; padding:12px 14px; color:#d6dce6;
     }
+
+    /* ==================================================================
+       FORENSIC REPORT COLOUR SYSTEM -- colours follow the nav bar.
+         Forensic sky = report chrome, Classification amber = scoring,
+         Headers green = auth, Origin cyan = route, Indicators rose = IOCs,
+         Correlation violet = campaigns. The dossier head takes the
+         email's own severity colour, so the page tells you how bad it is
+         before you read a word. One tone per block, never one for all.
+       ================================================================== */
+    .num-head {
+        --tone:#38bdf8; position:relative; display:flex; align-items:center; gap:14px;
+        margin:30px 0 12px 0; padding:2px 0;
+    }
+    .num-head:first-child {margin-top:8px;}
+    .num-head .nh-num {
+        flex:none; display:inline-flex; align-items:center; justify-content:center;
+        width:36px; height:36px; border-radius:10px;
+        font:800 13px/1 'JetBrains Mono',ui-monospace,Consolas,monospace; letter-spacing:.04em;
+        color:var(--tone);
+        background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.01));
+        background:linear-gradient(145deg,color-mix(in srgb,var(--tone) 26%,transparent),color-mix(in srgb,var(--tone) 8%,transparent));
+        border:1px solid rgba(255,255,255,.14);
+        border:1px solid color-mix(in srgb,var(--tone) 55%,transparent);
+        box-shadow:0 8px 20px -10px var(--tone), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .num-head .nh-text {display:flex; flex-direction:column; gap:3px; min-width:0;}
+    .num-head .nh-title {font:750 16.5px/1.25 Inter,"Segoe UI",sans-serif; color:#f4f6fa; letter-spacing:-.005em;}
+    .num-head .nh-sub {font-size:12px; line-height:1.4; color:var(--muted);}
+    .num-head .nh-rule {
+        flex:1; height:1px; min-width:30px; margin-left:6px;
+        background:linear-gradient(90deg,rgba(148,163,184,.3),transparent);
+        background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 55%,transparent),transparent);
+    }
+
+    /* tone-aware tables */
+    .polished-table-wrap.pt-toned {
+        background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
+                   linear-gradient(135deg,var(--tone),rgba(148,163,184,.14) 38%,rgba(148,163,184,.14) 100%) border-box !important;
+        background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
+                   linear-gradient(135deg,color-mix(in srgb,var(--tone) 70%,transparent),rgba(148,163,184,.14) 38%,rgba(148,163,184,.14) 100%) border-box !important;
+        box-shadow:0 16px 34px -22px var(--tone), inset 0 1px 0 rgba(255,255,255,.03) !important;
+    }
+    .polished-table-wrap.pt-toned::before {background:linear-gradient(90deg,var(--tone),transparent 85%) !important;}
+    .pt-toned table.polished-table thead th {--tc:var(--tone) !important; background:linear-gradient(180deg,#171d27,#11161e) !important;}
+    .pt-toned table.polished-table thead th:nth-child(n) {--tc:var(--tone) !important;}
+    .pt-toned table.polished-table tbody tr:hover {
+        background:linear-gradient(90deg,rgba(255,255,255,.06),transparent 85%) !important;
+        background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 16%,transparent),transparent 85%) !important;
+    }
+    .pt-toned table.polished-table tbody tr:hover td:first-child {background:linear-gradient(180deg,var(--tone),transparent) left center / 3px 62% no-repeat !important;}
+    .pt-toned table.polished-table tbody td:first-child {color:var(--tone) !important; font-weight:700;}
+
+    /* header cards: lifted, tone-washed, still graphite */
+    .part-banner, .dossier-head {
+        background:
+            radial-gradient(110% 170% at 0% 0%, color-mix(in srgb,var(--tone) 20%,transparent) 0%, transparent 60%),
+            radial-gradient(70% 120% at 100% 100%, color-mix(in srgb,var(--tone) 9%,transparent) 0%, transparent 70%),
+            linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+        border-color:color-mix(in srgb,var(--tone) 30%,var(--line-strong)) !important;
+    }
+    .part-banner::before, .dossier-head::before {top:0 !important; bottom:0 !important; width:4px !important; border-radius:0 !important;}
+    .dossier-head .dh-pill {
+        color:var(--tone) !important; border-radius:999px !important; letter-spacing:.12em;
+        background:color-mix(in srgb,var(--tone) 14%,transparent) !important;
+        border-color:color-mix(in srgb,var(--tone) 55%,transparent) !important;
+        box-shadow:0 6px 18px -10px var(--tone);
+    }
+    .part-sep {--tone:#38bdf8;}
+    .part-sep::before {background:linear-gradient(90deg,transparent,#14b8a6 55%,#38bdf8) !important;}
+    .part-sep::after {background:linear-gradient(90deg,#c084fc,#fb7185 45%,transparent) !important;}
+    .part-sep span {color:#e8eef7 !important; letter-spacing:.24em;}
+
+    /* email picker card */
+    .st-key-single_email_select {
+        --tone:#14b8a6;
+        border-color:color-mix(in srgb,var(--tone) 30%,var(--line-strong)) !important;
+        border-left:4px solid var(--tone) !important;
+        background:
+            radial-gradient(90% 160% at 0% 0%, color-mix(in srgb,var(--tone) 12%,transparent), transparent 60%),
+            linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+    }
+    .st-key-single_email_select [data-testid="stWidgetLabel"] p {
+        color:var(--tone) !important; font-size:11px !important; font-weight:700 !important;
+        letter-spacing:.14em !important; text-transform:uppercase !important;
+    }
+    .st-key-single_email_select [data-baseweb="select"] > div {border-color:color-mix(in srgb,var(--tone) 35%,var(--line-strong)) !important;}
+    .st-key-single_email_select svg {color:var(--tone) !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -5553,7 +5663,7 @@ elif st.session_state.get("active_panel") not in NAV_OPTIONS:
 # (which already reflects whether evidence is loaded).
 import urllib.parse as _nav_up
 _NAV_STYLE = {
-    "Dashboard": ("#4c8dff", "<rect x='3' y='3' width='7' height='9' rx='1.5'/><rect x='14' y='3' width='7' height='5' rx='1.5'/><rect x='14' y='12' width='7' height='9' rx='1.5'/><rect x='3' y='16' width='7' height='5' rx='1.5'/>"),
+    "Dashboard": ("#2fb68e", "<rect x='3' y='3' width='7' height='9' rx='1.5'/><rect x='14' y='3' width='7' height='5' rx='1.5'/><rect x='14' y='12' width='7' height='9' rx='1.5'/><rect x='3' y='16' width='7' height='5' rx='1.5'/>"),
     "AI Threat Analysis": ("#a78bfa", "<rect x='6' y='6' width='12' height='12' rx='2'/><path d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/>"),
     "Forensic Report": ("#38bdf8", "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/>"),
     "Classification": ("#f59e0b", "<path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/>"),
@@ -5565,7 +5675,7 @@ _NAV_STYLE = {
     "URLHaus Feed": ("#fb923c", "<circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/>"),
     "Antivirus": ("#4ade80", "<path d='M12 21a5 5 0 0 1-5-5v-4a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z'/><path d='M12 7V4M7 12H3M21 12h-4M8 8L5 5M16 8l3-3M8 18l-3 3M16 18l3 3'/>"),
     "Settings": ("#94a3b8", "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/><circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>"),
-    "About": ("#60a5fa", "<circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 8h.01'/>"),
+    "About": ("#f472b6", "<circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 8h.01'/>"),
 }
 _nav_rules = []
 for _ni, _nopt in enumerate(NAV_OPTIONS, start=1):
@@ -5666,6 +5776,17 @@ with st.container(key="topnav"):
         horizontal=True,
         label_visibility="collapsed",
     )
+
+def _panel_hex():
+    """Nav-bar colour of the panel currently open -- the one colour every
+    header, table and accent on that page is keyed to."""
+    return _NAV_STYLE.get(globals().get("active_panel"), ("#2fb68e",))[0]
+
+
+st.markdown(
+    "<style>.stApp{--panel-tone:" + _panel_hex() + ";}</style>",
+    unsafe_allow_html=True,
+)
 
 def _clean_ai_display(text):
     cleaned = []
@@ -6157,13 +6278,22 @@ def _loc_key(h):
 _BANNER_TONES = ("batch", "single", "ai", "intel", "rose", "sky", "gold", "teal", "plum", "lime")
 
 
+def _tone_style(tone):
+    """Inline --tone override: module headers take the nav colour of the open
+    panel. The Forensic Report keeps its hand-picked per-block colours and
+    AI blocks stay violet."""
+    if tone == "ai" or globals().get("active_panel") == "Forensic Report":
+        return ""
+    return f' style="--tone:{_panel_hex()};"'
+
+
 def _banner_html(step, title, sub="", scope="", tone="batch"):
     """HTML for the module-level header (see SECTION HEADER SYSTEM v2 in the
     CSS): small mono eyebrow, title, one-line sub, and a plain meta tag on
     the right. No pill/button-shaped pieces -- nothing in it is clickable."""
     tone = tone if tone in _BANNER_TONES else "batch"
     return (
-        f'<div class="part-banner part-banner-{tone}">'
+        f'<div class="part-banner part-banner-{tone}"{_tone_style(tone)}>'
         f'<div class="pb-main"><div class="pb-step">{html.escape(str(step))}</div>'
         f'<div class="pb-title">{html.escape(str(title))}</div>'
         + (f'<div class="pb-sub">{html.escape(str(sub))}</div>' if sub else '')
@@ -6179,12 +6309,25 @@ def _banner(step, title, sub="", scope="", tone="batch"):
     st.markdown(_banner_html(step, title, sub, scope, tone), unsafe_allow_html=True)
 
 
+def _num_head(num, title, tone_hex, sub=""):
+    """Numbered, colour-keyed sub-section header used inside the dossier.
+    Colour = the nav-bar colour of the module the section belongs to."""
+    st.markdown(
+        f'<div class="num-head" style="--tone:{tone_hex};">'
+        f'<span class="nh-num">{int(num):02d}</span>'
+        f'<span class="nh-text"><span class="nh-title">{html.escape(str(title))}</span>'
+        + (f'<span class="nh-sub">{html.escape(str(sub))}</span>' if sub else '')
+        + '</span><span class="nh-rule"></span></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _sec(title, sub="", tone="batch"):
     """Slim section header (accent bar + title + optional sub) for the
     sections inside a module."""
     tone = tone if tone in _BANNER_TONES else "batch"
     st.markdown(
-        f'<div class="sec-head sec-{tone}"><div class="sh-title">{html.escape(str(title))}</div>'
+        f'<div class="sec-head sec-{tone}"{_tone_style(tone)}><div class="sh-title">{html.escape(str(title))}</div>'
         + (f'<div class="sh-sub">{html.escape(str(sub))}</div>' if sub else '')
         + '</div>',
         unsafe_allow_html=True,
@@ -6623,7 +6766,7 @@ def _pt_cell(col, v, row_level=""):
     return f"<td>{esc}</td>"
 
 
-def _polished_table_html(df, max_height=None):
+def _polished_table_html(df, max_height=None, tone=None):
     cols = list(df.columns)
     thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
     level_col = next((c for c in cols if str(c).strip().lower() in ("verdict", "level")), None)
@@ -6632,14 +6775,16 @@ def _polished_table_html(df, max_height=None):
         lvl = str(row[level_col]).upper() if level_col is not None else ""
         body_rows.append("<tr>" + "".join(_pt_cell(c, row[c], lvl) for c in cols) + "</tr>")
     wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
+    if tone:
+        wrap_style = f' style="--tone:{tone};' + (f'max-height:{int(max_height)}px;overflow-y:auto;' if max_height else '') + '"'
     return (
-        f'<div class="polished-table-wrap"{wrap_style}>'
+        f'<div class="polished-table-wrap{" pt-toned" if tone else ""}"{wrap_style}>'
         f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
         f'<tbody>{"".join(body_rows)}</tbody></table></div>'
     )
 
 
-def _render_polished_table(df, empty_text="No data available.", max_height=None):
+def _render_polished_table(df, empty_text="No data available.", max_height=None, tone=None):
     """Presentation-only replacement for st.dataframe on plain, read-only
     tables -- draws real themed HTML/CSS (see '.polished-table' in the
     global stylesheet) instead of Streamlit's own canvas-rendered grid,
@@ -6654,7 +6799,7 @@ def _render_polished_table(df, empty_text="No data available.", max_height=None)
     if df is None or getattr(df, "empty", True):
         st.markdown(f'<div class="polished-table-empty">{html.escape(empty_text)}</div>', unsafe_allow_html=True)
         return
-    st.markdown(_polished_table_html(df, max_height), unsafe_allow_html=True)
+    st.markdown(_polished_table_html(df, max_height, tone or _panel_hex()), unsafe_allow_html=True)
 
 
 def _render_email_results_table(df, height=300):
@@ -6714,7 +6859,7 @@ def _render_email_results_table(df, height=300):
         body_rows.append(f"<tr>{''.join(tds)}</tr>")
     tbody = "".join(body_rows)
     st.markdown(
-        f'<div class="polished-table-wrap" style="max-height:{int(height)}px;overflow-y:auto;">'
+        f'<div class="polished-table-wrap pt-toned" style="--tone:{_panel_hex()};max-height:{int(height)}px;overflow-y:auto;">'
         f'<table class="polished-table"><thead><tr>{thead}</tr></thead>'
         f'<tbody>{tbody}</tbody></table></div>',
         unsafe_allow_html=True,
@@ -10199,7 +10344,7 @@ if active_panel == "Forensic Report":
             _banner(
                 "PART 1", f"Batch Report \u2014 All {_n_joint} Emails",
                 sub=f"Source: {pipeline_result.get('source', '')}",
-                scope="Covers all emails", tone="batch",
+                scope="Covers all emails", tone="sky",
             )
             st.caption("Machine analysis + AI threat analysis + semantic origin correlation, combined across the batch. Drill into any single email below, or grab everything at once.")
 
@@ -10331,7 +10476,7 @@ if active_panel == "Forensic Report":
                 'PART 2' if pipeline_active else 'SINGLE EMAIL',
                 'Single-Email Deep Dive',
                 sub='Everything below this point is about ONE email only. Choose which one:',
-                scope='One email', tone='single',
+                scope='One email', tone='teal',
             ),
             unsafe_allow_html=True,
         )
@@ -10358,7 +10503,7 @@ if active_panel == "Forensic Report":
 
         _dh_col = _LEVEL_MARKER_COLORS.get(sel_lvl, "#8b96a5")
         st.markdown(
-            '<div class="dossier-head"><div class="dh-title">Dossier: Email #' + str(sel_pos)
+            '<div class="dossier-head" style="--tone:' + _dh_col + ';"><div class="dh-title">Dossier: Email #' + str(sel_pos)
             + ' <span class="dh-of">of ' + str(len(report_items)) + '</span></div>'
             '<span class="dh-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
             + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
@@ -10366,12 +10511,12 @@ if active_panel == "Forensic Report":
         )
 
         # --- SHOW HIGHLY DETAILED MACHINE REPORT UI USING DATAFRAMES ---
-        _sec("Machine Forensic Analysis", tone="single")
+        _sec("Machine Forensic Analysis", "Deterministic telemetry for the selected email", tone="sky")
         st.caption("Deep technical telemetry extracted deterministically. Select the email above to populate.")
         
         with st.container(border=True):
-            st.markdown("##### 1. Threat & Classification Telemetry")
-            _render_polished_table(pd.DataFrame([{
+            _num_head(1, "Threat & Classification Telemetry", "#f59e0b", "Score, verdict and classifier output")
+            _render_polished_table(tone="#f59e0b", df=pd.DataFrame([{
                 "Risk Score": f"{sel_score:.1f}/100",
                 "Verdict": sel_lvl,
                 "Primary Driver": sel_res.get('verdict', {}).get('top_driver', 'None'),
@@ -10379,11 +10524,11 @@ if active_panel == "Forensic Report":
                 "ML Label": str(sel_m.get("label", "unknown")).upper()
             }]))
 
-            st.markdown("##### 2. Extracted Message Content")
+            _num_head(2, "Extracted Message Content", "#38bdf8", "Decoded body text, first 4,000 characters")
             st.text_area("Dossier Message Content", sel_p.get("body_text", "No body text extracted.")[:4000], height=180, disabled=True, label_visibility="collapsed", key=f"dossier_body_{sel_pos}")
 
-            st.markdown("##### 3. Authentication & Header Intelligence")
-            _render_polished_table(pd.DataFrame([{
+            _num_head(3, "Authentication & Header Intelligence", "#34d399", "SPF, DKIM, DMARC and header anomalies")
+            _render_polished_table(tone="#34d399", df=pd.DataFrame([{
                 "SPF": str(sel_h.get('spf', 'None')).upper(),
                 "DKIM": str(sel_h.get('dkim', 'None')).upper(),
                 "DMARC": str(sel_h.get('dmarc', 'None')).upper(),
@@ -10394,16 +10539,16 @@ if active_panel == "Forensic Report":
             if sel_h.get('anomalies'):
                 st.markdown("###### Header Anomalies Detail")
                 anomalies_df = pd.DataFrame(sel_h['anomalies'])
-                _render_polished_table(anomalies_df[['severity', 'title', 'detail']])
+                _render_polished_table(tone="#34d399", df=anomalies_df[['severity', 'title', 'detail']])
 
-            st.markdown("##### 4. Origin & Network Routing")
+            _num_head(4, "Origin & Network Routing", "#22d3ee", "Where the message really came from")
             sel_nt = assess_network_trust(
                 sel_p.get("from_addr", ""),
                 sel_g.get('origin', {}).get('ip', ''),
                 sel_g.get('origin', {}).get('infra_label', ''),
                 sel_g.get('origin', {}).get('country', ''),
             )
-            _render_polished_table(pd.DataFrame([{
+            _render_polished_table(tone="#22d3ee", df=pd.DataFrame([{
                 "Origin IP": sel_g.get('origin', {}).get('ip', 'Unknown'),
                 "Country": sel_g.get('origin', {}).get('country', 'Unknown'),
                 "Infrastructure": sel_g.get('origin', {}).get('infra_label', 'Unknown'),
@@ -10415,15 +10560,15 @@ if active_panel == "Forensic Report":
             if sel_nt["level"] != "ok" or sel_nt["is_new_sender"]:
                 st.caption("Network Trust — " + " ".join(sel_nt["reasons"]))
 
-            st.markdown("##### 5. Payload & Indicators of Compromise (IOCs)")
-            _render_polished_table(pd.DataFrame([{
+            _num_head(5, "Payload & Indicators of Compromise", "#fb7185", "Links, domains and addresses found inside")
+            _render_polished_table(tone="#fb7185", df=pd.DataFrame([{
                 "Total Links": len(sel_i.get('urls', [])),
                 "Suspicious Links": sel_i.get('counts', {}).get('suspicious', 0),
                 "Extracted Domains": len(sel_i.get('domains', [])),
                 "Extracted Emails": len(sel_i.get('emails', []))
             }]))
 
-            st.markdown("##### 6. Campaign Correlation & Semantic Origin Match")
+            _num_head(6, "Campaign Correlation & Semantic Origin Match", "#c084fc", "Shared infrastructure across analysed emails")
             # Same methodology as the dedicated Correlation panel: shared
             # infrastructure/indicators across every case analyzed so far
             # this session, via correlate.py.
@@ -10440,7 +10585,7 @@ if active_panel == "Forensic Report":
             _sel_case_name = sel_res.get("name", f"Email #{sel_pos}")
             _dossier_links = [s for s in _dossier_shared if _sel_case_name in s.get("cases", [])]
             if _dossier_links:
-                _render_polished_table(pd.DataFrame([{
+                _render_polished_table(tone="#c084fc", df=pd.DataFrame([{
                     "Indicator": s.get("indicator", "-"),
                     "Type": s.get("kind", "-"),
                     "Also Seen In": ", ".join(c for c in s.get("cases", []) if c != _sel_case_name) or "-",
@@ -10464,7 +10609,7 @@ if active_panel == "Forensic Report":
                 _sem_matches = _sem_find(sel_hash, _sem_origin, top_k=5)
             if _sem_matches:
                 st.markdown(_sem_headline(_sem_matches))
-                _render_polished_table(pd.DataFrame(_sem_rows(_sem_matches)))
+                _render_polished_table(tone="#c084fc", df=pd.DataFrame(_sem_rows(_sem_matches)))
             elif _sem_ready:
                 st.caption(_sem_none_text())
             else:
