@@ -6374,7 +6374,6 @@ def _settings():
 
 def _about():
     st.subheader("About ALGORITHMISTIC")
-    st.success("readme_view active")
     render_readme()
 
 # --------------------------------------------------------------------------
