@@ -1008,6 +1008,15 @@ _OAUTH_RELAY_GATE_HTML = """
     function finish() {
         if (done) return; done = true;
         say('Signed in. Returning to the app...');
+        // Bring the original tab to the front right away -- some browsers
+        // (current Chrome included) now permanently refuse a scripted
+        // close() on a popup once it has navigated through more than one
+        // page, which Google's own login flow always does, so close()
+        // below can silently fail no matter what. Shifting focus back to
+        // the tab that's actually signed in now is the one thing that
+        // reliably still works, so the leftover popup at least stops being
+        // the thing in front of the user.
+        try { pw.opener && pw.opener.focus(); } catch (e) {}
         // Plan A: a plain close(). Works as long as this popup's session
         // history is still exactly 1 entry long -- but Google's own login
         // pages add several entries as you sign in, so by the time we get
@@ -5309,6 +5318,49 @@ if active_panel == "Dashboard":
                         st.session_state["show_imap_connection_form"] = True
                         st.session_state["_imap_auto_connected"] = False
                         st.session_state["manual_login_submitted"] = False
+                        # Also clear whichever provider's cached OAuth token
+                        # got this mailbox connected (same thing each
+                        # provider's own "Sign out" button does below).
+                        # Without this, the next rerun's autofill still
+                        # finds a live cached token, refills "imap_user",
+                        # flips sign-in state back to true and the
+                        # auto-connect-after-login logic immediately
+                        # reconnects the very mailbox that was just
+                        # disconnected.
+                        _was_user = st.session_state.get("imap_user", "")
+                        _was_domain = _was_user.rsplit("@", 1)[-1].lower() if "@" in _was_user else ""
+                        _is_gmail = "gmail" in _was_domain
+                        _is_outlook = any(n in _was_domain for n in ("outlook", "hotmail", "live.", "office365", "office 365"))
+                        _is_yandex = "yandex" in _was_domain
+                        if _is_gmail and GOOGLE_OAUTH_READY:
+                            clear_saved_token()
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_GOOGLE_EMAIL_CACHE_PATH)
+                                except OSError:
+                                    pass
+                        elif _is_outlook and MICROSOFT_OAUTH_READY:
+                            microsoft_oauth.clear_saved_token()
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_PROVIDER_EMAIL_CACHE_PATHS["microsoft"])
+                                except OSError:
+                                    pass
+                        elif _is_yandex and YANDEX_OAUTH_READY:
+                            yandex_oauth.clear_saved_token()
+                            if not MULTIUSER:
+                                try:
+                                    os.remove(_PROVIDER_EMAIL_CACHE_PATHS["yandex"])
+                                except OSError:
+                                    pass
+                        for _k in [
+                            "google_oauth_token", "microsoft_oauth_token", "yandex_oauth_token",
+                            "_google_email_autofill_tried", "_microsoft_email_autofill_tried", "_yandex_email_autofill_tried",
+                            "_google_email_cache", "_microsoft_email_cache", "_yandex_email_cache",
+                            "imap_user", "imap_manual_password",
+                        ]:
+                            st.session_state.pop(_k, None)
+                        st.toast(f"Disconnected {_was_user}." if _was_user else "Disconnected.")
                         st.rerun()
             imap_host = _cfg_summary.get("host", "")
             imap_port = _cfg_summary.get("port", 993)
