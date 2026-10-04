@@ -5897,6 +5897,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+from redesign_ui import inject_redesign, topbar_chips_html
+inject_redesign()  # Aurora SOC visual layer (header + banners, mobile-ready)
+
 st.markdown(
     f"""<div class="topbar-shell">
       <div class="topbar-brand">
@@ -5904,7 +5907,7 @@ st.markdown(
         <div>
           <div class="topbar-kicker">ALGORITHMISTIC · Forensic Intelligence Platform</div>
           <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
-          <div class="topbar-subtitle">Evidence acquisition · header authentication · IOC intelligence · origin tracing · campaign correlation · local AI assessment</div>
+          <div class="topbar-subtitle">{topbar_chips_html()}</div>
         </div>
       </div>
       <div class="topbar-status-wrap">
