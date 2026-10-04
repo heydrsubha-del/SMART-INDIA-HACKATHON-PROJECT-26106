@@ -8,6 +8,7 @@ GitHub-only features are converted for Streamlit:
   * > [!NOTE] / [!TIP] / ...    -> st.info / st.success / st.warning / st.error
   * <details><summary>          -> st.expander
   * heading anchors             -> GitHub-compatible ids, so "#-installation" links work
+  * animated banners / images   -> scaled to fit the page width (no horizontal overflow)
 
 Usage:
     from readme_view import render_readme
@@ -52,12 +53,91 @@ _CAPSULE_RE = re.compile(
     r"(https://capsule-render\.vercel\.app/api\?[^\"'\s)]*?)height=(\d+)"
 )
 
+# The banner now stretches to the full page width. Because the image keeps its
+# aspect ratio it also grows taller on wide screens, so cap its height here.
+# If the banner is taller than this, it is cropped slightly (top edge) instead
+# of getting huge. Set to 0 to disable the cap.
+BANNER_MAX_HEIGHT_PX = 380
+
+# Injected once at the top of the About page. CSS !important beats any
+# width="..." attribute or inline style coming from the README's HTML.
+_FIT_CSS = """<style>
+/* ── Keep every README element inside the page width ───────────────── */
+.stMarkdown img,
+.stMarkdown svg,
+.stMarkdown video,
+.stMarkdown picture {
+  max-width: 100% !important;
+  height: auto;
+}
+/* ── Animated capsule-render banners: fill the width ───────────────── */
+.stMarkdown img[src*="capsule-render"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  box-sizing: border-box;
+  __BANNER_CAP__
+}
+/* Wrappers around the banner must not shrink it */
+.stMarkdown a:has(> img[src*="capsule-render"]),
+.stMarkdown picture:has(img[src*="capsule-render"]),
+.stMarkdown p:has(> img[src*="capsule-render"]),
+.stMarkdown div:has(> img[src*="capsule-render"]),
+.stMarkdown div:has(> a > img[src*="capsule-render"]) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+/* ── Centered HTML blocks stay inside the container ────────────────── */
+.stMarkdown [align="center"],
+.stMarkdown div[align],
+.stMarkdown p[align] {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+/* ── Wide tables / code scroll inside the boundary ─────────────────── */
+.stMarkdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.stMarkdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.stMarkdown p,
+.stMarkdown li,
+.stMarkdown td {
+  overflow-wrap: anywhere;
+}
+/* ── Mermaid diagram iframes fill the width ────────────────────────── */
+.stMarkdown iframe,
+[data-testid="stIFrame"],
+[data-testid="stCustomComponentV1"],
+iframe[title*="components"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+</style>"""
+
+
+def _fit_css() -> str:
+    cap = (
+        f"max-height: {int(BANNER_MAX_HEIGHT_PX)}px !important; "
+        "object-fit: cover !important; object-position: center bottom !important;"
+        if BANNER_MAX_HEIGHT_PX and BANNER_MAX_HEIGHT_PX > 0
+        else ""
+    )
+    return _FIT_CSS.replace("__BANNER_CAP__", cap)
+
 
 def _scale_capsule(text: str) -> str:
     def repl(m):
         return f"{m.group(1)}height={int(int(m.group(2)) * CAPSULE_HEIGHT_SCALE)}"
     return _CAPSULE_RE.sub(repl, text)
-
 
 
 # ───────────────────────────── helpers ─────────────────────────────
@@ -170,7 +250,7 @@ def _load(path: str, mtime: float) -> List[Segment]:
     """Parse once and re-parse only when the README file changes (mtime key)."""
     text = Path(path).read_text(encoding="utf-8")
     text = _COMMENT_RE.sub("", text)
-    text = _scale_capsule(text) 
+    text = _scale_capsule(text)
     return _parse(text.splitlines(), {})
 
 
@@ -181,11 +261,13 @@ def _render_mermaid(source: str, height: int = 420) -> None:
     components.html(
         f"""
         <style>
-          body {{ margin:0; background:transparent; }}
+          html, body {{ margin:0; width:100%; overflow-x:hidden; background:transparent; }}
           pre.mermaid {{
-            margin:0; color:#e6f7ff; font-family:'Fira Code',monospace;
+            margin:0; width:100%; box-sizing:border-box;
+            color:#e6f7ff; font-family:'Fira Code',monospace;
             font-size:12px; white-space:pre-wrap; text-align:center;
           }}
+          pre.mermaid svg {{ max-width:100% !important; height:auto !important; }}
         </style>
         <pre class="mermaid">{html.escape(source)}</pre>
         <script type="module">
@@ -194,7 +276,7 @@ def _render_mermaid(source: str, height: int = 420) -> None:
               "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
             );
             mermaid.initialize({{ startOnLoad: false, theme: "dark",
-                                  flowchart: {{ useMaxWidth: true }} }});
+                                  flowchart: {{ useMaxWidth: true, htmlLabels: true }} }});
             await mermaid.run();
           }} catch (e) {{
             /* Offline: the diagram source stays visible as text. */
@@ -240,7 +322,8 @@ def render_readme(path: Path | str = README_PATH) -> None:
         st.warning("README.md not found. Keep it in the same folder as app.py.")
         return
 
-    st.markdown('<a id="top"></a>', unsafe_allow_html=True)  # for "⬆ back to top"
+    st.markdown(_fit_css(), unsafe_allow_html=True)               # fit-to-width styles
+    st.markdown('<a id="top"></a>', unsafe_allow_html=True)       # for "⬆ back to top"
     _render(_load(str(p), p.stat().st_mtime))
 
 
