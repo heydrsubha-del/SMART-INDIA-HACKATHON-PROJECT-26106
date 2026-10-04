@@ -4194,6 +4194,135 @@ st.markdown(
     }
     .st-key-google_signin_link_btn a:hover, .st-key-microsoft_signin_link_btn a:hover, .st-key-yandex_signin_link_btn a:hover {box-shadow:0 0 0 3px rgba(255,255,255,.10) !important;}
 
+    /* ==================================================================
+       LIVE LOGIN v7  (Channel A) -- overflow fix + the acq2 card language
+       1) The clipping bug: Streamlit gives every element container
+          width:100%, and v6 also put left+right margins on each grid
+          child, so every child was (column width + 2*margin) wide and ran
+          past the card's right edge (the card is overflow:hidden, so the
+          inputs, Log in and the third provider tile were cut off). The
+          width is now calc(100% - 2*margin), which fits exactly.
+       2) Styling now follows .acq2 / .stage-label: top hairline accent,
+          mono eyebrow with a dash, tinted icon tiles, chips, a faint
+          ghost glyph. The three providers keep distinct hues -- blue,
+          copper, red -- instead of side stripes. ====================== */
+    .st-key-imap_signin_card > * {width:calc(100% - 2 * var(--padx)) !important; max-width:none !important; box-sizing:border-box !important;}
+    .st-key-imap_signin_card > *:first-child {width:100% !important;}
+
+    .st-key-imap_signin_card::before {height:3px !important; background:linear-gradient(90deg,#4c8dff 0%,#6c9bff 34%,#d49a66 70%,#e0634a 100%) !important;}
+    .st-key-imap_signin_card {
+        background:
+            radial-gradient(55% 45% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
+            radial-gradient(40% 40% at 100% 0%, rgba(76,141,255,.06), transparent 70%),
+            linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
+    }
+
+    /* left pane */
+    .signin-card-eyebrow {display:inline-flex; align-items:center; gap:10px;}
+    .signin-card-eyebrow::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .signin-facts {margin:28px 0 0 !important; gap:12px !important;}
+    .signin-facts li {flex-direction:row !important; align-items:flex-start; gap:12px !important; padding:12px !important; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.015); --t:#4c8dff; transition:border-color .18s var(--ease);}
+    .signin-facts li::before {display:none !important;}
+    .signin-facts li.sf-blue {--t:#4c8dff;}
+    .signin-facts li.sf-copper {--t:#d49a66;}
+    .signin-facts li.sf-green {--t:var(--green);}
+    .signin-facts li:hover {border-color:color-mix(in srgb, var(--t) 40%, var(--line-strong));}
+    .signin-facts .sf-ico {
+        flex:0 0 34px; width:34px; height:34px; border-radius:10px; font-style:normal;
+        display:flex; align-items:center; justify-content:center; color:var(--t);
+        background:color-mix(in srgb, var(--t) 12%, transparent);
+        border:1px solid color-mix(in srgb, var(--t) 38%, transparent);
+    }
+    .signin-facts .sf-ico svg {width:17px; height:17px;}
+    .signin-facts .sf-txt {display:flex; flex-direction:column; gap:3px; min-width:0;}
+    .signin-chips {display:flex; flex-wrap:wrap; gap:6px; margin-top:22px;}
+    .signin-chips span {
+        font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px;
+        color:#4c8dff; border:1px solid color-mix(in srgb, #4c8dff 40%, transparent); background:color-mix(in srgb, #4c8dff 8%, transparent);
+    }
+
+    /* right pane: header row, then the form */
+    .signin-form-head {display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--line);}
+    .sfh-tag {display:inline-flex; align-items:center; gap:10px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; color:#4c8dff;}
+    .sfh-tag::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .sfh-hint {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+
+    /* Log in: tinted glass in the Channel A tone (same recipe as the active
+       .acq2 tile) instead of a flat bright-blue slab, with a nudge arrow. */
+    .st-key-manual_login_btn button {
+        background:linear-gradient(180deg, color-mix(in srgb, #4c8dff 30%, #101722), color-mix(in srgb, #4c8dff 17%, #0e131a)) !important;
+        border:1px solid color-mix(in srgb, #4c8dff 62%, transparent) !important; color:#fff !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 3px color-mix(in srgb, #4c8dff 9%, transparent) !important;
+        transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease) !important;
+    }
+    .st-key-manual_login_btn button:hover {
+        background:linear-gradient(180deg, color-mix(in srgb, #4c8dff 42%, #101722), color-mix(in srgb, #4c8dff 26%, #0e131a)) !important;
+        border-color:#6c9bff !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 4px color-mix(in srgb, #4c8dff 14%, transparent) !important;
+    }
+    .st-key-manual_login_btn button p::after {content:"\2192"; display:inline-block; margin-left:10px; transition:transform .18s var(--ease);}
+    .st-key-manual_login_btn button:hover p::after {transform:translateX(4px);}
+
+    /* divider + helper line: real breathing room, no collision */
+    .st-key-imap_signin_card > *:has(.auth-divider) {margin-top:10px !important; margin-bottom:8px !important;}
+    .auth-divider {margin:0 !important; font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; text-transform:uppercase !important;}
+    .st-key-imap_signin_card > *:has([data-testid="stCaptionContainer"]) {margin-bottom:16px !important;}
+    .st-key-imap_signin_card > *:has([data-testid="stCaptionContainer"]) [data-testid="stCaptionContainer"] {font-size:12px !important; line-height:1.5 !important; color:var(--muted) !important; max-width:62ch; margin:0 auto;}
+
+    /* provider tiles: one shared tile, three hues */
+    .st-key-imap_signin_card .st-key-auth_google_box {--tone:#4c8dff;}
+    .st-key-imap_signin_card .st-key-auth_microsoft_box {--tone:#d49a66;}
+    .st-key-imap_signin_card .st-key-auth_yandex_box {--tone:#e0634a;}
+    .st-key-imap_signin_card .st-key-auth_google_box,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box,
+    .st-key-imap_signin_card .st-key-auth_yandex_box {
+        position:relative; overflow:hidden !important; min-width:0; padding:16px 16px 16px 16px !important;
+        border:1px solid var(--line-strong) !important; border-radius:14px !important;
+        background:
+            radial-gradient(90% 120% at 100% 100%, color-mix(in srgb, var(--tone) 14%, transparent) 0%, transparent 62%),
+            linear-gradient(180deg, var(--panel), var(--panel-3)) !important;
+        box-shadow:none !important;
+        transition:border-color .18s var(--ease), box-shadow .18s var(--ease) !important;
+    }
+    .st-key-imap_signin_card .st-key-auth_google_box::before,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box::before,
+    .st-key-imap_signin_card .st-key-auth_yandex_box::before {
+        content:""; position:absolute; left:0; right:0; top:0; bottom:auto; width:auto; height:2px;
+        border-radius:0; background:var(--tone) !important; opacity:.85; z-index:2; pointer-events:none;
+    }
+    .st-key-imap_signin_card .st-key-auth_google_box::after,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box::after,
+    .st-key-imap_signin_card .st-key-auth_yandex_box::after {
+        content:""; position:absolute; right:-8px; bottom:-16px; width:92px; height:92px; z-index:0; pointer-events:none;
+        background:var(--tone); opacity:.09;
+        -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E") center/contain no-repeat;
+        mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .st-key-imap_signin_card .st-key-auth_google_box > *,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box > *,
+    .st-key-imap_signin_card .st-key-auth_yandex_box > * {position:relative; z-index:1;}
+    .st-key-imap_signin_card .st-key-auth_google_box:hover,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box:hover,
+    .st-key-imap_signin_card .st-key-auth_yandex_box:hover {
+        border-color:color-mix(in srgb, var(--tone) 55%, var(--line-strong)) !important;
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 10%, transparent) !important;
+    }
+    .st-key-imap_signin_card .auth-option-label {color:var(--tone) !important; margin-bottom:12px !important; gap:9px !important;}
+    .st-key-imap_signin_card .auth-option-label::after {
+        content:"OAuth 2.0"; margin-left:auto; font:600 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em;
+        text-transform:uppercase; color:var(--muted); padding:4px 6px; border:1px solid var(--line-strong); border-radius:5px;
+    }
+
+    /* "Set IMAP server / port manually": centred under the card, aligned to it */
+    .stApp .st-key-imap_custom_toggle_btn {display:flex !important; justify-content:center !important; max-width:1180px; margin:2px auto 22px !important;}
+    .stApp .st-key-imap_custom_toggle_btn button {
+        background:transparent !important; border:1px dashed var(--line-strong) !important; border-radius:999px !important;
+        padding:9px 18px !important; min-height:0 !important; box-shadow:none !important; text-decoration:none !important;
+        color:var(--muted) !important; font:600 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase;
+        transition:border-color .18s var(--ease), color .18s var(--ease) !important;
+    }
+    .stApp .st-key-imap_custom_toggle_btn button p::before {content:"\2699\FE0E"; margin-right:9px; font-size:12px;}
+    .stApp .st-key-imap_custom_toggle_btn button:hover {border-color:#4c8dff !important; color:#fff !important; text-decoration:none !important;}
+
     /* Keyboard focus: one visible ring everywhere. */
     .stApp :is(a, [role="tab"], [role="radio"], summary):focus-visible {outline:2px solid rgba(59,130,246,.7); outline-offset:2px; border-radius:var(--r-sm);}
     </style>
@@ -5995,10 +6124,11 @@ if active_panel == "Dashboard":
                         <div class="signin-card-title">Connect your mailbox</div>
                         <div class="signin-card-sub">Sign in to start pulling message headers for analysis.</div>
                         <ul class="signin-facts">
-                            <li><b>Read-only</b><span>Nothing in your mailbox is changed.</span></li>
-                            <li><b>Headers first</b><span>Message headers are pulled for analysis.</span></li>
-                            <li><b>Provider sign-in</b><span>For Gmail, Outlook and Yandex your password never passes through this app.</span></li>
+                            <li class="sf-blue"><i class="sf-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></i><div class="sf-txt"><b>Read-only</b><span>Nothing in your mailbox is changed.</span></div></li>
+                            <li class="sf-copper"><i class="sf-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h14"/></svg></i><div class="sf-txt"><b>Headers first</b><span>Message headers are pulled for analysis.</span></div></li>
+                            <li class="sf-green"><i class="sf-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></i><div class="sf-txt"><b>Provider sign-in</b><span>For Gmail, Outlook and Yandex your password never passes through this app.</span></div></li>
                         </ul>
+                        <div class="signin-chips"><span>Read-only</span><span>IMAP over SSL</span><span>OAuth 2.0</span></div>
                     </div>""",
                     unsafe_allow_html=True,
                 )
@@ -6034,6 +6164,11 @@ if active_panel == "Dashboard":
                             if _auto_email:
                                 st.session_state["imap_user"] = _auto_email
                                 _save_cached_provider_email("yandex", _auto_email)
+
+                st.markdown(
+                    """<div class="signin-form-head"><span class="sfh-tag">Manual login</span><span class="sfh-hint">Email &amp; app password</span></div>""",
+                    unsafe_allow_html=True,
+                )
 
                 # Wrapped in a form: Streamlit only sends the fields' current
                 # values when the submit button is clicked (a single batched
