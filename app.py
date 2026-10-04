@@ -5935,21 +5935,32 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
-/* ============================ TOP BANNER ============================ */
+/* ============================ TOP BANNER ============================
+   Uses the empty strip at the very top of the page (beside the sidebar
+   toggle / Share toolbar) for a live status band, then a command card:
+   brand + account on one row, the six-stage forensic pipeline below. */
+.stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:0 !important;}
+
+.stApp .tb-band {
+  display:flex; align-items:center; gap:14px; min-height:2.75rem; margin:0 0 6px; padding:0 4px 0 58px;
+  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#7d8896;
+}
+.stApp .tb-live {display:inline-flex; align-items:center; gap:9px; color:#3fb68b;}
+.stApp .tb-live .topbar-status-dot {width:6px; height:6px; background:#3fb68b; box-shadow:0 0 8px #3fb68b; animation:pxPulse 2.4s ease-in-out infinite;}
+.stApp .tb-sep {width:1px; height:12px; background:var(--line-strong,#313c4b);}
+.stApp .tb-band .topbar-status-time {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#7d8896;}
+
 .stApp .topbar-shell {
-  --tone:#4c8dff;
-  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;
-  padding:26px 30px 24px; margin:10px 0 20px;
+  --tone:#4c8dff; display:block; padding:24px 30px 24px; margin:0 0 20px;
 }
-/* network graphic: quiet, right side only */
 .stApp .topbar-shell::after {
-  opacity:.38; mix-blend-mode:screen; z-index:0;
-  -webkit-mask-image:linear-gradient(90deg,transparent 40%,#000 100%);
-  mask-image:linear-gradient(90deg,transparent 40%,#000 100%);
+  opacity:.34; mix-blend-mode:screen; z-index:0;
+  -webkit-mask-image:linear-gradient(90deg,transparent 45%,#000 100%);
+  mask-image:linear-gradient(90deg,transparent 45%,#000 100%);
 }
-.stApp .topbar-brand, .stApp .topbar-status-wrap {position:relative; z-index:2;}
+.stApp .tb-head, .stApp .tb-pipe {position:relative; z-index:2;}
+.stApp .tb-head {display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;}
 .stApp .topbar-brand {display:flex; align-items:center; gap:20px; min-width:0; flex:1 1 420px;}
-.stApp .topbar-brand::before {display:none;}
 .stApp .topbar-logo {
   width:66px; height:66px; flex:0 0 66px; padding:8px; border-radius:14px;
   background:rgba(255,255,255,.03); box-shadow:none;
@@ -5957,35 +5968,42 @@ st.markdown(r"""
 }
 .stApp .topbar-logo img {border-radius:10px;}
 .stApp .topbar-kicker {
-  display:block; margin-bottom:8px; color:var(--tone); text-shadow:none; background:none; -webkit-text-fill-color:currentColor;
+  display:block; margin-bottom:8px; color:var(--tone);
   font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase;
 }
-.stApp .topbar-kicker::before {display:none;}
 .stApp .topbar-title {
   font:800 clamp(20px,2.6vw,30px)/1.22 Inter,"Segoe UI",sans-serif; letter-spacing:-.015em;
   color:#fff; background:none; -webkit-text-fill-color:#fff; text-shadow:none;
 }
-.stApp .topbar-subtitle {margin-top:6px; font-size:12.5px; line-height:1.5; color:#8b96a5;}
-
-.stApp .topbar-status-wrap {display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:0; max-width:100%;}
 .stApp .topbar-actions {margin:0; max-width:100%;}
 .stApp .topbar-account-chip {
   display:inline-flex; align-items:center; gap:10px; max-width:100%; padding:5px 14px 5px 6px; border-radius:999px;
-  background:rgba(255,255,255,.03); border:1px solid var(--line-strong,#313c4b); box-shadow:none; backdrop-filter:none;
+  background:rgba(255,255,255,.03); border:1px solid var(--line-strong,#313c4b);
 }
 .stApp .topbar-account-avatar {
   width:26px; height:26px; flex:0 0 26px; border-radius:50%; display:grid; place-items:center;
-  font:800 12px/1 Inter,sans-serif; color:#0b1220; background:var(--tone); box-shadow:none;
+  font:800 12px/1 Inter,sans-serif; color:#0b1220; background:var(--tone);
 }
 .stApp .topbar-account-email {min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 12.5px/1 Inter,sans-serif; color:#d6deea;}
-.stApp .topbar-status-pill {
-  --c:#3fb68b; display:inline-flex; align-items:center; gap:9px; padding:7px 12px; border-radius:6px;
-  font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase;
-  background:color-mix(in srgb,var(--c) 8%,transparent); border:1px solid color-mix(in srgb,var(--c) 40%,transparent); box-shadow:none;
+
+/* six-stage pipeline */
+.stApp .tb-pipe {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0 20px; margin-top:26px;
 }
-.stApp .topbar-status-dot {width:6px; height:6px; background:var(--c); box-shadow:none; animation:pxPulse 2.4s ease-in-out infinite;}
-.stApp .topbar-status-online {color:var(--c); font-weight:600;}
-.stApp .topbar-status-time {font:600 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#5f6c7d;}
+.stApp .tb-step {--c:#4c8dff; position:relative; padding-top:16px;}
+.stApp .tb-step::before {
+  content:""; position:absolute; top:0; left:0; right:-20px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 12%,transparent));
+}
+.stApp .tb-step:last-child::before {right:0;}
+.stApp .tb-step::after {
+  content:""; position:absolute; top:-3px; left:0; width:8px; height:8px; border-radius:50%;
+  background:var(--c); box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 20%,transparent);
+}
+.stApp .tb-num {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; color:var(--c);}
+.stApp .tb-name {margin-top:6px; font:700 13px/1.25 Inter,"Segoe UI",sans-serif; color:#e6ecf5;}
+.stApp .tb-desc {margin-top:3px; font-size:11.5px; line-height:1.4; color:#7d8896;}
+.stApp .tb-step:hover .tb-name {color:#fff;}
 
 /* ======================= MODULE / PART BANNERS ======================= */
 .stApp .part-banner, .stApp .dossier-head {padding:20px 24px 18px; margin:10px 0 18px;}
@@ -6025,29 +6043,43 @@ st.markdown(r"""
 </style>
 """, unsafe_allow_html=True)
 
+_TB_STEPS = (
+    ("#4c8dff", "Evidence acquisition", "Live IMAP or file upload"),
+    ("#d49a66", "Header authentication", "SPF · DKIM · DMARC"),
+    ("#8b7cf6", "IOC intelligence", "URLs, IPs, attachments"),
+    ("#3fb68b", "Origin tracing", "Hop route and geolocation"),
+    ("#38a3e8", "Campaign correlation", "Cross-case infrastructure graph"),
+    ("#e5637d", "Local AI assessment", "On-device model, no cloud"),
+)
+_tb_pipe = "".join(
+    f'<div class="tb-step" style="--c:{c};"><div class="tb-num">{i:02d}</div>'
+    f'<div class="tb-name">{n}</div><div class="tb-desc">{d}</div></div>'
+    for i, (c, n, d) in enumerate(_TB_STEPS, 1)
+)
+
 st.markdown(
-    f"""<div class="topbar-shell">
-      <div class="topbar-brand">
-        <div class="topbar-logo"><img src="{_ALGORITHMISTIC_LOGO_SRC}" alt="Algorithmistic logo"/></div>
-        <div>
-          <div class="topbar-kicker">ALGORITHMISTIC · Forensic Intelligence Platform</div>
-          <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
-          <div class="topbar-subtitle">Evidence acquisition · header authentication · IOC intelligence · origin tracing · campaign correlation · local AI assessment</div>
+    f"""<div class="tb-band">
+      <span class="tb-live"><span class="topbar-status-dot"></span>System operational</span>
+      <span class="tb-sep"></span>
+      <span class="topbar-status-time">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</span>
+    </div>
+    <div class="topbar-shell">
+      <div class="tb-head">
+        <div class="topbar-brand">
+          <div class="topbar-logo"><img src="{_ALGORITHMISTIC_LOGO_SRC}" alt="Algorithmistic logo"/></div>
+          <div>
+            <div class="topbar-kicker">ALGORITHMISTIC · Forensic Intelligence Platform</div>
+            <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
+          </div>
         </div>
-      </div>
-      <div class="topbar-status-wrap">
         <div class="topbar-actions">
-            <div class="topbar-account-chip" title="{_acct_label}">
-                <span class="topbar-account-avatar">{_acct_initial}</span>
-                <span class="topbar-account-email">{_acct_label}</span>
-            </div>
+          <div class="topbar-account-chip" title="{_acct_label}">
+            <span class="topbar-account-avatar">{_acct_initial}</span>
+            <span class="topbar-account-email">{_acct_label}</span>
+          </div>
         </div>
-        <div class="topbar-status-pill">
-          <span class="topbar-status-dot"></span>
-          <span class="topbar-status-online">System operational</span>
-        </div>
-        <div class="topbar-status-time">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
       </div>
+      <div class="tb-pipe">{_tb_pipe}</div>
     </div>""",
     unsafe_allow_html=True,
 )
