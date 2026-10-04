@@ -46,6 +46,19 @@ _ALERTS = {
     "CAUTION":   ("error",   "🛑", "Caution"),
 }
 
+# Make capsule-render banners taller in Streamlit only (README on GitHub is untouched).
+CAPSULE_HEIGHT_SCALE = 1.5   # try 1.3 to 2.0
+_CAPSULE_RE = re.compile(
+    r"(https://capsule-render\.vercel\.app/api\?[^\"'\s)]*?)height=(\d+)"
+)
+
+
+def _scale_capsule(text: str) -> str:
+    def repl(m):
+        return f"{m.group(1)}height={int(int(m.group(2)) * CAPSULE_HEIGHT_SCALE)}"
+    return _CAPSULE_RE.sub(repl, text)
+
+
 
 # ───────────────────────────── helpers ─────────────────────────────
 def _github_slug(text: str) -> str:
@@ -157,6 +170,7 @@ def _load(path: str, mtime: float) -> List[Segment]:
     """Parse once and re-parse only when the README file changes (mtime key)."""
     text = Path(path).read_text(encoding="utf-8")
     text = _COMMENT_RE.sub("", text)
+    text = _scale_capsule(text) 
     return _parse(text.splitlines(), {})
 
 
