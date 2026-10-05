@@ -6012,6 +6012,45 @@ st.markdown(
     @keyframes sbEdge {from {height:0; opacity:0;} to {height:20px; opacity:1;}}
     @keyframes sbPulse {0%,100% {box-shadow:0 8px 16px -6px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.3);} 50% {box-shadow:0 10px 24px -4px var(--c,#4c8dff), 0 0 0 4px color-mix(in srgb, var(--c,#4c8dff) 16%, transparent), inset 0 1px 0 rgba(255,255,255,.3);}}
     @media (prefers-reduced-motion: reduce) {.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before, .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::after {animation:none;}}
+
+    /* ==================================================================
+       BUTTON SYSTEM v2 -- one compact button for the whole app (38px, no
+       glow slabs). Colour = the open page's nav colour (--panel-tone);
+       primary = filled gradient, secondary = tinted glass, destructive
+       (disconnect / sign out / delete) = rose. Sidebar nav rows and the
+       invisible inbox row buttons keep their own styles.
+       ================================================================== */
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]).stButton[class*="disconnect"], .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]).stButton[class*="signout"], .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]).stButton[class*="delete_my"] {--bt:#f0646e;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) {--bt:var(--panel-tone,#2fb68e);}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button {
+        min-height:38px !important; height:auto !important; padding:0 18px !important; border-radius:10px !important;
+        font:600 13px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; color:#e8eef7 !important;
+        border:1px solid color-mix(in srgb, var(--bt) 40%, #222c3c) !important;
+        background:linear-gradient(180deg, color-mix(in srgb, var(--bt) 15%, #141b27), color-mix(in srgb, var(--bt) 5%, #0e141d)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.35) !important;
+        transform:none !important; overflow:hidden;
+        transition:transform .18s var(--ease), border-color .2s var(--ease), box-shadow .22s var(--ease), background .22s var(--ease), filter .2s var(--ease) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button::before, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button::after {display:none !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button p, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button div {font:inherit !important; color:inherit !important; margin:0 !important; line-height:1.1 !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button:hover {
+        transform:translateY(-1px) !important; border-color:var(--bt) !important; color:#fff !important;
+        background:linear-gradient(180deg, color-mix(in srgb, var(--bt) 24%, #161e2b), color-mix(in srgb, var(--bt) 9%, #0f1620)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 8px 18px -10px var(--bt) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button:active {transform:translateY(0) scale(.985) !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.4) !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button:focus-visible {outline:2px solid color-mix(in srgb, var(--bt) 70%, transparent) !important; outline-offset:2px !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button:disabled {opacity:.45 !important; transform:none !important; box-shadow:none !important; cursor:not-allowed !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button[kind="primary"], .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button[kind="primaryFormSubmit"] {
+        color:#07100c !important; border-color:color-mix(in srgb, var(--bt) 80%, #fff) !important;
+        background:linear-gradient(135deg, var(--bt), color-mix(in srgb, var(--bt) 58%, #8b7cf6)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 8px 18px -10px var(--bt) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button[kind="primary"]:hover, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not([class*="st-key-mrow_"]):not([class*="st-key-nav_"]) button[kind="primaryFormSubmit"]:hover {
+        color:#07100c !important; filter:brightness(1.08) saturate(1.05);
+        background:linear-gradient(135deg, var(--bt), color-mix(in srgb, var(--bt) 58%, #8b7cf6)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 22px -10px var(--bt) !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
