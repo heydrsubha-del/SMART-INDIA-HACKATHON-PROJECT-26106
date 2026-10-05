@@ -5966,6 +5966,8 @@ st.markdown(
     .stApp .sidebar-status-card-v2.compact {padding:7px 12px !important;}
     .stApp .sidebar-profile {padding:6px 10px !important;}
     @media (max-height:760px) {.stApp .sidebar-status-card-v2.compact {display:none;}}
+
+    .topbar-account-chip:not(.topbar-account-chip-empty)::after {content:""; flex:none; width:8px; height:8px; margin-left:10px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(52,211,153,.8);}
     </style>
     """,
     unsafe_allow_html=True,
@@ -6176,7 +6178,6 @@ with st.sidebar:
                 del st.session_state[_k]
             st.rerun()
 
-    _sb_user = ((st.session_state.get("live_mailbox_config") or {}).get("user") or st.session_state.get("imap_user") or "").strip()
     with st.container(key="sb_footer"):
         st.markdown(
             f"""<div class="sidebar-status-card-v2 compact" title="Last DB update {datetime.now().strftime('%d %b, %H:%M')}">
@@ -6184,17 +6185,6 @@ with st.sidebar:
                 <div class="scc-stat"><b>{_sb_total}</b><i>Analyzed</i></div>
                 <div class="scc-stat scc-alert"><b>{_sb_threats}</b><i>Threats</i></div>
                 <div class="scc-state">Online</div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
-        _sb_name = html.escape(_sb_user.split("@")[0]) if _sb_user else "Not signed in"
-        _sb_init = html.escape(_sb_user[:1].upper()) if _sb_user else "?"
-        _sb_sub = html.escape(_sb_user) if _sb_user else "Connect a mailbox to begin"
-        st.markdown(
-            f"""<div class="sidebar-profile">
-                <span class="sp-av">{_sb_init}</span>
-                <span class="sp-txt"><b>{_sb_name}</b><i>{_sb_sub}</i></span>
-                <span class="sp-live{' on' if _sb_user else ''}"></span>
             </div>""",
             unsafe_allow_html=True,
         )
