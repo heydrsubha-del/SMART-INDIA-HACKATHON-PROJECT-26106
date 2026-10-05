@@ -5229,6 +5229,63 @@ st.markdown(
     .st-key-inbox_list::-webkit-scrollbar-thumb {background:rgba(148,163,184,.28); border-radius:8px;}
     .st-key-inbox_list::-webkit-scrollbar-thumb:hover {background:var(--panel-tone, #2fb68e);}
 
+    /* ==================================================================
+       PREMIUM LIST -- inbox rows and every table share one flat, quiet
+       style: round avatar (profile picture when the sender has one, else
+       initial) with a coloured ring, "Name . domain" over an envelope +
+       address line, a soft received pill and a chevron. Hover and selection
+       are a flat wash plus a thin edge bar -- no glows, gradients or lifts.
+       Delete this block to go back to the previous list look.
+       ================================================================== */
+    .inbox-head, .inbox-row {grid-template-columns:44px minmax(250px,1.3fr) minmax(200px,1.5fr) 170px 64px; column-gap:18px;}
+    .inbox-head {background:#10151d; border-radius:14px 14px 0 0; color:#8e9aac;}
+    .inbox-head::before {display:none !important;}
+    .st-key-inbox_list {background:#0d1219 !important; box-shadow:none !important;}
+    .inbox-row {padding:0 20px !important; border-bottom:1px solid rgba(148,163,184,.10) !important; transition:background .15s ease;}
+    .inbox-row::before {opacity:0; top:0 !important; bottom:0 !important; transition:opacity .15s ease;}
+    [class*="st-key-mrow_"]:hover .inbox-row {background:rgba(255,255,255,.035);}
+    [class*="st-key-mrow_"]:hover .inbox-row::before {opacity:1;}
+    .inbox-row.is-sel {background:color-mix(in srgb,var(--tone) 8%,transparent);}
+    .inbox-row.is-sel::before {opacity:1;}
+    .inbox-row .ir-no {background:none; border:0; border-radius:0; padding:0; color:#7c889a; font-weight:600;}
+
+    .inbox-row .ir-from {gap:14px;}
+    .inbox-row .ir-av {
+        position:relative; width:44px; height:44px; border-radius:50%; flex:none; overflow:visible;
+        display:inline-flex; align-items:center; justify-content:center;
+        background:color-mix(in srgb,var(--tone) 12%,#0f151e); border:2px solid var(--tone); box-shadow:none;
+    }
+    .inbox-row .ir-av > b {font:700 16px/1 Inter,sans-serif; color:var(--tone);}
+    .inbox-row .ir-av .ir-pic {position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); border-radius:50%; object-fit:cover; background:transparent;}
+    .inbox-row .ir-av .ir-ok {position:absolute; right:-3px; bottom:-3px; width:12px; height:12px; border-radius:50%; background:#34d399; border:2px solid #0d1219; text-decoration:none;}
+    .inbox-row .ir-l1 {display:flex; align-items:baseline; gap:8px; min-width:0;}
+    .inbox-row .ir-l1 > b {font:650 14px/1.2 Inter,sans-serif; color:#eef2f7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto;}
+    .inbox-row .ir-dom {flex:0 1 auto; min-width:0; font:600 11.5px/1.2 Inter,sans-serif; color:var(--tone); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .inbox-row .ir-dom::before {content:"\2022"; margin-right:8px; color:#5d6b7e;}
+    .inbox-row .ir-fromtxt {gap:4px;}
+    .inbox-row .ir-fromtxt > i {display:flex; align-items:center; gap:7px; font:500 12px/1.2 Inter,sans-serif; color:#8b96a5;}
+    .inbox-row .ir-fromtxt > i::before {
+        content:""; flex:none; width:13px; height:13px; background-color:#7c889a;
+        -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3.5 7.5l8.5 6 8.5-6'/%3E%3C/svg%3E") center/contain no-repeat;
+        mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3.5 7.5l8.5 6 8.5-6'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    .inbox-row .ir-date {align-items:flex-start; gap:5px;}
+    .inbox-row .ir-pill {display:inline-flex; align-items:center; gap:7px; padding:4px 11px; border-radius:999px; background:rgba(148,163,184,.12); font:600 12px/1 Inter,sans-serif; color:#b8c2d0;}
+    .inbox-row .ir-pill u {width:6px; height:6px; border-radius:50%; background:#8b96a5; text-decoration:none;}
+    .inbox-row .ir-date > i {font:500 11px/1.2 Inter,sans-serif; color:#7c889a;}
+    .inbox-row .ir-go {opacity:1; transform:none; color:#6b7686; font-size:11px; letter-spacing:.08em; transition:color .15s ease;}
+    .inbox-row .ir-go em {font-size:22px; line-height:1; margin-left:6px;}
+    [class*="st-key-mrow_"]:hover .inbox-row .ir-go, .inbox-row.is-sel .ir-go {color:var(--tone);}
+
+    /* every other table: same flat treatment */
+    .polished-table-wrap {box-shadow:none !important;}
+    table.polished-table tbody tr:hover, .pt-toned table.polished-table tbody tr:hover {background:rgba(255,255,255,.035) !important;}
+    table.polished-table thead th {background:#10151d !important;}
+    table.polished-table tbody td:first-child::before {box-shadow:none !important;}
+    .ip-chip {background:rgba(148,163,184,.10) !important; box-shadow:none !important;}
+    .verdict-pill::before {box-shadow:none !important;}
+
     /* ---- Tables: rich cells ---- */
     .polished-table-wrap {
         background:linear-gradient(180deg,#11161e,#0d1117) padding-box,
@@ -8942,15 +8999,29 @@ if active_panel == "Dashboard":
                     _col = _AV_COLS[int(hashlib.md5((_addr or _name).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_AV_COLS)]
                     _d1, _d2, _rel = _when(_r["Date"])
                     _is_sel = (_i == _sel_idx)
+                    # Sender profile picture: Gravatar by hashed address, requested with d=blank so
+                    # senders without a picture stay transparent and the initial shows through.
+                    # The browser fetches it (sender-address hashes go to gravatar.com);
+                    # set SIH26106_SHOW_SENDER_PICS=0 to switch it off.
+                    _pic = ""
+                    if _addr and os.environ.get("SIH26106_SHOW_SENDER_PICS", "1") != "0":
+                        _h = hashlib.sha256(_addr.strip().lower().encode("utf-8", "ignore")).hexdigest()
+                        _pic = (f'<img class="ir-pic" src="https://www.gravatar.com/avatar/{_h}?s=96&d=blank" '
+                                'alt="" loading="lazy" referrerpolicy="no-referrer">')
+                    _dom = _addr.split("@")[-1] if "@" in _addr else ""
                     with st.container(key=f"mrow_{_i}"):
                         st.markdown(
                             f'<div class="inbox-row{" is-sel" if _is_sel else ""}" style="--tone:{_col};">'
                             f'<span class="ir-no">{int(_r["No."])}</span>'
-                            f'<span class="ir-from"><span class="ir-av">{html.escape((_name[:1] or "?").upper())}</span>'
-                            f'<span class="ir-fromtxt"><b>{html.escape(_name)}</b><i>{html.escape(_addr)}</i></span></span>'
+                            f'<span class="ir-from"><span class="ir-av"><b>{html.escape((_name[:1] or "?").upper())}</b>{_pic}'
+                            f'{"<s class=ir-ok></s>" if _is_sel else ""}</span>'
+                            f'<span class="ir-fromtxt"><span class="ir-l1"><b>{html.escape(_name)}</b>'
+                            f'{"<span class=ir-dom>" + html.escape(_dom) + "</span>" if _dom else ""}</span>'
+                            f'<i>{html.escape(_addr)}</i></span></span>'
                             f'<span class="ir-subj">{_tag_for(_r["Subject"])}{html.escape(str(_r["Subject"]))}</span>'
-                            f'<span class="ir-date"><b>{html.escape(_d1)}</b><i>{html.escape(_d2)}{" · " + html.escape(_rel) if _rel else ""}</i></span>'
-                            f'<span class="ir-go">{"Selected" if _is_sel else "Open"} <em>&rsaquo;</em></span>'
+                            f'<span class="ir-date"><span class="ir-pill"><u></u>{html.escape(_rel or _d1)}</span>'
+                            f'<i>{html.escape(_d1)} · {html.escape(_d2)}</i></span>'
+                            f'<span class="ir-go">{"Selected " if _is_sel else ""}<em>&rsaquo;</em></span>'
                             '</div>',
                             unsafe_allow_html=True,
                         )
