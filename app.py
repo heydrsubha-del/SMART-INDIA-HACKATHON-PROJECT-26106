@@ -5658,6 +5658,69 @@ st.markdown(
     .stApp :is([data-testid="stMain"],section.main) [data-testid="stHeading"] :is(h1,h2,h3,h4)::before {
         content:""; position:absolute; left:0; top:1px; bottom:10px; width:3px; border-radius:2px; background:var(--panel-tone,#38bdf8);
     }
+
+    /* ==================================================================
+       NAV BAR v12 -- floating capsule, icon over label. The open tab lifts
+       its icon into a raised badge that cuts a round notch out of the bar
+       (ring = page colour). Every tab keeps its own colour (--c), the glass
+       and the colours are unchanged; only the layout and motion are new.
+       ================================================================== */
+    .stApp .st-key-topnav {
+        margin:38px 0 12px 0 !important; padding:0 !important; overflow:visible !important;
+        border-radius:32px !important;
+        background:
+            radial-gradient(48% 170% at 0% 50%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 72%),
+            radial-gradient(42% 180% at 100% 0%, color-mix(in srgb, var(--violet) 12%, transparent), transparent 70%),
+            linear-gradient(180deg, #131923, #0d1219) !important;
+        box-shadow:0 26px 46px -24px rgba(0,0,0,.85), 0 2px 6px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+    .stApp .st-key-topnav::after {left:44px; right:44px; bottom:4px;}
+    .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
+    .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {
+        margin-top:-28px !important; padding:34px 28px 7px 28px !important;
+        align-items:flex-end !important; gap:4px !important; position:relative; z-index:3;
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label {
+        flex-direction:column !important; justify-content:flex-end !important; gap:0 !important;
+        min-width:92px; padding:12px 14px 11px 14px !important; border-radius:18px !important;
+        overflow:visible !important; background:transparent !important; border:0 !important; box-shadow:none !important;
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {
+        position:relative; z-index:2; flex-direction:column !important; align-items:center !important; gap:7px !important;
+        font:600 11.5px/1.15 Inter,"Segoe UI",Arial,sans-serif !important; letter-spacing:.025em !important; color:#98a5b7 !important;
+        transition:color .2s var(--ease);
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {
+        flex:0 0 22px; width:22px; height:22px; opacity:.82; position:relative; z-index:2;
+        transition:transform .32s cubic-bezier(.34,1.56,.64,1), opacity .2s var(--ease), background-color .2s var(--ease), filter .25s var(--ease);
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label::after {display:none !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover {background:transparent !important; border:0 !important; transform:none !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p {color:#fff !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p::before {opacity:1; transform:translateY(-3px) scale(1.12); filter:drop-shadow(0 6px 8px color-mix(in srgb, var(--c,#2fb68e) 55%, transparent));}
+
+    /* open tab: raised badge in a round cut-out */
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) {
+        background:transparent !important; border:0 !important; box-shadow:none !important; animation:none !important;
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked)::before {
+        content:"" !important; display:block !important; position:absolute !important; z-index:1 !important;
+        left:50% !important; top:-20px !important; width:52px !important; height:52px !important; margin:0 0 0 -26px !important; padding:0 !important;
+        opacity:1 !important; pointer-events:none !important; border-radius:50% !important;
+        background:linear-gradient(150deg, color-mix(in srgb, var(--c,#2fb68e) 100%, #fff 12%), color-mix(in srgb, var(--c,#2fb68e) 62%, #000)) !important;
+        border:6px solid var(--bg,#0a0d12) !important;
+        box-shadow:0 0 0 1px color-mix(in srgb, var(--c,#2fb68e) 60%, transparent), 0 12px 22px -6px var(--c,#2fb68e), inset 0 1px 0 rgba(255,255,255,.35) !important;
+        animation:navLift .42s cubic-bezier(.34,1.56,.64,1);
+    }
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {color:var(--c,#2fb68e) !important; font-weight:750 !important;}
+    .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {
+        background-color:#0a0d12 !important; opacity:1; filter:none; transform:translateY(-17px) scale(1.04);
+    }
+    @keyframes navLift {from {transform:translateY(14px) scale(.7); opacity:0;} to {transform:none; opacity:1;}}
+    @media (max-width:760px) {
+        .stApp .st-key-topnav .stRadio [role="radiogroup"] label {min-width:78px;}
+        .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
