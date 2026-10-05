@@ -6268,6 +6268,109 @@ st.markdown(
         position:fixed !important; top:14px !important; left:12px !important; z-index:1000003 !important; margin:0 !important;
     }
 
+    /* ==================================================================
+       DOCK + MAP/GRAPH v13 -- same language as the nav and sidebar: one
+       blue accent, a thin top hairline, mono eyebrows, 12-16px radii,
+       icon chips, flat tinted hover. Styling only: no markup, keys or
+       callbacks changed. Severity colours inside tiles stay (they mean
+       something). Delete this block to go back.
+       ================================================================== */
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock {
+        border:1px solid #243046 !important; border-radius:16px !important; padding:22px 18px 22px 18px !important;
+        background:
+            linear-gradient(90deg,#4c8dff,rgba(76,141,255,.10) 70%,transparent) top/100% 2px no-repeat,
+            radial-gradient(60% 34% at 0% 0%, rgba(76,141,255,.09), transparent 70%),
+            linear-gradient(180deg,#101826,#0a1019) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -20px rgba(0,0,0,.85) !important;
+    }
+    .stApp .rd-kicker, .stApp .right-dock-title {display:flex; align-items:center; gap:10px; color:#7fb0ff !important; font-size:10.5px !important; letter-spacing:.18em !important;}
+    .stApp .rd-kicker::before, .stApp .right-dock-title::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
+    .stApp .rd-score {padding:5px 11px; border-radius:999px; background:rgba(76,141,255,.10); border:1px solid rgba(76,141,255,.32); color:#b8cffc;}
+    .stApp .rd-gauge {height:4px; background:#1a2332;}
+    .stApp .st-key-toggle_right_summary_open {display:flex; justify-content:flex-end;}
+    .stApp .st-key-toggle_right_summary_open button {
+        width:38px !important; min-width:38px !important; height:38px !important; min-height:38px !important; padding:0 !important;
+        border-radius:11px !important; border:1px solid rgba(110,160,255,.45) !important; color:#eaf1ff !important; font-size:15px !important;
+        background:linear-gradient(180deg,rgba(76,141,255,.24),rgba(76,141,255,.08)), rgba(12,18,30,.9) !important; box-shadow:none !important;
+    }
+    .stApp .st-key-toggle_right_summary_open button:hover {border-color:rgba(165,198,255,.85) !important; background:linear-gradient(180deg,rgba(76,141,255,.34),rgba(76,141,255,.12)), rgba(12,18,30,.9) !important;}
+
+    .stApp .rd-sec {color:#7f98b3 !important; margin:22px 0 10px 0;}
+    .stApp .rd-sec::before {width:6px; height:6px; border-radius:50%; background:#4c8dff; opacity:1; box-shadow:0 0 0 3px rgba(76,141,255,.16);}
+    .stApp .rd-tile {padding:13px 14px 12px 17px !important; border-radius:12px !important; background:#0e1520 !important; border:1px solid #1f2a3d !important; box-shadow:none !important;}
+    .stApp .rd-tile::before {top:12px; bottom:12px; border-radius:0 3px 3px 0;}
+    .stApp .rd-tile:hover {border-color:#2a3a54 !important;}
+    .stApp .rd-card {border-radius:12px; background:#0e1520; border:1px solid #1f2a3d; box-shadow:none;}
+    .stApp .rd-card::before {top:12px; bottom:12px; border-radius:0 3px 3px 0;}
+    .stApp .kv-row {border-bottom:1px solid rgba(148,163,184,.08);}
+    .stApp .threattype-row .bar-track {height:5px; border-radius:5px;}
+
+    /* Synapse Copilot */
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head {
+        display:flex; align-items:center; gap:10px; margin-top:20px !important; padding:12px 14px !important;
+        border:1px solid #243046 !important; border-bottom:0 !important; border-radius:12px 12px 0 0 !important;
+        background:rgba(76,141,255,.07) !important; box-shadow:none !important;
+        font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; color:#9dbcff !important;
+    }
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head::before, .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head::after {display:none !important;}
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:first-child {display:inline-flex; align-items:center; gap:10px; color:#9dbcff !important;}
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:first-child::before {content:""; width:16px; height:16px; background-color:#6f9bff; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat;}
+    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:last-child {
+        margin-left:auto; padding:4px 9px; border-radius:999px; border:1px solid #2a3750; background:rgba(255,255,255,.03);
+        color:#8da3bb !important; font-size:9px !important; letter-spacing:.08em !important;
+    }
+    .stApp .st-key-copilot_panel {border:1px solid #243046 !important; border-top:0 !important; border-radius:0 0 12px 12px !important; background:#0d1520 !important; padding:16px !important;}
+    .stApp .copilot-title {font-size:13.5px; color:#f1f5fb;}
+    .stApp .copilot-active {padding:4px 10px; border-radius:999px; background:rgba(52,211,153,.10); border:1px solid rgba(52,211,153,.35); color:#6ee7b7; letter-spacing:.12em;}
+    .stApp .copilot-msg {background:#111a27; border:1px solid #1f2a3d; border-radius:4px 14px 14px 14px; color:#c9d4e3; line-height:1.6;}
+    .stApp .copilot-msg-user {background:rgba(76,141,255,.14); border:1px solid rgba(76,141,255,.35); border-radius:14px 4px 14px 14px; color:#eaf1ff;}
+
+    .stApp .st-key-copilot_quick_actions [data-testid="stHorizontalBlock"] {display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px !important;}
+    .stApp .st-key-copilot_quick_actions [data-testid="stColumn"], .stApp .st-key-copilot_quick_actions [data-testid="column"] {width:auto !important; min-width:0 !important; flex:none !important;}
+    .stApp .st-key-copilot_quick_actions .stButton button {
+        min-height:42px !important; padding:0 8px !important; border-radius:12px !important; box-shadow:none !important; transform:none !important;
+        background:rgba(255,255,255,.03) !important; border:1px solid #243046 !important; color:#b3bfd0 !important;
+    }
+    .stApp .st-key-copilot_quick_actions .stButton button::before, .stApp .st-key-copilot_quick_actions .stButton button::after {display:none !important; content:none !important;}
+    .stApp .st-key-copilot_quick_actions .stButton button:hover {background:rgba(76,141,255,.10) !important; border-color:rgba(76,141,255,.5) !important; color:#fff !important; transform:none !important;}
+    .stApp .st-key-copilot_quick_actions .stButton button p {display:flex !important; align-items:center; justify-content:center; gap:7px; width:100%; margin:0 !important; white-space:nowrap !important; overflow:hidden; text-overflow:ellipsis; font:600 12px/1.2 Inter,"Segoe UI",sans-serif !important;}
+    .stApp .st-key-copilot_quick_actions .stButton button p::before {content:""; position:static !important; transform:none !important; flex:none; width:14px; height:14px; margin:0 !important; background-color:#6f9bff;}
+    .stApp .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(1) button p::before, .stApp .st-key-copilot_quick_actions [data-testid="column"]:nth-child(1) button p::before {-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h6'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h6'/%3E%3C/svg%3E") center/contain no-repeat;}
+    .stApp .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(2) button p::before, .stApp .st-key-copilot_quick_actions [data-testid="column"]:nth-child(2) button p::before {-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center/contain no-repeat;}
+    .stApp .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(3) button p::before, .stApp .st-key-copilot_quick_actions [data-testid="column"]:nth-child(3) button p::before {-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'/%3E%3C/svg%3E") center/contain no-repeat;}
+
+    .stApp .st-key-copilot_command_row [data-testid="stForm"] {border:0 !important; padding:0 !important; background:none !important;}
+    .stApp .st-key-copilot_command_row [data-baseweb="input"], .stApp .st-key-copilot_command_row [data-baseweb="base-input"] {border-radius:12px !important;}
+    .stApp .st-key-copilot_command_row .stTextInput input {height:42px; background:#0b121c !important; border:1px solid #243046 !important; border-radius:12px !important; color:#eef2f8 !important;}
+    .stApp .st-key-copilot_command_row .stTextInput input:focus {border-color:#4c8dff !important; box-shadow:0 0 0 3px rgba(76,141,255,.14) !important;}
+    .stApp .st-key-copilot_command_row .stFormSubmitButton button {
+        min-height:42px !important; height:42px !important; border-radius:12px !important; font-size:15px !important; font-weight:700 !important; color:#eaf1ff !important;
+        background:linear-gradient(180deg,rgba(76,141,255,.30),rgba(76,141,255,.12)), rgba(12,18,30,.9) !important; border:1px solid rgba(110,160,255,.5) !important; box-shadow:none !important;
+    }
+    .stApp .st-key-copilot_command_row .stFormSubmitButton button::before, .stApp .st-key-copilot_command_row .stFormSubmitButton button::after {display:none !important; content:none !important;}
+    .stApp .st-key-copilot_command_row .stFormSubmitButton button:hover {border-color:rgba(165,198,255,.9) !important; background:linear-gradient(180deg,rgba(76,141,255,.42),rgba(76,141,255,.16)), rgba(12,18,30,.9) !important;}
+
+    /* Dashboard map + correlation graph cards */
+    .stApp .st-key-dash_map_card, .stApp .st-key-dash_graph_card {
+        --cc:#4c8dff; border:1px solid #243046 !important; border-radius:16px !important; padding:16px 20px 16px 20px !important;
+        background:
+            linear-gradient(90deg,#4c8dff,rgba(76,141,255,.10) 70%,transparent) top/100% 2px no-repeat,
+            radial-gradient(60% 30% at 0% 0%, rgba(76,141,255,.08), transparent 70%),
+            linear-gradient(180deg,#101826,#0a1019) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px -20px rgba(0,0,0,.85) !important;
+    }
+    .stApp .st-key-dash_map_card .part-banner, .stApp .st-key-dash_graph_card .part-banner {
+        --tone:#4c8dff !important; margin:-16px -20px 16px -20px !important; padding:20px 22px 16px 26px !important;
+        border-bottom:1px solid #1d2a3f !important; background:transparent !important;
+    }
+    .stApp .st-key-dash_map_card .pb-step, .stApp .st-key-dash_graph_card .pb-step {color:#7fb0ff !important; letter-spacing:.18em;}
+    .stApp .st-key-dash_map_card .pb-title, .stApp .st-key-dash_graph_card .pb-title {font-size:20px !important; color:#f4f7fb !important;}
+    .stApp .st-key-dash_map_card .pb-sub, .stApp .st-key-dash_graph_card .pb-sub {color:#8d99ac !important;}
+    .stApp .st-key-dash_map_card .pb-scope, .stApp .st-key-dash_graph_card .pb-scope {
+        padding:6px 12px !important; border-radius:999px !important; border:1px solid rgba(76,141,255,.35) !important;
+        background:rgba(76,141,255,.08) !important; color:#b8cffc !important;
+    }
+    .stApp .st-key-dash_map_card iframe, .stApp .st-key-dash_graph_card iframe {border-radius:12px; border:1px solid #1f2a3d; box-shadow:none;}
     </style>
     """,
     unsafe_allow_html=True,
