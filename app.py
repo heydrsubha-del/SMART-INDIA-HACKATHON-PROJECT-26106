@@ -6075,70 +6075,25 @@ st.markdown(
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::after {color:#07100c; opacity:.75; transform:translate(0,-52%);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::after {opacity:1; transform:translate(3px,-52%);}
 
-
     /* ==================================================================
-       BUTTON SYSTEM v5 -- keeps the v3 glass / nav-bar behaviour and fixes
-       the colour choice: primary is a frosted brand-blue glass with white
-       text (no neon green-to-violet fill, no dark-on-bright text), every
-       button gets real glass depth (translucent tint, blur, inner
-       highlight), and the three report downloads are tinted glass instead
-       of loud gradients. Delete this block to go back to v3.
+       BUTTON COLOURS v5 -- colour-only. Size, glass behaviour, hover sweep,
+       edge marker and arrow stay exactly as in v3. Primary buttons were a
+       neon green-to-violet fill with dark text; they are now frosted
+       brand-blue glass with white text. Delete this block to go back to v3.
        ================================================================== */
     .stApp {--act-1-top:#5b8def; --act-1-bot:#3a62c9; --act-1-border:rgba(150,185,255,.5); --act-1-text:#f4f8ff;
              --act-1-top-hover:#6b9bf2; --act-1-bot-hover:#4672d8; --act-1-border-hover:rgba(170,200,255,.7);}
-
-    /* secondary: frosted glass tinted by the open page's colour */
-    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button {
-        background-color:color-mix(in srgb, var(--bt) 9%, rgba(18,26,40,.62)) !important;
-        border:1px solid color-mix(in srgb, var(--bt) 30%, rgba(255,255,255,.10)) !important;
-        -webkit-backdrop-filter:blur(10px) saturate(1.3); backdrop-filter:blur(10px) saturate(1.3);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.18), 0 6px 16px -10px rgba(0,0,0,.7) !important;
-    }
-    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:hover {
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 8px 18px -10px var(--bt) !important;
-    }
-
-    /* primary: frosted brand-blue glass, white text */
-    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]) {
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]) {
         color:#fff !important; border-color:rgba(150,185,255,.55) !important; background-color:rgba(58,98,201,.40) !important;
         background-image:linear-gradient(105deg, rgba(255,255,255,0) 35%, rgba(255,255,255,.26) 50%, rgba(255,255,255,0) 65%),
                          linear-gradient(180deg, rgba(120,165,255,.60), rgba(52,92,196,.42)) !important;
-        background-repeat:no-repeat !important; background-position:-140% 0, 0 0 !important; background-size:60% 100%, 100% 100% !important;
-        -webkit-backdrop-filter:blur(10px) saturate(1.4); backdrop-filter:blur(10px) saturate(1.4);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.30), inset 0 -1px 0 rgba(0,0,0,.2), 0 8px 18px -10px rgba(76,141,255,.8) !important;
-        text-shadow:0 1px 1px rgba(0,0,0,.25);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.30), 0 8px 16px -10px rgba(76,141,255,.8) !important;
     }
-    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]):hover {
-        color:#fff !important; border-color:rgba(175,205,255,.75) !important; filter:brightness(1.07);
-        background-position:240% 0, 0 0 !important; background-size:60% 100%, 100% 100% !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.34), 0 10px 22px -10px rgba(76,141,255,.9) !important;
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]):hover {
+        color:#fff !important; border-color:rgba(175,205,255,.75) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.34), 0 10px 20px -10px rgba(76,141,255,.9) !important;
     }
-    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"])::after {color:#fff; opacity:.8;}
-
-    /* forensic report downloads: tinted glass, Combined = primary blue */
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button {
-        --fg:#8b7cf6; color:#f2f5fb !important; font-weight:650 !important;
-        background-color:color-mix(in srgb, var(--fg) 14%, rgba(18,26,40,.62)) !important;
-        background-image:linear-gradient(180deg, color-mix(in srgb, var(--fg) 24%, transparent), color-mix(in srgb, var(--fg) 4%, transparent)) !important;
-        background-repeat:no-repeat !important; background-position:0 0 !important; background-size:100% 100% !important;
-        border:1px solid color-mix(in srgb, var(--fg) 45%, rgba(255,255,255,.10)) !important;
-        -webkit-backdrop-filter:blur(10px) saturate(1.3); backdrop-filter:blur(10px) saturate(1.3);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.09), 0 6px 16px -10px var(--fg) !important;
-    }
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"]:nth-of-type(2) .stDownloadButton button {--fg:#38bdf8;}
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button {
-        --fg:#4c8dff; color:#fff !important; font-weight:700 !important;
-        background-image:linear-gradient(180deg, rgba(120,165,255,.60), rgba(52,92,196,.42)) !important;
-        border-color:rgba(150,185,255,.55) !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.30), 0 8px 18px -10px rgba(76,141,255,.8) !important;
-    }
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button:hover {
-        background-image:linear-gradient(180deg, color-mix(in srgb, var(--fg) 34%, transparent), color-mix(in srgb, var(--fg) 8%, transparent)) !important;
-        border-color:color-mix(in srgb, var(--fg) 70%, rgba(255,255,255,.1)) !important; color:#fff !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 8px 18px -10px var(--fg) !important;
-    }
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button:hover {background-image:linear-gradient(180deg, rgba(135,178,255,.68), rgba(60,102,208,.5)) !important;}
-    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button:disabled {opacity:.45 !important; box-shadow:none !important; filter:saturate(.5);}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"])::after {color:#fff;}
     </style>
     """,
     unsafe_allow_html=True,
