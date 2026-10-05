@@ -4924,32 +4924,6 @@ st.markdown(
 
     /* action row */
     .stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:12px !important; align-items:stretch !important;}
-    .stApp .st-key-imap_connected_panel .stButton button {
-        min-height:48px !important; border-radius:12px !important; font:650 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important;
-        transition:background .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease) !important;
-    }
-    .stApp .st-key-imap_connected_panel .stButton button:hover {transform:translateY(-1px) !important;}
-    .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button {
-        background:linear-gradient(180deg,#1f3a66,#16264a) padding-box, linear-gradient(115deg,#2fb68e,#8b7cf6 60%,#a78bfa) border-box !important;
-        border:1px solid transparent !important; color:#fff !important;
-        box-shadow:0 12px 24px -16px rgba(139,124,246,.9), inset 0 1px 0 rgba(255,255,255,.09) !important;
-    }
-    .stApp .st-key-imap_connected_panel .st-key-mailbox_quick_full_report_btn button:hover {
-        background:linear-gradient(180deg,#27487f,#1b2f5c) padding-box, linear-gradient(115deg,#5b9bf8,#7c7ff3 60%,#b9a6ff) border-box !important;
-        box-shadow:0 16px 28px -14px rgba(139,124,246,1), inset 0 1px 0 rgba(255,255,255,.12) !important;
-    }
-    .stApp .st-key-imap_connected_panel .st-key-imap_show_form_btn button {
-        background:rgba(76,141,255,.06) !important; border:1px solid rgba(76,141,255,.45) !important; color:#b9ceff !important;
-    }
-    .stApp .st-key-imap_connected_panel .st-key-imap_show_form_btn button:hover {
-        background:rgba(76,141,255,.14) !important; border-color:#6c9bff !important; color:#fff !important;
-    }
-    .stApp .st-key-imap_connected_panel .st-key-imap_disconnect_btn button {
-        background:rgba(239,90,90,.05) !important; border:1px solid rgba(239,90,90,.5) !important; color:#ff9d9d !important;
-    }
-    .stApp .st-key-imap_connected_panel .st-key-imap_disconnect_btn button:hover {
-        background:rgba(239,90,90,.14) !important; border-color:rgba(239,90,90,.9) !important; color:#ffd0d0 !important;
-    }
     @media (max-width:760px) {
         .mbx-head {flex-wrap:wrap;} .mbx-badge {display:none;}
         .stApp .st-key-imap_connected_panel {padding:18px 16px 18px 20px !important;}
@@ -6163,6 +6137,14 @@ st.markdown(
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::before {background:rgba(255,255,255,.32) !important;}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"] p::before {background-color:#fff !important;}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::after {color:#fff; opacity:.8;}
+
+    /* BUTTON COLOURS v6: by meaning -- neutral slate for secondary, page colour
+       for primary, emerald go, violet AI, cyan network, amber caution,
+       green safe, rose destructive. Keyed buttons carry their own colour. */
+    :where(.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *)) button[kind="secondary"], :where(.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *)) button[kind="secondaryFormSubmit"] {--bt:#8aa0bd;}
+    :where(.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *)) button[kind="primary"], :where(.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *)) button[kind="primaryFormSubmit"] {--bt:var(--panel-tone,#2fb68e);}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button > div, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button span {background:none !important; box-shadow:none !important; border:0 !important; border-radius:0 !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p::after, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button > div::before, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button > div::after {display:none !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -6269,8 +6251,8 @@ _BTN_STYLE = {
     "mailbox_quick_full_report_btn": ("#2fb68e", "report"),
     "connect_imap": ("#2fb68e", "plug"),
     "imap_reload_folder_btn": ("#2fb68e", "refresh"),
-    "imap_show_form_btn": ("#38bdf8", "swap"),
-    "evidence_show_form_btn": ("#38bdf8", "swap"),
+    "imap_show_form_btn": ("#8aa0bd", "swap"),
+    "evidence_show_form_btn": ("#8aa0bd", "swap"),
     "imap_disconnect_btn": ("#f0646e", "power"),
     "delete_my_data_btn": ("#f0646e", "trash"),
     "google_signout_btn": ("#f0646e", "logout"),
@@ -6279,11 +6261,11 @@ _BTN_STYLE = {
     "run_qwen_recent_batch": ("#8b7cf6", "chip"),
     "run_qwen_single": ("#8b7cf6", "chip"),
     "run_global_ip_scan": ("#22d3ee", "globe"),
-    "urlhaus_sync_btn": ("#f08a4b", "feed"),
+    "urlhaus_sync_btn": ("#f59e0b", "feed"),
     "confirm_threat": ("#f0646e", "check"),
-    "false_positive": ("#d9a35f", "flag"),
-    "corr_graph_clear_highlight": ("#8b7cf6", "x"),
-    "retry_imap_message": ("#d9a35f", "refresh"),
+    "false_positive": ("#34d399", "flag"),
+    "corr_graph_clear_highlight": ("#8aa0bd", "x"),
+    "retry_imap_message": ("#e0a458", "refresh"),
 }
 _btn_rules = []
 for _bk2, (_bc2, _bi2) in _BTN_STYLE.items():
