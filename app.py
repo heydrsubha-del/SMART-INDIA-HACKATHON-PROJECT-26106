@@ -6158,6 +6158,36 @@ st.markdown(
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p::before {z-index:1; transform:translateY(-50%);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:hover p::before {transform:translateY(-50%) scale(1.1) rotate(-6deg);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::after, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primaryFormSubmit"]:hover::after {background:none !important; background-image:none !important;}
+
+    /* ==================================================================
+       SIDEBAR TOGGLE -- the thin native arrow (>> / <<) is replaced by a
+       clear hamburger button: 44px frosted blue glass tile, bright three-bar
+       icon, visible at full opacity. Same click target, only the look
+       changes. Delete this block to get the native arrow back.
+       ================================================================== */
+    html body .stApp [data-testid="stToolbar"]:has([data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"]) {opacity:1 !important;}
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]) {
+        position:relative !important; display:inline-flex !important; align-items:center !important; justify-content:center !important;
+        width:44px !important; height:44px !important; min-width:44px !important; min-height:44px !important; padding:0 !important;
+        border-radius:12px !important; border:1px solid rgba(110,160,255,.55) !important; cursor:pointer !important; overflow:hidden !important;
+        font-size:0 !important; line-height:0 !important; color:transparent !important; opacity:1 !important;
+        background:linear-gradient(180deg, rgba(76,141,255,.28), rgba(76,141,255,.10)), rgba(12,18,30,.88) !important;
+        -webkit-backdrop-filter:blur(10px) saturate(1.3); backdrop-filter:blur(10px) saturate(1.3);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 8px 22px -10px rgba(76,141,255,.85) !important;
+        transition:transform .15s ease, border-color .15s ease, box-shadow .2s ease !important;
+    }
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]) > *, html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]) svg, html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]) [data-testid="stIconMaterial"] {display:none !important;}
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"])::before {
+        content:""; display:block; width:20px; height:20px; background-color:#eaf1ff;
+        -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):hover {
+        transform:translateY(-1px); border-color:rgba(165,198,255,.9) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 10px 26px -10px rgba(76,141,255,1) !important;
+    }
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):hover::before {background-color:#fff;}
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):active {transform:none;}
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):focus-visible {outline:2px solid rgba(150,185,255,.9) !important; outline-offset:2px !important;}
     </style>
     """,
     unsafe_allow_html=True,
