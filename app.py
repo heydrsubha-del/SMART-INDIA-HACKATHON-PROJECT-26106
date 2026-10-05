@@ -6306,16 +6306,16 @@ st.markdown(
     .stApp .threattype-row .bar-track {height:5px; border-radius:5px;}
 
     /* Synapse Copilot */
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head {
+    .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head {
         display:flex; align-items:center; gap:10px; margin-top:20px !important; padding:12px 14px !important;
         border:1px solid #243046 !important; border-bottom:0 !important; border-radius:12px 12px 0 0 !important;
         background:rgba(76,141,255,.07) !important; box-shadow:none !important;
         font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; color:#9dbcff !important;
     }
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head::before, .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head::after {display:none !important;}
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:first-child {display:inline-flex; align-items:center; gap:10px; color:#9dbcff !important;}
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:first-child::before {content:""; width:16px; height:16px; background-color:#6f9bff; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat;}
-    .stApp .st-key-right_summary_pane, .stApp .st-key-bulk_command_dock .panel-card-head > span:last-child {
+    .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head::before, .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head::after {display:none !important;}
+    .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head > span:first-child {display:inline-flex; align-items:center; gap:10px; color:#9dbcff !important;}
+    .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head > span:first-child::before {content:""; width:16px; height:16px; background-color:#6f9bff; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3Cpath d='M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4'/%3E%3C/svg%3E") center/contain no-repeat;}
+    .stApp :is(.st-key-right_summary_pane, .st-key-bulk_command_dock) .panel-card-head > span:last-child {
         margin-left:auto; padding:4px 9px; border-radius:999px; border:1px solid #2a3750; background:rgba(255,255,255,.03);
         color:#8da3bb !important; font-size:9px !important; letter-spacing:.08em !important;
     }
@@ -6371,6 +6371,63 @@ st.markdown(
         background:rgba(76,141,255,.08) !important; color:#b8cffc !important;
     }
     .stApp .st-key-dash_map_card iframe, .stApp .st-key-dash_graph_card iframe {border-radius:12px; border:1px solid #1f2a3d; box-shadow:none;}
+    /* ==================================================================
+       TABLES v13 -- every table in the app gets the premium-list look:
+       flat dark surface, quiet mono header, hairline rows, flat hover with
+       a thin edge bar, round ring avatars (profile picture when the sender
+       has one), neutral index numbers, no glows. Covers the polished HTML
+       tables and plain markdown / st.table tables. (st.dataframe is drawn
+       on a canvas by Streamlit and cannot be styled.) Delete to revert.
+       ================================================================== */
+    .stApp .polished-table-wrap {
+        background:#0d1219 !important; border:1px solid #1f2a3d !important; border-radius:14px !important; box-shadow:none !important;
+    }
+    .stApp .polished-table-wrap::before {display:none !important;}
+    .stApp table.polished-table thead th {
+        background:#10151d !important; color:#8e9aac !important; border-bottom:1px solid #1d2a3f !important;
+        font-size:10.5px !important; font-weight:700 !important; letter-spacing:.14em !important; text-transform:uppercase; padding:13px 20px !important;
+    }
+    .stApp table.polished-table thead th::before {display:none !important;}
+    .stApp table.polished-table tbody td {padding:12px 20px !important; border-bottom:1px solid rgba(148,163,184,.10) !important;}
+    .stApp table.polished-table tbody tr:hover, .stApp .pt-toned table.polished-table tbody tr:hover {background:rgba(255,255,255,.035) !important;}
+    .stApp table.polished-table tbody td:first-child::before {opacity:0; top:0; bottom:0; transition:opacity .15s ease;}
+    .stApp table.polished-table tbody tr:hover td:first-child::before {opacity:1;}
+    .stApp .pt-idx {background:none !important; border:0 !important; padding:0 !important; min-width:0; color:#7c889a !important; font-weight:600;}
+    .stApp .pt-bar-fill {box-shadow:none !important;}
+    .stApp .pt-foot {background:#0d1219; border:1px solid #1f2a3d; border-top:1px solid rgba(148,163,184,.12); color:#7c889a;}
+    .stApp .pt-foot-dot {box-shadow:none; background:#4c8dff;}
+
+    .stApp .pt-from {gap:14px; min-width:230px;}
+    .stApp .pt-av {
+        position:relative; width:40px; height:40px; border-radius:50%; overflow:visible; box-shadow:none;
+        background:color-mix(in srgb,var(--av) 12%,#0f151e); border:2px solid var(--av); color:var(--av);
+    }
+    .stApp .pt-av > b {font:700 15px/1 Inter,sans-serif; color:var(--av);}
+    .stApp .pt-av .pt-pic {position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); border-radius:50%; object-fit:cover; background:transparent;}
+    .stApp .pt-l1 {display:flex; align-items:baseline; gap:8px; min-width:0;}
+    .stApp .pt-l1 > b {font:650 14px/1.2 Inter,sans-serif; color:#eef2f7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto;}
+    .stApp .pt-dom {flex:0 1 auto; min-width:0; font:600 11.5px/1.2 Inter,sans-serif; color:var(--av); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .stApp .pt-dom::before {content:"\2022"; margin-right:8px; color:#5d6b7e;}
+    .stApp .pt-fromtxt {gap:4px;}
+    .stApp .pt-fromtxt > i {display:flex; align-items:center; gap:7px; font:500 12px/1.2 Inter,sans-serif; color:#8b96a5;}
+    .stApp .pt-fromtxt > i::before {
+        content:""; flex:none; width:13px; height:13px; background-color:#7c889a;
+        -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3.5 7.5l8.5 6 8.5-6'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3.5 7.5l8.5 6 8.5-6'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    /* plain markdown / st.table tables */
+    .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table), .stApp [data-testid="stTable"] table {
+        width:100%; border-collapse:separate; border-spacing:0; background:#0d1219; border:1px solid #1f2a3d !important; border-radius:12px; overflow:hidden; font-size:13px;
+    }
+    .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) th, .stApp [data-testid="stTable"] table th {
+        background:#10151d !important; color:#8e9aac !important; text-align:left; padding:11px 16px !important; border:0 !important; border-bottom:1px solid #1d2a3f !important;
+        font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    }
+    .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) td, .stApp [data-testid="stTable"] table td {
+        padding:11px 16px !important; border:0 !important; border-bottom:1px solid rgba(148,163,184,.10) !important; color:#d6deea; background:transparent !important;
+    }
+    .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) tr:last-child td, .stApp [data-testid="stTable"] table tr:last-child td {border-bottom:0 !important;}
+    .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) tbody tr:hover td, .stApp [data-testid="stTable"] table tbody tr:hover td {background:rgba(255,255,255,.035) !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -7926,8 +7983,16 @@ def _pt_cell(col, v, row_level="", colmax=None, is_first=False):
         _n, _a = _pt_parseaddr(text)
         _n = _n or (_a.split("@")[0] if _a else text)
         _c = _PT_AV[int(hashlib.md5((_a or _n).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_PT_AV)]
-        return (f'<td><div class="pt-from" style="--av:{_c};"><span class="pt-av">{html.escape((_n[:1] or "?").upper())}</span>'
-                f'<span class="pt-fromtxt"><b>{html.escape(_n)}</b>' + (f'<i>{html.escape(_a)}</i>' if _a else '') + '</span></div></td>')
+        _pic = ""
+        if _a and os.environ.get("SIH26106_SHOW_SENDER_PICS", "1") != "0":
+            _h = hashlib.sha256(_a.strip().lower().encode("utf-8", "ignore")).hexdigest()
+            _pic = (f'<img class="pt-pic" src="https://www.gravatar.com/avatar/{_h}?s=96&d=blank" '
+                    'alt="" loading="lazy" referrerpolicy="no-referrer">')
+        _dom = _a.split("@")[-1] if "@" in _a else ""
+        return (f'<td><div class="pt-from" style="--av:{_c};"><span class="pt-av"><b>{html.escape((_n[:1] or "?").upper())}</b>{_pic}</span>'
+                f'<span class="pt-fromtxt"><span class="pt-l1"><b>{html.escape(_n)}</b>'
+                + (f'<span class="pt-dom">{html.escape(_dom)}</span>' if _dom else '') + '</span>'
+                + (f'<i>{html.escape(_a)}</i>' if _a else '') + '</span></div></td>')
     if re.match(r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}", text) and key not in ("subject", "title"):
         _d, _t = re.split(r"[ T]", text.strip(), 1)
         return f'<td><div class="pt-date"><b>{html.escape(_d)}</b><i>{html.escape(_t[:8])}</i></div></td>'
