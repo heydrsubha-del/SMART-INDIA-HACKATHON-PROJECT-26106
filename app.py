@@ -5781,13 +5781,6 @@ st.markdown(
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::before {filter:none; opacity:1;}
     /* count badge (history, live mailbox) -- shows in every state */
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind] p::after {margin-left:auto;}
-    .stApp [data-testid="stSidebar"] .st-key-nav_history_side button[kind] p::after,
-    .stApp [data-testid="stSidebar"] .st-key-nav_live button[kind] p::after {
-        display:inline-flex; align-items:center; justify-content:center; width:auto !important; height:20px !important; min-width:22px; padding:0 7px;
-        border-radius:999px !important; font:700 11px/1 Inter,sans-serif !important; letter-spacing:0; color:var(--c) !important;
-        background:color-mix(in srgb, var(--c) 16%, transparent) !important; opacity:1 !important; transform:none !important;
-        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent) !important; margin-right:0 !important;
-    }
 
     /* footer: pinned, status + profile */
     .stApp .st-key-sb_footer {
@@ -5806,6 +5799,57 @@ st.markdown(
     .stApp .sidebar-profile .sp-txt i {font:500 11px/1.2 Inter,sans-serif; font-style:normal; color:#7d8aa0 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .stApp .sidebar-profile .sp-live {flex:none; width:8px; height:8px; border-radius:50%; background:#4b5668;}
     .stApp .sidebar-profile .sp-live.on {background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(52,211,153,.8);}
+
+    /* ==================================================================
+       SIDEBAR v12.1 -- breathing room, one-screen fit. Row and spacing
+       sizes scale with viewport height (clamp + vh) so every entry plus
+       the footer stays visible without scrolling on common screens.
+       ================================================================== */
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {height:34px !important; min-height:0 !important; padding:6px 10px 0 10px !important; margin:0 !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding:0 14px 0 14px !important; display:flex; flex-direction:column; min-height:calc(100vh - 40px);
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div {flex:1 1 auto; display:flex; flex-direction:column;}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {flex:1 1 auto;}
+    .stApp [data-testid="stSidebar"] [data-testid="stMarkdown"], .stApp [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {margin:0 !important; padding:0 !important;}
+
+    .stApp .sidebar-brand-v2 {margin:0 0 clamp(10px,1.6vh,16px) 0; padding:2px 4px 0 4px;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] {margin:0 0 clamp(4px,.8vh,8px) 0;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="base-input"] {
+        background-image:none !important; background-color:rgba(255,255,255,.04) !important; min-height:clamp(34px,4.6vh,40px) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input {
+        background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d99ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center / 16px !important;
+        padding:8px 12px 8px 38px !important;
+    }
+
+    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:clamp(1px,.28vh,3px) !important;}
+    .stApp .sidebar-group-label {margin:clamp(10px,2vh,20px) 8px clamp(3px,.6vh,6px) 8px !important; font-size:10px !important; line-height:1 !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {min-height:clamp(30px,4.3vh,40px) !important; padding:5px 12px !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {font-size:13px !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {flex:0 0 17px; width:17px; height:17px;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] .stButton, .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] {margin:0 !important;}
+
+    /* footer pinned to the bottom of the sidebar, compact */
+    .stApp .st-key-sb_footer, .stApp [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(> .st-key-sb_footer) {margin-top:auto !important;}
+    .stApp .st-key-sb_footer {position:sticky; bottom:0; padding:clamp(8px,1.4vh,14px) 0 clamp(8px,1.4vh,14px) 0 !important; gap:8px !important;}
+    .stApp .sidebar-status-card-v2.compact {
+        display:flex; align-items:center; gap:14px; margin:0 !important; padding:9px 12px !important; border-radius:13px;
+    }
+    .stApp .sidebar-status-card-v2.compact::before {display:none !important;}
+    .stApp .sidebar-status-card-v2.compact .ssc-pulse {flex:none; width:8px; height:8px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(52,211,153,.8);}
+    .stApp .sidebar-status-card-v2.compact .scc-stat {display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .stApp .sidebar-status-card-v2.compact .scc-stat b {font:750 16px/1 Inter,sans-serif; color:#9dbcff !important; font-variant-numeric:tabular-nums;}
+    .stApp .sidebar-status-card-v2.compact .scc-stat.scc-alert b {color:#fda4af !important;}
+    .stApp .sidebar-status-card-v2.compact .scc-stat i {font:600 9.5px/1 Inter,sans-serif; font-style:normal; letter-spacing:.08em; text-transform:uppercase; color:#7d8aa0 !important;}
+    .stApp .sidebar-status-card-v2.compact .scc-state {margin-left:auto; font:700 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#6ee7b7 !important;}
+    .stApp .sidebar-profile {margin-top:0 !important; padding:7px 10px !important;}
+    .stApp .sidebar-profile .sp-av {width:30px; height:30px; border-radius:9px; font-size:13px;}
+    @media (max-height:700px) {
+        .stApp .sidebar-brand-v2 .brand-text .role {display:none;}
+        .stApp .sidebar-profile .sp-txt i {display:none;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -5887,7 +5931,11 @@ for _sk, (_sc, _si) in _SB_NAV_STYLE.items():
 for _bk, _bn in _SB_BADGES.items():
     if _bn:
         _sb_rules.append(
-            '.stApp [data-testid="stSidebar"] .st-key-' + _bk + ' button[kind] p::after{content:"' + (str(_bn) if _bn < 1000 else "999+") + '" !important;}'
+            '.stApp [data-testid="stSidebar"] .st-key-' + _bk + ' button[kind] p::after{content:"' + (str(_bn) if _bn < 1000 else "999+") + '" !important;'
+            'display:inline-flex !important;align-items:center;justify-content:center;width:auto !important;height:19px !important;min-width:21px;padding:0 7px;'
+            'border-radius:999px !important;font:700 10.5px/1 Inter,sans-serif !important;letter-spacing:0;color:var(--c) !important;'
+            'background:color-mix(in srgb,var(--c) 16%,transparent) !important;opacity:1 !important;transform:none !important;margin-right:0 !important;'
+            'box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent) !important;}'
         )
 st.markdown("<style>" + "".join(_sb_rules) + "</style>", unsafe_allow_html=True)
 
@@ -6027,22 +6075,11 @@ with st.sidebar:
     _sb_user = ((st.session_state.get("live_mailbox_config") or {}).get("user") or st.session_state.get("imap_user") or "").strip()
     with st.container(key="sb_footer"):
         st.markdown(
-            f"""<div class="sidebar-status-card-v2">
-                <div class="ssc-head">
-                    <span class="ssc-pulse"></span>
-                    <span class="ssc-title">All Systems Online</span>
-                </div>
-                <div class="ssc-grid">
-                    <div class="ssc-tile">
-                        <div class="ssc-tile-value">{_sb_total}</div>
-                        <div class="ssc-tile-label">Emails Analyzed</div>
-                    </div>
-                    <div class="ssc-tile ssc-tile-alert">
-                        <div class="ssc-tile-value">{_sb_threats}</div>
-                        <div class="ssc-tile-label">Threats Detected</div>
-                    </div>
-                </div>
-                <div class="ssc-foot">Last DB update &middot; {datetime.now().strftime('%d %b, %H:%M')}</div>
+            f"""<div class="sidebar-status-card-v2 compact" title="Last DB update {datetime.now().strftime('%d %b, %H:%M')}">
+                <span class="ssc-pulse"></span>
+                <div class="scc-stat"><b>{_sb_total}</b><i>Analyzed</i></div>
+                <div class="scc-stat scc-alert"><b>{_sb_threats}</b><i>Threats</i></div>
+                <div class="scc-state">Online</div>
             </div>""",
             unsafe_allow_html=True,
         )
