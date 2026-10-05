@@ -6188,9 +6188,114 @@ st.markdown(
     html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):hover::before {background-color:#fff;}
     html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):active {transform:none;}
     html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]):focus-visible {outline:2px solid rgba(150,185,255,.9) !important; outline-offset:2px !important;}
+    /* ==================================================================
+       SIDEBAR RAIL + TOGGLE -- (1) the toggle is a 38px tile that sits
+       inside the sidebar's top-right corner, level with the logo, instead
+       of overhanging the edge; (2) collapsing no longer hides the sidebar:
+       on screens >= 769px it shrinks to a 76px icon rail (logo, icon tiles
+       with count badges, avatar) and the same hamburger sits at the top
+       of the rail. Phones keep Streamlit's own slide-away behaviour.
+       Delete this block (and the small script after it) to undo.
+       ================================================================== */
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]) {
+        width:38px !important; height:38px !important; min-width:38px !important; min-height:38px !important; border-radius:11px !important;
+    }
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"])::before {width:18px; height:18px;}
+
+    html body .stApp [data-testid="stSidebar"][aria-expanded="true"] [data-testid="stSidebarContent"] {position:relative;}
+    html body .stApp [data-testid="stSidebar"][aria-expanded="true"] [data-testid="stSidebarHeader"] {
+        position:absolute !important; top:16px !important; right:12px !important; left:auto !important;
+        width:auto !important; height:auto !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+        background:none !important; z-index:30 !important; display:flex !important; align-items:center !important;
+    }
+    html body .stApp [data-testid="stSidebar"][aria-expanded="true"] [data-testid="stSidebarUserContent"] {padding-top:14px !important;}
+    html body .stApp [data-testid="stSidebar"][aria-expanded="true"] .sidebar-brand-v2 {padding-right:52px !important;}
+
+    html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button) {
+        position:fixed !important; top:14px !important; left:12px !important; z-index:1000003 !important; margin:0 !important;
+    }
+
+    @media (min-width:769px) {
+        html body .stApp [data-testid="stSidebar"] {
+            transition:width .3s cubic-bezier(.22,1,.36,1), min-width .3s cubic-bezier(.22,1,.36,1) !important;
+        }
+        html body .stApp :is([data-testid="stExpandSidebarButton"]:is(button), [data-testid="stExpandSidebarButton"] button, [data-testid="stSidebarCollapsedControl"] button) {left:19px !important;}
+
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] {
+            transform:none !important; margin-left:0 !important; left:0 !important; visibility:visible !important; opacity:1 !important;
+            width:76px !important; min-width:76px !important; max-width:76px !important; overflow:hidden !important;
+        }
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] > div, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarContent"] {width:76px !important; min-width:0 !important; overflow-x:hidden !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarHeader"] {display:none !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarUserContent"] {padding-top:64px !important; padding-left:12px !important; padding-right:12px !important;}
+
+        /* brand: logo only */
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-brand-v2 {padding:0 !important; margin:0 0 14px 0 !important; display:flex; justify-content:center;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-brand-v2 .brand-row {justify-content:center; gap:0;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-brand-v2 .brand-text, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-brand-v2 .brand-meta {display:none !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-brand-v2 .brand-mark {width:44px; height:44px; flex:0 0 44px; border-radius:13px;}
+
+        /* search needs width to type in -> hidden in the rail */
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .stElementContainer:has([data-testid="stTextInput"]), html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stElementContainer"]:has([data-testid="stTextInput"]) {display:none !important;}
+
+        /* section labels become hairline dividers */
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-group-label {
+            font-size:0 !important; letter-spacing:0 !important; height:1px; padding:0 !important; margin:12px 10px !important; overflow:hidden;
+            background:rgba(255,255,255,.08); border-radius:1px;
+        }
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-group-label::before, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-group-label::after {display:none !important;}
+
+        /* nav rows: one icon tile each */
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stVerticalBlock"] {align-items:center;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] {width:52px !important; margin:0 auto !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button:hover, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button[kind="primary"] {
+            width:52px !important; min-width:52px !important; height:52px !important; min-height:52px !important; padding:0 !important;
+            margin:0 auto !important; justify-content:center !important; border-radius:14px !important;
+            background:transparent !important; border-color:transparent !important; box-shadow:none !important; overflow:visible !important;
+        }
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button > div {width:auto !important; justify-content:center !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button p {
+            font-size:0 !important; gap:0 !important; width:40px !important; height:40px !important; margin:0 auto !important;
+            justify-content:center !important; position:relative;
+        }
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button::before {left:6px !important; width:40px !important; height:40px !important; border-radius:13px !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button p::before {flex:0 0 40px !important; width:40px !important; height:40px !important; -webkit-mask-size:20px 20px !important; mask-size:20px 20px !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button:hover::before {transform:translateY(-50%) scale(1.08) !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-nav_"] button p::after {
+            position:absolute !important; top:-5px !important; right:-7px !important; margin:0 !important; z-index:3;
+            font:700 9px/1 Inter,sans-serif !important; padding:3px 5px !important; min-width:0 !important; border-radius:999px !important;
+        }
+
+        /* footer: avatar only, no status card or extra buttons */
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-status-card-v2 {display:none !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-profile {padding:0 !important; border:0 !important; background:none !important; justify-content:center; margin-top:6px;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-profile .sp-txt, html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .sidebar-profile .sp-live {display:none !important;}
+        html body .stApp [data-testid="stSidebar"][aria-expanded="false"] .stElementContainer:not([class*="st-key-nav_"]):has(> .stButton), html body .stApp [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stElementContainer"]:not([class*="st-key-nav_"]):has(> [data-testid="stButton"]) {display:none !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
+)
+
+# Keeps the collapsed icon rail clickable if the browser/Streamlit marks the
+# collapsed sidebar as inert (desktop only).
+components.html(
+    """<script>
+    (function () {
+      try {
+        var d = window.parent.document;
+        function fix() {
+          if (window.parent.innerWidth < 769) return;
+          var sb = d.querySelector('[data-testid="stSidebar"]');
+          if (!sb) return;
+          if (sb.hasAttribute("inert")) sb.removeAttribute("inert");
+          sb.querySelectorAll("[inert]").forEach(function (e) { e.removeAttribute("inert"); });
+        }
+        fix(); setInterval(fix, 600);
+      } catch (err) {}
+    })();
+    </script>""",
+    height=0,
 )
 
 # Resolve any pending sidebar "jump to this acquisition mode" request before
