@@ -60,7 +60,8 @@ _CAPSULE_RE = re.compile(
 # taller than this, it is cropped EQUALLY from top and bottom, so the title
 # (which sits in the vertical middle) is never cut off.
 #   clamp(min, preferred, max)
-BANNER_HEIGHT_CSS = "clamp(190px, 22vw, 320px)"
+BANNER_HEIGHT_CSS = "clamp(150px, 16vw, 230px)"
+
 
 # Injected once at the top of the About page. CSS !important beats any
 # width="..." attribute or inline style coming from the README's HTML.
