@@ -5888,7 +5888,7 @@ st.markdown(
     .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) input {color:#eef3fb !important; caret-color:#4c8dff; cursor:text;}
     .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within input::placeholder {color:#7d8aa0 !important;}
     .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]::after {
-        content:"ENTER \21B5"; position:absolute; right:11px; top:21px; transform:translateY(-50%) translateX(6px); pointer-events:none; opacity:0;
+        content:"ENTER"; position:absolute; right:11px; top:21px; transform:translateY(-50%) translateX(6px); pointer-events:none; opacity:0;
         padding:4px 7px; border-radius:7px; font:700 9px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#8fb3ff;
         background:rgba(76,141,255,.12); border:1px solid rgba(76,141,255,.3); transition:opacity .25s var(--ease) .2s, transform .3s var(--ease) .2s;
     }
@@ -5923,6 +5923,49 @@ st.markdown(
     .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {
         background:linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 17%, #0e1522), color-mix(in srgb, var(--c,#4c8dff) 4%, #0b111a)) !important;
     }
+
+    /* ==================================================================
+       SIDEBAR v12.3 -- search collapsed to an icon (all wrapper variants),
+       padding fixes, tighter rows so the whole list fits one screen.
+       ================================================================== */
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] {
+        width:42px !important; max-width:42px !important; min-width:0 !important; height:42px !important; min-height:42px !important;
+        flex:none !important; overflow:hidden !important; cursor:pointer; box-sizing:border-box !important;
+        border-radius:14px !important; border:1px solid #243046 !important;
+        background:linear-gradient(180deg,#121a28,#0d1420) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px -12px rgba(0,0,0,.9) !important;
+        transition:width .45s cubic-bezier(.22,1,.36,1), max-width .45s cubic-bezier(.22,1,.36,1), border-color .25s var(--ease), box-shadow .3s var(--ease) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] [data-testid="stTextInputRootElement"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] [data-baseweb="base-input"] {
+        width:100% !important; max-width:none !important; height:100% !important; border:0 !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-baseweb="input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-baseweb="input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-testid="stTextInputRootElement"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-testid="stTextInputRootElement"] {
+        width:100% !important; max-width:100% !important; cursor:text; border:1px solid transparent !important;
+        background:linear-gradient(180deg,#111a29,#0b121d) padding-box, linear-gradient(120deg,#4c8dff,#8b7cff 55%,#34d399) border-box !important;
+        box-shadow:0 0 0 4px rgba(76,141,255,.12), 0 16px 32px -16px rgba(76,141,255,.75), inset 0 1px 0 rgba(255,255,255,.07) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-baseweb="input"] [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-baseweb="input"] [data-baseweb="base-input"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-baseweb="input"] [data-testid="stTextInputRootElement"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-baseweb="input"] [data-testid="stTextInputRootElement"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-testid="stTextInputRootElement"] [data-baseweb="base-input"], .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-testid="stTextInputRootElement"] [data-baseweb="base-input"] {
+        background:transparent !important; border:0 !important; box-shadow:none !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input {padding:0 12px 0 40px !important; background-position:13px center !important; background-size:17px !important; height:100% !important;}
+
+    /* row padding: same inset in every state so tile, icon and text line up */
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button,
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover,
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {padding:2px 12px 2px 10px !important; min-height:clamp(28px,4.1vh,38px) !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {padding:0 !important; width:100% !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {flex:0 0 26px; width:26px; height:26px; -webkit-mask-size:15px 15px; mask-size:15px 15px;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button::before {width:26px !important; height:26px !important; border-radius:8px !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::after {margin-right:0 !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding:0 16px 0 14px !important; min-height:calc(100vh - 30px);}
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {height:26px !important;}
+    .stApp .sidebar-group-label {margin:clamp(8px,1.5vh,16px) 8px clamp(2px,.5vh,5px) 8px !important;}
+    .stApp .sidebar-status-card-v2.compact {padding:7px 12px !important;}
+    .stApp .sidebar-profile {padding:6px 10px !important;}
+    @media (max-height:760px) {.stApp .sidebar-status-card-v2.compact {display:none;}}
     </style>
     """,
     unsafe_allow_html=True,
