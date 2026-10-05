@@ -6100,6 +6100,40 @@ st.markdown(
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::before {display:none !important;}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::after {color:#07100c; opacity:.75; transform:translate(0,-52%);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::after {opacity:1; transform:translate(3px,-52%);}
+
+    /* ==================================================================
+       BUTTON SYSTEM v4 -- compact, content-width, icon tile like the nav
+       and sidebar rows. No stretched buttons: width follows the label.
+       ================================================================== */
+    .stApp [data-testid="stElementContainer"]:not([class*="st-key-nav_"]):not([class*="st-key-mrow_"]):not([class*="st-key-acq_pick_"]):has(> :is(.stButton, .stDownloadButton)) {width:fit-content !important; max-width:100% !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *), .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button {width:auto !important; min-width:0 !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) {display:inline-flex;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button {padding:0 28px 0 var(--pl,16px) !important; height:34px !important; font-size:12.5px !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button::before {
+        display:var(--tile,none) !important; content:"" !important; position:absolute; left:6px; top:50%; bottom:auto; width:22px; height:22px; border-radius:7px;
+        background:color-mix(in srgb, var(--bt) 18%, #0e1522); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--bt) 34%, transparent);
+        opacity:1; transform:translateY(-50%); transition:transform .3s cubic-bezier(.34,1.56,.64,1), background .25s var(--ease);
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p {position:static !important; width:auto !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p::before {
+        display:var(--tile,none); content:""; position:absolute; left:6px; top:50%; width:22px; height:22px; transform:translateY(-50%);
+        background-color:var(--bt); -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center;
+        -webkit-mask-size:13px 13px; mask-size:13px 13px; transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:hover::before {opacity:1; transform:translateY(-50%) scale(1.1) rotate(6deg); background:color-mix(in srgb, var(--bt) 30%, #0e1522);}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:hover p::before {transform:translateY(-50%) scale(1.1) rotate(-6deg);}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"] {
+        background-image:linear-gradient(105deg, rgba(255,255,255,0) 35%, rgba(255,255,255,.34) 50%, rgba(255,255,255,0) 65%), linear-gradient(180deg, color-mix(in srgb, var(--bt) 100%, #fff 10%), color-mix(in srgb, var(--bt) 78%, #000)) !important;
+        color:#061410 !important; border-color:color-mix(in srgb, var(--bt) 70%, #fff) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::before {display:var(--tile,none) !important; background:rgba(255,255,255,.3); box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"] p::before {background-color:#061410;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::before {background:rgba(255,255,255,.42);}
+
+    /* action rows built from columns: pack left, no stretched cells */
+    :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] {justify-content:flex-start !important; gap:10px !important; flex-wrap:wrap !important;}
+    :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+    :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -6188,6 +6222,51 @@ for _bk, _bn in _SB_BADGES.items():
             'box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent) !important;}'
         )
 st.markdown("<style>" + "".join(_sb_rules) + "</style>", unsafe_allow_html=True)
+
+_BTN_ICONS = {
+    "plug": "<path d='M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0z'/><path d='M12 17v5'/>",
+    "refresh": "<path d='M20 11a8 8 0 0 0-14.5-4M4 4v4h4'/><path d='M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4'/>",
+    "swap": "<path d='M7 4l-4 4 4 4M3 8h14M17 20l4-4-4-4M21 16H7'/>",
+    "power": "<path d='M12 3v8'/><path d='M6.3 6.3a8 8 0 1 0 11.4 0'/>",
+    "trash": "<path d='M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'/>",
+    "logout": "<path d='M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9'/>",
+    "check": "<path d='M5 12l5 5L20 7'/>",
+    "flag": "<path d='M5 21V4M5 4h11l-2 4 2 4H5'/>",
+    "x": "<path d='M6 6l12 12M18 6L6 18'/>",
+    "report": "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/>",
+}
+_BTN_ICONS.update({k: _SB_ICONS[k] for k in ("chip", "globe", "feed")})
+_BTN_STYLE = {
+    "mailbox_quick_full_report_btn": ("#2fb68e", "report"),
+    "connect_imap": ("#2fb68e", "plug"),
+    "imap_reload_folder_btn": ("#2fb68e", "refresh"),
+    "imap_show_form_btn": ("#38bdf8", "swap"),
+    "evidence_show_form_btn": ("#38bdf8", "swap"),
+    "imap_disconnect_btn": ("#f0646e", "power"),
+    "delete_my_data_btn": ("#f0646e", "trash"),
+    "google_signout_btn": ("#f0646e", "logout"),
+    "microsoft_signout_btn": ("#f0646e", "logout"),
+    "yandex_signout_btn": ("#f0646e", "logout"),
+    "run_qwen_recent_batch": ("#8b7cf6", "chip"),
+    "run_qwen_single": ("#8b7cf6", "chip"),
+    "run_global_ip_scan": ("#22d3ee", "globe"),
+    "urlhaus_sync_btn": ("#f08a4b", "feed"),
+    "confirm_threat": ("#f0646e", "check"),
+    "false_positive": ("#d9a35f", "flag"),
+    "corr_graph_clear_highlight": ("#8b7cf6", "x"),
+    "retry_imap_message": ("#d9a35f", "refresh"),
+}
+_btn_rules = []
+for _bk2, (_bc2, _bi2) in _BTN_STYLE.items():
+    _buri = "data:image/svg+xml," + _sb_up.quote(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' "
+        "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>" + _BTN_ICONS[_bi2] + "</svg>",
+        safe="/:=' ()",
+    )
+    _bsel = '.stApp .st-key-' + _bk2 + ' button'
+    _btn_rules.append(_bsel + '{--bt:' + _bc2 + ';--tile:block;--pl:40px;}')
+    _btn_rules.append(_bsel + ' p::before{-webkit-mask-image:url("' + _buri + '");mask-image:url("' + _buri + '");}')
+st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True)
 
 with st.sidebar:
     _sb_q = (st.text_input("Search", key="sb_search", placeholder="Search", label_visibility="collapsed") or "").strip().lower()
