@@ -6158,6 +6158,74 @@ st.markdown(
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p::before {z-index:1; transform:translateY(-50%);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button:hover p::before {transform:translateY(-50%) scale(1.1) rotate(-6deg);}
     .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::after, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primaryFormSubmit"]:hover::after {background:none !important; background-image:none !important;}
+
+    /* ==================================================================
+       BUTTON SYSTEM v4 -- professional palette. Same calm language as the
+       nav + sidebar: graphite surfaces, colour only where it means
+       something. Primary = ONE solid brand blue (white text, no gradient,
+       no shine sweep). Secondary = graphite with a hairline border.
+       Destructive = muted red tint. No per-page / per-button rainbow, no
+       green-to-violet fills. Sidebar rows, inbox rows, acquisition cards,
+       the sidebar collapse button and the OAuth brand buttons keep their
+       own styles. Delete this block to go back to v3.
+       ================================================================== */
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button {
+        height:36px !important; min-height:36px !important; max-height:none !important; padding:0 16px !important;
+        border-radius:8px !important; font:600 13px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important;
+        color:#d6dfec !important; background:#121a27 !important; background-image:none !important;
+        border:1px solid #273650 !important; box-shadow:0 1px 2px rgba(0,0,0,.3) !important;
+        transform:none !important; filter:none !important;
+        transition:background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease !important;
+    }
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button::before, html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button::after {display:none !important; content:none !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button p, html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button div {font:inherit !important; color:inherit !important; margin:0 !important; text-align:center; white-space:nowrap;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:hover {background:#182336 !important; background-image:none !important; border-color:#3d5578 !important; color:#fff !important; transform:none !important; filter:none !important; box-shadow:0 1px 3px rgba(0,0,0,.4) !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:active {background:#0f1622 !important; transform:none !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.4) !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:focus-visible {outline:2px solid rgba(91,141,239,.75) !important; outline-offset:2px !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:disabled {opacity:.5 !important; cursor:not-allowed !important; background:#121a27 !important; border-color:#273650 !important; color:#8a98ad !important; box-shadow:none !important;}
+
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]) {
+        background:#2d6cdf !important; background-image:none !important; border-color:#4b82ea !important; color:#fff !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 1px 2px rgba(0,0,0,.35) !important;
+    }
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]):hover {background:#3a79ee !important; background-image:none !important; border-color:#6b9bf2 !important; color:#fff !important; filter:none !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]):active {background:#2559b8 !important; border-color:#3f73d6 !important;}
+    html body .stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="st-key-sb_toggle"]) *) button:is([kind="primary"],[kind="primaryFormSubmit"],[data-testid="stBaseButton-primary"],[data-testid="stBaseButton-primaryFormSubmit"]):disabled {background:#25447f !important; border-color:#2f5192 !important; color:#b9c8e6 !important; opacity:.6 !important;}
+
+    /* destructive: disconnect / sign out / delete / clear */
+    html body .stApp.stApp.stApp :is([class*="imap_disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"]) :is(.stButton, .stDownloadButton, .stFormSubmitButton) button,
+    html body .stApp.stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):is([class*="imap_disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"]) button {
+        background:rgba(239,68,68,.10) !important; background-image:none !important; border-color:rgba(239,68,68,.45) !important; color:#fca5a5 !important;
+    }
+    html body .stApp.stApp.stApp :is([class*="imap_disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"]) :is(.stButton, .stDownloadButton, .stFormSubmitButton) button:hover,
+    html body .stApp.stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):is([class*="imap_disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"]) button:hover {
+        background:rgba(239,68,68,.18) !important; background-image:none !important; border-color:rgba(239,68,68,.7) !important; color:#fecaca !important;
+    }
+
+    /* forensic report downloads: two secondary views + Combined as the primary pick */
+    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button {
+        background:#121a27 !important; background-image:none !important; border:1px solid #273650 !important; color:#d6dfec !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.3) !important; font-weight:600 !important;
+    }
+    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button:hover {
+        background:#182336 !important; border-color:#3d5578 !important; color:#fff !important; box-shadow:0 1px 3px rgba(0,0,0,.4) !important;
+    }
+    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button {
+        background:#2d6cdf !important; border-color:#4b82ea !important; color:#fff !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 1px 2px rgba(0,0,0,.35) !important;
+    }
+    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"]:nth-of-type(3) .stDownloadButton button:hover {
+        background:#3a79ee !important; border-color:#6b9bf2 !important; color:#fff !important;
+    }
+    html body .stApp.stApp.stApp .st-key-forensic_download_row [data-testid="column"] .stDownloadButton button:disabled {
+        background:#121a27 !important; border-color:#273650 !important; color:#8a98ad !important; opacity:.5 !important; box-shadow:none !important;
+    }
+
+    /* narrow docks keep compact, wrapping buttons */
+    html body .stApp.stApp .st-key-copilot_quick_actions .stButton button {
+        height:auto !important; min-height:34px !important; padding:6px 8px !important; font-size:11px !important; line-height:1.25 !important; white-space:normal !important;
+    }
+    html body .stApp.stApp .st-key-copilot_quick_actions .stButton button p {white-space:normal !important;}
     </style>
     """,
     unsafe_allow_html=True,
