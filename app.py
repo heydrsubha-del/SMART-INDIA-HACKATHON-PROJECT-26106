@@ -6134,6 +6134,35 @@ st.markdown(
     :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] {justify-content:flex-start !important; gap:10px !important; flex-wrap:wrap !important;}
     :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
     :is(.st-key-imap_connected_actions, .st-key-imap_connected_panel) [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
+
+    /* ==================================================================
+       BUTTON SYSTEM v5 -- comfortable size (40px), cleaner primary.
+       ================================================================== */
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button {
+        height:40px !important; min-height:40px !important; max-height:40px !important;
+        padding:0 34px 0 calc(var(--pl,16px) + 6px) !important; border-radius:11px !important;
+        font:600 13.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.012em !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button::before {left:7px; width:28px; height:28px; border-radius:9px;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button p::before {left:7px; width:28px; height:28px; -webkit-mask-size:16px 16px; mask-size:16px 16px;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button::after {right:14px; font-size:19px;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"], .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primaryFormSubmit"] {
+        color:#fff !important; border:1px solid color-mix(in srgb, var(--bt) 70%, #fff) !important;
+        background-color:var(--bt) !important;
+        background-image:linear-gradient(180deg, color-mix(in srgb, var(--bt) 88%, #000), color-mix(in srgb, var(--bt) 58%, #000)) !important;
+        background-repeat:no-repeat !important; background-position:0 0 !important; background-size:100% 100% !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 10px 20px -12px var(--bt) !important; text-shadow:0 1px 1px rgba(0,0,0,.35);
+        transition:filter .2s var(--ease), box-shadow .25s var(--ease), transform .18s var(--ease) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover, .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primaryFormSubmit"]:hover {
+        color:#fff !important; filter:brightness(1.12); transform:translateY(-1px) !important;
+        background-position:0 0 !important; background-size:100% 100% !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.28), 0 14px 24px -12px var(--bt) !important;
+    }
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::before {background:rgba(255,255,255,.2) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.3) !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]:hover::before {background:rgba(255,255,255,.32) !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"] p::before {background-color:#fff !important;}
+    .stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"]) *) button[kind="primary"]::after {color:#fff; opacity:.8;}
     </style>
     """,
     unsafe_allow_html=True,
