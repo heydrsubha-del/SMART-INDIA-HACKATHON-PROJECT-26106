@@ -5721,6 +5721,91 @@ st.markdown(
         .stApp .st-key-topnav .stRadio [role="radiogroup"] label {min-width:78px;}
         .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important;}
     }
+
+    /* ==================================================================
+       SIDEBAR v12 -- workspace layout: flat brand header, search, quiet
+       section labels, compact rows with a soft active pill and count
+       badges, sticky footer with status + profile. Colours are the
+       existing ones (blue / green / violet / rose / slate per section).
+       ================================================================== */
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding:10px 14px 0 14px !important;}
+    .stApp .sidebar-brand-v2 {
+        margin:4px 0 14px 0; padding:4px 2px 0 2px; border:0 !important; border-radius:0; background:none !important; box-shadow:none !important; overflow:visible;
+    }
+    .stApp .sidebar-brand-v2::before {display:none !important;}
+    .stApp .sidebar-brand-v2 .brand-mark {width:38px; height:38px; flex:0 0 38px; border-radius:11px;}
+    .stApp .sidebar-brand-v2 .brand-text .name {font:750 15px/1.15 Inter,"Segoe UI",sans-serif; letter-spacing:.04em;}
+    .stApp .sidebar-brand-v2 .brand-text .role {font:500 11.5px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:0; text-transform:none; margin-top:3px;}
+
+    /* search */
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] {margin:0 0 6px 0;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="base-input"] {
+        background:rgba(255,255,255,.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d99ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center / 16px !important;
+        border:1px solid #1f2a3d !important; border-radius:12px !important; min-height:40px; box-shadow:none !important;
+        transition:border-color .2s var(--ease), background-color .2s var(--ease);
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"]:focus-within {border-color:#4c8dff !important; background-color:rgba(76,141,255,.07) !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input {
+        background:transparent !important; border:0 !important; box-shadow:none !important; padding:9px 12px 9px 40px !important;
+        font:500 13.5px/1.2 Inter,"Segoe UI",sans-serif !important; color:#dfe7f2 !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder {color:#7d8aa0 !important; opacity:1;}
+    .stApp .sb-empty {margin:14px 8px; font:500 12.5px/1.4 Inter,sans-serif; color:#7d8aa0 !important;}
+
+    /* section labels: quiet, no index chips or rules */
+    .stApp .sidebar-group-label {margin:22px 8px 6px 8px !important; gap:8px !important; display:flex; align-items:center;
+        font:650 10.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.13em !important; text-transform:uppercase; color:#74839a !important;}
+    .stApp .sidebar-group-label .grp-index {display:none !important;}
+    .stApp .sidebar-group-label:after {display:none !important;}
+    .stApp .sidebar-group-label::before {content:""; flex:none; width:6px; height:6px; border-radius:50%; background:var(--g); box-shadow:0 0 0 3px color-mix(in srgb, var(--g) 18%, transparent);}
+
+    /* rows */
+    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.18rem !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {
+        min-height:40px !important; padding:8px 12px !important; border-radius:11px !important; overflow:visible !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {font:560 13.5px/1.2 Inter,"Segoe UI",sans-serif !important; color:#b3bfd0 !important; gap:11px;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {flex:0 0 18px; width:18px; height:18px; opacity:.9;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button::before {display:none !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover {
+        background:rgba(255,255,255,.05) !important; border-color:transparent !important; transform:none !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p {color:#fff !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {
+        background:color-mix(in srgb, var(--c,#4c8dff) 15%, #0e1522) !important;
+        border:1px solid color-mix(in srgb, var(--c,#4c8dff) 30%, transparent) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px -14px var(--c,#4c8dff) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p {color:#fff !important; font-weight:650 !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::before {filter:none; opacity:1;}
+    /* count badge (history, live mailbox) -- shows in every state */
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind] p::after {margin-left:auto;}
+    .stApp [data-testid="stSidebar"] .st-key-nav_history_side button[kind] p::after,
+    .stApp [data-testid="stSidebar"] .st-key-nav_live button[kind] p::after {
+        display:inline-flex; align-items:center; justify-content:center; width:auto !important; height:20px !important; min-width:22px; padding:0 7px;
+        border-radius:999px !important; font:700 11px/1 Inter,sans-serif !important; letter-spacing:0; color:var(--c) !important;
+        background:color-mix(in srgb, var(--c) 16%, transparent) !important; opacity:1 !important; transform:none !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent) !important; margin-right:0 !important;
+    }
+
+    /* footer: pinned, status + profile */
+    .stApp .st-key-sb_footer {
+        position:sticky; bottom:0; z-index:5; margin-top:18px; padding:14px 0 14px 0 !important;
+        background:linear-gradient(180deg, transparent, #080d16 22%) !important;
+    }
+    .stApp .st-key-sb_footer .sidebar-status-card-v2 {margin-top:0 !important; padding:14px 14px 12px 16px; border-radius:14px;}
+    .stApp .sidebar-profile {
+        display:flex; align-items:center; gap:11px; margin-top:10px; padding:9px 11px; border-radius:13px;
+        border:1px solid #1f2a3d; background:rgba(255,255,255,.035);
+    }
+    .stApp .sidebar-profile .sp-av {flex:none; width:34px; height:34px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center;
+        font:800 14px/1 Inter,sans-serif; color:#0b0e14 !important; background:linear-gradient(145deg,#4c8dff,#8b7cff); box-shadow:0 6px 14px -8px #4c8dff;}
+    .stApp .sidebar-profile .sp-txt {display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;}
+    .stApp .sidebar-profile .sp-txt b {font:650 13px/1.2 Inter,sans-serif; color:#eef2f8 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .stApp .sidebar-profile .sp-txt i {font:500 11px/1.2 Inter,sans-serif; font-style:normal; color:#7d8aa0 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .stApp .sidebar-profile .sp-live {flex:none; width:8px; height:8px; border-radius:50%; background:#4b5668;}
+    .stApp .sidebar-profile .sp-live.on {background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(52,211,153,.8);}
     </style>
     """,
     unsafe_allow_html=True,
@@ -5776,6 +5861,19 @@ _SB_NAV_STYLE = {
     "nav_av_side": (_SB_ROSE, "bug"),
     "nav_settings_side": (_SB_SLATE, "sliders"), "nav_about_side": (_SB_SLATE, "info"),
 }
+try:
+    _sb_conn = get_connection()
+    _sb_c = _sb_conn.cursor()
+    _sb_c.execute("SELECT COUNT(*) FROM attackers")
+    _sb_total = _sb_c.fetchone()[0] or 0
+    _sb_c.execute("SELECT COUNT(*) FROM attackers WHERE verdict IN ('CRITICAL','HIGH')")
+    _sb_threats = _sb_c.fetchone()[0] or 0
+    _sb_conn.close()
+except Exception:
+    _sb_total, _sb_threats = 0, 0
+_sb_live_n = len(st.session_state.get("live_mailbox_messages") or [])
+_SB_BADGES = {"nav_history_side": _sb_total, "nav_live": _sb_live_n}
+
 _sb_rules = []
 for _sk, (_sc, _si) in _SB_NAV_STYLE.items():
     _suri = "data:image/svg+xml," + _sb_up.quote(
@@ -5786,6 +5884,11 @@ for _sk, (_sc, _si) in _SB_NAV_STYLE.items():
     _ssel = '.stApp [data-testid="stSidebar"] .st-key-' + _sk
     _sb_rules.append(_ssel + "{--c:" + _sc + ";}")
     _sb_rules.append(_ssel + ' button p::before{-webkit-mask-image:url("' + _suri + '");mask-image:url("' + _suri + '");}')
+for _bk, _bn in _SB_BADGES.items():
+    if _bn:
+        _sb_rules.append(
+            '.stApp [data-testid="stSidebar"] .st-key-' + _bk + ' button[kind] p::after{content:"' + (str(_bn) if _bn < 1000 else "999+") + '" !important;}'
+        )
 st.markdown("<style>" + "".join(_sb_rules) + "</style>", unsafe_allow_html=True)
 
 with st.sidebar:
@@ -5798,10 +5901,10 @@ with st.sidebar:
                     <div class="role">Forensic Intelligence Platform</div>
                 </div>
             </div>
-            <div class="brand-meta"><span class="brand-dot"></span>Active Session</div>
         </div>""",
         unsafe_allow_html=True,
     )
+    _sb_q = (st.text_input("Search", key="sb_search", placeholder="Search", label_visibility="collapsed") or "").strip().lower()
 
     def _nav_group(label, accent="teal"):
         """Section header for a run of sidebar nav buttons: a small
@@ -5812,6 +5915,8 @@ with st.sidebar:
         so the sidebar's own sections are as visually distinguishable as
         the color-coded panels in the main content area."""
         _nav_group._n = getattr(_nav_group, "_n", 0) + 1
+        if _sb_q:
+            return
         st.markdown(
             f'<div class="sidebar-group-label sidebar-group-{accent}">'
             f'<span class="grp-index">{_nav_group._n:02d}</span>{label}</div>',
@@ -5837,6 +5942,9 @@ with st.sidebar:
         is_active = active_when if active_when is not None else (
             panel_target is not None and st.session_state.get("active_panel") == panel_target
         )
+        if _sb_q and _sb_q not in label.lower():
+            return
+        _nav_button._shown = getattr(_nav_button, "_shown", 0) + 1
         if st.button(label, key=key, use_container_width=True, type="primary" if is_active else "secondary"):
             if force_mode is not None:
                 st.session_state["nav_force_mode"] = force_mode
@@ -5859,7 +5967,7 @@ with st.sidebar:
         active_when=_on_dashboard and _mode_now not in (_UPLOAD_MODE, _LIVE_MODE),
     )
 
-    _nav_group("Threat Operations", accent="teal")
+    _nav_group("Workspace", accent="teal")
     _nav_button(
         "Live Email Scan (IMAP)", "Dashboard", force_mode=_LIVE_MODE, key="nav_live",
         active_when=_on_dashboard and _mode_now == _LIVE_MODE,
@@ -5901,9 +6009,11 @@ with st.sidebar:
         _nav_group("Security", accent="rose")
         _nav_button("Antivirus (ClamAV)", "Antivirus", key="nav_av_side")
 
-    _nav_group("System", accent="slate")
+    _nav_group("Account", accent="slate")
     _nav_button("Settings", "Settings", key="nav_settings_side")
     _nav_button("About", "About", key="nav_about_side")
+    if _sb_q and not getattr(_nav_button, "_shown", 0):
+        st.markdown('<div class="sb-empty">No matching pages</div>', unsafe_allow_html=True)
 
     if MULTIUSER:
         st.caption("Your emails, results and Google sign-in are private to this browser session.")
@@ -5914,37 +6024,39 @@ with st.sidebar:
                 del st.session_state[_k]
             st.rerun()
 
-    try:
-        _sb_conn = get_connection()
-        _sb_c = _sb_conn.cursor()
-        _sb_c.execute("SELECT COUNT(*) FROM attackers")
-        _sb_total = _sb_c.fetchone()[0] or 0
-        _sb_c.execute("SELECT COUNT(*) FROM attackers WHERE verdict IN ('CRITICAL','HIGH')")
-        _sb_threats = _sb_c.fetchone()[0] or 0
-        _sb_conn.close()
-    except Exception:
-        _sb_total, _sb_threats = 0, 0
-
-    st.markdown(
-        f"""<div class="sidebar-status-card-v2">
-            <div class="ssc-head">
-                <span class="ssc-pulse"></span>
-                <span class="ssc-title">All Systems Online</span>
-            </div>
-            <div class="ssc-grid">
-                <div class="ssc-tile">
-                    <div class="ssc-tile-value">{_sb_total}</div>
-                    <div class="ssc-tile-label">Emails Analyzed</div>
+    _sb_user = ((st.session_state.get("live_mailbox_config") or {}).get("user") or st.session_state.get("imap_user") or "").strip()
+    with st.container(key="sb_footer"):
+        st.markdown(
+            f"""<div class="sidebar-status-card-v2">
+                <div class="ssc-head">
+                    <span class="ssc-pulse"></span>
+                    <span class="ssc-title">All Systems Online</span>
                 </div>
-                <div class="ssc-tile ssc-tile-alert">
-                    <div class="ssc-tile-value">{_sb_threats}</div>
-                    <div class="ssc-tile-label">Threats Detected</div>
+                <div class="ssc-grid">
+                    <div class="ssc-tile">
+                        <div class="ssc-tile-value">{_sb_total}</div>
+                        <div class="ssc-tile-label">Emails Analyzed</div>
+                    </div>
+                    <div class="ssc-tile ssc-tile-alert">
+                        <div class="ssc-tile-value">{_sb_threats}</div>
+                        <div class="ssc-tile-label">Threats Detected</div>
+                    </div>
                 </div>
-            </div>
-            <div class="ssc-foot">Last DB update &middot; {datetime.now().strftime('%d %b, %H:%M')}</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+                <div class="ssc-foot">Last DB update &middot; {datetime.now().strftime('%d %b, %H:%M')}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        _sb_name = html.escape(_sb_user.split("@")[0]) if _sb_user else "Not signed in"
+        _sb_init = html.escape(_sb_user[:1].upper()) if _sb_user else "?"
+        _sb_sub = html.escape(_sb_user) if _sb_user else "Connect a mailbox to begin"
+        st.markdown(
+            f"""<div class="sidebar-profile">
+                <span class="sp-av">{_sb_init}</span>
+                <span class="sp-txt"><b>{_sb_name}</b><i>{_sb_sub}</i></span>
+                <span class="sp-live{' on' if _sb_user else ''}"></span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
 # The account chip shows the actually-connected mailbox address when there
 # is one (st.session_state["imap_user"], set by the live IMAP connect flow
