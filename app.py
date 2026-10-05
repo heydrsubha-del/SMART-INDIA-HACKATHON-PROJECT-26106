@@ -4586,17 +4586,6 @@ st.markdown(
         background:linear-gradient(180deg, rgba(76,141,255,.12), rgba(76,141,255,.04)) !important;
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
-    /* Three OAuth provider tiles side by side get cramped under ~480px --
-       stack them to one per row there so each stays readable instead of
-       squeezing icon + label + "OAuth 2.0" tag into a sliver. */
-    @media (max-width:480px) {
-        .st-key-imap_signin_card [data-testid="stHorizontalBlock"]:has(.st-key-auth_google_box) {
-            flex-direction:column !important;
-        }
-        .st-key-imap_signin_card .st-key-auth_google_box,
-        .st-key-imap_signin_card .st-key-auth_microsoft_box,
-        .st-key-imap_signin_card .st-key-auth_yandex_box {width:100% !important;}
-    }
 
     /* ---- v11 workflow nav (FORENSIC WORKFLOW / ACTIVE MODULE) -------------
        Single-row, horizontally scrollable tab strip sized to match the rest
