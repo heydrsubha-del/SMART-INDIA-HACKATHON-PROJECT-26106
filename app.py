@@ -5968,6 +5968,50 @@ st.markdown(
     @media (max-height:760px) {.stApp .sidebar-status-card-v2.compact {display:none;}}
 
     .topbar-account-chip:not(.topbar-account-chip-empty)::after {content:""; flex:none; width:8px; height:8px; margin-left:10px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(52,211,153,.8);}
+
+    /* ==================================================================
+       SIDEBAR v12.4 -- spacing, alignment and motion polish.
+       Label dots share the icon-tile centre line; rows breathe more on tall
+       screens (vh-scaled); hover sweeps a tinted wash, lifts the tile and
+       nudges the label; the open row gets a glowing edge marker and a slow
+       tile pulse.
+       ================================================================== */
+    .stApp [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:clamp(2px,.55vh,6px) !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {min-height:clamp(30px,4.4vh,42px) !important; border-radius:12px !important; overflow:visible !important;}
+    .stApp .sidebar-group-label {margin:clamp(10px,2.3vh,24px) 4px clamp(3px,.7vh,7px) 20px !important; gap:10px !important;}
+    .stApp .sidebar-group-label::before {margin-left:-3px;}
+    .stApp .sidebar-group-label:after {
+        display:block !important; content:"" !important; flex:1; height:1px; margin-right:6px;
+        background:linear-gradient(90deg, color-mix(in srgb, var(--g) 45%, transparent), transparent) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] {margin:4px 0 clamp(8px,1.6vh,16px) 0;}
+
+    /* hover: tinted sweep, tile lift, label nudge, chevron */
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {
+        background:linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 0%, transparent), transparent) 0 0 / 220% 100% no-repeat !important;
+        transition:background-position .45s cubic-bezier(.22,1,.36,1), background-color .25s var(--ease), box-shadow .25s var(--ease) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover {
+        background:linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 17%, transparent), color-mix(in srgb, var(--c,#4c8dff) 3%, transparent) 70%, transparent) 0 0 / 100% 100% no-repeat !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c,#4c8dff) 14%, transparent) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {transition:transform .3s cubic-bezier(.22,1,.36,1), color .2s var(--ease);}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p {transform:translateX(3px);}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover p::before {transform:rotate(-6deg) scale(1.08); filter:drop-shadow(0 3px 5px color-mix(in srgb, var(--c,#4c8dff) 60%, transparent));}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {transition:transform .35s cubic-bezier(.34,1.56,.64,1), filter .25s var(--ease), background-color .25s var(--ease);}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover::before {transform:translateY(-50%) translateX(0) scale(1.1) rotate(6deg) !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:active {transform:scale(.985) !important;}
+
+    /* open row: edge marker + soft tile pulse */
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {overflow:visible !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::after {
+        display:block !important; content:"" !important; position:absolute; left:-11px; top:50%; width:4px; height:20px; border-radius:0 4px 4px 0;
+        transform:translateY(-50%); background:var(--c,#4c8dff); box-shadow:0 0 14px 1px var(--c,#4c8dff); animation:sbEdge .5s cubic-bezier(.34,1.56,.64,1);
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before {animation:sbPulse 3.2s ease-in-out infinite;}
+    @keyframes sbEdge {from {height:0; opacity:0;} to {height:20px; opacity:1;}}
+    @keyframes sbPulse {0%,100% {box-shadow:0 8px 16px -6px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.3);} 50% {box-shadow:0 10px 24px -4px var(--c,#4c8dff), 0 0 0 4px color-mix(in srgb, var(--c,#4c8dff) 16%, transparent), inset 0 1px 0 rgba(255,255,255,.3);}}
+    @media (prefers-reduced-motion: reduce) {.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before, .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::after {animation:none;}}
     </style>
     """,
     unsafe_allow_html=True,
