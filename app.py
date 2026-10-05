@@ -4187,19 +4187,19 @@ st.markdown(
     @media (max-width:700px) {.stApp section[data-testid="stFileUploaderDropzone"] button {width:auto; min-width:140px !important;}}
 
     /* ==================================================================
-       LIVE LOGIN v6  (Channel A, blue)
+       LIVE LOGIN v6  (Channel A, teal)
        Split card: an info pane on the left (what this is, what it will and
        won't do) and the sign-in form on the right. The card uses the full
        content width like the mode tiles above it, so the page lines up;
        below 900px it collapses to a single column. Provider buttons keep
        their brand colours. ================================================ */
     .live-head {margin:6px 0 6px;}
-    .live-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#4c8dff;}
+    .live-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#2fb68e;}
     .live-title {margin-top:9px; font:750 24px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
     .live-sub {margin-top:4px; font-size:13px; line-height:1.5; color:var(--muted);}
 
     .st-key-imap_signin_card {
-        --tone:#4c8dff; --pane:360px; --padx:40px;
+        --tone:#2fb68e; --pane:360px; --padx:40px;
         position:relative; overflow:hidden;
         display:grid !important; grid-template-columns:var(--pane) minmax(0,1fr); row-gap:0 !important; column-gap:0 !important;
         align-items:start; width:100% !important; max-width:1180px !important; margin:14px auto 20px !important;
@@ -4208,18 +4208,24 @@ st.markdown(
         background:linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 18px 44px rgba(0,0,0,.35) !important;
     }
-    .st-key-imap_signin_card::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; background:var(--tone); z-index:3;}
+    .st-key-imap_signin_card::before {content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--tone); z-index:3;}
     .st-key-imap_signin_card::after {                         /* tinted info pane */
         content:""; position:absolute; left:0; top:0; bottom:0; width:var(--pane); z-index:0; pointer-events:none;
         background:radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, var(--tone) 13%, transparent) 0%, transparent 62%),
                    rgba(255,255,255,.012);
         border-right:1px solid var(--line-strong);
+        animation:signinPaneBreathe 6s ease-in-out infinite;
     }
+    @keyframes signinPaneBreathe {
+        0%, 100% {opacity:1;}
+        50% {opacity:.72;}
+    }
+    @media (prefers-reduced-motion:reduce) {.st-key-imap_signin_card::after {animation:none !important;}}
     .st-key-imap_signin_card > * {position:relative; z-index:1; grid-column:2; margin:0 var(--padx) 14px var(--padx) !important; min-width:0;}
     .st-key-imap_signin_card > *:first-child {grid-column:1; grid-row:1 / span 40; margin:0 !important; padding:0 32px 0 var(--padx);}
 
     .signin-card-header {display:block !important; margin:0 !important;}
-    .signin-card-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#4c8dff;}
+    .signin-card-eyebrow {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:#2fb68e;}
     .signin-card-title {margin-top:12px; font:750 24px/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em; color:#fff !important;}
     .signin-card-sub {margin-top:8px; font-size:13px !important; line-height:1.55 !important; color:var(--muted) !important;}
     .signin-facts {list-style:none; margin:26px 0 0; padding:0; display:flex; flex-direction:column; gap:16px;}
@@ -4247,10 +4253,10 @@ st.markdown(
         color:#eef2f7 !important; box-shadow:none !important;
     }
     .st-key-imap_signin_card .stTextInput input::placeholder {color:#5f6b79 !important;}
-    .st-key-imap_signin_card .stTextInput input:focus {border-color:#4c8dff !important; box-shadow:0 0 0 3px color-mix(in srgb, #4c8dff 22%, transparent) !important;}
+    .st-key-imap_signin_card .stTextInput input:focus {border-color:#2fb68e !important; box-shadow:0 0 0 3px color-mix(in srgb, #2fb68e 22%, transparent) !important;}
     .st-key-manual_login_btn {margin:12px 0 0 0 !important;}
     .st-key-manual_login_btn button {
-        background:#4c8dff !important; border:1px solid #4c8dff !important; color:#fff !important;
+        background:#2fb68e !important; border:1px solid #2fb68e !important; color:#fff !important;
         font:700 14.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em;
         border-radius:10px !important; min-height:44px !important; box-shadow:none !important; transform:none !important;
     }
@@ -4288,11 +4294,11 @@ st.markdown(
     .st-key-imap_signin_card > * {width:calc(100% - 2 * var(--padx)) !important; max-width:none !important; box-sizing:border-box !important;}
     .st-key-imap_signin_card > *:first-child {width:100% !important;}
 
-    .st-key-imap_signin_card::before {height:3px !important; background:linear-gradient(90deg,#4c8dff,#6366f1) !important;}
+    .st-key-imap_signin_card::before {width:4px !important; background:#2fb68e !important;}
     .st-key-imap_signin_card {
         background:
             radial-gradient(55% 45% at 100% 100%, rgba(212,154,102,.07), transparent 70%),
-            radial-gradient(40% 40% at 100% 0%, rgba(76,141,255,.06), transparent 70%),
+            radial-gradient(40% 40% at 100% 0%, rgba(47,182,142,.06), transparent 70%),
             linear-gradient(180deg, var(--panel-2), var(--panel)) !important;
     }
 
@@ -4300,9 +4306,9 @@ st.markdown(
     .signin-card-eyebrow {display:inline-flex; align-items:center; gap:10px;}
     .signin-card-eyebrow::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
     .signin-facts {margin:28px 0 0 !important; gap:12px !important;}
-    .signin-facts li {flex-direction:row !important; align-items:flex-start; gap:12px !important; padding:12px !important; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.015); --t:#4c8dff; transition:border-color .18s var(--ease);}
+    .signin-facts li {flex-direction:row !important; align-items:flex-start; gap:12px !important; padding:12px !important; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.015); --t:#2fb68e; transition:border-color .18s var(--ease);}
     .signin-facts li::before {display:none !important;}
-    .signin-facts li.sf-blue {--t:#4c8dff;}
+    .signin-facts li.sf-blue {--t:#2fb68e;}
     .signin-facts li.sf-copper {--t:#d49a66;}
     .signin-facts li.sf-green {--t:var(--green);}
     .signin-facts li:hover {border-color:color-mix(in srgb, var(--t) 40%, var(--line-strong));}
@@ -4317,26 +4323,30 @@ st.markdown(
     .signin-chips {display:flex; flex-wrap:wrap; gap:6px; margin-top:22px;}
     .signin-chips span {
         font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px;
-        color:#4c8dff; border:1px solid color-mix(in srgb, #4c8dff 40%, transparent); background:color-mix(in srgb, #4c8dff 8%, transparent);
+        color:#2fb68e; border:1px solid color-mix(in srgb, #2fb68e 40%, transparent); background:color-mix(in srgb, #2fb68e 8%, transparent);
     }
 
     /* right pane: header row, then the form */
-    .signin-form-head {display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--line);}
-    .sfh-tag {display:inline-flex; align-items:center; gap:10px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; color:#4c8dff;}
+    .signin-form-head {display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+    @media (max-width:480px) {
+        .signin-form-head {flex-direction:column; align-items:flex-start; gap:8px;}
+        .sfh-hint {align-self:flex-start;}
+    }
+    .sfh-tag {display:inline-flex; align-items:center; gap:10px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; color:#2fb68e;}
     .sfh-tag::before {content:""; width:18px; height:1px; background:currentColor; opacity:.65;}
     .sfh-hint {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
 
     /* Log in: tinted glass in the Channel A tone (same recipe as the active
        .acq2 tile) instead of a flat bright-blue slab, with a nudge arrow. */
     .st-key-manual_login_btn button {
-        background:linear-gradient(180deg, color-mix(in srgb, #4c8dff 30%, #101722), color-mix(in srgb, #4c8dff 17%, #0e131a)) !important;
-        border:1px solid color-mix(in srgb, #4c8dff 62%, transparent) !important; color:#fff !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 3px color-mix(in srgb, #4c8dff 9%, transparent) !important;
+        background:linear-gradient(180deg, color-mix(in srgb, #2fb68e 30%, #101722), color-mix(in srgb, #2fb68e 17%, #0e131a)) !important;
+        border:1px solid color-mix(in srgb, #2fb68e 62%, transparent) !important; color:#fff !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 3px color-mix(in srgb, #2fb68e 9%, transparent) !important;
         transition:border-color .18s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease) !important;
     }
     .st-key-manual_login_btn button:hover {
-        background:linear-gradient(180deg, color-mix(in srgb, #4c8dff 42%, #101722), color-mix(in srgb, #4c8dff 26%, #0e131a)) !important;
-        border-color:#6c9bff !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 4px color-mix(in srgb, #4c8dff 14%, transparent) !important;
+        background:linear-gradient(180deg, color-mix(in srgb, #2fb68e 42%, #101722), color-mix(in srgb, #2fb68e 26%, #0e131a)) !important;
+        border-color:#4fc9a4 !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 4px color-mix(in srgb, #2fb68e 14%, transparent) !important;
     }
     .st-key-manual_login_btn button p::after {content:"\2192"; display:inline-block; margin-left:10px; transition:transform .18s var(--ease);}
     .st-key-manual_login_btn button:hover p::after {transform:translateX(4px);}
@@ -4348,7 +4358,7 @@ st.markdown(
     .st-key-imap_signin_card > *:has([data-testid="stCaptionContainer"]) [data-testid="stCaptionContainer"] {font-size:12px !important; line-height:1.5 !important; color:var(--muted) !important; max-width:62ch; margin:0 auto;}
 
     /* provider tiles: one shared tile, three hues */
-    .st-key-imap_signin_card .st-key-auth_google_box {--tone:#4c8dff;}
+    .st-key-imap_signin_card .st-key-auth_google_box {--tone:#2fb68e;}
     .st-key-imap_signin_card .st-key-auth_microsoft_box {--tone:#d49a66;}
     .st-key-imap_signin_card .st-key-auth_yandex_box {--tone:#e0634a;}
     .st-key-imap_signin_card .st-key-auth_google_box,
@@ -4386,6 +4396,15 @@ st.markdown(
         box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 10%, transparent) !important;
     }
     .st-key-imap_signin_card .auth-option-label {color:var(--tone) !important; margin-bottom:12px !important; gap:9px !important;}
+    .st-key-imap_signin_card .st-key-auth_google_box [data-testid="stVerticalBlock"],
+    .st-key-imap_signin_card .st-key-auth_microsoft_box [data-testid="stVerticalBlock"],
+    .st-key-imap_signin_card .st-key-auth_yandex_box [data-testid="stVerticalBlock"] {gap:0 !important;}
+    .st-key-imap_signin_card .st-key-auth_google_box .stButton,
+    .st-key-imap_signin_card .st-key-auth_microsoft_box .stButton,
+    .st-key-imap_signin_card .st-key-auth_yandex_box .stButton,
+    .st-key-imap_signin_card .st-key-auth_google_box [data-testid="stElementContainer"],
+    .st-key-imap_signin_card .st-key-auth_microsoft_box [data-testid="stElementContainer"],
+    .st-key-imap_signin_card .st-key-auth_yandex_box [data-testid="stElementContainer"] {margin:0 !important;}
     .st-key-imap_signin_card .auth-option-label::after {
         content:"OAuth 2.0"; margin-left:auto; font:600 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em;
         text-transform:uppercase; color:var(--muted); padding:4px 6px; border:1px solid var(--line-strong); border-radius:5px;
@@ -4400,7 +4419,7 @@ st.markdown(
         transition:border-color .18s var(--ease), color .18s var(--ease) !important;
     }
     .stApp .st-key-imap_custom_toggle_btn button p::before {content:"\2699\FE0E"; margin-right:9px; font-size:12px;}
-    .stApp .st-key-imap_custom_toggle_btn button:hover {border-color:#4c8dff !important; color:#fff !important; text-decoration:none !important;}
+    .stApp .st-key-imap_custom_toggle_btn button:hover {border-color:#2fb68e !important; color:#fff !important; text-decoration:none !important;}
 
     /* ==================================================================
        LIVE LOGIN v8  (Channel A) -- compact card, refined left panel + form.
@@ -4410,7 +4429,7 @@ st.markdown(
        ================================================================== */
     .st-key-imap_signin_card {
         --pane:340px; --padx:36px;
-        --c-blue:#4c8dff; --c-indigo:#8b7cff; --c-amber:#e0a458; --c-mint:#4fc3a1;
+        --c-blue:#2fb68e; --c-indigo:#8b7cff; --c-amber:#e0a458; --c-mint:#4fc3a1;
         grid-template-rows:repeat(24, min-content) minmax(0,1fr) !important;
         align-content:start !important;
         margin-top:10px !important;
@@ -4429,10 +4448,10 @@ st.markdown(
     .st-key-imap_signin_card::after {
         background:
             radial-gradient(circle at center, transparent 0 38%, rgba(139,124,255,.16) 38.4%, transparent 39.2%) right -80px bottom -80px / 300px 300px no-repeat,
-            radial-gradient(circle at center, transparent 0 56%, rgba(76,141,255,.14) 56.4%, transparent 57.2%) right -80px bottom -80px / 300px 300px no-repeat,
+            radial-gradient(circle at center, transparent 0 56%, rgba(47,182,142,.14) 56.4%, transparent 57.2%) right -80px bottom -80px / 300px 300px no-repeat,
             radial-gradient(circle at center, transparent 0 74%, rgba(79,195,161,.12) 74.4%, transparent 75.2%) right -80px bottom -80px / 300px 300px no-repeat,
             radial-gradient(circle at center, transparent 0 92%, rgba(224,164,88,.10) 92.4%, transparent 93.2%) right -80px bottom -80px / 300px 300px no-repeat,
-            radial-gradient(120% 55% at 0% 0%, rgba(76,141,255,.20), transparent 65%),
+            radial-gradient(120% 55% at 0% 0%, rgba(47,182,142,.20), transparent 65%),
             radial-gradient(90% 45% at 100% 100%, rgba(139,124,255,.14), transparent 70%),
             linear-gradient(180deg, #121a2b 0%, #0e1521 100%) !important;
         border-right:1px solid #243046 !important;
@@ -4441,9 +4460,9 @@ st.markdown(
     .signin-card-eyebrow {
         display:inline-flex; align-items:center; gap:9px; padding:5px 11px 5px 9px; border-radius:999px;
         font:600 10px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase;
-        color:#9fbfff !important; background:rgba(76,141,255,.10); border:1px solid rgba(76,141,255,.32);
+        color:#9fbfff !important; background:rgba(47,182,142,.10); border:1px solid rgba(47,182,142,.32);
     }
-    .signin-card-eyebrow::before {width:6px !important; height:6px !important; border-radius:50%; background:var(--c-blue) !important; opacity:1 !important; box-shadow:0 0 0 3px rgba(76,141,255,.22);}
+    .signin-card-eyebrow::before {width:6px !important; height:6px !important; border-radius:50%; background:var(--c-blue) !important; opacity:1 !important; box-shadow:0 0 0 3px rgba(47,182,142,.22);}
     .signin-card-title {margin-top:16px !important; font:750 25px/1.14 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.025em !important;
         background:linear-gradient(180deg,#fff 30%,#b9c8e6); -webkit-background-clip:text; background-clip:text; color:transparent !important; -webkit-text-fill-color:transparent;}
     .signin-card-sub {margin-top:8px !important; font-size:13px !important; line-height:1.55 !important; color:#9aa7ba !important;}
@@ -4467,7 +4486,7 @@ st.markdown(
 
     .signin-chips {margin-top:30px !important; padding-top:16px; border-top:1px solid #243046; gap:6px !important;}
     .signin-chips span {font:600 10px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.02em !important; padding:5px 8px !important; border-radius:999px !important;}
-    .signin-chips span:nth-child(1) {color:#9dbcff !important; border-color:rgba(76,141,255,.4) !important; background:rgba(76,141,255,.10) !important;}
+    .signin-chips span:nth-child(1) {color:#9dbcff !important; border-color:rgba(47,182,142,.4) !important; background:rgba(47,182,142,.10) !important;}
     .signin-chips span:nth-child(2) {color:#ecc088 !important; border-color:rgba(224,164,88,.4) !important; background:rgba(224,164,88,.10) !important;}
     .signin-chips span:nth-child(3) {color:#86d9bf !important; border-color:rgba(79,195,161,.4) !important; background:rgba(79,195,161,.10) !important;}
 
@@ -4488,7 +4507,7 @@ st.markdown(
         box-shadow:inset 0 1px 2px rgba(0,0,0,.35) !important;
     }
     .st-key-imap_signin_card .stTextInput input:hover {border-color:#3b4a66 !important;}
-    .st-key-imap_signin_card .stTextInput input:focus {border-color:var(--c-blue) !important; box-shadow:0 0 0 3px rgba(76,141,255,.22) !important;}
+    .st-key-imap_signin_card .stTextInput input:focus {border-color:var(--c-blue) !important; box-shadow:0 0 0 3px rgba(47,182,142,.22) !important;}
     .st-key-imap_signin_card .st-key-imap_user input {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d99ac' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.5'/%3E%3Cpath d='M3.5 7.5l8.5 6 8.5-6'/%3E%3C/svg%3E") !important;}
     .st-key-imap_signin_card .st-key-imap_manual_password input {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d99ac' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 018 0v3'/%3E%3C/svg%3E") !important;}
 
@@ -4576,14 +4595,14 @@ st.markdown(
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button p::before {
         content:"\2699\FE0E"; margin:0 !important; flex:0 0 28px; width:28px; height:28px; border-radius:8px;
         display:inline-flex; align-items:center; justify-content:center; font-size:15px; color:#9fbfff;
-        background:rgba(76,141,255,.12); border:1px solid rgba(76,141,255,.35);
+        background:rgba(47,182,142,.12); border:1px solid rgba(47,182,142,.35);
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button p::after {
         content:"\203A"; margin-left:auto; font-size:20px; line-height:1; color:#6f7d92; transition:transform .18s var(--ease), color .18s var(--ease);
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover {
-        border-color:rgba(76,141,255,.6) !important; color:#fff !important; text-decoration:none !important;
-        background:linear-gradient(180deg, rgba(76,141,255,.12), rgba(76,141,255,.04)) !important;
+        border-color:rgba(47,182,142,.6) !important; color:#fff !important; text-decoration:none !important;
+        background:linear-gradient(180deg, rgba(47,182,142,.12), rgba(47,182,142,.04)) !important;
     }
     .stApp .st-key-imap_signin_card .st-key-imap_custom_toggle_btn button:hover p::after {transform:translateX(3px); color:#9fbfff;}
     /* Three OAuth provider tiles side by side get cramped under ~480px --
