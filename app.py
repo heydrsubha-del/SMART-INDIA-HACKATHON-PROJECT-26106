@@ -5850,6 +5850,79 @@ st.markdown(
         .stApp .sidebar-brand-v2 .brand-text .role {display:none;}
         .stApp .sidebar-profile .sp-txt i {display:none;}
     }
+
+    /* ==================================================================
+       SIDEBAR v12.2 -- expanding search + icon tiles. Search is an icon
+       button; focus grows it into a full glass field with a gradient
+       border and glow. Every row's icon sits in a tinted tile that fills
+       with the section colour when the page is open.
+       ================================================================== */
+    .stApp [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {padding-top:4px;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] {position:relative; margin:0 0 clamp(6px,1.2vh,12px) 0;}
+    .stApp [data-testid="stSidebar"] [data-testid="InputInstructions"] {display:none !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
+        width:42px !important; height:42px !important; min-height:42px !important; overflow:hidden !important; cursor:pointer;
+        border-radius:14px !important; border:1px solid #243046 !important;
+        background:linear-gradient(180deg,#121a28,#0d1420) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px -12px rgba(0,0,0,.9) !important;
+        transition:width .45s cubic-bezier(.22,1,.36,1), border-color .25s var(--ease), box-shadow .3s var(--ease), background .3s var(--ease) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="base-input"] {width:100% !important; height:100% !important; background:transparent !important; border:0 !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"]:hover {border-color:#4c8dff !important; box-shadow:0 0 0 3px rgba(76,141,255,.12), 0 10px 20px -12px rgba(76,141,255,.7) !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input {
+        height:100% !important; cursor:pointer; color:transparent !important; caret-color:transparent;
+        background-position:12px center !important; background-size:17px !important;
+        transition:color .2s var(--ease) .15s;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder {color:transparent !important;}
+    /* expanded: focused, or holding a query */
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within [data-baseweb="input"],
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) [data-baseweb="input"] {
+        width:100% !important; cursor:text; border:1px solid transparent !important;
+        background:
+            linear-gradient(180deg,#111a29,#0b121d) padding-box,
+            linear-gradient(120deg,#4c8dff,#8b7cff 55%,#34d399) border-box !important;
+        box-shadow:0 0 0 4px rgba(76,141,255,.12), 0 16px 32px -16px rgba(76,141,255,.75), inset 0 1px 0 rgba(255,255,255,.07) !important;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within input,
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown)) input {color:#eef3fb !important; caret-color:#4c8dff; cursor:text;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within input::placeholder {color:#7d8aa0 !important;}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]::after {
+        content:"ENTER \21B5"; position:absolute; right:11px; top:21px; transform:translateY(-50%) translateX(6px); pointer-events:none; opacity:0;
+        padding:4px 7px; border-radius:7px; font:700 9px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; color:#8fb3ff;
+        background:rgba(76,141,255,.12); border:1px solid rgba(76,141,255,.3); transition:opacity .25s var(--ease) .2s, transform .3s var(--ease) .2s;
+    }
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within::after {opacity:1; transform:translateY(-50%);}
+    .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown))::after {opacity:0;}
+
+    /* icon tiles */
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button {padding:4px 12px 4px 10px !important;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p {position:relative; z-index:1; gap:12px;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button p::before {
+        flex:0 0 28px; width:28px; height:28px; opacity:1;
+        -webkit-mask-size:16px 16px; mask-size:16px 16px; -webkit-mask-position:center; mask-position:center;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button::before {
+        display:block !important; content:"" !important; position:absolute !important; left:10px !important; top:50% !important; bottom:auto !important;
+        width:28px !important; height:28px !important; border-radius:9px !important; z-index:0;
+        background:color-mix(in srgb, var(--c,#4c8dff) 13%, #0e1522) !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c,#4c8dff) 26%, transparent) !important;
+        opacity:1 !important; transform:translateY(-50%) !important;
+        transition:background .25s var(--ease), box-shadow .25s var(--ease), transform .25s var(--ease) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button:hover::before {
+        background:color-mix(in srgb, var(--c,#4c8dff) 24%, #0e1522) !important; transform:translateY(-50%) scale(1.07) !important; opacity:1 !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c,#4c8dff) 50%, transparent), 0 6px 14px -8px var(--c,#4c8dff) !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before {
+        background:linear-gradient(145deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 62%, #000)) !important;
+        box-shadow:0 8px 16px -6px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.3) !important;
+        transform:translateY(-50%) !important; opacity:1 !important;
+    }
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::before {background-color:#0a0d12 !important; filter:none;}
+    .stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {
+        background:linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 17%, #0e1522), color-mix(in srgb, var(--c,#4c8dff) 4%, #0b111a)) !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -5940,18 +6013,6 @@ for _bk, _bn in _SB_BADGES.items():
 st.markdown("<style>" + "".join(_sb_rules) + "</style>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown(
-        f"""<div class="sidebar-brand-v2">
-            <div class="brand-row">
-                <div class="brand-mark brand-mark--logo"><img src="{_ALGORITHMISTIC_LOGO_SRC}" alt="Algorithmistic logo"/></div>
-                <div class="brand-text">
-                    <div class="name">ALGORITHMISTIC</div>
-                    <div class="role">Forensic Intelligence Platform</div>
-                </div>
-            </div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
     _sb_q = (st.text_input("Search", key="sb_search", placeholder="Search", label_visibility="collapsed") or "").strip().lower()
 
     def _nav_group(label, accent="teal"):
