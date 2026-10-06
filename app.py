@@ -6750,6 +6750,45 @@ st.markdown(
     @media (prefers-reduced-motion: reduce) {
         .stApp.stApp.stApp .st-key-imap_signin_card, .stApp.stApp.stApp .st-key-imap_signin_card > *, .stApp.stApp.stApp .st-key-imap_signin_card > *:first-child, .stApp.stApp.stApp .st-key-imap_signin_card > *:first-child::before, .stApp.stApp.stApp .signin-card-title::before {animation:none !important;}
     }
+
+    /* LOGIN v8: wide + short card, two-column fields, colourful provider buttons */
+    .stApp.stApp.stApp .st-key-imap_signin_card {--padx:40px; max-width:1100px !important; grid-template-columns:minmax(0,1.65fr) minmax(0,.62fr) !important; padding:28px 0 24px 0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card > * {margin:0 var(--padx) 10px var(--padx) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {margin:-28px 0 -24px 0 !important; padding:0 30px 0 26% !important; clip-path:polygon(16% 0,100% 0,100% 100%,0 100%) !important;}
+    .stApp.stApp.stApp .signin-form-head {margin-bottom:12px !important;}
+    .stApp.stApp.stApp .signin-form-head .sfh-tag {font-size:26px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] {display:grid !important; grid-template-columns:1fr 1fr; column-gap:26px; row-gap:6px;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] > * {min-width:0;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] > :has(.st-key-manual_login_btn), .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] .st-key-manual_login_btn {grid-column:1 / -1;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] > :has(.stFormSubmitButton), .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] > :has([data-testid="stFormSubmitButton"]) {grid-column:1 / -1;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn {margin:10px 0 0 0 !important;}
+    .stApp.stApp.stApp .auth-divider {margin:6px 0 4px 0 !important;}
+    .stApp.stApp.stApp .auth-note {margin-bottom:8px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {margin-top:2px;}
+    .stApp.stApp.stApp .st-key-imap_custom_toggle_btn {margin:8px auto 0 auto !important;}
+
+    /* providers: brand-colour fills with the nav tile */
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a {--pc:#e8ecf3; --base1:#ffffff; --base2:#e9edf3; --ptx:#1f2328; --tile:rgba(0,0,0,.06); --ring:rgba(0,0,0,.14); --sweep:rgba(66,133,244,.22);}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a {--pc:#1b78d0; --base1:#2a86e0; --base2:#0b4f94; --ptx:#ffffff; --tile:rgba(255,255,255,.2); --ring:rgba(255,255,255,.4); --sweep:rgba(255,255,255,.26);}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a {--pc:#ff5a36; --base1:#ff6a45; --base2:#d33615; --ptx:#ffffff; --tile:rgba(255,255,255,.2); --ring:rgba(255,255,255,.4); --sweep:rgba(255,255,255,.26);}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        height:48px !important; min-height:48px !important;
+        background-image:linear-gradient(90deg,var(--sweep),transparent), linear-gradient(180deg,var(--base1),var(--base2)) !important;
+        background-size:0% 100%, 100% 100% !important; background-repeat:no-repeat !important; background-position:0 0, 0 0 !important;
+        border:1px solid rgba(255,255,255,.28) !important; border-top:1px solid rgba(255,255,255,.4) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 12px 22px -14px var(--pc) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {background-size:100% 100%, 100% 100% !important; transform:translateY(-2px); border-color:rgba(255,255,255,.7) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 16px 26px -12px var(--pc) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before {background:var(--tile) !important; box-shadow:inset 0 0 0 1px var(--ring) !important; border-radius:11px; width:34px; height:34px;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after {width:34px; height:34px; background-size:19px 19px;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a *, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a:hover * {color:#1f2328 !important; -webkit-text-fill-color:#1f2328 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a *, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a *,
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a:hover *, .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a:hover * {color:#fff !important; -webkit-text-fill-color:#fff !important; text-shadow:0 1px 1px rgba(0,0,0,.25) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {font-weight:650 !important; font-size:13.5px !important; padding-left:4px;}
+    @media (max-width:980px) {
+        .stApp.stApp.stApp .st-key-imap_signin_card {max-width:100% !important;}
+        .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] {grid-template-columns:1fr;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
