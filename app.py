@@ -6816,6 +6816,65 @@ st.markdown(
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a *, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover * {color:#9fb3c2 !important; -webkit-text-fill-color:#9fb3c2 !important; text-shadow:none !important;}
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p {color:#fff !important; -webkit-text-fill-color:#fff !important;}
     @media (prefers-reduced-motion: reduce) {.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {animation:none;}}
+
+    /* LOGIN v10: provider dock in nav style (icon lifts into a ringed badge on hover,
+       caption stays), uncropped; redesigned Log in capsule. */
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"], .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > *, .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] [data-testid="stVerticalBlock"],
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] [data-testid="stElementContainer"], .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] [data-testid="stLinkButton"] {overflow:visible !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {
+        justify-content:space-around !important; align-items:flex-start; gap:10px !important; padding:22px 18px 14px 18px !important; margin:8px 0 0 0 !important;
+        border-radius:22px; border:1px solid rgba(127,214,228,.16);
+        background:radial-gradient(70% 120% at 50% 0%, rgba(34,211,238,.07), transparent 70%), linear-gradient(180deg,#0e151d,#0a1017);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 18px 34px -24px rgba(0,0,0,.9);
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"], .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:1 1 0 !important; min-width:84px !important; width:auto !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {margin-bottom:30px !important; width:100% !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        position:relative; width:84px !important; min-width:84px !important; height:56px !important; min-height:56px !important; max-height:56px !important; margin:0 auto !important; border-radius:0 !important;
+        background:none !important; background-image:none !important; border:0 !important; box-shadow:none !important; animation:none !important; transform:none !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {transform:none !important; animation:none !important; background:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before {
+        display:block !important; content:"" !important; position:absolute; left:50% !important; top:2px !important; width:46px !important; height:46px !important; margin-left:-23px; border-radius:50% !important; z-index:0;
+        background:color-mix(in srgb,var(--pc) 15%,#0f1722) !important; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pc) 40%,transparent) !important; border:0 !important;
+        transform:none !important; transition:transform .4s cubic-bezier(.34,1.56,.64,1), background .25s var(--ease), box-shadow .3s var(--ease), border-color .25s !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after {
+        left:50% !important; top:2px !important; width:46px !important; height:46px !important; margin-left:-23px; background-size:24px 24px !important; transform:none !important; z-index:1;
+        transition:transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {
+        transform:translateY(-12px) scale(1.12) !important; background:linear-gradient(150deg,var(--base1),var(--base2)) !important; border:5px solid #0a1017 !important;
+        box-shadow:0 0 0 1px color-mix(in srgb,var(--pc) 70%,transparent), 0 14px 22px -6px var(--pc), inset 0 1px 0 rgba(255,255,255,.4) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {transform:translateY(-12px) scale(1.12) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {top:calc(100% + 4px) !important; font:650 11px/1 Inter,sans-serif !important; letter-spacing:.14em;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p {color:var(--pc) !important; -webkit-text-fill-color:var(--pc) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a:hover p {color:#e8ecf3 !important; -webkit-text-fill-color:#e8ecf3 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active::before, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active::after {transform:translateY(-6px) scale(1.02) !important;}
+
+    /* LOG IN: dark glass capsule, travelling gradient edge, fill sweep, tile + arrow */
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn {margin:14px 0 2px 0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {
+        height:48px !important; min-height:48px !important; max-height:48px !important; padding:0 60px !important; border-radius:999px !important; border:1.5px solid transparent !important;
+        color:#eafcff !important; font:700 15px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.05em !important; text-shadow:none !important;
+        background-image:linear-gradient(90deg,#22d3ee,#0e9fb5), linear-gradient(180deg,#0f1c26,#0a1219), conic-gradient(from var(--loginAng),rgba(34,211,238,.25) 0 55%,#22d3ee 75%,#8b7cf6 88%,rgba(34,211,238,.25) 100%) !important;
+        background-size:0% 100%, 100% 100%, 100% 100% !important; background-repeat:no-repeat !important; background-position:0 0, 0 0, 0 0 !important;
+        background-origin:padding-box, padding-box, border-box !important; background-clip:padding-box, padding-box, border-box !important;
+        background-color:transparent !important; animation:loginSpin 5s linear infinite !important;
+        box-shadow:0 12px 26px -16px #22d3ee, inset 0 1px 0 rgba(255,255,255,.06) !important;
+        transition:background-size .55s cubic-bezier(.22,1,.36,1), transform .2s var(--ease), box-shadow .3s var(--ease), color .2s var(--ease) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover {background-size:100% 100%, 100% 100%, 100% 100% !important; color:#04161b !important; filter:none !important; transform:translateY(-2px) !important; box-shadow:0 16px 30px -14px #22d3ee !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:active {transform:translateY(0) scale(.985) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button p {color:inherit !important; -webkit-text-fill-color:currentColor !important; text-shadow:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before {
+        left:8px !important; width:32px !important; height:32px !important; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4'/%3E%3Cpath d='M10 17l5-5-5-5M15 12H3'/%3E%3C/svg%3E") center / 16px no-repeat, rgba(34,211,238,.16) !important; box-shadow:inset 0 0 0 1px rgba(34,211,238,.5) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304161b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4'/%3E%3Cpath d='M10 17l5-5-5-5M15 12H3'/%3E%3C/svg%3E") center / 16px no-repeat, rgba(4,22,27,.14) !important; box-shadow:inset 0 0 0 1px rgba(4,22,27,.35) !important; transform:translateY(-50%) rotate(-10deg) scale(1.08);}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {right:22px !important; color:#7fe9f7 !important; font-size:20px; transition:transform .3s var(--ease), color .2s;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::after {color:#04161b !important; transform:translate(6px,-52%);}
+    @media (prefers-reduced-motion: reduce) {.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {animation:none !important;}}
     </style>
     """,
     unsafe_allow_html=True,
