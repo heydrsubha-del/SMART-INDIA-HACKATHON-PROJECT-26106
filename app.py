@@ -6502,6 +6502,72 @@ st.markdown(
         .stApp .st-key-imap_signin_card > *:first-child {order:-1; margin:0 0 26px 0 !important; padding:30px 22px 28px 22px !important; text-align:center; clip-path:none; border-radius:19px 19px 0 0; align-items:center;}
         .stApp .signin-chips {justify-content:center;}
     }
+
+    /* ==================================================================
+       LOGIN CARD v3 -- smaller card, complete welcome panel, flat fields,
+       real pill button, compact provider row.
+       ================================================================== */
+    .stApp.stApp.stApp .st-key-imap_signin_card {
+        --padx:36px; max-width:900px !important; padding:34px 0 30px 0 !important; border-radius:18px !important;
+        grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card > * {margin:0 var(--padx) 12px var(--padx) !important;}
+    /* welcome panel: shallower slant, text never clipped */
+    .stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {
+        margin:-34px 0 -30px 0 !important; padding:0 30px 0 28% !important;
+        clip-path:polygon(24% 0,100% 0,100% 100%,0 100%) !important; border-radius:0 17px 17px 0 !important;
+        background:linear-gradient(155deg,#0b3340 0%,#0e6577 52%,#12a1b6 100%) !important;
+    }
+    .stApp.stApp.stApp .signin-card-title {font-size:26px !important; line-height:1.15 !important; letter-spacing:.02em !important;}
+    .stApp.stApp.stApp .signin-card-sub {font-size:12.5px !important; margin-top:12px !important; max-width:220px; margin-left:auto;}
+    .stApp.stApp.stApp .signin-chips {margin-top:16px;}
+    .stApp.stApp.stApp .signin-chips span {font-size:10.5px; padding:5px 10px;}
+    /* heading block: plain text, no pill/rule */
+    .stApp.stApp.stApp .signin-form-head {margin:0 var(--padx) 18px var(--padx) !important; padding:0 !important; border:0 !important; background:none !important;}
+    .stApp.stApp.stApp .signin-form-head::after, .stApp.stApp.stApp .signin-form-head::before {display:none !important;}
+    .stApp.stApp.stApp .signin-form-head .sfh-tag {font-size:28px !important;}
+    .stApp.stApp.stApp .signin-form-head .sfh-hint {display:block !important; padding:0 !important; border:0 !important; background:none !important; border-radius:0 !important;
+        font:500 12.5px/1.4 Inter,sans-serif !important; letter-spacing:0 !important; text-transform:none !important; color:#8593a3 !important; margin-top:6px;}
+    /* fields: flat underline, no filled box */
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stTextInputRootElement"], .stApp.stApp.stApp .st-key-imap_signin_card .stTextInput div[data-baseweb="input"], .stApp.stApp.stApp .st-key-imap_signin_card .stTextInput div[data-baseweb="base-input"] {
+        background:transparent !important; border:0 !important; box-shadow:none !important; border-radius:0 !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stTextInputRootElement"] {border-bottom:1.5px solid rgba(255,255,255,.3) !important; transition:border-color .25s var(--ease), box-shadow .25s var(--ease);}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stTextInputRootElement"]:focus-within {border-bottom-color:#22d3ee !important; box-shadow:0 10px 14px -12px rgba(34,211,238,.9) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .stTextInput input {border:0 !important; border-bottom:0 !important; box-shadow:none !important; min-height:42px !important; background-color:transparent !important; font-size:14.5px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .stTextInput input:focus {border:0 !important; box-shadow:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stWidgetLabel"] p {font-size:10.5px !important; letter-spacing:.12em !important; text-transform:uppercase; color:#7fd6e4 !important;}
+    /* log in: full-width pill */
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn {width:100% !important; max-width:100% !important; margin:16px 0 2px 0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn :is(.stFormSubmitButton, .stButton, [data-testid="stFormSubmitButton"]) {width:100% !important; display:block !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {
+        width:100% !important; height:46px !important; min-height:46px !important; max-height:46px !important; padding:0 24px !important; border-radius:999px !important;
+        justify-content:center; color:#fff !important; font:700 14.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.03em !important;
+        border:1px solid rgba(255,255,255,.5) !important;
+        background-image:linear-gradient(180deg,#2fc7da,#0c7a8f) !important; background-color:#0c7a8f !important; background-size:100% 100% !important; background-position:0 0 !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 24px -14px #22d3ee !important; text-shadow:0 1px 1px rgba(0,0,0,.3);
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover {filter:brightness(1.1); transform:translateY(-1px) !important; border-color:#fff !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before {display:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {display:block !important; content:"\2192" !important; position:absolute; right:22px; top:50%; transform:translateY(-52%); opacity:.8; font-size:17px; background:none !important; color:#fff;}
+    /* providers: one quiet row, no boxes, single-line buttons */
+    .stApp.stApp.stApp .st-key-imap_signin_card [class*="st-key-auth_"] {border:0 !important; background:none !important; box-shadow:none !important; padding:0 !important; border-radius:0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [class*="st-key-auth_"]::before, .stApp.stApp.stApp .st-key-imap_signin_card [class*="st-key-auth_"]::after {display:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .auth-option-label {display:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {gap:10px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        min-height:42px !important; height:42px !important; padding:0 12px !important; border-radius:11px !important; white-space:nowrap !important;
+        justify-content:center; gap:9px; font-size:12.5px !important; box-shadow:0 8px 16px -12px rgba(0,0,0,.9) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {font-size:12.5px !important; white-space:nowrap !important; margin:0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a {background:#c93a22 !important; border-color:#c93a22 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a {background:#1f2630 !important; border:1px solid #323c4a !important;}
+    .stApp.stApp.stApp .auth-note {font-size:12px !important; max-width:380px; margin-left:auto !important; margin-right:auto !important;}
+    /* manual IMAP link: matches the card width */
+    .stApp.stApp.stApp .st-key-imap_custom_toggle_btn {max-width:900px !important;}
+    @media (max-width:900px) {
+        .stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {clip-path:none !important; padding:28px 22px !important; margin:-34px 0 20px 0 !important; border-radius:17px 17px 0 0 !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
