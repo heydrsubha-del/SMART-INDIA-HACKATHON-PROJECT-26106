@@ -6789,6 +6789,33 @@ st.markdown(
         .stApp.stApp.stApp .st-key-imap_signin_card {max-width:100% !important;}
         .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] {grid-template-columns:1fr;}
     }
+
+    /* LOGIN v9: round provider buttons (icon circle + caption), ripple on hover */
+    @keyframes provRipple {0% {box-shadow:0 14px 24px -12px var(--pc), 0 0 0 0 color-mix(in srgb,var(--pc) 55%,transparent);} 100% {box-shadow:0 14px 24px -12px var(--pc), 0 0 0 16px transparent;}}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {justify-content:center !important; gap:34px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"], .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {width:auto !important; display:flex; justify-content:center; margin-bottom:26px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) [data-testid="stLinkButton"] {width:auto !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        width:62px !important; min-width:62px !important; height:62px !important; min-height:62px !important; max-height:62px !important; padding:0 !important; margin:0 auto !important;
+        border-radius:50% !important; overflow:visible !important; justify-content:center !important;
+        background-size:0% 100%, 100% 100% !important;
+        border:1px solid rgba(255,255,255,.45) !important; border-top:1px solid rgba(255,255,255,.6) !important;
+        box-shadow:inset 0 2px 0 rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.18), 0 14px 24px -12px var(--pc) !important;
+        transition:transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .25s var(--ease), border-color .2s var(--ease) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {transform:translateY(-5px) scale(1.1) !important; background-size:100% 100%, 100% 100% !important; animation:provRipple 1.1s ease-out infinite;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active {transform:translateY(-1px) scale(.96) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before {display:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after {left:50% !important; top:50% !important; width:100% !important; height:100% !important; background-size:26px 26px !important; transform:translate(-50%,-50%) !important; transition:transform .4s cubic-bezier(.34,1.56,.64,1);}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {transform:translate(-50%,-50%) rotate(-10deg) scale(1.08) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {
+        position:absolute !important; left:50%; top:calc(100% + 10px); transform:translateX(-50%); white-space:nowrap; padding:0 !important;
+        font:600 12px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.06em; text-transform:uppercase; transition:color .2s var(--ease);
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a *, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover * {color:#9fb3c2 !important; -webkit-text-fill-color:#9fb3c2 !important; text-shadow:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p {color:#fff !important; -webkit-text-fill-color:#fff !important;}
+    @media (prefers-reduced-motion: reduce) {.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {animation:none;}}
     </style>
     """,
     unsafe_allow_html=True,
