@@ -6560,8 +6560,6 @@ st.markdown(
         justify-content:center; gap:9px; font-size:12.5px !important; box-shadow:0 8px 16px -12px rgba(0,0,0,.9) !important;
     }
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {font-size:12.5px !important; white-space:nowrap !important; margin:0 !important;}
-    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a {background:#c93a22 !important; border-color:#c93a22 !important;}
-    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a {background:#1f2630 !important; border:1px solid #323c4a !important;}
     .stApp.stApp.stApp .auth-note {font-size:12px !important; max-width:380px; margin-left:auto !important; margin-right:auto !important;}
     /* manual IMAP link: matches the card width */
     .stApp.stApp.stApp .st-key-imap_custom_toggle_btn {max-width:900px !important;}
@@ -6623,6 +6621,15 @@ st.markdown(
     }
     .stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover {border-color:#22d3ee !important; color:#fff !important; background:rgba(34,211,238,.1) !important;}
     .stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, .stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::after {display:none !important;}
+
+    /* LOGIN v5: page header aligned to the card, provider text/logos, centred manual link */
+    .stApp:has(.st-key-imap_signin_card) .live-head {max-width:900px; margin:56px auto 14px auto !important;}
+    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) .live-head {margin-top:56px;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a * {color:#e6edf6 !important; text-shadow:none !important; opacity:1 !important; font-weight:600 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {padding:0 12px 0 44px !important; background-size:19px 19px !important; background-position:14px center !important; background-repeat:no-repeat !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {font-size:13px !important; letter-spacing:.01em;}
+    .stApp.stApp.stApp .st-key-imap_custom_toggle_btn {justify-self:center !important; grid-column:1 !important; width:auto !important; margin:14px auto 4px auto !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card > .st-key-imap_custom_toggle_btn {margin:14px auto 4px auto !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -9007,7 +9014,7 @@ if active_panel == "Dashboard":
                                     # isn't subject to any of that; it reliably navigates every
                                     # time. Styled via CSS to keep the same Google button look.
                                     st.link_button(
-                                        "Sign in with Gmail", auth_url,
+                                        "Gmail", auth_url,
                                         use_container_width=True, key="google_signin_link_btn",
                                     )
                                 except Exception as e:
@@ -9052,7 +9059,7 @@ if active_panel == "Dashboard":
                                 try:
                                     auth_url, _state = microsoft_oauth.get_authorization_url(email_hint=imap_user)
                                     st.link_button(
-                                        "Sign in with Outlook", auth_url,
+                                        "Outlook", auth_url,
                                         use_container_width=True, key="microsoft_signin_link_btn",
                                     )
                                 except Exception as e:
@@ -9105,7 +9112,7 @@ if active_panel == "Dashboard":
                                 try:
                                     auth_url, _state = yandex_oauth.get_authorization_url(email_hint=imap_user)
                                     st.link_button(
-                                        "Sign in with Yandex", auth_url,
+                                        "Yandex", auth_url,
                                         use_container_width=True, key="yandex_signin_link_btn",
                                     )
                                 except Exception as e:
