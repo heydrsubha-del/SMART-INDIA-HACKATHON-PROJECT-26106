@@ -7094,6 +7094,41 @@ st.markdown(
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {left:0 !important; width:34px !important; height:34px !important; border-radius:50% !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before {box-shadow:inset 0 0 0 1px rgba(34,211,238,.35), 0 0 0 3px rgba(34,211,238,.08) !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {box-shadow:inset 0 0 0 1px rgba(34,211,238,.7), 0 0 0 3px #0a1017, 0 0 0 4px rgba(34,211,238,.45), 0 10px 18px -8px #22d3ee !important;}
+
+    /* ==================================================================
+       LOGIN v12.3 -- polish: smaller circular badges (provider 46px,
+       Log in 36px, IMAP 28px), tighter captions, calmer helper text,
+       focus ring. Delete this block to go back to v12.2.
+       ================================================================== */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .auth-note {font-size:11.5px !important; max-width:400px !important; margin:4px auto 0 auto !important; color:#7d8da0 !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {margin:8px 0 0 0 !important;}
+
+    /* Log in */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {height:48px !important; min-height:48px !important; max-height:48px !important; padding:0 60px !important; font-size:14px !important; letter-spacing:.03em !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {left:6px !important; width:36px !important; height:36px !important;
+        box-shadow:0 0 0 3px rgba(34,211,238,.16), 0 6px 12px -6px #22d3ee, inset 0 1px 0 rgba(255,255,255,.4) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before {background-size:16px 16px, 100% 100% !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {background-size:16px 16px, 100% 100% !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {right:22px !important; font-size:16px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:focus-visible {outline:2px solid rgba(103,232,249,.8) !important; outline-offset:3px !important;}
+
+    /* providers */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {height:80px !important; min-height:80px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {width:46px !important; height:46px !important; margin:0 0 0 -23px !important;
+        box-shadow:inset 0 2px 0 rgba(255,255,255,.32), inset 0 -6px 10px rgba(0,0,0,.18), 0 0 0 3px rgba(255,255,255,.035), 0 10px 18px -12px var(--pv) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {transform:translateY(-4px) !important;
+        box-shadow:inset 0 2px 0 rgba(255,255,255,.4), 0 0 0 3px #0a1017, 0 0 0 4px color-mix(in srgb,var(--pv) 55%,transparent), 0 12px 20px -8px var(--pv) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {width:46px !important; height:46px !important; margin:0 0 0 -23px !important; background-size:22px 22px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {transform:translateY(-4px) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active::after {transform:translateY(-1px) scale(.96) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {top:60px !important; font-size:11px !important; letter-spacing:.14em !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:focus-visible::before {box-shadow:0 0 0 3px #0a1017, 0 0 0 5px rgba(103,232,249,.8) !important;}
+
+    /* manual IMAP */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn {margin:10px auto 0 auto !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button {min-height:36px !important; padding:0 4px 0 40px !important; font-size:12.5px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {width:28px !important; height:28px !important; background-size:14px 14px, 100% 100% !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:focus-visible {outline:2px solid rgba(103,232,249,.7) !important; outline-offset:4px !important; border-radius:8px !important;}
     </style>
     """,
     unsafe_allow_html=True,
