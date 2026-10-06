@@ -6905,6 +6905,122 @@ st.markdown(
     }
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {color:#b9cad6 !important; -webkit-text-fill-color:#b9cad6 !important;}
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {border:5px solid #0a1017 !important;}
+
+    /* ==================================================================
+       LOGIN v12 -- same card, same cyan/teal manner, calmer and roomier.
+       Controls use the nav-bar language: icon tile + label, tinted glass,
+       hover colour sweep, tile tilt. Log in = teal glass row with a tile
+       and arrow; the three providers are equal nav-style rows (logo tile
+       + name, no tray, no floating circles); "Set IMAP server / port
+       manually" is a quiet ghost row. Delete this block to go back to v11.
+       ================================================================== */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card {--padx:48px; padding:40px 0 34px 0 !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > * {margin:0 var(--padx) 18px var(--padx) !important;}
+    @media (min-width:901px) {html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {margin:-40px 0 -34px 0 !important; padding:0 34px 0 26% !important;}}
+    @media (max-width:900px) {
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card {--padx:22px; padding:40px 0 28px 0 !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {margin:-40px 0 24px 0 !important;}
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head {margin-bottom:26px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stForm"] [data-testid="stVerticalBlock"] {column-gap:34px !important; row-gap:14px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .stTextInput input {min-height:46px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:has(.auth-divider) {margin-top:10px !important; margin-bottom:14px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .auth-divider {margin:6px 0 !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .auth-note {margin:6px auto 0 auto !important; max-width:420px; line-height:1.55 !important;}
+
+    /* LOG IN -- teal glass row: gradient tile, centred label, arrow */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {
+        position:relative; overflow:hidden; width:100% !important; height:50px !important; min-height:50px !important; max-height:50px !important;
+        padding:0 64px !important; border-radius:14px !important; justify-content:center; animation:none !important;
+        color:#effcff !important; font:700 14.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.04em !important; text-shadow:none !important;
+        border:1px solid rgba(34,211,238,.5) !important; background-color:rgba(8,20,28,.9) !important;
+        background-image:linear-gradient(90deg,rgba(34,211,238,.34),rgba(34,211,238,.06)), linear-gradient(180deg,rgba(34,211,238,.2),rgba(14,159,181,.1)) !important;
+        background-size:0% 100%, 100% 100% !important; background-position:0 0, 0 0 !important; background-repeat:no-repeat !important;
+        background-origin:border-box !important; background-clip:border-box !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 14px 26px -18px #22d3ee !important;
+        transition:background-size .5s cubic-bezier(.22,1,.36,1), border-color .2s var(--ease), box-shadow .3s var(--ease), transform .2s var(--ease) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover {
+        background-size:100% 100%, 100% 100% !important; background-position:0 0, 0 0 !important; color:#fff !important; filter:none !important;
+        border-color:rgba(103,232,249,.85) !important; transform:translateY(-1px) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 18px 30px -16px #22d3ee !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:active {transform:none !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button p {color:inherit !important; -webkit-text-fill-color:currentColor !important; text-shadow:none !important; margin:0 !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {
+        display:block !important; content:"" !important; position:absolute !important; left:8px !important; top:50% !important; width:34px !important; height:34px !important;
+        border-radius:10px !important; border:0 !important;
+        background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304161b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3'/%3E%3C/svg%3E") center / 18px 18px no-repeat, linear-gradient(145deg,#2dd4bf,#0e9fb5) !important;
+        box-shadow:0 6px 14px -6px #22d3ee, inset 0 1px 0 rgba(255,255,255,.35) !important;
+        transition:transform .35s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before {transform:translateY(-50%) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {transform:translateY(-50%) rotate(-8deg) scale(1.08) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {display:block !important; content:"\2192" !important; right:20px !important; font-size:18px !important; color:#a5f3fc !important; opacity:.9; transition:transform .3s var(--ease), color .2s !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::after {color:#fff !important; transform:translate(5px,-52%) !important;}
+
+    /* PROVIDERS -- three equal nav-style rows, no tray */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {padding:0 !important; margin:6px 0 0 0 !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important;
+        gap:14px !important; justify-content:stretch !important; align-items:stretch !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"], html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:1 1 0 !important; min-width:0 !important; width:auto !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {width:100% !important; margin:0 !important; display:block !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) [data-testid="stLinkButton"] {width:100% !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a {--pv:#4285f4;} html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a {--pv:#38a3f0;} html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a {--pv:#ff5a36;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        position:relative; display:flex !important; align-items:center; justify-content:flex-start !important; width:100% !important; min-width:0 !important;
+        height:50px !important; min-height:50px !important; max-height:50px !important; margin:0 !important; padding:0 14px 0 56px !important;
+        border-radius:14px !important; overflow:hidden !important; animation:none !important; transform:none !important;
+        background-color:rgba(255,255,255,.035) !important;
+        background-image:linear-gradient(90deg,color-mix(in srgb,var(--pv) 24%,transparent),transparent) !important;
+        background-size:0% 100% !important; background-position:0 0 !important; background-repeat:no-repeat !important;
+        border:1px solid rgba(255,255,255,.11) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;
+        transition:background-size .45s cubic-bezier(.22,1,.36,1), border-color .2s var(--ease), box-shadow .25s var(--ease), transform .2s var(--ease) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {
+        background-size:100% 100% !important; background-color:rgba(255,255,255,.05) !important; transform:translateY(-1px) !important; animation:none !important;
+        border-color:color-mix(in srgb,var(--pv) 60%,transparent) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 14px 24px -18px var(--pv) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:active {transform:none !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {
+        display:block !important; content:"" !important; position:absolute !important; left:8px !important; top:50% !important; width:34px !important; height:34px !important;
+        margin:0 !important; border-radius:10px !important; border:0 !important; z-index:0;
+        background:linear-gradient(150deg,var(--base1),var(--base2)) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.18) !important;
+        transition:transform .35s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before {transform:translateY(-50%) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {transform:translateY(-50%) rotate(-6deg) scale(1.07) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {left:8px !important; top:50% !important; width:34px !important; height:34px !important; margin:0 !important; background-size:19px 19px !important; z-index:1; transition:transform .35s cubic-bezier(.34,1.56,.64,1) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after {transform:translateY(-50%) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {transform:translateY(-50%) rotate(-6deg) scale(1.07) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {
+        position:relative !important; left:auto !important; top:auto !important; transform:none !important; z-index:2;
+        display:flex !important; align-items:center; justify-content:space-between; width:100% !important; margin:0 !important; padding:0 !important;
+        font:650 13.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; text-transform:none !important; white-space:nowrap;
+        color:#dbe6f0 !important; -webkit-text-fill-color:#dbe6f0 !important; text-shadow:none !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p::after {content:"\2197"; margin-left:auto; font-size:14px; opacity:.45; transition:transform .25s var(--ease), opacity .2s;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p {color:#fff !important; -webkit-text-fill-color:#fff !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p::after {opacity:1; transform:translate(2px,-2px);}
+
+    /* MANUAL IMAP -- quiet ghost row */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn {margin:20px auto 6px auto !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button {
+        position:relative; height:42px !important; min-height:42px !important; padding:0 22px 0 52px !important; border-radius:12px !important; overflow:hidden;
+        color:#b7c8d6 !important; font:600 13px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; box-shadow:none !important;
+        border:1px solid rgba(255,255,255,.12) !important; background-color:rgba(255,255,255,.03) !important;
+        background-image:linear-gradient(90deg,rgba(34,211,238,.18),transparent) !important; background-size:0% 100% !important; background-repeat:no-repeat !important; background-position:0 0 !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover {background-size:100% 100% !important; border-color:rgba(34,211,238,.5) !important; color:#fff !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {
+        display:block !important; content:"" !important; position:absolute !important; left:7px !important; top:50% !important; width:28px !important; height:28px !important;
+        border-radius:9px !important; border:0 !important;
+        background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h10M18 7h2M4 17h2M10 17h10'/%3E%3Ccircle cx='16' cy='7' r='2'/%3E%3Ccircle cx='8' cy='17' r='2'/%3E%3C/svg%3E") center / 15px 15px no-repeat, rgba(34,211,238,.12) !important; box-shadow:inset 0 0 0 1px rgba(34,211,238,.3) !important;
+        transition:transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before {transform:translateY(-50%) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {transform:translateY(-50%) rotate(90deg) !important;}
     </style>
     """,
     unsafe_allow_html=True,
