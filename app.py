@@ -6439,6 +6439,69 @@ st.markdown(
     }
     .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) tr:last-child td, .stApp [data-testid="stTable"] table tr:last-child td {border-bottom:0 !important;}
     .stApp [data-testid="stMarkdownContainer"] table:not(.polished-table) tbody tr:hover td, .stApp [data-testid="stTable"] table tbody tr:hover td {background:rgba(255,255,255,.035) !important;}
+
+    /* ==================================================================
+       LOGIN CARD v2 -- split layout after the reference: sign-in form on
+       the left (centred title, underline fields, pill button), diagonal
+       teal "Welcome back" panel on the right, neon cyan edge. Nav bar and
+       sidebar are untouched.
+       ================================================================== */
+    .stApp .st-key-imap_signin_card {
+        --tone:#22d3ee; --pane:46%; --padx:44px;
+        grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) !important; max-width:1120px !important;
+        padding:46px 0 40px 0 !important; border-radius:20px !important;
+        border:1px solid rgba(34,211,238,.6) !important;
+        background:radial-gradient(90% 70% at 0% 0%, rgba(34,211,238,.07), transparent 60%), linear-gradient(180deg,#0b1118,#080c12) !important;
+        box-shadow:0 0 0 1px rgba(34,211,238,.18), 0 0 38px -8px rgba(34,211,238,.55), 0 34px 70px -34px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05) !important;
+    }
+    .stApp .st-key-imap_signin_card::before {display:none !important;}
+    .stApp .st-key-imap_signin_card::after {display:none !important;}
+    .stApp .st-key-imap_signin_card > * {grid-column:1 !important; margin:0 var(--padx) 16px var(--padx) !important;}
+    /* right: diagonal welcome panel */
+    .stApp .st-key-imap_signin_card > *:first-child {
+        grid-column:2 !important; grid-row:1 / span 40 !important; margin:-46px 0 -40px 0 !important; padding:0 44px 0 90px !important;
+        align-self:stretch; display:flex; flex-direction:column; justify-content:center; text-align:right;
+        background:linear-gradient(150deg,#0c3a45 0%,#0f6f80 48%,#14a3b8 100%);
+        clip-path:polygon(30% 0,100% 0,100% 100%,62% 100%); border-radius:0 19px 19px 0;
+    }
+    .stApp .signin-card-eyebrow, .stApp .signin-facts {display:none !important;}
+    .stApp .signin-card-title {margin:0 !important; font:800 34px/1.12 Inter,"Segoe UI",sans-serif !important; letter-spacing:.015em; text-transform:uppercase; color:#fff !important; text-shadow:0 4px 22px rgba(0,0,0,.35);}
+    .stApp .signin-card-sub {margin-top:14px !important; font-size:13.5px !important; line-height:1.6 !important; color:rgba(230,251,255,.82) !important;}
+    .stApp .signin-chips {display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-top:20px;}
+    .stApp .signin-chips span {padding:5px 11px; border-radius:999px; font:600 11px/1 Inter,sans-serif; letter-spacing:.04em; color:#e6fbff; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);}
+    /* left: title + underline fields + pill button */
+    .stApp .signin-form-head {display:block !important; text-align:center; margin:0 var(--padx) 22px var(--padx) !important;}
+    .stApp .signin-form-head .sfh-tag {display:block !important; padding:0 !important; background:none !important; border:0 !important; font:800 34px/1.1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em; text-transform:none !important; color:#fff !important;}
+    .stApp .signin-form-head .sfh-hint {display:block !important; margin-top:8px; font:500 12.5px/1.4 Inter,sans-serif !important; color:var(--muted) !important;}
+    .stApp .st-key-imap_signin_card [data-testid="stForm"] {border:0 !important; padding:0 !important; background:none !important;}
+    .stApp .st-key-imap_signin_card [data-testid="stWidgetLabel"] p {font:600 11px/1.2 Inter,sans-serif !important; letter-spacing:.12em !important; color:#7fe9f7 !important;}
+    .stApp .st-key-imap_signin_card .stTextInput div[data-baseweb="input"],
+    .stApp .st-key-imap_signin_card .stTextInput div[data-baseweb="base-input"] {background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important;}
+    .stApp .st-key-imap_signin_card .stTextInput input {
+        background:transparent no-repeat left center / 18px !important; border:0 !important; border-bottom:1.5px solid rgba(255,255,255,.38) !important;
+        border-radius:0 !important; min-height:46px !important; padding:0 12px 0 32px !important; font-size:15px !important; color:#fff !important;
+        transition:border-color .25s var(--ease), box-shadow .25s var(--ease);
+    }
+    .stApp .st-key-imap_signin_card .st-key-imap_user input {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7'/%3E%3C/svg%3E") !important;}
+    .stApp .st-key-imap_signin_card .st-key-imap_manual_password input {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") !important;}
+    .stApp .st-key-imap_signin_card .stTextInput input:focus {border-bottom-color:#22d3ee !important; box-shadow:0 8px 14px -10px rgba(34,211,238,.9) !important;}
+    .stApp .st-key-imap_signin_card .stTextInput input::placeholder {color:#6c7c8c !important;}
+    .stApp .st-key-imap_signin_card .stTextInput button {background:transparent !important; border:0 !important; color:#7fe9f7 !important;}
+    .stApp .st-key-manual_login_btn {margin:20px 0 4px 0 !important;}
+    .stApp .st-key-manual_login_btn button {
+        height:48px !important; min-height:48px !important; border-radius:999px !important; border:1px solid rgba(255,255,255,.55) !important;
+        background:linear-gradient(180deg,#2cc4d8,#0d7488) !important; color:#fff !important; font:700 15px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.02em !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 14px 26px -14px #22d3ee !important; transition:filter .2s var(--ease), transform .18s var(--ease), box-shadow .25s var(--ease) !important;
+    }
+    .stApp .st-key-manual_login_btn button:hover {filter:brightness(1.1); transform:translateY(-1px) !important; background:linear-gradient(180deg,#2cc4d8,#0d7488) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 18px 30px -14px #22d3ee !important; border-color:#fff !important;}
+    .stApp .st-key-manual_login_btn button::before, .stApp .st-key-manual_login_btn button::after {display:none !important;}
+    .stApp .st-key-manual_login_btn button p::after {display:none !important;}
+    .stApp .auth-divider-wrap {margin-top:6px !important;}
+    @media (max-width:900px) {
+        .stApp .st-key-imap_signin_card {display:flex !important; flex-direction:column; padding:0 0 30px 0 !important; --padx:22px;}
+        .stApp .st-key-imap_signin_card > *:first-child {order:-1; margin:0 0 26px 0 !important; padding:30px 22px 28px 22px !important; text-align:center; clip-path:none; border-radius:19px 19px 0 0; align-items:center;}
+        .stApp .signin-chips {justify-content:center;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -8664,7 +8727,7 @@ if active_panel == "Dashboard":
                 st.markdown(
                     """<div class="signin-card-header">
                         <div class="signin-card-eyebrow">Mailbox access</div>
-                        <div class="signin-card-title">Connect your mailbox</div>
+                        <div class="signin-card-title">Welcome back</div>
                         <div class="signin-card-sub">Sign in to start pulling message headers for analysis.</div>
                         <ul class="signin-facts">
                             <li class="sf-blue"><i class="sf-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></i><div class="sf-txt"><b>Read-only</b><span>Nothing in your mailbox is changed.</span></div></li>
@@ -8709,7 +8772,7 @@ if active_panel == "Dashboard":
                                 _save_cached_provider_email("yandex", _auto_email)
 
                 st.markdown(
-                    """<div class="signin-form-head"><span class="sfh-tag">Manual login</span><span class="sfh-hint">Email &amp; app password</span></div>""",
+                    """<div class="signin-form-head"><span class="sfh-tag">Login</span><span class="sfh-hint">Email &amp; app password</span></div>""",
                     unsafe_allow_html=True,
                 )
 
