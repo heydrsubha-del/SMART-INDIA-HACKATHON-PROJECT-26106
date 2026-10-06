@@ -7129,6 +7129,45 @@ st.markdown(
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button {min-height:36px !important; padding:0 4px 0 40px !important; font-size:12.5px !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {width:28px !important; height:28px !important; background-size:14px 14px, 100% 100% !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:focus-visible {outline:2px solid rgba(103,232,249,.7) !important; outline-offset:4px !important; border-radius:8px !important;}
+
+    /* PROVIDERS on phones: all the rules above size each provider as a
+       100%-wide block, so under Streamlit's own column-stacking
+       breakpoint the three end up as three separate full-width rows with
+       big gaps -- not broken, just never given a "stay side-by-side and
+       shrink" rule for a phone-width screen. Giving the row the same
+       docked-pill treatment the nav bar already uses (one bordered
+       capsule, badges shrunk to fit) instead of three loose stacked
+       circles. Scoped tightly to narrow widths only -- nothing above this
+       changes, nothing on desktop/tablet changes. */
+    @media (max-width:600px) {
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {
+            flex-direction:row !important; flex-wrap:nowrap !important; align-items:flex-start !important;
+            gap:4px !important; padding:14px 6px 10px 6px !important; margin:14px 0 0 0 !important;
+            border-radius:18px !important; border:1px solid rgba(127,214,228,.18) !important;
+            background:linear-gradient(180deg,#0e151d,#0a1017) !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+            flex:1 1 0 !important; width:auto !important; min-width:0 !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {
+            width:100% !important; margin-bottom:0 !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+            height:72px !important; min-height:72px !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before,
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {
+            width:44px !important; height:44px !important; margin:0 0 0 -22px !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after,
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {
+            width:44px !important; height:44px !important; margin:0 0 0 -22px !important; background-size:21px 21px !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {
+            top:48px !important; font-size:9px !important; letter-spacing:.06em !important; white-space:nowrap !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
