@@ -6630,6 +6630,27 @@ st.markdown(
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {font-size:13px !important; letter-spacing:.01em;}
     .stApp.stApp.stApp .st-key-imap_custom_toggle_btn {justify-self:center !important; grid-column:1 !important; width:auto !important; margin:14px auto 4px auto !important;}
     .stApp.stApp.stApp .st-key-imap_signin_card > .st-key-imap_custom_toggle_btn {margin:14px auto 4px auto !important;}
+
+    /* LOGIN v6: no page header above the card; provider tiles take nav colours */
+    .stApp:has(.st-key-imap_signin_card) .live-head {display:none !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card {margin-top:30px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a {--pc:#fb7185;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a {--pc:#38bdf8;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a {--pc:#f5a524;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
+        height:46px !important; min-height:46px !important; border-radius:12px !important; padding:0 12px 0 46px !important;
+        background-color:rgba(255,255,255,.055) !important; border:1px solid rgba(255,255,255,.14) !important; border-top:2px solid var(--pc) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 18px -14px var(--pc) !important;
+        font:600 13.5px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover {
+        background-color:rgba(255,255,255,.09) !important; border-color:var(--pc) !important; border-top-width:2px !important; transform:translateY(-2px);
+        box-shadow:0 14px 24px -14px var(--pc), inset 0 1px 0 rgba(255,255,255,.1) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a * {color:#f1f7fb !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {gap:12px !important; margin-top:6px;}
+    .stApp.stApp.stApp .auth-note {font-size:11.5px !important; color:#7d8da0 !important; margin-bottom:12px !important;}
+    .stApp.stApp.stApp .st-key-imap_custom_toggle_btn button {border-color:rgba(34,211,238,.35) !important; color:#a6e3ef !important;}
     </style>
     """,
     unsafe_allow_html=True,
