@@ -7021,6 +7021,49 @@ st.markdown(
     }
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before {transform:translateY(-50%) !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {transform:translateY(-50%) rotate(90deg) !important;}
+
+    /* ==================================================================
+       LOGIN v12.1 -- welcome text no longer clipped (the header carried
+       its own side padding), "Press Enter to submit form" removed, round
+       nav-style controls (pill + circular icon badge with a soft ring),
+       and the "Login" heading now uses the same header language as the
+       rest of the app (kicker, bold title, hairline + accent). Delete
+       this block to go back to v12.
+       ================================================================== */
+    /* welcome panel: text always fits */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-header {padding:0 !important; width:100% !important; max-width:100% !important; overflow:visible !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title {font-size:clamp(17px,1.55vw,22px) !important; letter-spacing:.025em !important; line-height:1.2 !important; word-break:normal !important; overflow-wrap:break-word !important; max-width:100%;}
+    @media (min-width:901px) {html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {padding:0 40px 0 22% !important;}}
+
+    /* no "Press Enter to submit form" */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="InputInstructions"], html body .stApp [data-testid="stForm"] [data-testid="InputInstructions"] {display:none !important;}
+
+    /* heading: kicker / title / hairline + accent */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head {position:relative; text-align:left !important; margin:0 var(--padx) 26px var(--padx) !important; padding:0 0 16px 0 !important; border:0 !important; border-bottom:1px solid #1d2a3f !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head::after {display:block !important; content:"" !important; position:absolute; left:0; bottom:-1px; width:64px; height:2px; border-radius:2px; background:#22d3ee; box-shadow:0 0 10px rgba(34,211,238,.8);}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head .sfh-kicker {display:inline-flex; align-items:center; gap:10px; font:700 10.5px/1 ui-monospace,'JetBrains Mono',Consolas,monospace; letter-spacing:.2em; text-transform:uppercase; color:#22d3ee;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head .sfh-kicker::before {content:""; width:20px; height:1px; background:currentColor; opacity:.7;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-form-head .sfh-tag {display:block !important; margin-top:10px; font:750 26px/1.15 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.012em !important; color:#f4f7fb !important; text-align:left !important; text-transform:none !important;}
+
+    /* LOG IN -- pill + circular badge */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {border-radius:999px !important; height:52px !important; min-height:52px !important; max-height:52px !important; padding:0 70px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::before {left:6px !important; width:40px !important; height:40px !important; border-radius:50% !important;
+        box-shadow:0 0 0 3px rgba(34,211,238,.18), 0 8px 16px -6px #22d3ee, inset 0 1px 0 rgba(255,255,255,.4) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {right:24px !important;}
+
+    /* PROVIDERS -- pills, round logo badges, label left, chevron right */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {height:54px !important; min-height:54px !important; max-height:54px !important; border-radius:999px !important; padding:0 20px 0 64px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {left:7px !important; width:40px !important; height:40px !important; border-radius:50% !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.18), 0 0 0 3px color-mix(in srgb,var(--pv) 16%,transparent), 0 8px 16px -8px var(--pv) !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {left:7px !important; width:40px !important; height:40px !important; background-size:22px 22px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a > div, html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a [data-testid="stMarkdownContainer"] {width:100% !important; flex:1 1 auto !important; margin:0 !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {justify-content:space-between !important; text-align:left !important; font-size:14px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p::after {content:"\203A" !important; font-size:22px; line-height:1; opacity:.5; transform:none;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover p::after {opacity:1; transform:translateX(3px);}
+
+    /* MANUAL IMAP -- pill + round badge */
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button {border-radius:999px !important; height:44px !important; min-height:44px !important; padding:0 24px 0 54px !important;}
+    html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {left:6px !important; width:32px !important; height:32px !important; border-radius:50% !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -9291,7 +9334,7 @@ if active_panel == "Dashboard":
                                 _save_cached_provider_email("yandex", _auto_email)
 
                 st.markdown(
-                    """<div class="signin-form-head"><span class="sfh-tag">Login</span><span class="sfh-hint">Email &amp; app password</span></div>""",
+                    """<div class="signin-form-head"><span class="sfh-kicker">Mailbox access</span><span class="sfh-tag">Login</span><span class="sfh-hint">Email &amp; app password</span></div>""",
                     unsafe_allow_html=True,
                 )
 
