@@ -6875,6 +6875,36 @@ st.markdown(
     .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {right:22px !important; color:#7fe9f7 !important; font-size:20px; transition:transform .3s var(--ease), color .2s;}
     .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover::after {color:#04161b !important; transform:translate(6px,-52%);}
     @media (prefers-reduced-motion: reduce) {.stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {animation:none !important;}}
+
+    /* LOGIN v11: no subtitle, vivid Log in, colourful compact provider dock */
+    .stApp.stApp.stApp .signin-form-head .sfh-hint {display:none !important;}
+    .stApp.stApp.stApp .signin-form-head {margin-bottom:20px !important;}
+    .stApp.stApp.stApp .signin-form-head .sfh-tag {font-size:28px !important; letter-spacing:.005em;}
+
+    /* Log in: vivid teal-to-sky fill, gloss, sheen sweep */
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button {
+        color:#04161b !important; font-weight:800 !important; border:1px solid rgba(255,255,255,.55) !important; animation:none !important;
+        background-image:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%), linear-gradient(180deg,rgba(255,255,255,.28),transparent 55%), linear-gradient(100deg,#2dd4bf 0%,#22d3ee 50%,#38bdf8 100%) !important;
+        background-size:55% 100%, 100% 100%, 100% 100% !important; background-position:-140% 0, 0 0, 0 0 !important;
+        background-origin:padding-box !important; background-clip:padding-box !important; background-repeat:no-repeat !important;
+        box-shadow:0 14px 28px -12px #22d3ee, inset 0 1px 0 rgba(255,255,255,.6) !important;
+        transition:background-position .9s cubic-bezier(.22,1,.36,1), transform .2s var(--ease), box-shadow .3s var(--ease) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button:hover {
+        background-size:55% 100%, 100% 100%, 100% 100% !important; background-position:240% 0, 0 0, 0 0 !important; color:#04161b !important;
+        transform:translateY(-2px) !important; box-shadow:0 18px 32px -12px #22d3ee, inset 0 1px 0 rgba(255,255,255,.7) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::before {background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304161b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4'/%3E%3Cpath d='M10 17l5-5-5-5M15 12H3'/%3E%3C/svg%3E") center / 16px no-repeat, rgba(4,22,27,.14) !important; box-shadow:inset 0 0 0 1px rgba(4,22,27,.35) !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-manual_login_btn.st-key-manual_login_btn button::after {color:#04161b !important;}
+
+    /* provider dock: colourful circles at rest, shorter */
+    .stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {padding:16px 18px 4px 18px !important; border-color:rgba(127,214,228,.2);}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {margin-bottom:26px !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before {
+        background:linear-gradient(150deg,var(--base1),var(--base2)) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 0 0 1px rgba(255,255,255,.3), 0 8px 16px -8px var(--pc) !important;
+    }
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {color:#b9cad6 !important; -webkit-text-fill-color:#b9cad6 !important;}
+    .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {border:5px solid #0a1017 !important;}
     </style>
     """,
     unsafe_allow_html=True,
