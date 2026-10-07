@@ -1257,6 +1257,13 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
 st.markdown(
     r"""
     <style>
+    /* Inter is named first in every font stack below but was never loaded,
+       so on any device without it installed (most phones) the text fell
+       back to whatever the OS maps "Arial" to -- a serif face on some
+       phones. Loading it makes the intended typeface the same everywhere;
+       if the request is blocked the stacks below still fall back to
+       system sans fonts. */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
     :root {
         /* -------------------------------------------------------------
            REDESIGNED PALETTE (color-only retint — every token name below
@@ -1479,8 +1486,8 @@ st.markdown(
            the content reflows *with* it instead of snapping after it. */
         transition: max-width .3s var(--ease) !important;
     }
-    .stApp, .stApp p, .stApp span, .stApp label, .stApp small {font-family: Inter, "Segoe UI", Arial, sans-serif !important;}
-    h1,h2,h3,h4,h5,h6 {color:var(--text) !important; font-family:Inter,"Segoe UI",Arial,sans-serif !important; font-weight:750 !important;}
+    .stApp, .stApp p, .stApp span, .stApp label, .stApp small {font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;}
+    h1,h2,h3,h4,h5,h6 {color:var(--text) !important; font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif !important; font-weight:750 !important;}
     [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {color:var(--muted) !important;}
 
     [data-testid="stSidebar"] {background:#0b0f14 !important; border-right:1px solid var(--line) !important;}
@@ -1878,7 +1885,7 @@ st.markdown(
         text-decoration:none !important; box-shadow:0 1px 3px rgba(0,0,0,.3) !important;
         padding:10px 16px 10px 44px !important; background-repeat:no-repeat !important;
         background-position:16px center !important; background-size:16px 16px !important;
-        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='4' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='20' fill='white'%3EЯ%3C/text%3E%3C/svg%3E") !important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.53 4.70V19.50M16.53 4.70H12.13a4.6 4.6 0 0 0 0 9.20H16.53M12.13 13.90L8.53 19.50' fill='none' stroke='white' stroke-width='2.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
         transition:box-shadow .15s ease, border-color .15s ease, background-color .15s ease !important;
     }
     .st-key-yandex_signin_link_btn a:hover {
@@ -6729,7 +6736,7 @@ st.markdown(
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {transform:translateY(-50%) rotate(-8deg) scale(1.1);}
     .stApp.stApp.stApp .st-key-imap_signin_card .st-key-google_signin_link_btn a::after {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23FFC107' d='M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z'/%3E%3Cpath fill='%23FF3D00' d='M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4c-7.682 0-14.344 4.337-17.694 10.691z'/%3E%3Cpath fill='%234CAF50' d='M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z'/%3E%3Cpath fill='%231976D2' d='M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C40.463 35.751 44 30.5 44 24c0-1.341-.138-2.65-.389-3.917z'/%3E%3C/svg%3E");}
     .stApp.stApp.stApp .st-key-imap_signin_card .st-key-microsoft_signin_link_btn a::after {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 21 21'%3E%3Crect x='1' y='1' width='9' height='9' fill='%23f25022'/%3E%3Crect x='11' y='1' width='9' height='9' fill='%2300a4ef'/%3E%3Crect x='1' y='11' width='9' height='9' fill='%23ffb900'/%3E%3Crect x='11' y='11' width='9' height='9' fill='%237fba00'/%3E%3C/svg%3E");}
-    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a::after {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext x='4' y='19' font-family='Arial,sans-serif' font-weight='900' font-size='20' fill='white'%3EЯ%3C/text%3E%3C/svg%3E");}
+    .stApp.stApp.stApp .st-key-imap_signin_card .st-key-yandex_signin_link_btn a::after {background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.53 4.70V19.50M16.53 4.70H12.13a4.6 4.6 0 0 0 0 9.20H16.53M12.13 13.90L8.53 19.50' fill='none' stroke='white' stroke-width='2.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");}
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {background-image:linear-gradient(90deg,color-mix(in srgb,var(--pc) 30%,transparent),color-mix(in srgb,var(--pc) 4%,transparent)) !important;}
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a *, .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover * {color:#f1f7fb !important; -webkit-text-fill-color:#f1f7fb !important;}
     .stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {position:relative; z-index:2;}
@@ -7130,43 +7137,42 @@ st.markdown(
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button::before, html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:hover::before {width:28px !important; height:28px !important; background-size:14px 14px, 100% 100% !important;}
     html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn button:focus-visible {outline:2px solid rgba(103,232,249,.7) !important; outline-offset:4px !important; border-radius:8px !important;}
 
-    /* PROVIDERS on phones: all the rules above size each provider as a
-       100%-wide block, so under Streamlit's own column-stacking
-       breakpoint the three end up as three separate full-width rows with
-       big gaps -- not broken, just never given a "stay side-by-side and
-       shrink" rule for a phone-width screen. Giving the row the same
-       docked-pill treatment the nav bar already uses (one bordered
-       capsule, badges shrunk to fit) instead of three loose stacked
-       circles. Scoped tightly to narrow widths only -- nothing above this
-       changes, nothing on desktop/tablet changes. */
+    /* PROVIDERS on phones -- the same boxless, floating badges as desktop.
+       The previous phone rule wrapped the row in a bordered "capsule" and
+       squeezed it (44px badges, a 9px caption only 4px underneath), which
+       is what made it look boxed-in and crowded next to desktop. Now: no
+       capsule, desktop proportions (46px badge, caption 14px below it),
+       a little more air around the row, and captions optically centred
+       (letter-spacing adds trailing space after the last letter, so a
+       matching text-indent re-centres them). Phones only. */
     @media (max-width:600px) {
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] {
             flex-direction:row !important; flex-wrap:nowrap !important; align-items:flex-start !important;
-            gap:4px !important; padding:14px 6px 10px 6px !important; margin:14px 0 0 0 !important;
-            border-radius:18px !important; border:1px solid rgba(127,214,228,.18) !important;
-            background:linear-gradient(180deg,#0e151d,#0a1017) !important;
+            gap:8px !important; padding:0 !important; margin:20px 0 0 0 !important;
+            border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important;
         }
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {
             flex:1 1 0 !important; width:auto !important; min-width:0 !important;
         }
-        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {
-            width:100% !important; margin-bottom:0 !important;
-        }
-        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {
-            height:72px !important; min-height:72px !important;
-        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) {width:100% !important; margin-bottom:0 !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a {height:80px !important; min-height:80px !important;}
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::before,
-        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {
-            width:44px !important; height:44px !important; margin:0 0 0 -22px !important;
-        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::before {width:46px !important; height:46px !important; margin:0 0 0 -23px !important;}
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a::after,
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a:hover::after {
-            width:44px !important; height:44px !important; margin:0 0 0 -22px !important; background-size:21px 21px !important;
+            width:46px !important; height:46px !important; margin:0 0 0 -23px !important;
+            background-size:22px 22px !important; background-position:center !important; background-repeat:no-repeat !important;
         }
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card :is(.st-key-google_signin_link_btn, .st-key-microsoft_signin_link_btn, .st-key-yandex_signin_link_btn) a p {
-            top:48px !important; font-size:9px !important; letter-spacing:.06em !important; white-space:nowrap !important;
+            top:60px !important; font-size:10.5px !important; letter-spacing:.12em !important;
+            text-indent:.12em !important; white-space:nowrap !important;
         }
+        /* air around the neighbours so nothing crowds the captions */
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:has(.auth-divider) {margin-top:20px !important; margin-bottom:16px !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn {margin:18px auto 0 auto !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .login-plain-divider {margin:20px 0 14px 0 !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stCaptionContainer"] p {line-height:1.6 !important;}
     }
     </style>
     """,
