@@ -7941,6 +7941,49 @@ st.markdown(r"""
   .stApp.stApp.stApp .sec-head .sh-main {max-width:100%; clip-path:none; padding-right:22px;}
 }
 
+/* ===== DESKTOP / TABLET ONLY: Bulk Infrastructure card + expanders follow the same premium card language ===== */
+@media (min-width:701px) {
+  .stApp.stApp.stApp .st-key-bulk_infra_scan {
+    --cc:#2fb68e; position:relative; overflow:hidden; margin-top:14px !important; padding:16px 18px 18px 18px !important;
+    border:1px solid color-mix(in srgb,var(--cc) 30%,#232d3b) !important; border-radius:18px !important;
+    background:linear-gradient(180deg, color-mix(in srgb,var(--cc) 13%,#0e141c) 0, #0e141c 170px) !important;
+    box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb,var(--cc) 8%,transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  }
+  .stApp.stApp.stApp .st-key-bulk_infra_scan::before {display:none !important;}
+  .stApp.stApp.stApp .st-key-bulk_infra_scan .part-banner {
+    margin:-16px -18px 16px -18px !important; border:0 !important; border-radius:0 !important; padding:0 !important;
+    border-bottom:1px solid color-mix(in srgb,var(--cc) 24%,#232d3b) !important; background:transparent !important; box-shadow:none !important;
+  }
+  .stApp.stApp.stApp .st-key-bulk_infra_scan .part-banner::before {display:none !important;}
+  .stApp.stApp.stApp .st-key-bulk_infra_scan .part-banner .pb-main {background:linear-gradient(150deg, color-mix(in srgb,var(--cc) 40%,#0a0f18) 0%, color-mix(in srgb,var(--cc) 14%,#0a0f18) 100%);}
+  .stApp.stApp.stApp [data-testid="stExpander"] {
+    border:1px solid rgba(255,255,255,.09) !important; border-left:1px solid rgba(255,255,255,.09) !important; border-radius:14px !important;
+    background:linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,.01) 55%), #0c1219 !important; overflow:hidden;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+  }
+  .stApp.stApp.stApp [data-testid="stExpander"] summary {padding:12px 16px !important;}
+  .stApp.stApp.stApp [data-testid="stExpander"] summary:hover {background:rgba(255,255,255,.035) !important;}
+}
+
+/* ===== DESKTOP / TABLET ONLY: every remaining card + numbered header follows the premium card language ===== */
+@media (min-width:701px) {
+  .stApp.stApp.stApp [data-testid="stVerticalBlockBorderWrapper"]:not([class*="st-key-"]), .stApp.stApp.stApp [class*="st-key-geo_"][data-testid="stVerticalBlockBorderWrapper"] {
+    border:1px solid color-mix(in srgb, #2fb68e 22%, #232d3b) !important; border-radius:18px !important;
+    background:linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,.01) 55%), linear-gradient(180deg,#0f151e,#0b1017) !important;
+    box-shadow:0 16px 36px -24px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  }
+  .stApp.stApp.stApp .num-head {margin:26px 0 14px 0; padding:0;}
+  .stApp.stApp.stApp .num-head .nh-num {
+    width:40px; height:40px; border-radius:12px; color:#fff;
+    background:linear-gradient(150deg, color-mix(in srgb,var(--tone) 55%,#0a0f18), color-mix(in srgb,var(--tone) 22%,#0a0f18));
+    border:1px solid color-mix(in srgb,var(--tone) 60%,transparent);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 14%,transparent), 0 10px 20px -10px var(--tone), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .stApp.stApp.stApp .num-head .nh-title {font:800 17px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+  .stApp.stApp.stApp .num-head .nh-sub {font-size:12.5px; color:rgba(200,212,226,.72);}
+  .stApp.stApp.stApp .num-head .nh-rule {background:linear-gradient(90deg,color-mix(in srgb,var(--tone) 60%,transparent),transparent 85%);}
+}
+
 /* ===== App backdrop: calm navy with a soft top glow and a fine engineering grid that fades toward the centre ===== */
 html body .stApp.stApp [data-testid="stAppViewContainer"] {
   background:
@@ -8337,16 +8380,15 @@ def panel(fn, label):
 # "No evidence loaded yet" gate further down -- which keeps both openable
 # before any mailbox is connected or file is uploaded.
 def _settings():
-    st.subheader("Settings")
-    st.caption("Live view of the scoring configuration this build is actually running with (config.py) - editing requires changing that file.")
+    _banner("Configuration", "Settings", "Live view of the scoring configuration this build is actually running with (config.py) - editing requires changing that file.", tone="gold")
 
-    st.markdown("##### Risk signal weights")
+    _sec("Risk signal weights", tone="gold")
     _render_polished_table(pd.DataFrame([{"Signal": k, "Weight": v} for k, v in C.WEIGHTS.items()]))
 
-    st.markdown("##### Risk level thresholds")
+    _sec("Risk level thresholds", tone="gold")
     _render_polished_table(pd.DataFrame([{"Score ≥": t, "Level": n} for t, n, _ in C.RISK_LEVELS]))
 
-    st.markdown("##### Reference lists")
+    _sec("Reference lists", tone="gold")
     _g_ok = bool(GOOGLE_OAUTH_READY and oauth_available())
     st.markdown(
         '<div class="inbox-stats">'
@@ -10756,7 +10798,7 @@ if active_panel == "Dashboard":
                     dd_res = st.session_state["bulk_scan_cases"][selected_row]
                     dd_p = dd_res.get("parsed", {})
 
-                    st.markdown("##### Extracted Message Content")
+                    _sec("Extracted Message Content", tone="ai")
                     _dd_txt = dd_p.get('body_text', 'No body text extracted.')[:4000]
                     _mail_box(
                         key=str(selected_row), kicker="Extracted content", title="Message text",
@@ -11995,14 +12037,11 @@ if active_panel == "Origin & Route":
         #     traced before the most recent Tor list refresh.
         # ------------------------------------------------------------------
         with st.container(border=True, key="bulk_infra_scan"):
-            st.markdown(
-                '<div class="infra-scan-head">'
-                '<div class="infra-scan-eyebrow">VPN &middot; Datacenter &middot; Tor</div>'
-                '<div class="infra-scan-title">Bulk Infrastructure Scan</div>'
-                '<div class="infra-scan-sub">Checks every origin and hop IP across all loaded emails against '
-                'VPN / datacenter ranges and Tor exit lists, in one pass. Pick a tab below, then press Scan.</div>'
-                '</div>',
-                unsafe_allow_html=True,
+            _banner_c(
+                "VPN · Datacenter · Tor", "Bulk Infrastructure Scan",
+                "Checks every origin and hop IP across all loaded emails against "
+                "VPN / datacenter ranges and Tor exit lists, in one pass. Pick a tab below, then press Scan.",
+                color="#2fb68e", small=True,
             )
             with st.container(key="seg_infra_scan"):
                 _bulk_infra_view = st.radio(
@@ -12348,7 +12387,7 @@ if active_panel == "Origin & Route":
         if st.session_state.get("nomic_last_hash") == current_evidence_hash or _indexed_now:
             matches = _sem_find(current_evidence_hash, origin, top_k=8, min_score=_sem_min)
             if matches:
-                st.markdown("##### Closest previously analyzed origins (by meaning)")
+                _sec("Closest previously analyzed origins (by meaning)", tone="intel")
                 st.markdown(_sem_headline(matches))
                 _render_polished_table(pd.DataFrame(_sem_rows(matches)))
             else:
@@ -12796,8 +12835,7 @@ if active_panel == "Forensic Report":
     d_center = st.container()
     
     with d_center:
-        st.subheader("Complete Forensic Investigation Dossier")
-        st.caption("Select an email number to view the highly detailed machine forensic analysis and AI threat report together.")
+        _banner("Dossier", "Complete Forensic Investigation Dossier", "Select an email number to view the highly detailed machine forensic analysis and AI threat report together.", tone="rose")
 
         pipeline_active = (
             st.session_state.get("forensic_report_source") == "pipeline"
