@@ -7272,6 +7272,58 @@ st.markdown(
         html body .stApp.stApp.stApp.stApp.stApp .topbar-shell {padding:36px 32px 30px !important; gap:24px 28px !important;}
         html body .stApp.stApp.stApp.stApp.stApp .topbar-subtitle {padding-top:20px !important;}
     }
+
+    /* ==================================================================
+       STAT CARDS v2 -- the chunky boxes, refined. One compact card language
+       for st.metric tiles and the keyed status boxes (VPN masking, network
+       trust, Tor exit): slim accent bar, small tinted mono label, a value
+       sized for reading (not shouting), tone rotating by column.
+       ================================================================== */
+    .stApp.stApp.stApp div[data-testid="stMetric"] {
+        --tone:#2fb68e; padding:12px 16px 12px 18px !important; border-radius:12px !important; min-height:0 !important;
+        border:1px solid rgba(255,255,255,.08) !important;
+        background:radial-gradient(120% 170% at 0% 0%, color-mix(in srgb,var(--tone) 14%,transparent), transparent 62%), linear-gradient(180deg,#121923,#0c1118) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 20px -16px rgba(0,0,0,.9) !important;
+        transition:border-color .2s var(--ease), box-shadow .25s var(--ease), transform .2s var(--ease) !important;
+    }
+    .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4n+1) div[data-testid="stMetric"], .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4n+1) div[data-testid="stMetric"] {--tone:#2fb68e;}
+    .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4n+2) div[data-testid="stMetric"], .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4n+2) div[data-testid="stMetric"] {--tone:#d9a35f;}
+    .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4n+3) div[data-testid="stMetric"], .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4n+3) div[data-testid="stMetric"] {--tone:#8b7cf6;}
+    .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4n+4) div[data-testid="stMetric"], .stApp.stApp.stApp [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4n+4) div[data-testid="stMetric"] {--tone:#e0708c;}
+    .stApp.stApp.stApp div[data-testid="stMetric"]:hover {border-color:color-mix(in srgb,var(--tone) 50%,rgba(255,255,255,.08)) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 14px 24px -16px var(--tone) !important;}
+    .stApp.stApp.stApp div[data-testid="stMetric"]::before {top:12px !important; bottom:12px !important; width:3px !important; background:var(--tone) !important; box-shadow:0 0 12px -1px var(--tone);}
+    .stApp.stApp.stApp div[data-testid="stMetricLabel"], .stApp.stApp.stApp div[data-testid="stMetricLabel"] p {
+        font:700 10.5px/1.2 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase !important; color:var(--tone) !important; margin:0 !important;
+    }
+    .stApp.stApp.stApp div[data-testid="stMetricLabel"] p::before {display:none !important;}
+    .stApp.stApp.stApp div[data-testid="stMetricValue"] {margin-top:7px; line-height:1.18 !important;}
+    .stApp.stApp.stApp div[data-testid="stMetricValue"], .stApp.stApp.stApp div[data-testid="stMetricValue"] > div {
+        font:750 clamp(17px,1.5vw,23px)/1.2 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em !important; color:#f3f6fb !important;
+        white-space:normal !important; overflow:visible !important; text-overflow:clip !important; overflow-wrap:anywhere; font-variant-numeric:tabular-nums;
+    }
+    .stApp.stApp.stApp div[data-testid="stMetricDelta"] {font-size:12px !important; margin-top:3px;}
+
+    /* keyed status boxes in the Origin & Route summary */
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) {
+        position:relative; overflow:hidden; padding:12px 16px 12px 18px !important; border-radius:12px !important; min-height:0 !important;
+        border:1px solid rgba(255,255,255,.08) !important; gap:.25rem !important;
+        background:radial-gradient(120% 170% at 0% 0%, color-mix(in srgb,var(--tone) 12%,transparent), transparent 62%), linear-gradient(180deg,#121923,#0c1118) !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 20px -16px rgba(0,0,0,.9) !important;
+        transition:border-color .2s var(--ease), box-shadow .25s var(--ease) !important;
+    }
+    .stApp.stApp.stApp .st-key-geo_vpn_box {--tone:#8b7cf6;} .stApp.stApp.stApp .st-key-geo_trust_box {--tone:#2fb68e;} .stApp.stApp.stApp .st-key-geo_tor_box {--tone:#d9a35f;}
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box)::before {
+        content:"" !important; display:block !important; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--tone) !important; box-shadow:0 0 12px -1px var(--tone);
+    }
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box):hover {border-color:color-mix(in srgb,var(--tone) 50%,rgba(255,255,255,.08)) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 14px 24px -16px var(--tone) !important;}
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stCaptionContainer"]:first-child,
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stCaptionContainer"]:first-child p {
+        font:700 10.5px/1.2 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase !important; color:var(--tone) !important; margin:0 !important;
+    }
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stMarkdownContainer"] p {font:650 15.5px/1.35 Inter,"Segoe UI",sans-serif !important; color:#f3f6fb !important; margin:0 !important;}
+    .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stVerticalBlock"] {gap:.35rem !important;}
+    /* info strip above the cards: a quiet rail instead of a bar */
+    .stApp.stApp.stApp [data-testid="stAlert"] {border-radius:12px !important;}
     </style>
     """,
     unsafe_allow_html=True,
