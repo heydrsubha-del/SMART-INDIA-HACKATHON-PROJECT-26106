@@ -7672,40 +7672,6 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
-/* ===== MOBILE ONLY: refined nav selection + compact channel cards (desktop untouched) ===== */
-@media (max-width:700px) {
-  /* nav: no box, just icons + label; active = tinted pill behind the icon, coloured icon/label */
-  .stApp .st-key-topnav {margin:6px 0 10px 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important;
-    background:none !important; box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; overflow:hidden !important;}
-  .stApp .st-key-topnav::before, .stApp .st-key-topnav::after {display:none !important;}
-  .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
-  .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {margin-top:0 !important; padding:2px 4px !important; gap:0 !important; align-items:stretch !important; justify-content:space-around !important;
-    -webkit-mask-image:none !important; mask-image:none !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label {flex:1 1 0 !important; min-width:0 !important; padding:8px 4px 6px 4px !important; justify-content:flex-start !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important; letter-spacing:.03em !important; gap:5px !important; font-weight:600 !important; color:#8693a6 !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {flex:0 0 22px; width:22px; height:22px; opacity:.7;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked)::before {
-    top:4px !important; width:54px !important; height:30px !important; margin:0 0 0 -27px !important; border-radius:15px !important;
-    background:color-mix(in srgb, var(--c,#2fb68e) 20%, transparent) !important; border:0 !important; box-shadow:none !important; animation:none !important;
-  }
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {color:var(--c,#2fb68e) !important; font-weight:700 !important; letter-spacing:.03em !important; text-transform:none; font-size:10.5px !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {background-color:var(--c,#2fb68e) !important; opacity:1 !important; transform:none !important; filter:none !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p::before {transform:none !important; filter:none !important;}
-
-  /* channel cards: compact, flat, left accent rail, no ghost watermark */
-  :root {--acq-h:142px;}
-  .acq2 {padding:13px 16px 13px 18px; border-radius:12px; background:linear-gradient(180deg, var(--panel), var(--panel-3));}
-  .acq2::before {top:0; bottom:0; left:0; right:auto; width:3px; height:auto;}
-  .acq2-on::before {width:4px; height:auto;}
-  .acq2-on {box-shadow:none; background:linear-gradient(180deg, color-mix(in srgb, var(--tone) 9%, var(--panel-2)), var(--panel));}
-  .acq2-ghost {display:none;}
-  .acq2-tag, .acq2-state-txt {font-size:9.5px; letter-spacing:.14em;}
-  .acq2-title {margin-top:9px; font-size:16px; line-height:1.2;}
-  .acq2-sub {margin-top:3px; font-size:11.5px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
-  .acq2-chips {gap:5px;}
-  .acq2-chip {font-size:9.5px; padding:4px 7px; border-radius:5px;}
-}
-
 </style>
 """, unsafe_allow_html=True)
 
