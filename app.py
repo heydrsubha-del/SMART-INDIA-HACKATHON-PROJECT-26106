@@ -7700,22 +7700,21 @@ st.markdown(r"""
   html body .stApp.stApp.stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] {
     height:var(--acq-h) !important; border-radius:16px !important;
   }
-  .acq2-nav {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; width:100%; text-align:center;}
+  .acq2-nav {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:100%; text-align:center;}
   .acq2-nav-ic {
-    width:44px; height:44px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:0;
-    color:color-mix(in srgb, var(--tone) 70%, #9aa6b5);
-    background:color-mix(in srgb, var(--tone) 9%, transparent);
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--tone) 24%, transparent);
-    transition:background .25s var(--ease), box-shadow .25s var(--ease), color .2s var(--ease);
+    width:40px; height:40px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:0;
+    color:color-mix(in srgb, var(--tone) 55%, #9aa6b5); background:transparent;
+    transition:transform .3s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease), color .2s var(--ease);
   }
-  .acq2-nav-ic svg {width:22px; height:22px; display:block; flex:none; stroke-width:1.8;}
+  .acq2-nav-ic svg {width:24px; height:24px; display:block; flex:none; margin:0; stroke-width:1.8;}
+  .acq2-blue .acq2-nav-ic svg {transform:translateX(1px);}  /* bolt glyph is optically left-heavy */
   .acq2-nav-lbl {font:700 13px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.01em; color:#93a0b0; white-space:nowrap; transition:color .2s var(--ease);}
   .acq2-nav-tag {font:600 8.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#667282; white-space:nowrap; transition:color .2s var(--ease);}
-  /* active: filled disc with a soft ring and glow, same size and baseline as the idle icon */
+  /* active: raised, filled disc with a dark ring and glow -- same as the top navbar */
   .acq2-on .acq2-nav-ic {
-    color:#08111a;
+    transform:translateY(-18px) scale(1.3); color:#08111a;
     background:linear-gradient(150deg, color-mix(in srgb, var(--tone) 82%, #fff), color-mix(in srgb, var(--tone) 78%, #000));
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 22%, transparent), 0 6px 14px -4px color-mix(in srgb, var(--tone) 60%, transparent);
+    box-shadow:0 0 0 3px #0a1018, 0 0 0 4px color-mix(in srgb, var(--tone) 60%, transparent), 0 8px 18px -4px color-mix(in srgb, var(--tone) 65%, transparent);
   }
   .acq2-on .acq2-nav-lbl {color:var(--tone);}
   .acq2-on .acq2-nav-tag {color:color-mix(in srgb, var(--tone) 70%, #667282);}
