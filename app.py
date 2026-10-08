@@ -2999,81 +2999,139 @@ st.markdown(
         display:none !important;
     }
     .stApp .block-container, .stApp [data-testid="stMainBlockContainer"] {padding-top:2rem !important;}
-    /* ================= TOP BANNER =================
-       Same card language as every stage-card / part-banner in the rest of
-       the app: flat graphite panel, one 1px border, ONE solid accent
-       color on the left edge (not a multi-color top line) -- so this
-       reads as the same design system as the module banners below it,
-       not a separate "hero" treatment. */
+    /* ================= TOP BANNER v2 -- aurora glass =================
+       Same visual language as the data tables: dark glass, a gradient
+       hairline edge (blue at the top-left corner, rose at the bottom-right,
+       quiet between) and the thin multi-colour aurora strip along the top.
+       Replaces the old 150px "hero" (thick cyan left edge, big logo tile,
+       decorative network-globe picture, long subtitle sentence) with a
+       slimmer, calmer header:
+         * mono eyebrow  : brand name in soft blue, platform name muted
+         * title         : 21px, calm weight, no glow
+         * capability row: the old subtitle sentence as small tags, each with
+                           a muted colour dot (same dots as table headers)
+         * right side    : account + system status as quiet outlined chips
+         * background    : a faint dot grid fading in from the right, plus
+                           two very soft colour washes -- technical, not
+                           illustrative.
+       Muted tones only. Phones keep the two-row layout below. */
     .topbar-shell {
-        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px;
-        background:linear-gradient(180deg,var(--panel-2),var(--panel));
-        border:1px solid var(--line-strong); border-left:4px solid var(--cyan); border-radius:var(--r-lg);
-        min-height:150px; padding:28px 32px; margin-top:8px; margin-bottom:20px;
-        box-shadow:0 10px 26px rgba(0,0,0,.26);
-        position:relative; overflow:hidden;
+        position:relative; overflow:hidden; isolation:isolate;
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px 28px;
+        min-height:0; padding:20px 26px 18px; margin-top:8px; margin-bottom:20px;
+        border:1px solid transparent; border-radius:14px;
+        background:
+            radial-gradient(70% 140% at 100% 0%, rgba(91,141,239,.10), transparent 62%) padding-box,
+            radial-gradient(50% 120% at 0% 100%, rgba(139,92,246,.07), transparent 60%) padding-box,
+            linear-gradient(180deg,#111b2d,#0b1321) padding-box,
+            linear-gradient(135deg,rgba(91,141,239,.6),rgba(148,163,184,.13) 34%,rgba(148,163,184,.13) 66%,rgba(224,112,140,.5)) border-box !important;
+        background-origin:border-box !important;
+        background-clip:padding-box, padding-box, padding-box, border-box !important;
+        box-shadow:0 14px 34px -18px rgba(91,141,239,.4), inset 0 1px 0 rgba(255,255,255,.03);
     }
-    /* Network/globe background graphic (image itself set in a small
-       separate <style> tag right before this markup, since the big
-       stylesheet this rule lives in is a raw, non-interpolated string --
-       see _TOPBAR_MAP_SRC). Faded out toward the left with a mask so the
-       banner text on the left stays fully legible and the graphic only
-       reads on the right, same balance as the reference picture. */
+    /* thin aurora strip along the top edge */
+    .topbar-shell::before {
+        content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; pointer-events:none;
+        background:linear-gradient(90deg,#3b82f6 0%,#8b5cf6 28%,#db2777 55%,#f59e0b 78%,#14b8a6 100%);
+        opacity:.9;
+    }
+    /* faint dot grid, fading in from the right (replaces the globe image) */
     .topbar-shell::after {
-        content:""; position:absolute; inset:0;
-        background-repeat:no-repeat; background-position:right center; background-size:cover;
-        -webkit-mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.85) 42%, rgba(0,0,0,1) 100%);
-        mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.85) 42%, rgba(0,0,0,1) 100%);
-        opacity:.55; pointer-events:none; z-index:0;
+        content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+        background-image:radial-gradient(rgba(148,163,184,.22) 1px, transparent 1.2px) !important;
+        background-size:14px 14px !important; background-position:0 0 !important; background-repeat:repeat !important;
+        -webkit-mask-image:linear-gradient(90deg, transparent 38%, #000 100%);
+        mask-image:linear-gradient(90deg, transparent 38%, #000 100%);
+        opacity:.5;
     }
     .topbar-brand, .topbar-status-wrap {position:relative; z-index:1;}
-    .topbar-brand {display:flex; align-items:center; gap:18px; min-width:0; flex:1 1 420px;}
+    .topbar-brand {display:flex; align-items:center; gap:16px; min-width:0; flex:1 1 440px;}
     .topbar-logo {
-        width:52px; height:52px; flex:0 0 52px; border-radius:13px;
-        background:var(--panel-3); border:1px solid var(--line-strong);
-        display:flex; align-items:center; justify-content:center; padding:7px;
+        width:44px; height:44px; flex:0 0 44px; border-radius:12px;
+        background:#0d1522; border:1px solid rgba(148,163,184,.22);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+        display:flex; align-items:center; justify-content:center; padding:6px;
     }
     .topbar-logo img {width:100%; height:100%; object-fit:contain; display:block;}
     .topbar-brand > div:last-child {min-width:0;}
-    .topbar-kicker {font-size:11px; font-weight:800; letter-spacing:1.6px; color:var(--teal); text-transform:uppercase; margin-bottom:5px;}
-    .topbar-title {
-        font-size:24px; font-weight:800; letter-spacing:-.01em; color:#f3f6fb; line-height:1.25;
+    .stApp .topbar-kicker, .stApp .topbar-kicker span {font-family:ui-monospace,"JetBrains Mono",SFMono-Regular,Consolas,monospace !important;}
+    .topbar-kicker {
+        display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin:0 0 7px;
+        font-size:10.5px; font-weight:700; line-height:1.2; letter-spacing:.16em; text-transform:uppercase; color:#7f90a6;
     }
-    .topbar-subtitle {font-size:12.5px; color:var(--muted); line-height:1.55; margin-top:6px; max-width:74ch;}
-    /* Right side: two matching pills -- same shape, same border weight,
-       just different accent colors -- instead of a chip that used to pair
-       an avatar-style circle with a "?" and a separate pill style. */
+    .topbar-kicker .tb-brand {
+        background:linear-gradient(90deg,#8ab4f8,#b6a8f7); -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent; color:transparent;
+    }
+    .topbar-kicker .tb-sep {width:18px; height:1px; background:currentColor; opacity:.45;}
+    .topbar-title {font-size:20px; font-weight:750; letter-spacing:-.012em; color:#eef2f8; line-height:1.25;}
+    /* capability row: a full-width footer strip of the banner, set off by a hairline */
+    .topbar-subtitle {
+        order:3; flex:1 1 100%; position:relative; z-index:1;
+        display:flex; flex-wrap:wrap; gap:6px 22px; margin:0; max-width:none; padding-top:12px;
+        background:linear-gradient(90deg, rgba(148,163,184,.28), rgba(148,163,184,0) 85%) top left / 100% 1px no-repeat;
+        font-size:11.5px; line-height:1.4; color:#8b9bb0;
+    }
+    .topbar-subtitle .tb-tag {display:inline-flex; align-items:center; gap:7px; white-space:nowrap; --tc:#5b8def;}
+    .topbar-subtitle .tb-tag::before {
+        content:""; width:6px; height:6px; border-radius:50%; background:var(--tc);
+        box-shadow:0 0 0 3px rgba(148,163,184,.14);
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--tc) 24%, transparent);
+    }
+    .topbar-subtitle .tb-tag:nth-child(2) {--tc:#8b7cf6;}
+    .topbar-subtitle .tb-tag:nth-child(3) {--tc:#38b2a3;}
+    .topbar-subtitle .tb-tag:nth-child(4) {--tc:#e0a050;}
+    .topbar-subtitle .tb-tag:nth-child(5) {--tc:#e0708c;}
+    .topbar-subtitle .tb-tag:nth-child(6) {--tc:#8fa1b6;}
+    /* right side: quiet outlined chips (same shape, same border weight) */
     .topbar-status-wrap {display:flex; align-items:center; gap:10px; flex:0 0 auto;}
     .topbar-account-chip, .topbar-status-pill {
-        display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:650; white-space:nowrap;
-        border-radius:999px; padding:7px 14px;
+        display:flex; align-items:center; gap:9px; font-size:11.5px; font-weight:600; white-space:nowrap;
+        border-radius:10px; padding:7px 13px;
+        background:rgba(148,163,184,.06); border:1px solid rgba(148,163,184,.2); color:#cbd6e4;
     }
-    .topbar-account-chip {
-        background:var(--panel-3); border:1px solid var(--line-strong); color:var(--text); max-width:230px;
-    }
-    .topbar-account-chip-empty {color:var(--muted); font-weight:600;}
+    .topbar-account-chip {max-width:240px;}
+    .topbar-account-chip-empty {color:#8b9bb0; font-weight:600;}
     .topbar-account-avatar {
         width:20px; height:20px; border-radius:50%; flex:0 0 20px;
         display:flex; align-items:center; justify-content:center;
         background:var(--brand-gradient); color:#fff; font-weight:800; font-size:10.5px;
     }
     .topbar-account-email {overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .topbar-status-pill {color:#b9d2c3; background:rgba(111,174,140,.1); border:1px solid rgba(111,174,140,.3);}
-    .topbar-status-dot {width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px rgba(111,174,140,.6); display:inline-block; animation:sbPulse 2.2s ease-in-out infinite;}
+    /* calmer "connected" dot on the account chip (the generic rule that draws it is further down the file) */
+    .stApp .topbar-account-chip:not(.topbar-account-chip-empty)::after {
+        width:6px; height:6px; margin-left:4px; background:#5bbf8a; box-shadow:0 0 0 3px rgba(91,191,138,.18);
+    }
+    .topbar-status-pill {color:#bfe0cf; background:rgba(91,191,138,.07); border-color:rgba(91,191,138,.3);}
+    .topbar-status-dot {
+        width:7px; height:7px; border-radius:50%; background:#5bbf8a; display:inline-block;
+        box-shadow:0 0 0 3px rgba(91,191,138,.18);
+        animation:tbDot 2.6s ease-in-out infinite;
+    }
+    /* own keyframe: "sbPulse" is defined twice in this file and the later
+       definition (a sidebar-tile glow) is the one that wins, which would
+       turn this 7px dot into a big blurry glow. */
+    @keyframes tbDot {0%,100% {box-shadow:0 0 0 3px rgba(91,191,138,.18);} 50% {box-shadow:0 0 0 6px rgba(91,191,138,.05);}}
     @media (max-width:1000px) {
-        .topbar-shell {padding:22px 20px; min-height:0;}
-        .topbar-subtitle {max-width:none;}
+        .topbar-shell {padding:18px 20px 16px;}
     }
     @media (max-width:640px) {
-        /* Two rows total on a phone: brand row, then one compact row for
-           account + status -- never the 4-5 line stack this used to be. */
-        .topbar-shell {padding:18px 16px; gap:12px; min-height:0;}
-        .topbar-logo {width:40px; height:40px; flex:0 0 40px; border-radius:11px;}
-        .topbar-kicker {font-size:9.5px; letter-spacing:1.2px;}
-        .topbar-title {font-size:17px; line-height:1.3;}
+        /* Two rows on a phone: brand row, then one compact row for
+           account + status. */
+        .topbar-shell {padding:16px 16px 14px; gap:12px; border-radius:12px;}
+        .topbar-logo {width:36px; height:36px; flex:0 0 36px; border-radius:10px; padding:5px;}
+        .topbar-brand {gap:12px;}
+        .topbar-kicker {font-size:9.5px; letter-spacing:.12em; margin-bottom:5px;}
+        .topbar-kicker .tb-sep {display:none;}
+        .topbar-title {font-size:16.5px; line-height:1.3;}
         .topbar-subtitle {display:none;}
-        .topbar-status-wrap {width:100%; justify-content:space-between;}
-        .topbar-account-email {max-width:34vw;}
+        .topbar-status-wrap {width:100%; justify-content:space-between; gap:8px;}
+        /* chip takes whatever width is left (email truncates with an ellipsis)
+           and the status pill stays compact, so the row can never overflow */
+        .topbar-account-chip {flex:1 1 0; min-width:0; max-width:none; padding:7px 11px;}
+        .topbar-account-email {flex:1 1 auto; min-width:0; max-width:none;}
+        .topbar-status-pill {flex:0 0 auto; padding:7px 11px;}
+        .topbar-status-online .tb-hide-sm {display:none;}   /* 'System operational' -> 'operational' */
     }
     @media (prefers-reduced-motion:reduce) {.topbar-status-dot {animation:none !important;}}
 
@@ -7480,15 +7538,10 @@ _acct_avatar_html = (
     f'<span class="topbar-account-avatar">{_acct_initial}</span>' if _acct_email else ""
 )
 
-# Just the background-image url() for .topbar-shell::after, in its own
-# tiny interpolated <style> tag -- the main stylesheet above is one large
-# raw (non-f) string, so a variable like _TOPBAR_MAP_SRC can't be dropped
-# into it directly without escaping every literal `{ }` in that entire
-# block. Isolating just this one rule here avoids that risk entirely.
-st.markdown(
-    f"<style>.topbar-shell::after {{background-image:url('{_TOPBAR_MAP_SRC}');}}</style>",
-    unsafe_allow_html=True,
-)
+# (The banner's network-globe background image used to be injected here as a
+# tiny interpolated <style> tag. The redesigned banner uses a CSS dot grid
+# instead, so the image -- and its base64 payload on every rerun -- is gone.
+# _TOPBAR_MAP_SRC above is now unused and can be deleted whenever convenient.)
 
 # Header redesign: top banner + module/section headers share the .acq2 card language
 st.markdown(r"""
@@ -7537,9 +7590,8 @@ st.markdown(
       <div class="topbar-brand">
         <div class="topbar-logo"><img src="{_ALGORITHMISTIC_LOGO_SRC}" alt="Algorithmistic logo"/></div>
         <div>
-          <div class="topbar-kicker">ALGORITHMISTIC · Forensic Intelligence Platform</div>
+          <div class="topbar-kicker"><span class="tb-brand">ALGORITHMISTIC</span><span class="tb-sep"></span><span>Forensic Intelligence Platform</span></div>
           <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
-          <div class="topbar-subtitle">Evidence acquisition · header authentication · IOC intelligence · origin tracing · campaign correlation · local AI assessment</div>
         </div>
       </div>
       <div class="topbar-status-wrap">
@@ -7548,9 +7600,10 @@ st.markdown(
         </div>
         <div class="topbar-status-pill">
           <span class="topbar-status-dot"></span>
-          <span class="topbar-status-online">System operational</span>
+          <span class="topbar-status-online"><span class="tb-hide-sm">System </span>operational</span>
         </div>
       </div>
+      <div class="topbar-subtitle"><span class="tb-tag">Evidence acquisition</span><span class="tb-tag">Header authentication</span><span class="tb-tag">IOC intelligence</span><span class="tb-tag">Origin tracing</span><span class="tb-tag">Campaign correlation</span><span class="tb-tag">Local AI assessment</span></div>
     </div>""",
     unsafe_allow_html=True,
 )
