@@ -8508,22 +8508,33 @@ st.markdown(_SUMMARY_CARD_CSS, unsafe_allow_html=True)
 
 _STAT_TILE_CSS = """
 <style>
-/* Dashboard stat tiles (.is-card): glass card, tone accent line on top, glowing label dot. */
-html body .stApp.stApp.stApp.stApp.stApp .inbox-stats {gap:14px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card {
-  position:relative; overflow:hidden; border-radius:14px !important; padding:17px 22px 18px 22px !important;
-  border:1px solid rgba(148,163,184,.17) !important; border-left-width:1px !important;
-  background:radial-gradient(90% 140% at 100% 0%, color-mix(in srgb, var(--tone) 10%, transparent), transparent 65%), linear-gradient(180deg,#131b27 0%,#0d131b 100%) !important;
-  box-shadow:0 12px 28px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04) !important;
-  transition:border-color .2s ease, transform .2s ease !important;
+/* Dashboard stats: the four loose tiles become ONE card with hairline-divided cells (same language as the Origin summary). */
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats {
+  position:relative; display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:0 !important; margin:8px 0 16px 0 !important; overflow:hidden;
+  border-radius:16px; border:1px solid rgba(148,163,184,.17);
+  background:linear-gradient(180deg,#131b27 0%,#0d131b 100%);
+  box-shadow:0 14px 32px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
 }
-html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:hover {border-color:color-mix(in srgb, var(--tone) 45%, rgba(148,163,184,.17)) !important; transform:translateY(-1px);}
-html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card::before {content:"" !important; position:absolute; left:0; right:0; top:0; bottom:auto; width:auto !important; height:2px;
-  background:linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 15%, transparent) 75%, transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; pointer-events:none;
+  background:linear-gradient(90deg, #2fb68e, #d9a35f 34%, #8b7cf6 67%, #e0708c);}
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card {
+  position:relative; overflow:visible; border-radius:0 !important; border:0 !important; border-right:1px solid rgba(255,255,255,.07) !important;
+  padding:20px 24px 20px 24px !important; background:none !important; box-shadow:none !important; transform:none !important;
+  transition:background .2s ease !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:last-child {border-right:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:hover {background:linear-gradient(180deg, color-mix(in srgb, var(--tone) 10%, transparent), transparent) !important; transform:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card::before {display:none !important;}
 html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card span {display:flex !important; align-items:center; gap:9px; font:700 10px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.17em !important;
   color:color-mix(in srgb, var(--tone) 85%, #fff) !important;}
 html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card span::before {content:""; flex:0 0 auto; width:6px; height:6px; border-radius:50%; background:var(--tone); box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 22%, transparent), 0 0 9px var(--tone);}
 html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card b {margin-top:12px !important; font:800 clamp(18px,1.6vw,24px)/1.2 Inter,"Segoe UI",sans-serif !important; color:#fff !important; letter-spacing:-.01em;}
+@media (max-width:900px) {
+  html body .stApp.stApp.stApp.stApp.stApp .inbox-stats {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:nth-child(2) {border-right:0 !important;}
+  html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:nth-child(n+3) {border-top:1px solid rgba(255,255,255,.07) !important;}
+  html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card:nth-child(4) {border-right:0 !important;}
+}
 </style>
 """
 st.markdown(_STAT_TILE_CSS, unsafe_allow_html=True)
