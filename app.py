@@ -7798,15 +7798,17 @@ st.markdown(r"""
 }
 
 
-/* ===== App backdrop: soft teal / blue / copper aurora + faint dot grid instead of flat navy ===== */
+/* ===== App backdrop: teal / blue / copper aurora + dot grid + fine line grid instead of flat navy ===== */
 html body .stApp.stApp [data-testid="stAppViewContainer"] {
   background:
-    radial-gradient(62% 46% at 6% 0%, rgba(47,182,142,.14), transparent 70%),
-    radial-gradient(52% 42% at 100% 6%, rgba(76,141,255,.11), transparent 70%),
-    radial-gradient(58% 46% at 88% 100%, rgba(212,154,102,.11), transparent 72%),
-    radial-gradient(48% 40% at 0% 100%, rgba(34,211,238,.06), transparent 72%),
-    radial-gradient(rgba(255,255,255,.045) 1px, transparent 1.4px) 0 0 / 26px 26px,
-    linear-gradient(180deg, #0b1118 0%, #080b10 100%) !important;
+    radial-gradient(60% 50% at 4% 0%, rgba(47,182,142,.34), transparent 68%),
+    radial-gradient(52% 46% at 100% 4%, rgba(76,141,255,.28), transparent 68%),
+    radial-gradient(58% 50% at 90% 100%, rgba(212,154,102,.26), transparent 70%),
+    radial-gradient(46% 42% at 0% 100%, rgba(34,211,238,.16), transparent 70%),
+    radial-gradient(rgba(255,255,255,.13) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 96px 96px,
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 96px 96px,
+    linear-gradient(180deg, #0d141d 0%, #080c11 100%) !important;
 }
 html body .stApp.stApp [data-testid="stMain"], html body .stApp.stApp [data-testid="stHeader"] {background:transparent !important;}
 @media (min-width:701px) {
