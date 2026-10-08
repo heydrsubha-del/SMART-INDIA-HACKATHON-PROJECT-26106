@@ -4126,6 +4126,7 @@ st.markdown(
     .acq2-chip {font:600 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.06em; padding:5px 8px; border-radius:6px; border:1px solid var(--line-strong); color:#8b96a5; background:rgba(255,255,255,.02);}
     .acq2-ghost {position:absolute; right:-6px; bottom:-14px; width:104px; height:104px; color:var(--tone); opacity:.07; pointer-events:none; transition:opacity .18s var(--ease);}
     .acq2-ghost svg {width:100%; height:100%;}
+    .acq2-nav {display:none;}
 
     .acq2-on {
         border-color:color-mix(in srgb, var(--tone) 60%, var(--line-strong));
@@ -7672,19 +7673,43 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
-/* ===== MOBILE ONLY: compact channel cards (desktop untouched) ===== */
+/* ===== MOBILE ONLY: channel selector as an icon navbar (desktop untouched) ===== */
 @media (max-width:700px) {
-  /* channel cards: slim selector rows (tag + switch, title, chips); description hidden, no watermark */
-  :root {--acq-h:104px;}
-  .acq2 {padding:12px 16px 12px 18px; border-radius:12px; background:linear-gradient(180deg, var(--panel), var(--panel-3));}
-  .acq2::before {top:0; bottom:0; left:0; right:auto; width:3px; height:auto;}
-  .acq2-on::before {width:4px; height:auto;}
-  .acq2-on {box-shadow:none; background:linear-gradient(180deg, color-mix(in srgb, var(--tone) 9%, var(--panel-2)), var(--panel));}
-  .acq2-ghost, .acq2-sub {display:none !important;}
-  .acq2-tag, .acq2-state-txt {font-size:9.5px; letter-spacing:.14em;}
-  .acq2-title {margin-top:8px; font-size:16px; line-height:1.2;}
-  .acq2-chips {gap:5px; margin-top:auto;}
-  .acq2-chip {font-size:9.5px; padding:4px 7px; border-radius:5px;}
+  :root {--acq-h:92px;}
+  /* the two channel columns become one rounded nav pill, side by side */
+  html body .stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) {
+    display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important; gap:4px !important;
+    padding:8px !important; margin-bottom:4px !important;
+    border:1px solid var(--line-strong); border-radius:24px;
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    box-shadow:0 12px 30px -18px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  html body .stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) > :is([data-testid="stColumn"],[data-testid="column"]) {
+    flex:1 1 0 !important; width:auto !important; min-width:0 !important;
+  }
+  /* each card turns into an icon + label nav item */
+  html body .stApp.stApp.stApp .acq2 {
+    height:var(--acq-h); padding:10px 4px; overflow:visible; align-items:center; justify-content:center;
+    border:0 !important; border-radius:18px; transform:none !important; box-shadow:none !important;
+    background:transparent !important;
+  }
+  html body .stApp.stApp.stApp .acq2::before, html body .stApp.stApp.stApp .acq2::after {display:none !important;}
+  html body .stApp.stApp.stApp .acq2 :is(.acq2-top, .acq2-title, .acq2-sub, .acq2-chips, .acq2-ghost) {display:none !important;}
+  .acq2-nav {display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; position:relative; z-index:1; text-align:center;}
+  .acq2-nav-ic {
+    width:42px; height:42px; border-radius:50%; display:grid; place-items:center; color:#8b96a5;
+    border:1px solid transparent; transition:all .22s var(--ease);
+  }
+  .acq2-nav-ic svg {width:22px; height:22px;}
+  .acq2-nav-lbl {font:700 13px/1.1 Inter,"Segoe UI",sans-serif; letter-spacing:.01em; color:#93a0b0; transition:color .2s var(--ease);}
+  .acq2-nav-tag {font:600 8.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#667282; transition:color .2s var(--ease);}
+  .acq2-on .acq2-nav-ic {
+    color:var(--tone); border-color:color-mix(in srgb, var(--tone) 75%, transparent);
+    background:radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--tone) 38%, #0b1218), color-mix(in srgb, var(--tone) 14%, #0b1218));
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--tone) 12%, transparent), 0 8px 18px -6px color-mix(in srgb, var(--tone) 60%, transparent);
+  }
+  .acq2-on .acq2-nav-lbl {color:var(--tone);}
+  .acq2-on .acq2-nav-tag {color:color-mix(in srgb, var(--tone) 70%, #667282);}
 }
 
 </style>
@@ -9229,7 +9254,7 @@ if active_panel == "Dashboard":
     BOLT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>'
     UPLOAD_SVG = '<svg viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M12 12.5v5.5M9.2 15.2h5.6"/></svg>'
 
-    def _acq_card(tone, tag, title, sub, chips, svg, active):
+    def _acq_card(tone, tag, title, sub, chips, svg, active, short="", ch=""):
         _chips = "".join(f'<span class="acq2-chip">{c}</span>' for c in chips)
         return (
             f'<div class="acq2 acq2-{tone} {"acq2-on" if active else ""}">'
@@ -9240,6 +9265,8 @@ if active_panel == "Dashboard":
             f'<div class="acq2-sub">{sub}</div>'
             f'<div class="acq2-chips">{_chips}</div>'
             f'<div class="acq2-ghost">{svg}</div>'
+            f'<div class="acq2-nav"><span class="acq2-nav-ic">{svg}</span>'
+            f'<span class="acq2-nav-lbl">{short}</span><span class="acq2-nav-tag">{ch}</span></div>'
             f'</div>'
         )
 
@@ -9247,7 +9274,8 @@ if active_panel == "Dashboard":
         st.markdown(
             _acq_card("blue", "Channel A &middot; Live", "Live IMAP mailbox interceptor",
                       "Connects straight to the mailbox and pulls messages in real time.",
-                      ["Read-only", "IMAP over SSL"], BOLT_SVG, input_mode == _LIVE_OPT),
+                      ["Read-only", "IMAP over SSL"], BOLT_SVG, input_mode == _LIVE_OPT,
+                      short="Live IMAP", ch="Channel A"),
             unsafe_allow_html=True,
         )
         if st.button("Use live IMAP mailbox interceptor", key="acq_pick_live", use_container_width=True):
@@ -9257,7 +9285,8 @@ if active_panel == "Dashboard":
         st.markdown(
             _acq_card("copper", "Channel B &middot; Batch", "Evidence file upload",
                       "Analyse saved evidence offline, one message or a whole export.",
-                      [".eml", ".txt", ".csv"], UPLOAD_SVG, input_mode == _UPLOAD_OPT),
+                      [".eml", ".txt", ".csv"], UPLOAD_SVG, input_mode == _UPLOAD_OPT,
+                      short="Evidence", ch="Channel B"),
             unsafe_allow_html=True,
         )
         if st.button("Use evidence file upload", key="acq_pick_upload", use_container_width=True):
