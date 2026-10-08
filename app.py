@@ -7898,28 +7898,6 @@ st.markdown(r"""
   .stApp.stApp.stApp .sec-head .sh-title {font:800 17px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
   .stApp.stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(236,243,250,.72); max-width:90ch;}
 
-  /* two-option toggles = quiet neutral segmented control, accent only as a thin underline on the active segment */
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] p {
-    font:600 10px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#8793a5 !important;
-  }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] {
-    gap:4px !important; padding:4px !important; border-radius:12px !important;
-    background:#0c1219 !important; border:1px solid rgba(255,255,255,.09) !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
-  }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {
-    justify-content:center !important; padding:9px 20px !important; border-radius:9px !important; gap:0 !important;
-    color:#8f9bab !important; background:transparent !important; border:0 !important; box-shadow:none !important;
-  }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:13px !important; font-weight:600 !important; letter-spacing:.01em !important;}
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label > div:not(:has(p)):not(:has([data-testid="stMarkdownContainer"])), .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {display:none !important;}
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {background:rgba(255,255,255,.04) !important; color:#e8edf4 !important;}
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
-    background:rgba(255,255,255,.07) !important; color:#fff !important;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), inset 0 -2px 0 var(--seg) !important;
-  }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#fff !important; font-weight:650 !important;}
-
   /* tables */
   .stApp.stApp.stApp .polished-table-wrap {
     border:1px solid color-mix(in srgb, #2fb68e 30%, #232d3b) !important; border-radius:18px !important;
@@ -7937,6 +7915,47 @@ st.markdown(r"""
   .stApp.stApp.stApp table.polished-table tbody tr:hover {background:linear-gradient(90deg, color-mix(in srgb, #2fb68e 12%, transparent), rgba(148,163,184,0) 88%) !important;}
   .stApp.stApp.stApp table.polished-table tbody tr:hover td:first-child {background:linear-gradient(180deg,#2fb68e,#38b2c8) left center / 3px 62% no-repeat !important;}
 }
+/* two-option toggles: neutral segmented control at every width */
+/* two-option toggles = quiet neutral segmented control, accent only as a thin underline on the active segment */
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] p {
+  font:600 10px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#8793a5 !important;
+}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] {
+  gap:4px !important; padding:4px !important; border-radius:12px !important;
+  background:#0c1219 !important; border:1px solid rgba(255,255,255,.09) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {
+  justify-content:center !important; padding:9px 20px !important; border-radius:9px !important; gap:0 !important;
+  color:#8f9bab !important; background:transparent !important; border:0 !important; box-shadow:none !important;
+}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:13px !important; font-weight:600 !important; letter-spacing:.01em !important;}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label > div:not(:has(p)):not(:has([data-testid="stMarkdownContainer"])), .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {display:none !important;}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {background:rgba(255,255,255,.04) !important; color:#e8edf4 !important;}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+  background:rgba(255,255,255,.07) !important; color:#fff !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), inset 0 -2px 0 var(--seg) !important;
+}
+.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#fff !important; font-weight:650 !important;}
+
+
+/* primary / scan buttons: one calm, premium look at every width */
+.stApp.stApp.stApp [data-testid="stBaseButton-primary"], .stApp.stApp.stApp button[kind="primary"] {
+  min-height:46px !important; padding:0 22px !important; border-radius:12px !important;
+  border:1px solid rgba(255,255,255,.20) !important;
+  background:linear-gradient(180deg,#32bf98 0%,#1d8568 100%) !important; color:#fff !important;
+  font:650 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.015em !important; text-shadow:0 1px 1px rgba(0,0,0,.25);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26), 0 10px 22px -14px rgba(47,182,142,.75) !important;
+  transition:filter .18s var(--ease), transform .18s var(--ease), box-shadow .2s var(--ease) !important;
+}
+.stApp.stApp.stApp [data-testid="stBaseButton-primary"]:hover, .stApp.stApp.stApp button[kind="primary"]:hover {filter:brightness(1.08); transform:translateY(-1px); border-color:rgba(255,255,255,.34) !important;}
+.stApp.stApp.stApp [data-testid="stBaseButton-primary"]:active, .stApp.stApp.stApp button[kind="primary"]:active {transform:translateY(0); filter:brightness(.96);}
+.stApp.stApp.stApp [data-testid="stBaseButton-primary"] p, .stApp.stApp.stApp button[kind="primary"] p {font:inherit !important; color:#fff !important; margin:0 !important;}
+@media (max-width:700px) {
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {padding:9px 14px !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:12.5px !important;}
+}
+
 @media (min-width:701px) and (max-width:900px) {
   .stApp.stApp.stApp .sec-head .sh-main {max-width:100%; clip-path:none; padding-right:22px;}
 }
