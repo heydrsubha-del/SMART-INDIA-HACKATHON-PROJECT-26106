@@ -7771,36 +7771,50 @@ st.markdown(r"""
   .stApp.stApp .st-key-evidence_intake_card .intake-limit {text-align:center;}
 }
 
-/* ===== DESKTOP / TABLET ONLY: modern glass look for the Channel A / B mode cards (phones use the nav tiles) ===== */
+/* ===== DESKTOP / TABLET ONLY: Channel A / B mode cards -- icon disc (same as the phone nav) + glass card ===== */
 @media (min-width:701px) {
-  :root {--acq-h:140px;}
-  .stApp.stApp .acq2 {
-    padding:20px 24px 18px 24px; border-radius:18px; border:1px solid rgba(255,255,255,.075);
-    background:linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 55%), linear-gradient(180deg, var(--panel), var(--panel-3));
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px -18px rgba(0,0,0,.75);
+  :root {--acq-h:136px;}
+  .stApp.stApp.stApp .acq2 {
+    padding:20px 26px 18px 104px; border-radius:20px; border:1px solid rgba(255,255,255,.08);
+    background:linear-gradient(160deg, rgba(255,255,255,.055), rgba(255,255,255,.01) 55%), linear-gradient(180deg, var(--panel), var(--panel-3));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 32px -20px rgba(0,0,0,.8);
   }
-  .stApp.stApp .acq2::before {left:24px; right:auto; width:38px; height:3px; border-radius:0 0 4px 4px; background:rgba(255,255,255,.14);}
-  .stApp.stApp .acq2-tag, .stApp.stApp .acq2-state-txt {font-size:10px; letter-spacing:.16em;}
-  .stApp.stApp .acq2-sw {width:36px; height:20px; background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14);}
-  .stApp.stApp .acq2-sw i {width:14px; height:14px; top:2px; left:2px; background:#8a95a4;}
-  .stApp.stApp .acq2-title {margin-top:12px; font:700 19px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.015em;}
-  .stApp.stApp .acq2-sub {margin-top:5px; font-size:12.5px; color:#8793a2;}
-  .stApp.stApp .acq2-chips {gap:7px;}
-  .stApp.stApp .acq2-chip {padding:5px 11px; border-radius:999px; border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.035); font-size:10.5px; letter-spacing:.05em;}
-  .stApp.stApp .acq2-ghost {right:-10px; bottom:-20px; width:124px; height:124px; opacity:.05;}
-  .stApp.stApp .acq2-on {
-    border-color:color-mix(in srgb, var(--tone) 50%, rgba(255,255,255,.08));
+  .stApp.stApp.stApp .acq2::before {left:0; right:0; top:0; width:auto; height:2px; border-radius:0; background:transparent;}
+  /* icon disc: reuse the phone nav icon, vertically centred on the left */
+  .stApp.stApp.stApp .acq2 .acq2-nav {display:block !important; position:absolute; left:26px; top:50%; transform:translateY(-50%); width:auto; z-index:2;}
+  .stApp.stApp.stApp .acq2 .acq2-nav-lbl, .stApp.stApp.stApp .acq2 .acq2-nav-tag {display:none !important;}
+  .stApp.stApp.stApp .acq2 .acq2-nav-ic {
+    width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:0;
+    color:color-mix(in srgb, var(--tone) 78%, #9aa6b5); background:color-mix(in srgb, var(--tone) 10%, transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--tone) 28%, transparent);
+    transition:background .25s var(--ease), box-shadow .25s var(--ease), color .2s var(--ease);
+  }
+  .stApp.stApp.stApp .acq2 .acq2-nav-ic svg {width:26px; height:26px; display:block; flex:none; margin:0; stroke-width:1.7;}
+  .stApp.stApp.stApp .acq2-blue .acq2-nav-ic svg {transform:translateX(1px);}
+  .stApp.stApp.stApp .acq2-ghost {display:none !important;}
+  .stApp.stApp.stApp .acq2-tag, .stApp.stApp.stApp .acq2-state-txt {font-size:10px; letter-spacing:.16em;}
+  .stApp.stApp.stApp .acq2-sw {width:36px; height:20px; background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14);}
+  .stApp.stApp.stApp .acq2-sw i {width:14px; height:14px; top:2px; left:2px; background:#8a95a4;}
+  .stApp.stApp.stApp .acq2-title {margin-top:12px; font:700 19px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.015em;}
+  .stApp.stApp.stApp .acq2-sub {margin-top:5px; font-size:12.5px; color:#8793a2;}
+  .stApp.stApp.stApp .acq2-chips {gap:7px;}
+  .stApp.stApp.stApp .acq2-chip {padding:5px 11px; border-radius:999px; border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.035); font-size:10.5px; letter-spacing:.05em;}
+  .stApp.stApp.stApp .acq2-on {
+    border-color:color-mix(in srgb, var(--tone) 52%, rgba(255,255,255,.08));
     background:
       radial-gradient(80% 140% at 100% 0%, color-mix(in srgb, var(--tone) 17%, transparent) 0%, transparent 64%),
-      linear-gradient(160deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 55%),
+      linear-gradient(160deg, rgba(255,255,255,.055), rgba(255,255,255,.01) 55%),
       linear-gradient(180deg, var(--panel-2), var(--panel));
-    box-shadow:0 0 0 1px color-mix(in srgb, var(--tone) 16%, transparent), 0 20px 42px -24px color-mix(in srgb, var(--tone) 60%, transparent), inset 0 1px 0 rgba(255,255,255,.07);
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--tone) 16%, transparent), 0 22px 44px -24px color-mix(in srgb, var(--tone) 60%, transparent), inset 0 1px 0 rgba(255,255,255,.07);
   }
-  .stApp.stApp .acq2-on::before {height:3px; background:var(--tone); box-shadow:0 2px 12px color-mix(in srgb, var(--tone) 80%, transparent);}
-  .stApp.stApp .acq2-on .acq2-sw {background:color-mix(in srgb, var(--tone) 38%, #12171f); border-color:color-mix(in srgb, var(--tone) 70%, transparent);}
-  .stApp.stApp .acq2-on .acq2-sw i {left:18px; background:var(--tone); box-shadow:0 0 8px color-mix(in srgb, var(--tone) 70%, transparent);}
-  .stApp.stApp .acq2-on .acq2-chip {border-color:color-mix(in srgb, var(--tone) 38%, transparent); background:color-mix(in srgb, var(--tone) 10%, transparent);}
-  .stApp.stApp .acq2-on .acq2-ghost {opacity:.1;}
+  .stApp.stApp.stApp .acq2-on::before {background:linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent) 85%);}
+  .stApp.stApp.stApp .acq2-on .acq2-nav-ic {
+    color:#08111a; background:linear-gradient(150deg, color-mix(in srgb, var(--tone) 82%, #fff), color-mix(in srgb, var(--tone) 78%, #000));
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--tone) 20%, transparent), 0 10px 22px -6px color-mix(in srgb, var(--tone) 65%, transparent);
+  }
+  .stApp.stApp.stApp .acq2-on .acq2-sw {background:color-mix(in srgb, var(--tone) 38%, #12171f); border-color:color-mix(in srgb, var(--tone) 70%, transparent);}
+  .stApp.stApp.stApp .acq2-on .acq2-sw i {left:18px; background:var(--tone); box-shadow:0 0 8px color-mix(in srgb, var(--tone) 70%, transparent);}
+  .stApp.stApp.stApp .acq2-on .acq2-chip {border-color:color-mix(in srgb, var(--tone) 38%, transparent); background:color-mix(in srgb, var(--tone) 10%, transparent);}
 }
 
 </style>
