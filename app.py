@@ -7769,11 +7769,6 @@ st.markdown(r"""
   .stApp.stApp .st-key-evidence_intake_card .intake-sub {margin:12px auto 0 auto;}
   .stApp.stApp .st-key-evidence_intake_card .intake-meta {justify-content:center;}
   .stApp.stApp .st-key-evidence_intake_card .intake-limit {text-align:center;}
-
-/* phones: Evidence intake keeps the compact original look; card wrapper adds no extra chrome */
-@media (max-width:700px) {
-  .stApp .st-key-evidence_intake_card {display:flex !important; flex-direction:column; gap:0 !important; padding:0 !important; margin:0 !important; border:0 !important; background:none !important; box-shadow:none !important;}
-  .stApp .st-key-evidence_intake_card > * {margin:0 !important; width:100% !important;}
 }
 
 /* ===== DESKTOP / TABLET ONLY: modern glass look for the Channel A / B mode cards (phones use the nav tiles) ===== */
@@ -7806,7 +7801,6 @@ st.markdown(r"""
   .stApp.stApp .acq2-on .acq2-sw i {left:18px; background:var(--tone); box-shadow:0 0 8px color-mix(in srgb, var(--tone) 70%, transparent);}
   .stApp.stApp .acq2-on .acq2-chip {border-color:color-mix(in srgb, var(--tone) 38%, transparent); background:color-mix(in srgb, var(--tone) 10%, transparent);}
   .stApp.stApp .acq2-on .acq2-ghost {opacity:.1;}
-}
 }
 
 </style>
