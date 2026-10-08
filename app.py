@@ -2922,7 +2922,6 @@ st.markdown(
        the whole app: tabs and buttons read as the same design system
        instead of two different ones that happen to sit near each other. */
     .st-key-topnav .stRadio label:has(input:checked),
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked),
     .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background:linear-gradient(135deg,var(--act-1-top) 0%,var(--act-1-bot) 100%) !important;
         border-color:var(--act-1-border) !important;
@@ -2930,7 +2929,6 @@ st.markdown(
         transform:translateY(-1px) !important;
     }
     .st-key-topnav .stRadio label:has(input:checked) p,
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label:has(input:checked) p,
     .st-key-tech_logs_tabs [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {
         color:#ffffff !important; font-weight:700 !important; letter-spacing:.15px !important;
     }
@@ -3429,26 +3427,7 @@ st.markdown(
        adding visual noise and were also colliding with a native radio
        circle that CSS wasn't fully suppressing), flat single-accent active
        state. Minimal and consistent with every other tab strip in the app. */
-    .st-key-bulk_infra_scan [data-testid="stRadio"] > div {
-        display:flex !important; flex-wrap:nowrap !important; gap:8px !important;
-        background:linear-gradient(180deg,#0c1117,#0a0e13) !important;
-        border:1px solid #2a3444 !important;
-        padding:6px !important;
-        border-radius:var(--r-md) !important;
-    }
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label {
-        flex:1 1 0 !important; justify-content:center !important;
-        display:flex !important; align-items:center !important;
-        text-align:center !important; white-space:nowrap !important;
-        min-height:24px !important;
-        font-size:13px !important; font-weight:700 !important; letter-spacing:.2px !important;
-        padding:12px 16px !important; border-radius:9px !important;
-        border:1px solid transparent !important;
-        transition:background .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
-    }
-    .st-key-bulk_infra_scan [data-testid="stRadio"] label p {
-        font-size:13px !important; font-weight:700 !important; white-space:nowrap !important;
-    }
+    /* (Bulk-infra view toggle now uses the shared seg_ toggle styling below.) */
     /* The Scan buttons themselves used to be identical generic teal
        primary buttons in both tabs -- functionally fine but visually
        interchangeable, giving no sense that one drives a VPN/datacenter
@@ -5194,8 +5173,7 @@ st.markdown(
         box-shadow:0 0 0 4px rgba(255,255,255,.10), 0 0 12px 2px var(--seg) !important;
         box-shadow:0 0 0 4px color-mix(in srgb,var(--seg) 22%,transparent), 0 0 12px 2px color-mix(in srgb,var(--seg) 70%,transparent) !important;
     }
-    .stApp .st-key-seg_tech_logs [data-testid="stRadio"] [role="radiogroup"] label,
-    .stApp .st-key-seg_infra_scan [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
+    .stApp .st-key-seg_tech_logs [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
 
 
     /* ==================================================================
