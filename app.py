@@ -7728,15 +7728,15 @@ st.markdown(r"""
     --padx:36px; position:relative; overflow:hidden;
     display:grid !important; grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr); column-gap:0 !important; row-gap:0 !important; align-items:center;
     width:100% !important; max-width:900px !important; margin:14px auto 20px !important; padding:34px 0 30px 0 !important;
-    border-radius:18px !important; border:1px solid rgba(34,211,238,.6) !important;
-    background:radial-gradient(90% 70% at 0% 0%, rgba(34,211,238,.07), transparent 60%), linear-gradient(180deg,#0b1118,#080c12) !important;
-    box-shadow:0 0 0 1px rgba(34,211,238,.18), 0 0 38px -8px rgba(34,211,238,.55), 0 34px 70px -34px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05) !important;
+    border-radius:18px !important; border:1px solid rgba(212,154,102,.6) !important;
+    background:radial-gradient(90% 70% at 0% 0%, rgba(212,154,102,.08), transparent 60%), linear-gradient(180deg,#0b1118,#080c12) !important;
+    box-shadow:0 0 0 1px rgba(212,154,102,.20), 0 0 38px -8px rgba(212,154,102,.50), 0 34px 70px -34px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05) !important;
   }
   .stApp.stApp .st-key-evidence_intake_card > * {grid-column:1; margin:0 var(--padx) !important; min-width:0; position:relative; z-index:1;}
   .stApp.stApp .st-key-evidence_intake_card > *:first-child {
     grid-column:2; grid-row:1 / span 40; margin:-34px 0 -30px 0 !important; padding:0 34px 0 22% !important; align-self:stretch;
     display:flex; flex-direction:column; justify-content:center; text-align:right;
-    background:radial-gradient(90% 60% at 100% 0%, rgba(255,255,255,.14), transparent 60%), linear-gradient(155deg,#0a2f3b 0%,#0d5f72 52%,#12a1b6 100%);
+    background:radial-gradient(90% 60% at 100% 0%, rgba(255,255,255,.14), transparent 60%), linear-gradient(155deg,#2e1b0d 0%,#7a4d27 52%,#c98a50 100%);
     clip-path:polygon(20% 0,100% 0,100% 100%,0 100%); border-radius:0 17px 17px 0;
   }
   .stApp.stApp .st-key-evidence_intake_card .intake-head {display:block; margin:0; padding:0; border:0; background:none; overflow:visible; --tone:#fff;}
@@ -7749,16 +7749,16 @@ st.markdown(r"""
     background:rgba(255,255,255,.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z'/%3E%3Cpath d='M14 3v5h5'/%3E%3Cpath d='M12 12.5v5.5M9.2 15.2h5.6'/%3E%3C/svg%3E") center / 22px no-repeat;
     border:1px solid rgba(255,255,255,.34); box-shadow:0 12px 24px -10px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.4);
   }
-  .stApp.stApp .st-key-evidence_intake_card .intake-sub {margin:12px 0 0 auto; max-width:210px; font-size:12.5px; line-height:1.6; color:rgba(230,251,255,.82);}
+  .stApp.stApp .st-key-evidence_intake_card .intake-sub {margin:12px 0 0 auto; max-width:210px; font-size:12.5px; line-height:1.6; color:rgba(255,243,230,.84);}
   .stApp.stApp .st-key-evidence_intake_card .intake-meta {display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; margin-top:18px;}
-  .stApp.stApp .st-key-evidence_intake_card .intake-chip {color:#e9fbff; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.26); border-radius:999px; padding:5px 10px; font:600 10.5px/1 Inter,sans-serif; letter-spacing:.05em;}
-  .stApp.stApp .st-key-evidence_intake_card .intake-limit {margin:2px 0 0 0; flex-basis:100%; text-align:right; color:rgba(230,251,255,.7);}
-  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"] {min-height:200px !important; border:1.5px dashed rgba(34,211,238,.45) !important; border-radius:14px !important; background:rgba(255,255,255,.02) !important;}
-  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"]:hover {border-color:#22d3ee !important; background:rgba(34,211,238,.06) !important;}
-  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"]::before {background-color:rgba(34,211,238,.12) !important; border-color:rgba(34,211,238,.38) !important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 16l-4-4-4 4'/%3E%3Cpath d='M12 12v9'/%3E%3Cpath d='M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 4 16.3'/%3E%3C/svg%3E") !important;}
+  .stApp.stApp .st-key-evidence_intake_card .intake-chip {color:#fff3e6; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.26); border-radius:999px; padding:5px 10px; font:600 10.5px/1 Inter,sans-serif; letter-spacing:.05em;}
+  .stApp.stApp .st-key-evidence_intake_card .intake-limit {margin:2px 0 0 0; flex-basis:100%; text-align:right; color:rgba(255,243,230,.72);}
+  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"] {min-height:200px !important; border:1.5px dashed rgba(212,154,102,.50) !important; border-radius:14px !important; background:rgba(255,255,255,.02) !important;}
+  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"]:hover {border-color:#d49a66 !important; background:rgba(212,154,102,.07) !important;}
+  .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"]::before {background-color:rgba(212,154,102,.12) !important; border-color:rgba(212,154,102,.40) !important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d49a66' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 16l-4-4-4 4'/%3E%3Cpath d='M12 12v9'/%3E%3Cpath d='M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 4 16.3'/%3E%3C/svg%3E") !important;}
   .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"] button {
     height:44px !important; border-radius:999px !important; border:1px solid rgba(255,255,255,.5) !important; color:#fff !important;
-    background:linear-gradient(180deg,#2fc7da,#0c7a8f) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 24px -14px #22d3ee !important;
+    background:linear-gradient(180deg,#e3ad78,#94592b) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 24px -14px #d49a66 !important;
   }
   .stApp.stApp .st-key-evidence_intake_card section[data-testid="stFileUploaderDropzone"] button:hover {filter:brightness(1.1); border-color:#fff !important;}
 }
@@ -7769,6 +7769,12 @@ st.markdown(r"""
   .stApp.stApp .st-key-evidence_intake_card .intake-sub {margin:12px auto 0 auto;}
   .stApp.stApp .st-key-evidence_intake_card .intake-meta {justify-content:center;}
   .stApp.stApp .st-key-evidence_intake_card .intake-limit {text-align:center;}
+
+/* phones: Evidence intake keeps the compact original look; card wrapper adds no extra chrome */
+@media (max-width:700px) {
+  .stApp .st-key-evidence_intake_card {display:flex !important; flex-direction:column; gap:0 !important; padding:0 !important; margin:0 !important; border:0 !important; background:none !important; box-shadow:none !important;}
+  .stApp .st-key-evidence_intake_card > * {margin:0 !important; width:100% !important;}
+}
 }
 
 </style>
