@@ -8428,35 +8428,35 @@ st.markdown(_HEADER_POLISH_CSS, unsafe_allow_html=True)
 
 _EXPANDER_CSS = """
 <style>
-/* Expanders -> premium cards, keyed to the open page's nav colour. */
+/* Expanders = the same card language as the section headers (.part-banner): slanted tone block, 18px card, panel colour. */
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) {
-  border:1px solid color-mix(in srgb, var(--panel-tone) 20%, #243041) !important; border-left:3px solid var(--panel-tone) !important;
-  border-radius:14px !important; margin:12px 0 !important; overflow:hidden !important;
-  background:linear-gradient(180deg, color-mix(in srgb, var(--panel-tone) 6%, #131a25), #0e141c) !important;
-  box-shadow:0 14px 30px -22px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  position:relative !important; border:1px solid color-mix(in srgb, var(--panel-tone) 34%, var(--line-strong,#313c4b)) !important; border-left-width:1px !important;
+  border-radius:18px !important; margin:14px 0 !important; overflow:hidden !important;
+  background:radial-gradient(60% 150% at 100% 0%, color-mix(in srgb, var(--panel-tone) 9%, transparent), transparent 72%), linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922)) !important;
+  box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb, var(--panel-tone) 8%, transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
   transition:border-color .2s ease, box-shadow .2s ease !important;
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]):hover {
-  border-color:color-mix(in srgb, var(--panel-tone) 42%, #243041) !important; border-left-color:var(--panel-tone) !important;
-  box-shadow:0 16px 34px -20px rgba(0,0,0,.9), 0 0 0 1px color-mix(in srgb, var(--panel-tone) 10%, transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
-}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]):hover {border-color:color-mix(in srgb, var(--panel-tone) 55%, var(--line-strong,#313c4b)) !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary {
-  padding:15px 20px !important; background:transparent !important; border:0 !important; gap:12px !important;
-  font:600 14.5px/1.35 Inter,"Segoe UI",sans-serif !important; letter-spacing:.005em !important; color:#e8eef6 !important;
-  transition:background .2s ease, color .2s ease !important;
+  position:relative !important; isolation:isolate; display:flex !important; align-items:center !important; gap:14px !important;
+  padding:17px 24px !important; background:transparent !important; border:0 !important;
+  font:800 15.5px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important; color:#fff !important;
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary:hover {color:#fff !important; background:linear-gradient(90deg, color-mix(in srgb, var(--panel-tone) 9%, transparent), transparent 75%) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary::before {
+  content:"" !important; position:absolute; left:0; top:0; bottom:0; width:clamp(300px, 46%, 540px); z-index:-1; pointer-events:none;
+  background:linear-gradient(150deg, color-mix(in srgb, var(--panel-tone) 40%, #0a0f18) 0%, color-mix(in srgb, var(--panel-tone) 14%, #0a0f18) 100%);
+  clip-path:polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary > * {position:relative; z-index:1;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary:hover {background:transparent !important; color:#fff !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary p {margin:0 !important; font:inherit !important; color:inherit !important;}
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"], html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary svg {color:var(--panel-tone) !important; fill:var(--panel-tone) !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"] {
   display:inline-flex !important; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;
-  background:color-mix(in srgb, var(--panel-tone) 14%, transparent); border:1px solid color-mix(in srgb, var(--panel-tone) 30%, transparent);
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary {
-  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 20%, #232d3b) !important;
-  background:linear-gradient(90deg, color-mix(in srgb, var(--panel-tone) 12%, transparent), transparent 70%) !important;
-}
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] {padding:18px 24px 22px 24px !important; color:#c2cedb !important; line-height:1.65 !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"], html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary svg {color:#fff !important; fill:#fff !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary {border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 24%, #232d3b) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] {padding:18px 26px 22px 26px !important; color:#c2cedb !important; line-height:1.65 !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] p, html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] li {font-size:13.5px !important; line-height:1.65 !important; color:#c2cedb !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] strong {color:#fff !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] a {color:var(--panel-tone) !important;}
