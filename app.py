@@ -7372,6 +7372,24 @@ st.markdown(
     @media (max-width:700px) {
         .stApp.stApp.stApp.stApp .mb-head {padding:14px 16px 12px 18px;} .stApp.stApp.stApp.stApp .mb-body {margin:2px 10px 12px 10px; padding:14px 8px 14px 14px;}
     }
+
+    /* STAT CARDS v2.1: robust label/value targeting and no clipped text */
+    .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricLabel"], .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricLabel"] *, .stApp.stApp.stApp.stApp [data-testid="stMetric"] label, .stApp.stApp.stApp.stApp [data-testid="stMetric"] label * {
+        font:700 10.5px/1.2 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase !important;
+        color:var(--tone) !important; -webkit-text-fill-color:var(--tone) !important; margin:0 !important; padding:0 !important;
+    }
+    .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricLabel"] p::before {display:none !important;}
+    .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricValue"], .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricValue"] * {
+        font:750 clamp(17px,1.45vw,22px)/1.25 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.01em !important; color:#f3f6fb !important;
+        white-space:normal !important; overflow:visible !important; text-overflow:clip !important; overflow-wrap:anywhere;
+    }
+    .stApp.stApp.stApp.stApp [data-testid="stMetric"] [data-testid="stMetricValue"] {margin-top:8px !important;}
+    .stApp.stApp.stApp.stApp [data-testid="stMetric"] {height:auto !important; min-height:0 !important; gap:0 !important;}
+
+    .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) {overflow:visible !important; padding:13px 16px 15px 18px !important; height:auto !important; min-height:0 !important;}
+    .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) :is([data-testid="stMarkdown"], [data-testid="stMarkdownContainer"], [data-testid="stElementContainer"], [data-testid="stCaptionContainer"]) {margin:0 !important; padding:0 !important; min-height:0 !important;}
+    .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stVerticalBlock"] {gap:8px !important;}
+    .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stMarkdownContainer"] p {line-height:1.4 !important; padding:1px 0 2px 0 !important;}
     </style>
     """,
     unsafe_allow_html=True,
