@@ -8564,6 +8564,30 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_show_form_btn button, html
 </style>
 """
 st.markdown(_MAILBOX_PANEL_CSS, unsafe_allow_html=True)
+
+_SIDEBAR_ACTIVE_CSS = """
+<style>
+/* Sidebar: the open row was being re-skinned by the global green primary-button style (wrong tile, centred text, icon off-grid).
+   Re-assert the intended look: tinted row, tone-gradient icon tile, left-aligned label. */
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] {
+  display:flex !important; align-items:center !important; justify-content:flex-start !important; padding:2px 12px 2px 10px !important; min-height:clamp(28px,4.1vh,38px) !important; height:auto !important;
+  border-radius:12px !important; text-shadow:none !important; filter:none !important; transform:none !important;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--c,#4c8dff) 20%, #0e1522), color-mix(in srgb, var(--c,#4c8dff) 5%, #0b111a)) !important;
+  border:1px solid color-mix(in srgb, var(--c,#4c8dff) 36%, transparent) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px -14px var(--c,#4c8dff) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p {display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:12px !important; width:100% !important; margin:0 !important; padding:0 !important; text-align:left !important; color:#fff !important; font-weight:650 !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]::before {
+  display:block !important; content:"" !important; position:absolute !important; left:10px !important; top:50% !important; bottom:auto !important; width:26px !important; height:26px !important; border-radius:8px !important; border:0 !important;
+  background:linear-gradient(145deg, var(--c,#4c8dff), color-mix(in srgb, var(--c,#4c8dff) 62%, #000)) !important;
+  box-shadow:0 6px 14px -6px var(--c,#4c8dff), inset 0 1px 0 rgba(255,255,255,.3) !important; transform:translateY(-50%) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::before {flex:0 0 26px !important; width:26px !important; height:26px !important; position:relative; z-index:1; background-color:#08111a !important; -webkit-mask-size:15px 15px !important; mask-size:15px 15px !important; -webkit-mask-position:center !important; mask-position:center !important; filter:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"] p::after {margin-left:auto !important; margin-right:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-key-nav_"] button[kind="primary"]:hover {filter:none !important; transform:none !important; border-color:color-mix(in srgb, var(--c,#4c8dff) 55%, transparent) !important;}
+</style>
+"""
+st.markdown(_SIDEBAR_ACTIVE_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
