@@ -7847,6 +7847,52 @@ st.markdown(r"""
   .stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(200,212,226,.72); max-width:90ch;}
 }
 
+/* ===== DESKTOP / TABLET ONLY: flush premium banners + premium message-viewer cards ===== */
+@media (min-width:701px) {
+  .stApp.stApp.stApp .part-banner, .stApp.stApp.stApp .part-banner-sm {padding:0 !important;}
+  .stApp.stApp.stApp .st-key-dash_map_card .part-banner, .stApp.stApp.stApp .st-key-dash_graph_card .part-banner {
+    margin:-16px -18px 16px -18px !important; border:0 !important; border-radius:0 !important; padding:0 !important;
+    border-bottom:1px solid color-mix(in srgb,var(--cc) 24%,#232d3b) !important; background:transparent !important; box-shadow:none !important;
+  }
+  .stApp.stApp.stApp .st-key-dash_map_card .part-banner .pb-main, .stApp.stApp.stApp .st-key-dash_graph_card .part-banner .pb-main {
+    background:linear-gradient(150deg, color-mix(in srgb,var(--cc) 40%,#0a0f18) 0%, color-mix(in srgb,var(--cc) 14%,#0a0f18) 100%);
+  }
+  .stApp.stApp.stApp .st-key-dash_map_card .part-banner::before, .stApp.stApp.stApp .st-key-dash_graph_card .part-banner::before {display:none !important;}
+
+  .stApp.stApp.stApp .mb-card {
+    border-radius:18px; border:1px solid color-mix(in srgb,var(--ac) 30%,#232d3b);
+    box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb,var(--ac) 8%,transparent), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .stApp.stApp.stApp .mb-card::before {display:none !important;}
+  .stApp.stApp.stApp .mb-head {
+    display:flex; flex-wrap:nowrap; align-items:stretch; gap:0; padding:0;
+    background:radial-gradient(60% 150% at 100% 50%, color-mix(in srgb,var(--ac) 10%,transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);
+    border-bottom:1px solid color-mix(in srgb,var(--ac) 24%,#232d3b);
+  }
+  .stApp.stApp.stApp .mb-left {
+    flex:0 1 auto; min-width:260px; max-width:70%; padding:18px 54px 18px 24px;
+    background:linear-gradient(150deg, color-mix(in srgb,var(--ac) 38%,#0a0f18) 0%, color-mix(in srgb,var(--ac) 12%,#0a0f18) 100%);
+    clip-path:polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+  }
+  .stApp.stApp.stApp .mb-kicker {
+    display:inline-flex; align-items:center; padding:6px 11px; border-radius:8px; color:#fff;
+    font:700 10px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.14em; text-transform:uppercase;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .stApp.stApp.stApp .mb-title {margin-top:11px; font:800 20px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+  .stApp.stApp.stApp .mb-sub {margin-top:4px; font:400 12.5px/1.5 Inter,"Segoe UI",sans-serif; color:rgba(236,243,250,.72);}
+  .stApp.stApp.stApp .mb-chips {align-self:center; margin:0 22px 0 auto; gap:8px;}
+  .stApp.stApp.stApp .mb-chip {
+    padding:6px 12px; border-radius:999px; color:#e6edf6; font:600 11px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.04em;
+    background:color-mix(in srgb,var(--ac) 10%,transparent); border:1px solid color-mix(in srgb,var(--ac) 36%,transparent);
+  }
+}
+@media (min-width:701px) and (max-width:900px) {
+  .stApp.stApp.stApp .mb-head {flex-direction:column;}
+  .stApp.stApp.stApp .mb-left {max-width:100%; clip-path:none; padding-right:24px;}
+  .stApp.stApp.stApp .mb-chips {margin:14px 22px 16px 22px; align-self:flex-start;}
+}
+
 /* ===== App backdrop: calm navy with a soft top glow and a fine engineering grid that fades toward the centre ===== */
 html body .stApp.stApp [data-testid="stAppViewContainer"] {
   background:
