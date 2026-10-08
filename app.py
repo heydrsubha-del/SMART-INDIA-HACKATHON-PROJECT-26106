@@ -7898,29 +7898,27 @@ st.markdown(r"""
   .stApp.stApp.stApp .sec-head .sh-title {font:800 17px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
   .stApp.stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(236,243,250,.72); max-width:90ch;}
 
-  /* two-option toggles = glass pill with a filled accent segment */
+  /* two-option toggles = quiet neutral segmented control, accent only as a thin underline on the active segment */
   .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] p {
-    font:700 10px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase !important;
-    color:color-mix(in srgb, var(--seg) 70%, #9aa6b5) !important;
+    font:600 10px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#8793a5 !important;
   }
   .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] {
-    gap:6px !important; padding:5px !important; border-radius:999px !important;
-    background:linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 55%), #0c1219 !important;
-    border:1px solid color-mix(in srgb, var(--seg) 26%, rgba(255,255,255,.08)) !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 28px -18px rgba(0,0,0,.85) !important;
+    gap:4px !important; padding:4px !important; border-radius:12px !important;
+    background:#0c1219 !important; border:1px solid rgba(255,255,255,.09) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
   }
   .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {
-    justify-content:center !important; padding:9px 22px !important; border-radius:999px !important; gap:0 !important; color:#98a4b4 !important;
+    justify-content:center !important; padding:9px 20px !important; border-radius:9px !important; gap:0 !important;
+    color:#8f9bab !important; background:transparent !important; border:0 !important; box-shadow:none !important;
   }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:13px !important; font-weight:650 !important; letter-spacing:.01em !important;}
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {display:none !important;}
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {background:color-mix(in srgb, var(--seg) 9%, transparent) !important; color:#f1f5f9 !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:13px !important; font-weight:600 !important; letter-spacing:.01em !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label > div:not(:has(p)):not(:has([data-testid="stMarkdownContainer"])), .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {display:none !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {background:rgba(255,255,255,.04) !important; color:#e8edf4 !important;}
   .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
-    background:linear-gradient(150deg, color-mix(in srgb, var(--seg) 82%, #fff), color-mix(in srgb, var(--seg) 74%, #000)) !important;
-    border-color:transparent !important; color:#06100d !important;
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--seg) 20%, transparent), 0 8px 18px -8px color-mix(in srgb, var(--seg) 70%, transparent) !important;
+    background:rgba(255,255,255,.07) !important; color:#fff !important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), inset 0 -2px 0 var(--seg) !important;
   }
-  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#06100d !important; font-weight:750 !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#fff !important; font-weight:650 !important;}
 
   /* tables */
   .stApp.stApp.stApp .polished-table-wrap {
