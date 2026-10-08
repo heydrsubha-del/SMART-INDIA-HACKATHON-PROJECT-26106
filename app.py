@@ -7674,22 +7674,23 @@ st.markdown(r"""
 
 /* ===== MOBILE ONLY: refined nav selection + compact channel cards (desktop untouched) ===== */
 @media (max-width:700px) {
-  /* nav: slimmer bar, quieter badge (dark tinted disc + coloured ring/icon instead of a bright glowing blob) */
-  .stApp .st-key-topnav {margin:30px 0 10px 0 !important; border-radius:22px !important; border:1px solid rgba(255,255,255,.06) !important;
-    box-shadow:0 14px 28px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05) !important;}
+  /* nav: no box, just icons + label; active = tinted pill behind the icon, coloured icon/label */
+  .stApp .st-key-topnav {margin:6px 0 10px 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important;
+    background:none !important; box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; overflow:hidden !important;}
+  .stApp .st-key-topnav::before, .stApp .st-key-topnav::after {display:none !important;}
   .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
-  .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {margin-top:-22px !important; padding:28px 14px 8px 14px !important; gap:2px !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label {min-width:72px; padding:10px 10px 4px 10px !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important; letter-spacing:.04em !important; gap:6px !important; font-weight:600 !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {flex:0 0 20px; width:20px; height:20px;}
+  .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {margin-top:0 !important; padding:2px 4px !important; gap:0 !important; align-items:stretch !important; justify-content:space-around !important;
+    -webkit-mask-image:none !important; mask-image:none !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label {flex:1 1 0 !important; min-width:0 !important; padding:8px 4px 6px 4px !important; justify-content:flex-start !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important; letter-spacing:.03em !important; gap:5px !important; font-weight:600 !important; color:#8693a6 !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {flex:0 0 22px; width:22px; height:22px; opacity:.7;}
   .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked)::before {
-    top:-17px !important; width:44px !important; height:44px !important; margin:0 0 0 -22px !important;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--c,#2fb68e) 22%, #111823), color-mix(in srgb, var(--c,#2fb68e) 8%, #0b1119)) !important;
-    border:4px solid var(--bg,#0a0d12) !important;
-    box-shadow:0 0 0 1.5px color-mix(in srgb, var(--c,#2fb68e) 75%, transparent), 0 8px 14px -8px var(--c,#2fb68e) !important;
+    top:4px !important; width:54px !important; height:30px !important; margin:0 0 0 -27px !important; border-radius:15px !important;
+    background:color-mix(in srgb, var(--c,#2fb68e) 20%, transparent) !important; border:0 !important; box-shadow:none !important; animation:none !important;
   }
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {font-weight:700 !important; letter-spacing:.06em !important; text-transform:uppercase; font-size:9.5px !important;}
-  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {background-color:var(--c,#2fb68e) !important; transform:translateY(-14px) scale(1) !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {color:var(--c,#2fb68e) !important; font-weight:700 !important; letter-spacing:.03em !important; text-transform:none; font-size:10.5px !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {background-color:var(--c,#2fb68e) !important; opacity:1 !important; transform:none !important; filter:none !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:hover p::before {transform:none !important; filter:none !important;}
 
   /* channel cards: compact, flat, left accent rail, no ghost watermark */
   :root {--acq-h:142px;}
