@@ -8364,6 +8364,52 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+_PANEL_WIDGET_CSS = """
+<style>
+/* Every control that used Streamlit's stock red now follows the open page's nav colour (--panel-tone). */
+html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] {--seg:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] label:has(input:checked) :is([data-baseweb="radio"] > :first-child, div:empty, span:empty) {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stRadio"]:not(.st-key-topnav [data-testid="stRadio"]) label:has(input:checked) :is([data-baseweb="radio"] > :first-child) {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stCheckbox"] label:has(input:checked) [data-baseweb="checkbox"] > :first-child {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSlider"] [role="slider"] {background-color:var(--panel-tone) !important; box-shadow:0 0 0 4px color-mix(in srgb, var(--panel-tone) 25%, transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSlider"] [data-testid="stSliderThumbValue"], html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSlider"] [data-testid="stSliderThumbValue"] * {color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stProgress"] [role="progressbar"] > div > div {background-color:var(--panel-tone) !important;}
+</style>
+"""
+st.markdown(_PANEL_WIDGET_CSS, unsafe_allow_html=True)
+components.html(
+    r"""
+    <script>
+    (function() {
+        const doc = window.parent.document;
+        function tone() {
+            const app = doc.querySelector('.stApp');
+            const hex = (app ? getComputedStyle(app).getPropertyValue('--panel-tone') : '').trim();
+            const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+            if (!m) return null;
+            const n = parseInt(m[1], 16);
+            return 'rgb(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')';
+        }
+        const re = /(rgba?\([^)]*\))(\s+0%,\s*)\1(\s+[\d.]+%)/;
+        function fix() {
+            const t = tone();
+            if (!t) return;
+            doc.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"] div[style*="gradient"]').forEach(function(el) {
+                const st = el.getAttribute('style') || '';
+                const ns = st.replace(re, t + '$2' + t + '$3');
+                if (ns !== st) el.setAttribute('style', ns);
+            });
+        }
+        try {
+            new MutationObserver(fix).observe(doc.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['style']});
+        } catch (e) {}
+        fix(); setInterval(fix, 500);
+    })();
+    </script>
+    """,
+    height=0,
+)
+
 def _clean_ai_display(text):
     cleaned = []
     for line in str(text or "").splitlines():
