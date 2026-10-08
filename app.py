@@ -7675,38 +7675,47 @@ st.markdown(r"""
 
 /* ===== MOBILE ONLY: channel selector as an icon navbar (desktop untouched) ===== */
 @media (max-width:700px) {
-  :root {--acq-h:92px;}
-  /* the two channel columns become one rounded nav pill, side by side */
-  html body .stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) {
-    display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important; gap:4px !important;
-    padding:8px !important; margin-bottom:4px !important;
-    border:1px solid var(--line-strong); border-radius:24px;
+  :root {--acq-h:84px;}
+  /* one rounded nav pill holding both channels side by side */
+  html body .stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) {
+    display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important; align-items:stretch !important;
+    gap:6px !important; padding:6px !important; margin:0 0 6px 0 !important;
+    border:1px solid var(--line-strong); border-radius:22px; overflow:hidden;
     background:linear-gradient(180deg, var(--panel-2), var(--panel));
     box-shadow:0 12px 30px -18px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04);
   }
-  html body .stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) > :is([data-testid="stColumn"],[data-testid="column"]) {
-    flex:1 1 0 !important; width:auto !important; min-width:0 !important;
+  html body .stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"],[data-testid="column"]) .acq2):not(:has([data-testid="stHorizontalBlock"] .acq2)) > :is([data-testid="stColumn"],[data-testid="column"]) {
+    flex:1 1 0 !important; width:auto !important; min-width:0 !important; height:var(--acq-h);
   }
-  /* each card turns into an icon + label nav item */
-  html body .stApp.stApp.stApp .acq2 {
-    height:var(--acq-h); padding:10px 4px; overflow:visible; align-items:center; justify-content:center;
-    border:0 !important; border-radius:18px; transform:none !important; box-shadow:none !important;
-    background:transparent !important;
+  /* each card = one nav item: icon over label, no frame, no hover/focus artefacts */
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2, html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2:hover, html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2:focus, html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2:focus-within {
+    height:var(--acq-h); padding:8px 4px; margin:0; overflow:hidden; box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border:0 !important; border-radius:16px; outline:none !important; transform:none !important;
+    box-shadow:none !important; background:transparent !important;
   }
-  html body .stApp.stApp.stApp .acq2::before, html body .stApp.stApp.stApp .acq2::after {display:none !important;}
-  html body .stApp.stApp.stApp .acq2 :is(.acq2-top, .acq2-title, .acq2-sub, .acq2-chips, .acq2-ghost) {display:none !important;}
-  .acq2-nav {display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; position:relative; z-index:1; text-align:center;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2::before, html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2::after {display:none !important;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2 :is(.acq2-top, .acq2-title, .acq2-sub, .acq2-chips, .acq2-ghost) {display:none !important;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2.acq2-on, html body .stApp.stApp.stApp.stApp.stApp.stApp .acq2.acq2-on:hover {
+    background:color-mix(in srgb, var(--tone) 9%, transparent) !important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--tone) 30%, transparent) !important;
+  }
+  /* keep the invisible tap target exactly on its tile */
+  html body .stApp.stApp.stApp :is([data-testid="stColumn"],[data-testid="column"]) [class*="st-key-acq_pick_"] {
+    height:var(--acq-h) !important; border-radius:16px !important;
+  }
+  .acq2-nav {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:100%; text-align:center;}
   .acq2-nav-ic {
-    width:42px; height:42px; border-radius:50%; display:grid; place-items:center; color:#8b96a5;
+    width:40px; height:40px; flex:none; border-radius:50%; display:grid; place-items:center; color:#8b96a5;
     border:1px solid transparent; transition:all .22s var(--ease);
   }
-  .acq2-nav-ic svg {width:22px; height:22px;}
-  .acq2-nav-lbl {font:700 13px/1.1 Inter,"Segoe UI",sans-serif; letter-spacing:.01em; color:#93a0b0; transition:color .2s var(--ease);}
-  .acq2-nav-tag {font:600 8.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#667282; transition:color .2s var(--ease);}
+  .acq2-nav-ic svg {width:21px; height:21px; display:block;}
+  .acq2-nav-lbl {font:700 13px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.01em; color:#93a0b0; white-space:nowrap; transition:color .2s var(--ease);}
+  .acq2-nav-tag {font:600 8.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#667282; white-space:nowrap; transition:color .2s var(--ease);}
   .acq2-on .acq2-nav-ic {
-    color:var(--tone); border-color:color-mix(in srgb, var(--tone) 75%, transparent);
-    background:radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--tone) 38%, #0b1218), color-mix(in srgb, var(--tone) 14%, #0b1218));
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--tone) 12%, transparent), 0 8px 18px -6px color-mix(in srgb, var(--tone) 60%, transparent);
+    color:var(--tone); border-color:color-mix(in srgb, var(--tone) 70%, transparent);
+    background:radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--tone) 34%, #0b1218), color-mix(in srgb, var(--tone) 12%, #0b1218));
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--tone) 12%, transparent);
   }
   .acq2-on .acq2-nav-lbl {color:var(--tone);}
   .acq2-on .acq2-nav-tag {color:color-mix(in srgb, var(--tone) 70%, #667282);}
