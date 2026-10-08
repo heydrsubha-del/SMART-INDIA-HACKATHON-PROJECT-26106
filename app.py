@@ -7324,6 +7324,54 @@ st.markdown(
     .stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stVerticalBlock"] {gap:.35rem !important;}
     /* info strip above the cards: a quiet rail instead of a bar */
     .stApp.stApp.stApp [data-testid="stAlert"] {border-radius:12px !important;}
+
+    /* ==================================================================
+       MESSAGE BODY CARD v2 -- same language as the stat cards: slim accent
+       bar, compact single-row header (tinted kicker, title, sub, pill chips),
+       and the text sits in an inset well with real padding instead of
+       running flush to the card edge.
+       ================================================================== */
+    .stApp.stApp.stApp.stApp .mb-card {
+        --ac:#2fb68e; margin:8px 0 18px 0; border-radius:14px; overflow:hidden;
+        border:1px solid rgba(255,255,255,.09);
+        background:radial-gradient(90% 120% at 0% 0%, color-mix(in srgb,var(--ac) 11%,transparent), transparent 55%), linear-gradient(180deg,#121923,#0c1118);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 28px -20px rgba(0,0,0,.9);
+    }
+    .stApp.stApp.stApp.stApp .mb-card::before {display:block !important; content:""; position:absolute; left:0; top:16px; bottom:16px; width:3px; border-radius:0 3px 3px 0; background:var(--ac); box-shadow:0 0 12px -1px var(--ac);}
+    .stApp.stApp.stApp.stApp .mb-head {
+        display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px; padding:16px 22px 14px 24px;
+        background:none; border-bottom:0;
+    }
+    .stApp.stApp.stApp.stApp .mb-left {flex:1 1 auto; min-width:0; max-width:none; padding:0; background:none; clip-path:none;}
+    .stApp.stApp.stApp.stApp .mb-kicker {
+        display:inline-flex; align-items:center; gap:8px; padding:5px 11px 5px 9px; border-radius:999px; color:var(--ac);
+        font:700 10px/1 ui-monospace,"JetBrains Mono",Consolas,monospace; letter-spacing:.16em; text-transform:uppercase;
+        background:color-mix(in srgb,var(--ac) 12%,transparent); border:1px solid color-mix(in srgb,var(--ac) 38%,transparent); box-shadow:none;
+    }
+    .stApp.stApp.stApp.stApp .mb-kicker::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--ac); box-shadow:0 0 8px var(--ac);}
+    .stApp.stApp.stApp.stApp .mb-title {margin-top:11px; font:750 19px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#f3f6fb;}
+    .stApp.stApp.stApp.stApp .mb-sub {margin-top:3px; font:400 12.5px/1.45 Inter,"Segoe UI",sans-serif; color:#8793a5;}
+    .stApp.stApp.stApp.stApp .mb-chips {margin:0; align-self:center; gap:8px;}
+    .stApp.stApp.stApp.stApp .mb-chip {
+        padding:6px 12px; border-radius:999px; color:#dfe7f1; font:600 11px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.03em;
+        background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.12);
+    }
+    .stApp.stApp.stApp.stApp .mb-chip:first-child {color:var(--ac); background:color-mix(in srgb,var(--ac) 10%,transparent); border-color:color-mix(in srgb,var(--ac) 34%,transparent);}
+    .stApp.stApp.stApp.stApp .mb-body {
+        margin:2px 16px 16px 16px; padding:16px 10px 16px 20px; border-radius:11px; background:#080d13;
+        border:1px solid rgba(255,255,255,.07); box-shadow:inset 0 1px 6px rgba(0,0,0,.45);
+        font:400 13px/1.7 'JetBrains Mono','SFMono-Regular',Consolas,monospace; color:#d3dae5; scrollbar-gutter:stable;
+        scrollbar-width:thin; scrollbar-color:color-mix(in srgb,var(--ac) 60%,#0b1017) transparent;
+    }
+    .stApp.stApp.stApp.stApp .mb-body::-webkit-scrollbar {width:12px;}
+    .stApp.stApp.stApp.stApp .mb-body::-webkit-scrollbar-track {background:transparent; margin:8px 0;}
+    .stApp.stApp.stApp.stApp .mb-body::-webkit-scrollbar-thumb {background:color-mix(in srgb,var(--ac) 55%,#0b1017); border:3px solid #080d13; border-radius:10px; opacity:1;}
+    .stApp.stApp.stApp.stApp .mb-body::-webkit-scrollbar-thumb:hover {background:var(--ac);}
+    .stApp.stApp.stApp.stApp .mb-body::-webkit-scrollbar-corner {background:transparent;}
+    .stApp.stApp.stApp.stApp .mb-body:focus-visible {box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ac) 70%,transparent), 0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent);}
+    @media (max-width:700px) {
+        .stApp.stApp.stApp.stApp .mb-head {padding:14px 16px 12px 18px;} .stApp.stApp.stApp.stApp .mb-body {margin:2px 10px 12px 10px; padding:14px 8px 14px 14px;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
