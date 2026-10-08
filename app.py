@@ -8506,6 +8506,59 @@ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-ge
 """
 st.markdown(_SUMMARY_CARD_CSS, unsafe_allow_html=True)
 
+_RIGHT_DOCK_CSS = """
+<style>
+/* Right dock redesign: split header + ONE combined card with hairline-divided cells
+   (same material as the Origin summary card). */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane {
+  --tone:var(--panel-tone); position:relative; overflow:hidden !important; padding:0 !important; gap:0 !important;
+  border-radius:18px !important; border:1px solid color-mix(in srgb, var(--panel-tone) 30%, #232d3b) !important;
+  background:linear-gradient(180deg,#101822,#0b1017) !important;
+  box-shadow:0 16px 36px -22px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane::before {content:""; position:absolute; left:0; right:0; top:0; height:2px; z-index:3; pointer-events:none;
+  background:linear-gradient(90deg, var(--panel-tone), color-mix(in srgb, var(--panel-tone) 20%, transparent) 70%, transparent);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stVerticalBlock"] {gap:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stMarkdown"], html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stMarkdownContainer"] {margin:0 !important;}
+/* header row = first columns block */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:first-child,
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-child {
+  background:radial-gradient(70% 170% at 100% 50%, color-mix(in srgb, var(--panel-tone) 10%, transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);
+  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 22%, #232d3b);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type {gap:0 !important; align-items:center !important; flex-wrap:nowrap !important;
+  background:radial-gradient(70% 170% at 100% 50%, color-mix(in srgb, var(--panel-tone) 10%, transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);
+  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 22%, #232d3b);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type > [data-testid="stColumn"]:last-child {flex:0 0 52px !important; min-width:0 !important; padding-right:12px;}
+.rd2-head {position:relative; padding:0;}
+.rd2-left {display:inline-block; padding:16px 44px 14px 20px; clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);
+  background:linear-gradient(135deg, color-mix(in srgb, var(--lv) 30%, #0d131b), color-mix(in srgb, var(--lv) 8%, #0d131b));}
+.rd2-kicker {display:inline-flex; align-items:center; gap:9px; font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:color-mix(in srgb, var(--panel-tone) 82%, #fff);}
+.rd2-kicker::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--panel-tone); box-shadow:0 0 0 3px color-mix(in srgb, var(--panel-tone) 24%, transparent), 0 0 10px var(--panel-tone);}
+.rd2-title {display:flex; align-items:baseline; gap:12px; margin-top:8px; font:800 21px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
+.rd2-lvl {color:var(--lv);} .rd2-score {color:#fff; font-size:15px; font-weight:700;} .rd2-score small {color:#8fa1b5; font-weight:500; font-size:12px;}
+.rd2-gauge {height:3px; background:rgba(255,255,255,.07);} .rd2-gauge i {display:block; height:100%; background:var(--lv); box-shadow:0 0 10px var(--lv);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button {min-height:30px !important; height:30px; padding:0 !important; border-radius:9px !important; background:rgba(255,255,255,.05) !important; border:1px solid rgba(255,255,255,.1) !important; color:#c6d3e2 !important;}
+/* copilot flattened into the card */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane .st-key-copilot_panel {border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; margin:0 !important; padding:14px 18px !important; border-bottom:1px solid rgba(255,255,255,.07) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane .panel-card-head {margin:0 !important; padding:12px 18px 0 18px !important; background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; clip-path:none !important;}
+/* sections */
+.rd2-sec {padding:13px 18px 9px 18px; border-top:1px solid rgba(255,255,255,.07); font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:color-mix(in srgb, var(--panel-tone) 75%, #fff);}
+.rd2-tiles {display:grid; grid-template-columns:1fr 1fr; border-top:1px solid rgba(255,255,255,.07);}
+.rd2-tile {padding:14px 18px; display:flex; flex-direction:column; gap:3px; min-width:0; border-right:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07);}
+.rd2-tile:nth-child(2n) {border-right:0;} .rd2-tile:nth-last-child(-n+2) {border-bottom:0;}
+.rd2-tile span {font:600 10px/1.2 Inter,sans-serif; letter-spacing:.1em; text-transform:uppercase; color:#8fa1b5;}
+.rd2-tile b {font:800 22px/1.2 Inter,"Segoe UI",sans-serif; color:var(--c); letter-spacing:-.01em;}
+.rd2-tile i {font:normal 600 9px/1.3 ui-monospace,Consolas,monospace; letter-spacing:.08em; color:#6f8196; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rd2-kv {border-top:1px solid rgba(255,255,255,.07);}
+.rd2-row {display:flex; justify-content:space-between; gap:14px; padding:9px 18px; border-bottom:1px solid rgba(255,255,255,.05); font:400 12.5px/1.4 Inter,sans-serif;}
+.rd2-row:last-child {border-bottom:0;}
+.rd2-row span {color:#8fa1b5; flex:0 0 auto;} .rd2-row b {color:#e8eef6; font-weight:600; text-align:right; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rd2-sigs {border-top:1px solid rgba(255,255,255,.07); padding:6px 18px 14px 18px;}
+.rd2-empty {padding:10px 0; color:#6f8196; font-size:12px;}
+</style>
+"""
+st.markdown(_RIGHT_DOCK_CSS, unsafe_allow_html=True)
+
 _STAT_TILE_CSS = """
 <style>
 /* Dashboard stats: the four loose tiles become ONE card with hairline-divided cells (same language as the Origin summary). */
@@ -11509,15 +11562,17 @@ if active_panel == "Dashboard":
         if col_right is not None:
             with col_right:
                 with st.container(border=True, key="right_summary_pane"):
-                    _dock_h_l, _dock_h_r = st.columns([4.2, 1])
+                    _rd_lvl = str(result.get("level", "UNKNOWN")).upper()
+                    _rd_col = _LEVEL_MARKER_COLORS.get(_rd_lvl, "#8b96a5")
+                    _rd_score = float(result.get("score", 0) or 0)
+                    _dock_h_l, _dock_h_r = st.columns([5, 1])
                     with _dock_h_l:
-                        _rd_lvl = str(result.get("level", "UNKNOWN")).upper()
-                        _rd_col = _LEVEL_MARKER_COLORS.get(_rd_lvl, "#8b96a5")
                         st.markdown(
-                            '<div class="rd-head"><div class="rd-kicker">Threat summary</div>'
-                            '<div class="rd-title"><span style="color:' + _rd_col + ';">' + html.escape(_rd_lvl) + '</span>'
-                            '<span class="rd-score">' + f"{float(result.get('score', 0)):.1f}" + ' / 100</span></div>'
-                            '<div class="rd-gauge"><i style="width:' + f"{max(2.0, min(100.0, float(result.get('score', 0)))):.0f}" + '%;background:' + _rd_col + ';"></i></div></div>',
+                            '<div class="rd2-head" style="--lv:' + _rd_col + ';"><div class="rd2-left">'
+                            '<div class="rd2-kicker">Threat summary</div>'
+                            '<div class="rd2-title"><span class="rd2-lvl">' + html.escape(_rd_lvl) + '</span>'
+                            '<span class="rd2-score">' + f"{_rd_score:.1f}" + '<small> / 100</small></span></div></div>'
+                            '<div class="rd2-gauge"><i style="width:' + f"{max(2.0, min(100.0, _rd_score)):.0f}" + '%;"></i></div></div>',
                             unsafe_allow_html=True,
                         )
                     with _dock_h_r:
@@ -11530,14 +11585,10 @@ if active_panel == "Dashboard":
                             st.session_state["right_panel_open"] = False
                             st.rerun()
 
-                    # Pinned right under the header, not at the bottom of the
-                    # dock — this is the most-used part of the sidebar (it's
-                    # how a full multi-email AI + semantic report gets
-                    # triggered now), so it shouldn't need scrolling past
-                    # three other sections to reach.
+                    # Copilot stays pinned right under the header (most-used part).
                     _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash)
 
-                    _lvl_hex = _LEVEL_MARKER_COLORS.get(str(result.get("level", "UNKNOWN")).upper(), "#8b96a5")
+                    _lvl_hex = _rd_col
 
                     def _sev_hex(frac):
                         return "#ff4757" if frac >= 0.7 else "#ff9f43" if frac >= 0.4 else "#f5c04a" if frac >= 0.2 else "#35d399"
@@ -11546,22 +11597,22 @@ if active_panel == "Dashboard":
                     _auth_hex = ["#ff4757", "#ff9f43", "#f5c04a", "#35d399"][max(0, min(3, int(auth_pass)))]
                     _anom_hex = "#35d399" if anomaly_count == 0 else ("#f5c04a" if anomaly_count <= 2 else "#ff4757")
                     _tiles = [
-                        ("Threat score", f"{float(result.get('score', 0)):.1f}", str(result.get("level", "?")).upper(), _lvl_hex),
+                        ("Threat score", f"{_rd_score:.1f}", _rd_lvl, _lvl_hex),
                         ("ML phishing", f"{_ml_p:.1%}", "MODEL PROBABILITY", _sev_hex(_ml_p)),
                         ("Auth pass", f"{auth_pass}/3", "SPF · DKIM · DMARC", _auth_hex),
                         ("Anomalies", str(anomaly_count), "HEADER FINDINGS", _anom_hex),
                     ]
-                    st.markdown('<div class="rd-sec" style="--c:#38bdf8;">Key metrics</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="rd2-sec">Key metrics</div>', unsafe_allow_html=True)
                     st.markdown(
-                        '<div class="rd-tiles">' + "".join(
-                            '<div class="rd-tile" style="--c:{c};"><span>{l}</span><b>{v}</b><i>{n}</i></div>'.format(
+                        '<div class="rd2-tiles">' + "".join(
+                            '<div class="rd2-tile" style="--c:{c};"><span>{l}</span><b>{v}</b><i>{n}</i></div>'.format(
                                 c=html.escape(c), l=html.escape(l), v=html.escape(v), n=html.escape(n))
                             for l, v, n, c in _tiles
                         ) + '</div>',
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown('<div class="rd-sec" style="--c:#a78bfa;">Investigation summary</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="rd2-sec">Investigation summary</div>', unsafe_allow_html=True)
                     _inv_rows = [
                         ("From", sel_p.get("from_addr", "Unknown")),
                         ("Subject", sel_p.get("subject", "No Subject")),
@@ -11570,33 +11621,33 @@ if active_panel == "Dashboard":
                         ("Infrastructure", origin.get("infra_label", "Unknown")),
                         ("Attachments", len(sel_p.get("attachments", []) or [])),
                         ("Links", len((result.get("iocs", {}) or {}).get("urls", []) or [])),
-                        ("Verdict", str(result.get("level", "UNKNOWN")).upper()),
+                        ("Verdict", _rd_lvl),
                     ]
                     st.markdown(
-                        '<div class="rd-card" style="--c:#a78bfa;"><div class="kv">'
+                        '<div class="rd2-kv">'
                         + "".join(
-                            '<div class="kv-row"><span>{}</span><b{}>{}</b></div>'.format(
+                            '<div class="rd2-row"><span>{}</span><b{}>{}</b></div>'.format(
                                 html.escape(str(k)),
                                 (' style="color:' + _lvl_hex + ';"') if k == "Verdict" else "",
                                 html.escape(str(v)))
                             for k, v in _inv_rows
                         )
-                        + "</div></div>",
+                        + "</div>",
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown('<div class="rd-sec" style="--c:#f59e0b;">Top threat signals</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="rd2-sec">Top threat signals</div>', unsafe_allow_html=True)
                     contributions = sel_verdict.get("contributions", []) or []
+                    _sig_html = ""
                     for c in contributions[:6]:
                         _st = float(c.get("strength", 0.0) or 0.0)
-                        pct = _st * 100
-                        st.markdown(
+                        _sig_html += (
                             '<div class="threattype-row"><span class="tt-label">{l}</span>'
                             '<div class="bar-track"><div class="bar-fill" style="width:{w:.0f}%;background:{col};"></div></div>'
                             '<span class="pct" style="color:{col};">{w:.0f}%</span></div>'.format(
-                                l=html.escape(str(c.get("label", "-"))), w=pct, col=_sev_hex(_st)),
-                            unsafe_allow_html=True,
+                                l=html.escape(str(c.get("label", "-"))), w=_st * 100, col=_sev_hex(_st))
                         )
+                    st.markdown('<div class="rd2-sigs">' + (_sig_html or '<div class="rd2-empty">No signals</div>') + '</div>', unsafe_allow_html=True)
 
                     # col_right only ever exists when the bulk-scan dock is
                     # NOT active (see above), so the copilot above is never a
