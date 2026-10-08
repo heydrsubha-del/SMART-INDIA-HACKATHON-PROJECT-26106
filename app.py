@@ -7797,6 +7797,21 @@ st.markdown(r"""
   .stApp.stApp.stApp .acq2-on .acq2-chip {color:var(--tone); background:color-mix(in srgb, var(--tone) 9%, transparent); border-color:color-mix(in srgb, var(--tone) 34%, transparent);}
 }
 
+
+/* ===== App backdrop: soft teal / blue / copper aurora + faint dot grid instead of flat navy ===== */
+html body .stApp.stApp [data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(62% 46% at 6% 0%, rgba(47,182,142,.14), transparent 70%),
+    radial-gradient(52% 42% at 100% 6%, rgba(76,141,255,.11), transparent 70%),
+    radial-gradient(58% 46% at 88% 100%, rgba(212,154,102,.11), transparent 72%),
+    radial-gradient(48% 40% at 0% 100%, rgba(34,211,238,.06), transparent 72%),
+    radial-gradient(rgba(255,255,255,.045) 1px, transparent 1.4px) 0 0 / 26px 26px,
+    linear-gradient(180deg, #0b1118 0%, #080b10 100%) !important;
+}
+html body .stApp.stApp [data-testid="stMain"], html body .stApp.stApp [data-testid="stHeader"] {background:transparent !important;}
+@media (min-width:701px) {
+  html body .stApp.stApp [data-testid="stAppViewContainer"] {background-attachment:fixed !important;}
+}
 </style>
 """, unsafe_allow_html=True)
 
