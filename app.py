@@ -7280,6 +7280,13 @@ st.markdown(
     }
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stCaptionContainer"] p {line-height:1.6 !important;}
     }
+    /* Welcome panel (phones/tablets): centre the heading, shield icon and subtitle together. */
+    @media (max-width:900px) {
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-header {display:flex !important; flex-direction:column !important; align-items:center !important; text-align:center !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title {align-self:center !important; width:100% !important; max-width:100% !important; margin-left:auto !important; margin-right:auto !important; text-align:center !important; text-indent:.03em !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title::before {margin:0 auto 14px auto !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-sub {align-self:center !important; margin-left:auto !important; margin-right:auto !important; text-align:center !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
