@@ -7287,6 +7287,10 @@ st.markdown(
         html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title::before {margin:0 auto 14px auto !important;}
         html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-sub {align-self:center !important; margin-left:auto !important; margin-right:auto !important; text-align:center !important;}
     }
+    /* Desktop only: trim the empty strip above the top banner (phones/tablets untouched). */
+    @media (min-width:901px) {
+        html body .stApp.stApp.stApp.stApp.stApp .block-container, html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMainBlockContainer"] {padding-top:.5rem !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
