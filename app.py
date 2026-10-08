@@ -7390,6 +7390,52 @@ st.markdown(
     .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) :is([data-testid="stMarkdown"], [data-testid="stMarkdownContainer"], [data-testid="stElementContainer"], [data-testid="stCaptionContainer"]) {margin:0 !important; padding:0 !important; min-height:0 !important;}
     .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stVerticalBlock"] {gap:8px !important;}
     .stApp.stApp.stApp.stApp :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box) [data-testid="stMarkdownContainer"] p {line-height:1.4 !important; padding:1px 0 2px 0 !important;}
+
+    /* ==================================================================
+       ORIGIN SUMMARY CARD -- one panel, same header language as the section
+       banners (tinted diagonal label panel), cells flat inside a single
+       4-column grid with hairline dividers instead of loose boxes.
+       ================================================================== */
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card {
+        --tone:#22d3ee; position:relative; overflow:hidden !important; padding:0 !important; gap:0 !important; margin:8px 0 14px 0;
+        border-radius:18px !important; border:1px solid color-mix(in srgb,#22d3ee 30%,#232d3b) !important;
+        background:linear-gradient(180deg,#101822,#0b1017) !important;
+        box-shadow:0 16px 36px -22px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05) !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card > div, .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stVerticalBlock"] {gap:0 !important;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMarkdown"], .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMarkdownContainer"] {margin:0 !important;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .geo-head {display:flex; align-items:stretch; border-bottom:1px solid color-mix(in srgb,#22d3ee 22%,#232d3b);
+        background:radial-gradient(60% 160% at 100% 50%, color-mix(in srgb,#22d3ee 9%,transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-left {flex:0 0 auto; min-width:250px; padding:16px 56px 16px 24px; clip-path:polygon(0 0,100% 0,calc(100% - 30px) 100%,0 100%);
+        background:linear-gradient(150deg,color-mix(in srgb,#22d3ee 40%,#0a0f18) 0%,color-mix(in srgb,#22d3ee 13%,#0a0f18) 100%);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-kicker {display:inline-flex; padding:5px 11px; border-radius:8px; color:#fff; font:700 10px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.14em; text-transform:uppercase;
+        background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.22);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-title {margin-top:9px; font:800 18px/1.25 Inter,"Segoe UI",sans-serif; color:#fff; letter-spacing:-.01em;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-sub {align-self:center; padding:0 24px; font:400 13px/1.5 Inter,"Segoe UI",sans-serif; color:#a3b3c4;}
+    /* grid: equal columns, hairline dividers, rows separated */
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] {gap:0 !important; align-items:stretch !important;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] + [data-testid="stHorizontalBlock"], .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stElementContainer"]:has([data-testid="stHorizontalBlock"]) + [data-testid="stElementContainer"] {border-top:1px solid rgba(255,255,255,.07);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"], .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex:1 1 0 !important; min-width:0 !important; border-right:1px solid rgba(255,255,255,.07);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child, .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child {border-right:0;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] ~ [data-testid="stHorizontalBlock"] {border-top:1px solid rgba(255,255,255,.07);}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card div[data-testid="stMetric"], .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box) {
+        background:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; padding:16px 22px 17px 22px !important; height:100%; overflow:visible !important;
+        transition:background .2s var(--ease) !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card div[data-testid="stMetric"]::before, .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box)::before {display:none !important;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card div[data-testid="stMetric"]:hover, .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box):hover {
+        background:linear-gradient(180deg,color-mix(in srgb,var(--tone) 10%,transparent),transparent) !important; box-shadow:none !important; border:0 !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card .st-key-geo_verdict_box {--tone:#2fb68e;}
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box) [data-testid="stCaptionContainer"]:first-child,
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box) [data-testid="stCaptionContainer"]:first-child p {
+        font:700 10.5px/1.2 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase !important; color:var(--tone) !important; margin:0 !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box, .st-key-geo_trust_box, .st-key-geo_tor_box, .st-key-geo_verdict_box) [data-testid="stMarkdownContainer"] p {font:700 clamp(15px,1.25vw,19px)/1.3 Inter,"Segoe UI",sans-serif !important; color:#f3f6fb !important; margin:0 !important;}
+    @media (max-width:900px) {
+        .stApp.stApp.stApp.stApp .st-key-geo_summary_card .geo-head {flex-direction:column;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-left {clip-path:none; padding-right:24px;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-sub {padding:12px 24px 16px 24px;}
+        .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 50% !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -11982,7 +12028,6 @@ if active_panel == "Origin & Route":
         _active_geo = _active_case.get("geo", {}) or {}
         origin = _active_geo.get("origin", {}) or {}
 
-        st.info(_active_geo.get("summary", "No routing data."))
 
         # Network-Trust: geolocate.py already classifies infra (tor/vpn/proxy/
         # datacenter/residential) -- this compares today's origin against
@@ -11997,52 +12042,57 @@ if active_panel == "Origin & Route":
             origin.get("country", ""),
         )
 
-        g1, g2, g3, g4 = st.columns(4)
-        g1.metric("Origin IP", origin.get("ip") or "unknown")
-        g2.metric("Location", ", ".join(p for p in [origin.get("city"), origin.get("country")] if p) or "Unknown")
-        g3.metric("Infrastructure", origin.get("infra_label", "Unattributed"))
-        g4.metric("Hops traced", len(_active_geo.get("hops", [])))
+        _geo_sum = html.escape(str(_active_geo.get("summary", "No routing data.")))
+        _lvl = _nt.get("level")
+        _verdict_txt, _verdict_tone = (
+            ("Anomaly detected", "#e0708c") if _lvl == "alert"
+            else ("Worth reviewing", "#d9a35f") if _lvl == "warning"
+            else ("No anomaly", "#2fb68e")
+        )
+        with st.container(key="geo_summary_card"):
+            st.markdown(
+                '<div class="geo-head"><div class="gh-left"><div class="gh-kicker">At a glance</div>'
+                '<div class="gh-title">Origin summary</div></div>'
+                f'<div class="gh-sub">{_geo_sum}</div></div>',
+                unsafe_allow_html=True,
+            )
+            g1, g2, g3, g4 = st.columns(4)
+            g1.metric("Origin IP", origin.get("ip") or "unknown")
+            g2.metric("Location", ", ".join(p for p in [origin.get("city"), origin.get("country")] if p) or "Unknown")
+            g3.metric("Infrastructure", origin.get("infra_label", "Unattributed"))
+            g4.metric("Hops traced", len(_active_geo.get("hops", [])))
 
-        # VPN Masking / Network Trust / Tor Exit Confirmation get their own
-        # row below, in bordered containers with wrapping markdown text
-        # rather than st.metric -- squeezed into a 6-up metric row their
-        # labels ("Detected — VPN", "New network for this sender") got
-        # clipped to "Detect..." since st.metric never wraps. A full-width
-        # row fixes that.
-        vpn_box, trust_box, tor_box = st.columns(3)
-        with vpn_box:
-            with st.container(border=True, key="geo_vpn_box"):
-                st.caption("VPN Masking")
-                # Direct answer to "is VPN/proxy/Tor masking present on this
-                # message at all" -- independent of whether that's normal
-                # for this sender. Kept separate from Network Trust, which
-                # answers the different question of whether it's *new*.
-                if _nt.get("is_anonymizing"):
-                    st.markdown(f" **Detected — {_nt.get('infra_display', origin.get('infra_label', 'Unknown'))}**")
-                else:
-                    st.markdown(" **Not detected**")
-        with trust_box:
-            with st.container(border=True, key="geo_trust_box"):
-                st.caption("Network Trust")
-                st.markdown(f"**{_nt['badge']}**")
-        with tor_box:
-            with st.container(border=True, key="geo_tor_box"):
-                st.caption("Tor Exit Confirmation")
-                # Separate signal from VPN Masking above: that box is the
-                # `infra` keyword heuristic (ISP/org string guess). This one
-                # is tor_check.py's confirmed-list lookup -- an IP actually
-                # published on one or more of its cached Tor lists (Tor
-                # Project official, community exit mirror, community full
-                # node list), cited by name. These can disagree with the
-                # heuristic above: a VPS-hosted exit can be confirmed here
-                # while the ISP-name guess misses it entirely (ISP just
-                # says "OVH SAS").
-                if origin.get("tor_exit_confirmed"):
-                    _tor_srcs = origin.get("tor_exit_sources", [])
-                    st.markdown(" **Confirmed exit node**")
-                    st.caption("Source: " + "; ".join(_tor_srcs) if _tor_srcs else "Source: unknown")
-                else:
-                    st.markdown(" **Not on published exit lists**")
+            # Row two: the anonymising-infrastructure signals, in the same
+            # four-column grid so every cell lines up with the row above.
+            vpn_box, trust_box, tor_box, verdict_box = st.columns(4)
+            with vpn_box:
+                with st.container(key="geo_vpn_box"):
+                    st.caption("VPN Masking")
+                    if _nt.get("is_anonymizing"):
+                        st.markdown(f" **Detected — {_nt.get('infra_display', origin.get('infra_label', 'Unknown'))}**")
+                    else:
+                        st.markdown(" **Not detected**")
+            with trust_box:
+                with st.container(key="geo_trust_box"):
+                    st.caption("Network Trust")
+                    st.markdown(f"**{_nt['badge']}**")
+            with tor_box:
+                with st.container(key="geo_tor_box"):
+                    st.caption("Tor Exit Confirmation")
+                    if origin.get("tor_exit_confirmed"):
+                        _tor_srcs = origin.get("tor_exit_sources", [])
+                        st.markdown(" **Confirmed exit node**")
+                        st.caption("Source: " + "; ".join(_tor_srcs) if _tor_srcs else "Source: unknown")
+                    else:
+                        st.markdown(" **Not on published exit lists**")
+            with verdict_box:
+                with st.container(key="geo_verdict_box"):
+                    st.caption("Sender Network")
+                    st.markdown(f"**{_verdict_txt}**")
+            st.markdown(
+                f"<style>.st-key-geo_verdict_box{{--tone:{_verdict_tone} !important;}}</style>",
+                unsafe_allow_html=True,
+            )
 
         if _nt["level"] == "alert":
             st.error(
