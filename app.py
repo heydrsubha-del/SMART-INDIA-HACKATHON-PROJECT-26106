@@ -8567,19 +8567,6 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button {
   writing-mode:vertical-rl !important; white-space:nowrap !important; transition:background .15s, width .15s;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button p {font:700 11px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase; margin:0 !important; white-space:nowrap !important; overflow:visible !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button:hover {width:38px !important; background:linear-gradient(180deg,color-mix(in srgb, var(--panel-tone) 18%, #131b26),#0d131b) !important;}
-/* Segmented toggles: no radio dots, active segment tinted like the Origin header */
-html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] label [data-baseweb="radio"] > :first-child, html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] label > div:first-child:not(:has(p)), html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] label div:empty {display:none !important; width:0 !important; height:0 !important; margin:0 !important;}
-html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
-  background:linear-gradient(135deg, color-mix(in srgb, var(--panel-tone) 26%, #0d131b), color-mix(in srgb, var(--panel-tone) 8%, #0d131b)) !important;
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--panel-tone) 45%, transparent), inset 0 -2px 0 var(--panel-tone) !important;}
-html body .stApp.stApp.stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
-/* Analyst feedback buttons: clean, no stray tile/chevron pseudo icons */
-html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button::before, html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button::after, html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button p::before, html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button p::after {content:none !important; display:none !important; background:none !important; -webkit-mask:none !important; mask:none !important;}
-html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button {min-height:46px !important; padding:0 22px !important; display:flex !important; align-items:center !important; justify-content:center !important; gap:0 !important; border-radius:12px !important; box-shadow:none !important;}
-html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-confirm_threat, .st-key-false_positive) button p {margin:0 !important; padding:0 !important; flex:0 0 auto !important; font:700 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.01em !important; white-space:nowrap !important; transform:none !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat button {background:linear-gradient(135deg,#2fb68e,#1f8f6e) !important; border:1px solid #3fd4aa !important; color:#fff !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-false_positive button {background:linear-gradient(180deg,#131b26,#0d131b) !important; border:1px solid rgba(255,255,255,.14) !important; color:#dbe4ef !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-false_positive button:hover {border-color:#ff6b7a !important; color:#ff9aa5 !important;}
 </style>
 """
 st.markdown(_RIGHT_DOCK_CSS, unsafe_allow_html=True)
@@ -11853,7 +11840,7 @@ if active_panel == "Dashboard":
     feedback_type = None
 
     with fb1:
-        if st.button("✓  Confirm Threat", key="confirm_threat", type="primary", use_container_width=True):
+        if st.button("Confirm Threat", key="confirm_threat", type="primary", use_container_width=True):
             add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
             training_result = maybe_retrain_from_feedback()
             if training_result["status"] == "trained":
