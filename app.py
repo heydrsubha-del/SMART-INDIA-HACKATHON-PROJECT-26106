@@ -8391,18 +8391,45 @@ components.html(
             return 'rgb(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')';
         }
         const re = /(rgba?\([^)]*\))(\s+0%,\s*)\1(\s+[\d.]+%)/;
+        const SEL = '[data-testid="stSlider"], [data-testid="stRadio"], [data-testid="stCheckbox"], [data-testid="stProgress"]';
+        function isRed(c) {
+            const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || '');
+            return !!m && +m[1] >= 200 && +m[2] <= 120 && +m[3] <= 120;
+        }
+        function paint(el, prop, val) {
+            if (el.style.getPropertyValue(prop) !== val) el.style.setProperty(prop, val, 'important');
+        }
+        let obs = null, busy = false;
+        function watch() { if (obs) obs.observe(doc.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class']}); }
         function fix() {
+            if (busy) return;
             const t = tone();
             if (!t) return;
-            doc.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"] div[style*="gradient"]').forEach(function(el) {
-                const st = el.getAttribute('style') || '';
-                const ns = st.replace(re, t + '$2' + t + '$3');
-                if (ns !== st) el.setAttribute('style', ns);
+            busy = true;
+            if (obs) obs.disconnect();
+            doc.querySelectorAll(SEL).forEach(function(w) {
+                if (w.closest('.st-key-topnav')) return;
+                w.querySelectorAll('*').forEach(function(el) {
+                    if (el.dataset.ptRed === '1') {
+                        ['background-color', 'border-color', 'color', 'fill'].forEach(function(p) { el.style.removeProperty(p); });
+                        delete el.dataset.ptRed;
+                    }
+                    const cs = getComputedStyle(el);
+                    const st = el.getAttribute('style') || '';
+                    if (/gradient/.test(st)) {
+                        const ns = st.replace(re, t + '$2' + t + '$3');
+                        if (ns !== st) el.setAttribute('style', ns);
+                    }
+                    if (isRed(cs.backgroundColor)) { el.dataset.ptRed = '1'; paint(el, 'background-color', t); }
+                    if (isRed(cs.borderTopColor) && cs.borderTopWidth !== '0px') { el.dataset.ptRed = '1'; paint(el, 'border-color', t); }
+                    if (isRed(cs.color)) { el.dataset.ptRed = '1'; paint(el, 'color', t); }
+                    if (isRed(cs.fill)) { el.dataset.ptRed = '1'; paint(el, 'fill', t); }
+                });
             });
+            watch();
+            busy = false;
         }
-        try {
-            new MutationObserver(fix).observe(doc.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['style']});
-        } catch (e) {}
+        try { obs = new MutationObserver(function() { requestAnimationFrame(fix); }); } catch (e) {}
         fix(); setInterval(fix, 500);
     })();
     </script>
