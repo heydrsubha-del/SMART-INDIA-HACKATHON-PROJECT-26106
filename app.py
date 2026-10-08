@@ -8555,6 +8555,18 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane .panel-card-
 .rd2-row span {color:#8fa1b5; flex:0 0 auto;} .rd2-row b {color:#e8eef6; font-weight:600; text-align:right; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .rd2-sigs {border-top:1px solid rgba(255,255,255,.07); padding:6px 18px 14px 18px;}
 .rd2-empty {padding:10px 0; color:#6f8196; font-size:12px;}
+/* Reopen tab: clean vertical handle on the screen edge */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen {position:fixed !important; right:0 !important; top:50% !important; bottom:auto !important; transform:translateY(-50%); width:auto !important; z-index:9999 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen [data-testid="stElementContainer"], html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen [data-testid="stVerticalBlock"] {width:auto !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button {
+  width:34px !important; min-width:34px !important; height:132px !important; min-height:132px !important; padding:0 !important; overflow:visible !important;
+  display:flex !important; align-items:center; justify-content:center;
+  border-radius:12px 0 0 12px !important; border:1px solid color-mix(in srgb, var(--panel-tone) 45%, #232d3b) !important; border-right:0 !important;
+  background:linear-gradient(180deg,#131b26,#0d131b) !important; color:color-mix(in srgb, var(--panel-tone) 85%, #fff) !important;
+  box-shadow:-8px 0 22px -10px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  writing-mode:vertical-rl !important; white-space:nowrap !important; transition:background .15s, width .15s;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button p {font:700 11px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase; margin:0 !important; white-space:nowrap !important; overflow:visible !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-right_dock_reopen button:hover {width:38px !important; background:linear-gradient(180deg,color-mix(in srgb, var(--panel-tone) 18%, #131b26),#0d131b) !important;}
 </style>
 """
 st.markdown(_RIGHT_DOCK_CSS, unsafe_allow_html=True)
@@ -11552,7 +11564,7 @@ if active_panel == "Dashboard":
                 col_right = None
                 with st.container(key="right_dock_reopen"):
                     if st.button(
-                        "☰ Summary",
+                        "◂ Summary",
                         key="toggle_right_summary_closed",
                         help="Show the threat summary sidebar",
                     ):
