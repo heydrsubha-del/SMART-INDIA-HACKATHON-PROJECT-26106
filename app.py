@@ -8428,35 +8428,41 @@ st.markdown(_HEADER_POLISH_CSS, unsafe_allow_html=True)
 
 _EXPANDER_CSS = """
 <style>
-/* Expanders = the same card language as the section headers (.part-banner): slanted tone block, 18px card, panel colour. */
+/* Expanders: quiet glass cards with a glowing tone chevron and an Expand/Collapse tag -- related to the headers, not a copy. */
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) {
-  position:relative !important; border:1px solid color-mix(in srgb, var(--panel-tone) 34%, var(--line-strong,#313c4b)) !important; border-left-width:1px !important;
-  border-radius:18px !important; margin:14px 0 !important; overflow:hidden !important;
-  background:radial-gradient(60% 150% at 100% 0%, color-mix(in srgb, var(--panel-tone) 9%, transparent), transparent 72%), linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922)) !important;
-  box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb, var(--panel-tone) 8%, transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  position:relative !important; border:1px solid rgba(148,163,184,.17) !important; border-left-width:1px !important;
+  border-radius:14px !important; margin:12px 0 !important; overflow:hidden !important;
+  background:linear-gradient(180deg, #131b27 0%, #0d131b 100%) !important;
+  box-shadow:0 10px 26px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04) !important;
   transition:border-color .2s ease, box-shadow .2s ease !important;
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]):hover {border-color:color-mix(in srgb, var(--panel-tone) 55%, var(--line-strong,#313c4b)) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]):hover {
+  border-color:color-mix(in srgb, var(--panel-tone) 45%, rgba(148,163,184,.17)) !important;
+  box-shadow:0 12px 30px -20px color-mix(in srgb, var(--panel-tone) 55%, #000), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary {
-  position:relative !important; isolation:isolate; display:flex !important; align-items:center !important; gap:14px !important;
-  padding:17px 24px !important; background:transparent !important; border:0 !important;
-  font:800 15.5px/1.3 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.005em !important; color:#fff !important;
+  display:flex !important; align-items:center !important; gap:14px !important; padding:13px 16px 13px 14px !important;
+  background:transparent !important; border:0 !important; color:#e6edf6 !important;
+  font:650 14.5px/1.35 Inter,"Segoe UI",sans-serif !important; letter-spacing:.003em !important;
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary::before {
-  content:"" !important; position:absolute; left:0; top:0; bottom:0; width:clamp(300px, 46%, 540px); z-index:-1; pointer-events:none;
-  background:linear-gradient(150deg, color-mix(in srgb, var(--panel-tone) 40%, #0a0f18) 0%, color-mix(in srgb, var(--panel-tone) 14%, #0a0f18) 100%);
-  clip-path:polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
-}
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary > * {position:relative; z-index:1;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary::before {display:none !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary:hover {background:transparent !important; color:#fff !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary p {margin:0 !important; font:inherit !important; color:inherit !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"] {
-  display:inline-flex !important; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;
-  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+  display:inline-flex !important; align-items:center; justify-content:center; flex:0 0 auto; width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(145deg, var(--panel-tone), color-mix(in srgb, var(--panel-tone) 55%, #06101a));
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--panel-tone) 20%, transparent), 0 4px 12px -4px var(--panel-tone); border:0;
 }
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"], html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary svg {color:#fff !important; fill:#fff !important;}
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary {border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 24%, #232d3b) !important;}
-html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] {padding:18px 26px 22px 26px !important; color:#c2cedb !important; line-height:1.65 !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"], html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary svg {color:#06121a !important; fill:#06121a !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary::after {
+  content:"EXPAND"; margin-left:auto; flex:0 0 auto; padding:5px 11px; border-radius:999px;
+  font:700 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em;
+  color:color-mix(in srgb, var(--panel-tone) 80%, #fff); background:color-mix(in srgb, var(--panel-tone) 9%, transparent);
+  border:1px solid color-mix(in srgb, var(--panel-tone) 32%, transparent);
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary::after {content:"COLLAPSE";}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary {border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 22%, #1f2937) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] {padding:18px 24px 22px 24px !important; color:#c2cedb !important; line-height:1.65 !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] p, html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] li {font-size:13.5px !important; line-height:1.65 !important; color:#c2cedb !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] strong {color:#fff !important;}
 html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] a {color:var(--panel-tone) !important;}
