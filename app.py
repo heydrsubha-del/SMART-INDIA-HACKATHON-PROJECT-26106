@@ -7834,6 +7834,19 @@ st.markdown(r"""
   .stApp.stApp .part-banner .pb-scope {margin:14px 22px 16px 22px; align-self:flex-start;}
 }
 
+/* ===== DESKTOP / TABLET ONLY: section headers share the premium card language ===== */
+@media (min-width:701px) {
+  .stApp.stApp .sec-head {
+    position:relative; display:block !important; margin:28px 0 14px 0 !important; padding:13px 20px 13px 24px !important; overflow:hidden;
+    border:1px solid color-mix(in srgb, var(--tone) 26%, var(--line-strong,#313c4b)) !important; border-radius:14px;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 17%, #0a0f18) 0%, color-mix(in srgb, var(--tone) 4%, var(--panel,#131922)) 46%, var(--panel,#131922) 100%);
+    box-shadow:0 12px 26px -20px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .stApp.stApp .sec-head::before {content:""; position:absolute; left:0; top:0; bottom:0; width:4px; height:auto; border-radius:0; background:var(--tone); box-shadow:0 0 14px color-mix(in srgb, var(--tone) 60%, transparent);}
+  .stApp.stApp .sec-head .sh-title {font:750 17px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+  .stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(200,212,226,.72); max-width:90ch;}
+}
+
 /* ===== App backdrop: calm navy with a soft top glow and a fine engineering grid that fades toward the centre ===== */
 html body .stApp.stApp [data-testid="stAppViewContainer"] {
   background:
@@ -10386,7 +10399,7 @@ if active_panel == "Dashboard":
         dossier dock in _dashboard()) via the shared _render_copilot_panel()
         so the command vocabulary is identical either way."""
 
-        st.markdown("#### Technical Logs & Antivirus")
+        _sec("Technical Logs & Antivirus", tone="teal")
         _tech_logs_container = st.container(key="seg_tech_logs")
         with _tech_logs_container:
             _tech_logs_view = st.radio(
@@ -10479,8 +10492,7 @@ if active_panel == "Dashboard":
                 # this whole block disappears in favor of the compact
                 # status row + dock below, instead of sitting on screen
                 # forever above a scan that's already finished.
-                st.markdown("## Bulk Threat Scanner")
-                st.caption("Dataset-wide forensic scan. The selected email still receives the complete forensic workflow below.")
+                _banner("Bulk scan", "Bulk Threat Scanner", "Dataset-wide forensic scan. The selected email still receives the complete forensic workflow below.", tone="batch")
                 st.info(f" **{len(data):,}** email records loaded from **{uploaded.name}**")
 
                 # These two used to be stacked full-width bars, one above
@@ -10611,8 +10623,7 @@ if active_panel == "Dashboard":
                     # bottom-pane "Email Results" tab so the data only appears once.
                     st.session_state["unified_email_table"] = filtered_df
 
-                    st.markdown("### Deep Dive Analysis")
-                    st.caption("Select any email record below to load its message content into the forensic workflow.")
+                    _sec("Deep Dive Analysis", "Select any email record below to load its message content into the forensic workflow.", tone="sky")
 
                     available_rows = filtered_df["Row #"].tolist() if not filtered_df.empty else list(range(len(data)))
                     # Newest first: same Date-header-with-CSV-row-fallback
@@ -11256,8 +11267,7 @@ if active_panel == "Dashboard":
     with st.container(border=True):
         left, right = st.columns([2.2, 1])
         with left:
-            st.markdown("### AI Learning Status")
-            st.caption("Analyst-verified feedback is used for controlled model adaptation.")
+            _sec("AI Learning Status", "Analyst-verified feedback is used for controlled model adaptation.", tone="ai")
         with right:
             if is_adaptive:
                 st.success("ADAPTIVE MODEL")
