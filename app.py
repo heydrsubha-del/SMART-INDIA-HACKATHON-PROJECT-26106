@@ -7672,6 +7672,21 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
+/* ===== MOBILE ONLY: compact channel cards (desktop untouched) ===== */
+@media (max-width:700px) {
+  /* channel cards: slim selector rows (tag + switch, title, chips); description hidden, no watermark */
+  :root {--acq-h:104px;}
+  .acq2 {padding:12px 16px 12px 18px; border-radius:12px; background:linear-gradient(180deg, var(--panel), var(--panel-3));}
+  .acq2::before {top:0; bottom:0; left:0; right:auto; width:3px; height:auto;}
+  .acq2-on::before {width:4px; height:auto;}
+  .acq2-on {box-shadow:none; background:linear-gradient(180deg, color-mix(in srgb, var(--tone) 9%, var(--panel-2)), var(--panel));}
+  .acq2-ghost, .acq2-sub {display:none !important;}
+  .acq2-tag, .acq2-state-txt {font-size:9.5px; letter-spacing:.14em;}
+  .acq2-title {margin-top:8px; font-size:16px; line-height:1.2;}
+  .acq2-chips {gap:5px; margin-top:auto;}
+  .acq2-chip {font-size:9.5px; padding:4px 7px; border-radius:5px;}
+}
+
 </style>
 """, unsafe_allow_html=True)
 
