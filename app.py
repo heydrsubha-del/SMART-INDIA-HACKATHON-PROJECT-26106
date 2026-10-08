@@ -7797,6 +7797,43 @@ st.markdown(r"""
   .stApp.stApp.stApp .acq2-on .acq2-chip {color:var(--tone); background:color-mix(in srgb, var(--tone) 9%, transparent); border-color:color-mix(in srgb, var(--tone) 34%, transparent);}
 }
 
+/* ===== DESKTOP / TABLET ONLY: premium split module headers (dark tinted panel + content side), tone-matched ===== */
+@media (min-width:701px) {
+  .stApp.stApp .part-banner {
+    display:flex; flex-wrap:nowrap; align-items:stretch; gap:0; padding:0; margin:6px 0 18px 0; overflow:hidden; border-radius:18px;
+    border:1px solid color-mix(in srgb, var(--tone) 34%, var(--line-strong,#313c4b)); border-left-width:1px;
+    background:radial-gradient(60% 150% at 100% 50%, color-mix(in srgb, var(--tone) 11%, transparent), transparent 72%), linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+    box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb, var(--tone) 8%, transparent), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .stApp.stApp .part-banner::before {display:none !important;}
+  .stApp.stApp .part-banner .pb-main {
+    position:relative; flex:0 1 auto; min-width:280px; max-width:64%; margin:0; padding:20px 54px 20px 24px;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--tone) 40%, #0a0f18) 0%, color-mix(in srgb, var(--tone) 14%, #0a0f18) 100%);
+    clip-path:polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+  }
+  .stApp.stApp .part-banner .pb-step {
+    display:inline-flex; align-items:center; margin:0 0 11px 0; padding:6px 11px; border-radius:8px;
+    font:700 10px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .stApp.stApp .part-banner .pb-title {margin:0; font:800 20px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+  .stApp.stApp .part-banner .pb-sub {margin-top:5px; font-size:12.5px; line-height:1.5; color:rgba(236,243,250,.72);}
+  .stApp.stApp .part-banner .pb-scope {
+    align-self:center; margin:0 22px 0 auto; padding:7px 14px 7px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:8px;
+    font:600 10.5px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.1em; text-transform:uppercase; color:#e6edf6;
+    background:color-mix(in srgb, var(--tone) 12%, transparent); border:1px solid color-mix(in srgb, var(--tone) 40%, transparent);
+  }
+  .stApp.stApp .part-banner .pb-scope::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--tone); box-shadow:0 0 8px var(--tone);}
+  .stApp.stApp .part-banner-sm .pb-main {padding:14px 46px 14px 20px; min-width:220px;}
+  .stApp.stApp .part-banner-sm .pb-title {font-size:17px;}
+  .stApp.stApp .part-banner-sm .pb-step {margin-bottom:8px;}
+}
+@media (min-width:701px) and (max-width:900px) {
+  .stApp.stApp .part-banner {flex-direction:column;}
+  .stApp.stApp .part-banner .pb-main {max-width:100%; clip-path:none; padding-right:24px;}
+  .stApp.stApp .part-banner .pb-scope {margin:14px 22px 16px 22px; align-self:flex-start;}
+}
+
 /* ===== App backdrop: calm navy with a soft top glow and a fine engineering grid that fades toward the centre ===== */
 html body .stApp.stApp [data-testid="stAppViewContainer"] {
   background:
