@@ -7257,6 +7257,27 @@ st.markdown(
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:has(.auth-divider) {margin-top:20px !important; margin-bottom:16px !important;}
         html body .stApp.stApp.stApp.stApp .st-key-imap_custom_toggle_btn {margin:18px auto 0 auto !important;}
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .login-plain-divider {margin:20px 0 14px 0 !important;}
+    /* LOGIN WELCOME PANEL on phones/tablets -- one clean stacked banner.
+       The desktop slant (clip-path), 22-26% left padding and negative
+       margins were still applying below 900px, which left a black wedge on
+       the left and clipped the shield icon at the top and the chips at the
+       bottom. Below 900px the panel is a full-width, auto-height, centred
+       block flush with the card's top edge. Desktop is untouched. */
+    @media (max-width:900px) {
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card {padding-top:0 !important; overflow:hidden;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:first-child {
+            clip-path:none !important; margin:0 0 22px 0 !important; padding:28px 22px 24px 22px !important; width:100% !important;
+            height:auto !important; min-height:0 !important; max-height:none !important; flex:0 0 auto !important; overflow:visible !important;
+            display:block !important; text-align:center !important; border-radius:17px 17px 0 0 !important;
+            background:radial-gradient(90% 60% at 100% 0%, rgba(255,255,255,.14), transparent 60%), linear-gradient(155deg,#0a2f3b 0%,#0d5f72 52%,#12a1b6 100%) !important;
+        }
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card > *:first-child * {overflow:visible !important; max-height:none !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-header {display:flex !important; flex-direction:column; align-items:center; text-align:center !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title {text-align:center !important; font-size:22px !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-title::before {margin:0 auto 14px auto !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-card-sub {max-width:300px !important; margin:10px auto 0 auto !important; text-align:center !important;}
+        html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card .signin-chips {justify-content:center !important; margin-top:16px !important;}
+    }
         html body .stApp.stApp.stApp.stApp .st-key-imap_signin_card [data-testid="stCaptionContainer"] p {line-height:1.6 !important;}
     }
     </style>
