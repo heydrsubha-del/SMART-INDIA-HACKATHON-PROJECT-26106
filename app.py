@@ -6345,6 +6345,16 @@ st.markdown(
     }
 
     /* ==================================================================
+       SIDEBAR SEARCH -- live search. The "ENTER" hint is gone (typing filters
+       instantly), and the expanded field stops short of the sidebar toggle
+       tile in the top-right corner so the two never overlap.
+       ================================================================== */
+    html body .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]::after,
+    html body .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:focus-within::after,
+    html body .stApp [data-testid="stSidebar"] [data-testid="stTextInput"]:has(input:not(:placeholder-shown))::after {content:none !important; display:none !important;}
+    html body .stApp [data-testid="stSidebar"][aria-expanded="true"] [data-testid="stTextInput"] {width:calc(100% - 48px) !important; max-width:calc(100% - 48px) !important;}
+
+    /* ==================================================================
        DOCK + MAP/GRAPH v13 -- same language as the nav and sidebar: one
        blue accent, a thin top hairline, mono eyebrows, 12-16px radii,
        icon chips, flat tinted hover. Styling only: no markup, keys or
@@ -7367,6 +7377,36 @@ for _bk2, (_bc2, _bi2) in _BTN_STYLE.items():
     _btn_rules.append(_bsel + ' p::before{-webkit-mask-image:url("' + _buri + '");mask-image:url("' + _buri + '");}')
 st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True)
 
+# Live sidebar search: Streamlit only commits a text_input on Enter/blur, so
+# watch the box and fire the same Enter commit shortly after typing pauses.
+components.html(
+    """<script>
+    (function () {
+      function bind(inp) {
+        var timer = null, sent = inp.value;
+        inp.addEventListener('input', function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            if (inp.value === sent) return;
+            sent = inp.value;
+            ['keydown', 'keypress', 'keyup'].forEach(function (t) {
+              inp.dispatchEvent(new KeyboardEvent(t, {key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true}));
+            });
+          }, 300);
+        });
+      }
+      function tick() {
+        try {
+          var d = window.parent.document;
+          var inp = d.querySelector('[data-testid="stSidebar"] [data-testid="stTextInput"] input');
+          if (inp && !inp.dataset.liveSearch) { inp.dataset.liveSearch = '1'; bind(inp); }
+        } catch (err) {}
+      }
+      tick(); setInterval(tick, 400);
+    })();
+    </script>""",
+    height=0,
+)
 with st.sidebar:
     _sb_q = (st.text_input("Search", key="sb_search", placeholder="Search", label_visibility="collapsed") or "").strip().lower()
 
