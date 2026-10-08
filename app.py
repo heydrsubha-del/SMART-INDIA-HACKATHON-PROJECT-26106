@@ -7834,19 +7834,6 @@ st.markdown(r"""
   .stApp.stApp .part-banner .pb-scope {margin:14px 22px 16px 22px; align-self:flex-start;}
 }
 
-/* ===== DESKTOP / TABLET ONLY: section headers share the premium card language ===== */
-@media (min-width:701px) {
-  .stApp.stApp .sec-head {
-    position:relative; display:block !important; margin:28px 0 14px 0 !important; padding:13px 20px 13px 24px !important; overflow:hidden;
-    border:1px solid color-mix(in srgb, var(--tone) 26%, var(--line-strong,#313c4b)) !important; border-radius:14px;
-    background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 17%, #0a0f18) 0%, color-mix(in srgb, var(--tone) 4%, var(--panel,#131922)) 46%, var(--panel,#131922) 100%);
-    box-shadow:0 12px 26px -20px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04);
-  }
-  .stApp.stApp .sec-head::before {content:""; position:absolute; left:0; top:0; bottom:0; width:4px; height:auto; border-radius:0; background:var(--tone); box-shadow:0 0 14px color-mix(in srgb, var(--tone) 60%, transparent);}
-  .stApp.stApp .sec-head .sh-title {font:750 17px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
-  .stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(200,212,226,.72); max-width:90ch;}
-}
-
 /* ===== DESKTOP / TABLET ONLY: flush premium banners + premium message-viewer cards ===== */
 @media (min-width:701px) {
   .stApp.stApp.stApp .part-banner, .stApp.stApp.stApp .part-banner-sm {padding:0 !important;}
@@ -7891,6 +7878,69 @@ st.markdown(r"""
   .stApp.stApp.stApp .mb-head {flex-direction:column;}
   .stApp.stApp.stApp .mb-left {max-width:100%; clip-path:none; padding-right:24px;}
   .stApp.stApp.stApp .mb-chips {margin:14px 22px 16px 22px; align-self:flex-start;}
+}
+
+/* ===== DESKTOP / TABLET ONLY: section headers, toggles and tables share the premium card language ===== */
+@media (min-width:701px) {
+  /* section header = slim split banner */
+  .stApp.stApp.stApp .sec-head {
+    position:relative; display:flex !important; align-items:stretch; margin:26px 0 14px 0 !important; padding:0 !important; overflow:hidden;
+    border:1px solid color-mix(in srgb, var(--tone) 34%, var(--line-strong,#313c4b)) !important; border-radius:18px;
+    background:radial-gradient(60% 150% at 100% 50%, color-mix(in srgb, var(--tone) 11%, transparent), transparent 72%), linear-gradient(180deg, var(--panel-2,#171e28), var(--panel,#131922));
+    box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb, var(--tone) 8%, transparent), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .stApp.stApp.stApp .sec-head::before {display:none !important;}
+  .stApp.stApp.stApp .sec-head .sh-main {
+    flex:0 1 auto; min-width:240px; max-width:70%; padding:14px 52px 14px 22px;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--tone) 40%, #0a0f18) 0%, color-mix(in srgb, var(--tone) 14%, #0a0f18) 100%);
+    clip-path:polygon(0 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
+  }
+  .stApp.stApp.stApp .sec-head .sh-title {font:800 17px/1.3 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em; color:#fff;}
+  .stApp.stApp.stApp .sec-head .sh-sub {margin-top:3px; font-size:12.5px; line-height:1.5; color:rgba(236,243,250,.72); max-width:90ch;}
+
+  /* two-option toggles = glass pill with a filled accent segment */
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] p {
+    font:700 10px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; text-transform:uppercase !important;
+    color:color-mix(in srgb, var(--seg) 70%, #9aa6b5) !important;
+  }
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] {
+    gap:6px !important; padding:5px !important; border-radius:999px !important;
+    background:linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 55%), #0c1219 !important;
+    border:1px solid color-mix(in srgb, var(--seg) 26%, rgba(255,255,255,.08)) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 28px -18px rgba(0,0,0,.85) !important;
+  }
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label {
+    justify-content:center !important; padding:9px 22px !important; border-radius:999px !important; gap:0 !important; color:#98a4b4 !important;
+  }
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label p {font-size:13px !important; font-weight:650 !important; letter-spacing:.01em !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] label div:empty {display:none !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:hover {background:color-mix(in srgb, var(--seg) 9%, transparent) !important; color:#f1f5f9 !important;}
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+    background:linear-gradient(150deg, color-mix(in srgb, var(--seg) 82%, #fff), color-mix(in srgb, var(--seg) 74%, #000)) !important;
+    border-color:transparent !important; color:#06100d !important;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--seg) 20%, transparent), 0 8px 18px -8px color-mix(in srgb, var(--seg) 70%, transparent) !important;
+  }
+  .stApp.stApp.stApp [class*="st-key-seg_"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {color:#06100d !important; font-weight:750 !important;}
+
+  /* tables */
+  .stApp.stApp.stApp .polished-table-wrap {
+    border:1px solid color-mix(in srgb, #2fb68e 30%, #232d3b) !important; border-radius:18px !important;
+    background:linear-gradient(180deg,#0f151e,#0b1017) !important; background-clip:border-box !important; background-origin:padding-box !important;
+    box-shadow:0 16px 36px -22px rgba(0,0,0,.85), 0 0 0 1px color-mix(in srgb, #2fb68e 8%, transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  }
+  .stApp.stApp.stApp .polished-table-wrap::before {display:none !important;}
+  .stApp.stApp.stApp table.polished-table thead th {
+    background:linear-gradient(150deg, color-mix(in srgb, #2fb68e 26%, #0a0f18), color-mix(in srgb, #2fb68e 9%, #0a0f18)) !important;
+    color:#dfe9f2 !important; font-family:Inter,"Segoe UI",sans-serif; letter-spacing:.14em; padding:13px 18px 12px;
+    border-bottom:1px solid color-mix(in srgb, #2fb68e 34%, #232d3b) !important;
+  }
+  .stApp.stApp.stApp table.polished-table thead th::before {background:#2fb68e !important; box-shadow:0 0 8px rgba(47,182,142,.6) !important;}
+  .stApp.stApp.stApp table.polished-table tbody td {padding:12px 18px !important; border-bottom:1px solid rgba(148,163,184,.09) !important;}
+  .stApp.stApp.stApp table.polished-table tbody tr:hover {background:linear-gradient(90deg, color-mix(in srgb, #2fb68e 12%, transparent), rgba(148,163,184,0) 88%) !important;}
+  .stApp.stApp.stApp table.polished-table tbody tr:hover td:first-child {background:linear-gradient(180deg,#2fb68e,#38b2c8) left center / 3px 62% no-repeat !important;}
+}
+@media (min-width:701px) and (max-width:900px) {
+  .stApp.stApp.stApp .sec-head .sh-main {max-width:100%; clip-path:none; padding-right:22px;}
 }
 
 /* ===== App backdrop: calm navy with a soft top glow and a fine engineering grid that fades toward the centre ===== */
@@ -8665,9 +8715,9 @@ def _sec(title, sub="", tone="batch"):
     sections inside a module."""
     tone = tone if tone in _BANNER_TONES else "batch"
     st.markdown(
-        f'<div class="sec-head sec-{tone}"{_tone_style(tone)}><div class="sh-title">{html.escape(str(title))}</div>'
+        f'<div class="sec-head sec-{tone}"{_tone_style(tone)}><div class="sh-main"><div class="sh-title">{html.escape(str(title))}</div>'
         + (f'<div class="sh-sub">{html.escape(str(sub))}</div>' if sub else '')
-        + '</div>',
+        + '</div></div>',
         unsafe_allow_html=True,
     )
 
