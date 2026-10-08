@@ -6345,6 +6345,23 @@ st.markdown(
     }
 
     /* ==================================================================
+       COMPACT NOTES -- st.info / st.caption hints are slim one-line notes
+       (thin accent bar, no filled box, small muted text) instead of big
+       bordered panels. Warnings and errors keep their full styling.
+       ================================================================== */
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]),
+    html body .stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) {
+        background:transparent !important; box-shadow:none !important; border:0 !important;
+        border-left:2px solid rgba(34,211,238,.45) !important; border-radius:0 !important;
+        padding:2px 0 2px 10px !important; min-height:0 !important; margin:0 !important;
+    }
+    html body .stApp [data-testid="stAlertContentInfo"], html body .stApp [data-testid="stAlertContentInfo"] p {
+        font-size:12px !important; line-height:1.45 !important; color:#8fa3b8 !important; margin:0 !important;
+    }
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) [data-testid="stAlertDynamicIcon"] {display:none !important;}
+    html body .stApp [data-testid="stCaptionContainer"] {font-size:11.5px !important; line-height:1.4 !important; margin:0 !important; padding:0 !important; opacity:.8;}
+
+    /* ==================================================================
        SIDEBAR SEARCH -- live search. The "ENTER" hint is gone (typing filters
        instantly), and the expanded field stops short of the sidebar toggle
        tile in the top-right corner so the two never overlap.
@@ -9860,7 +9877,6 @@ if active_panel == "Dashboard":
                 st.session_state["_imap_auto_connected"] = True
             else:
                 st.markdown('<div class="login-plain-divider"></div>', unsafe_allow_html=True)
-                st.caption("Click \"Log in\" above with your email + password, or use a one-click provider, to load your mailbox.")
                 browse_count = st.session_state.get("imap_browse_count", 10)
                 connect_clicked = False
 
@@ -10141,7 +10157,7 @@ if active_panel == "Dashboard":
                 st.info("Choose a mailbox message and load it for forensic analysis.")
                 st.stop()
         else:
-            st.info("Connect to Gmail, Yandex, Outlook/Microsoft 365, or a custom IMAP server to browse messages.")
+            pass
             st.stop()
     else:
         st.info("Please select a threat acquisition mode.")
