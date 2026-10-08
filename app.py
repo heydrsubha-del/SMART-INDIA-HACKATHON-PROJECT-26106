@@ -7672,6 +7672,39 @@ st.markdown(r"""
   border-color:color-mix(in srgb,var(--tone) 45%,var(--line-strong,#313c4b)); transform:none;
 }
 
+/* ===== MOBILE ONLY: refined nav selection + compact channel cards (desktop untouched) ===== */
+@media (max-width:700px) {
+  /* nav: slimmer bar, quieter badge (dark tinted disc + coloured ring/icon instead of a bright glowing blob) */
+  .stApp .st-key-topnav {margin:30px 0 10px 0 !important; border-radius:22px !important; border:1px solid rgba(255,255,255,.06) !important;
+    box-shadow:0 14px 28px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05) !important;}
+  .stApp .st-key-topnav [data-testid="stRadio"] [role="radiogroup"],
+  .stApp .st-key-topnav .stRadio > div:not([data-testid="stWidgetLabel"]) {margin-top:-22px !important; padding:28px 14px 8px 14px !important; gap:2px !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label {min-width:72px; padding:10px 10px 4px 10px !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p {font-size:10.5px !important; letter-spacing:.04em !important; gap:6px !important; font-weight:600 !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label p::before {flex:0 0 20px; width:20px; height:20px;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked)::before {
+    top:-17px !important; width:44px !important; height:44px !important; margin:0 0 0 -22px !important;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--c,#2fb68e) 22%, #111823), color-mix(in srgb, var(--c,#2fb68e) 8%, #0b1119)) !important;
+    border:4px solid var(--bg,#0a0d12) !important;
+    box-shadow:0 0 0 1.5px color-mix(in srgb, var(--c,#2fb68e) 75%, transparent), 0 8px 14px -8px var(--c,#2fb68e) !important;
+  }
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p {font-weight:700 !important; letter-spacing:.06em !important; text-transform:uppercase; font-size:9.5px !important;}
+  .stApp .st-key-topnav .stRadio [role="radiogroup"] label:has(input:checked) p::before {background-color:var(--c,#2fb68e) !important; transform:translateY(-14px) scale(1) !important;}
+
+  /* channel cards: compact, flat, left accent rail, no ghost watermark */
+  :root {--acq-h:142px;}
+  .acq2 {padding:13px 16px 13px 18px; border-radius:12px; background:linear-gradient(180deg, var(--panel), var(--panel-3));}
+  .acq2::before {top:0; bottom:0; left:0; right:auto; width:3px; height:auto;}
+  .acq2-on::before {width:4px; height:auto;}
+  .acq2-on {box-shadow:none; background:linear-gradient(180deg, color-mix(in srgb, var(--tone) 9%, var(--panel-2)), var(--panel));}
+  .acq2-ghost {display:none;}
+  .acq2-tag, .acq2-state-txt {font-size:9.5px; letter-spacing:.14em;}
+  .acq2-title {margin-top:9px; font-size:16px; line-height:1.2;}
+  .acq2-sub {margin-top:3px; font-size:11.5px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .acq2-chips {gap:5px;}
+  .acq2-chip {font-size:9.5px; padding:4px 7px; border-radius:5px;}
+}
+
 </style>
 """, unsafe_allow_html=True)
 
