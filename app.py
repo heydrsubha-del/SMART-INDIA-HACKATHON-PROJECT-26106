@@ -8470,6 +8470,41 @@ html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="
 </style>
 """
 st.markdown(_EXPANDER_CSS, unsafe_allow_html=True)
+
+_SUMMARY_CARD_CSS = """
+<style>
+/* Summary / metric cards: same glass-card language as the expanders, keyed to the page colour. */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card {
+  --tone:var(--panel-tone); border-radius:16px !important; border:1px solid rgba(148,163,184,.17) !important;
+  background:linear-gradient(180deg,#131b27 0%,#0d131b 100%) !important;
+  box-shadow:0 14px 32px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card::before {content:"" !important; display:block !important; position:absolute; left:0; right:0; top:0; height:2px; z-index:2; pointer-events:none;
+  background:linear-gradient(90deg, var(--panel-tone), color-mix(in srgb, var(--panel-tone) 20%, transparent) 70%, transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .geo-head {align-items:center !important; gap:20px; padding:20px 26px 18px 26px; background:transparent !important; border-bottom:1px solid rgba(255,255,255,.07) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-left {clip-path:none !important; background:none !important; padding:0 !important; min-width:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-kicker {display:inline-flex !important; align-items:center; gap:9px; padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important;
+  font:700 10px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.17em !important; text-transform:uppercase; color:color-mix(in srgb, var(--panel-tone) 82%, #fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-kicker::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--panel-tone); box-shadow:0 0 0 3px color-mix(in srgb, var(--panel-tone) 24%, transparent), 0 0 10px var(--panel-tone);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-title {margin-top:8px !important; font:800 21px/1.25 Inter,"Segoe UI",sans-serif !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-sub {padding:2px 0 2px 20px !important; border-left:1px solid rgba(255,255,255,.1); color:#a9b8c9 !important; font-size:13.5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card div[data-testid="stMetric"] {padding:20px 26px 20px 26px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMetricLabel"], html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMetricLabel"] p {
+  font:700 10px/1.2 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:color-mix(in srgb, var(--panel-tone) 78%, #fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMetricValue"], html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stMetricValue"] * {font:800 clamp(20px,1.7vw,26px)/1.25 Inter,"Segoe UI",sans-serif !important; color:#fff !important; letter-spacing:-.01em;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card :is(.st-key-geo_vpn_box,.st-key-geo_trust_box,.st-key-geo_tor_box) {--tone:var(--panel-tone) !important;}
+@media (max-width:900px) { html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-sub {border-left:0; padding:12px 0 0 0 !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-geo_summary_card .geo-head {padding:18px 20px;} }
+/* standalone metric tiles elsewhere */
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"]) {
+  position:relative; border-radius:14px !important; border:1px solid rgba(148,163,184,.17) !important; padding:16px 20px !important; overflow:hidden;
+  background:linear-gradient(180deg,#131b27 0%,#0d131b 100%) !important; box-shadow:0 10px 24px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"])::before {content:"" !important; display:block !important; position:absolute; left:0; right:0; top:0; height:2px; background:linear-gradient(90deg, var(--panel-tone), transparent 75%) !important; width:auto !important; bottom:auto !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"]) [data-testid="stMetricLabel"], html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"]) [data-testid="stMetricLabel"] p {font:700 10px/1.2 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:color-mix(in srgb, var(--panel-tone) 78%, #fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"]) [data-testid="stMetricValue"], html body .stApp.stApp.stApp.stApp.stApp [data-testid="stMetric"]:not(.st-key-geo_summary_card [data-testid="stMetric"]) [data-testid="stMetricValue"] * {font:800 24px/1.25 Inter,"Segoe UI",sans-serif !important; color:#fff !important;}
+</style>
+"""
+st.markdown(_SUMMARY_CARD_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
