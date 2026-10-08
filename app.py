@@ -9363,12 +9363,6 @@ if active_panel == "Dashboard":
                 st.rerun()
             uploaded = None
             if not uploaded:
-                st.markdown(
-                    '<div class="intake-status"><span class="intake-dot"></span>'
-                    '<span class="intake-status-k">Ready</span>'
-                    '<span class="intake-status-v">Waiting for evidence. Accepts EML, TXT and CSV, up to 50 MB per file.</span></div>',
-                    unsafe_allow_html=True,
-                )
                 st.stop()
     elif "Live IMAP Mailbox Interceptor" in input_mode:
         st.markdown(
