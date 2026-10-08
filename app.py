@@ -8377,60 +8377,60 @@ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stProgress"] [role="progr
 </style>
 """
 st.markdown(_PANEL_WIDGET_CSS, unsafe_allow_html=True)
+def _hue_rot_for(hex_color):
+    """Angle (deg) that turns Streamlit's stock red (255,75,75) into the given
+    panel colour with CSS hue-rotate(), so red controls can follow --panel-tone."""
+    import math
+    h = hex_color.lstrip("#")
+    tr, tg, tb = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    best, best_d = 0, 1e9
+    for deg in range(360):
+        a = math.radians(deg)
+        c, sn = math.cos(a), math.sin(a)
+        m = (
+            (0.213 + c * 0.787 - sn * 0.213, 0.715 - c * 0.715 - sn * 0.715, 0.072 - c * 0.072 + sn * 0.928),
+            (0.213 - c * 0.213 + sn * 0.143, 0.715 + c * 0.285 + sn * 0.140, 0.072 - c * 0.072 - sn * 0.283),
+            (0.213 - c * 0.213 - sn * 0.787, 0.715 - c * 0.715 + sn * 0.715, 0.072 + c * 0.928 + sn * 0.072),
+        )
+        out = [min(255, max(0, r[0] * 255 + r[1] * 75 + r[2] * 75)) for r in m]
+        d = (out[0] - tr) ** 2 + (out[1] - tg) ** 2 + (out[2] - tb) ** 2
+        if d < best_d:
+            best, best_d = deg, d
+    return best
+
+
+st.markdown(
+    "<style>.stApp{--pt-rot:" + str(_hue_rot_for(_panel_hex())) + "deg;}"
+    ".stApp .pt-red{filter:hue-rotate(var(--pt-rot)) !important; transition:none !important;}</style>",
+    unsafe_allow_html=True,
+)
 components.html(
     r"""
     <script>
     (function() {
         const doc = window.parent.document;
-        function tone() {
-            const app = doc.querySelector('.stApp');
-            const hex = (app ? getComputedStyle(app).getPropertyValue('--panel-tone') : '').trim();
-            const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-            if (!m) return null;
-            const n = parseInt(m[1], 16);
-            return 'rgb(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')';
-        }
-        const re = /(rgba?\([^)]*\))(\s+0%,\s*)\1(\s+[\d.]+%)/;
         const SEL = '[data-testid="stSlider"], [data-testid="stRadio"], [data-testid="stCheckbox"], [data-testid="stProgress"]';
         function isRed(c) {
             const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || '');
             return !!m && +m[1] >= 200 && +m[2] <= 120 && +m[3] <= 120;
         }
-        function paint(el, prop, val) {
-            if (el.style.getPropertyValue(prop) !== val) el.style.setProperty(prop, val, 'important');
-        }
-        let obs = null, busy = false;
-        function watch() { if (obs) obs.observe(doc.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class']}); }
-        function fix() {
-            if (busy) return;
-            const t = tone();
-            if (!t) return;
-            busy = true;
-            if (obs) obs.disconnect();
+        function tag() {
             doc.querySelectorAll(SEL).forEach(function(w) {
                 if (w.closest('.st-key-topnav')) return;
                 w.querySelectorAll('*').forEach(function(el) {
-                    if (el.dataset.ptRed === '1') {
-                        ['background-color', 'border-color', 'color', 'fill'].forEach(function(p) { el.style.removeProperty(p); });
-                        delete el.dataset.ptRed;
-                    }
+                    if (el.classList.contains('pt-red')) return;
                     const cs = getComputedStyle(el);
-                    const st = el.getAttribute('style') || '';
-                    if (/gradient/.test(st)) {
-                        const ns = st.replace(re, t + '$2' + t + '$3');
-                        if (ns !== st) el.setAttribute('style', ns);
+                    if (isRed(cs.backgroundColor) || /rgb\(255, 75, 75\)/.test(cs.backgroundImage) ||
+                        (isRed(cs.borderTopColor) && cs.borderTopWidth !== '0px') || isRed(cs.fill)) {
+                        el.classList.add('pt-red');
                     }
-                    if (isRed(cs.backgroundColor)) { el.dataset.ptRed = '1'; paint(el, 'background-color', t); }
-                    if (isRed(cs.borderTopColor) && cs.borderTopWidth !== '0px') { el.dataset.ptRed = '1'; paint(el, 'border-color', t); }
-                    if (isRed(cs.color)) { el.dataset.ptRed = '1'; paint(el, 'color', t); }
-                    if (isRed(cs.fill)) { el.dataset.ptRed = '1'; paint(el, 'fill', t); }
                 });
             });
-            watch();
-            busy = false;
         }
-        try { obs = new MutationObserver(function() { requestAnimationFrame(fix); }); } catch (e) {}
-        fix(); setInterval(fix, 500);
+        try {
+            new MutationObserver(function() { requestAnimationFrame(tag); }).observe(doc.body, {subtree: true, childList: true});
+        } catch (e) {}
+        tag(); setInterval(tag, 400);
     })();
     </script>
     """,
