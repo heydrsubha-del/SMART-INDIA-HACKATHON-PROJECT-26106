@@ -8538,32 +8538,6 @@ html body .stApp.stApp.stApp.stApp.stApp .inbox-stats .is-card b {margin-top:12p
 </style>
 """
 st.markdown(_STAT_TILE_CSS, unsafe_allow_html=True)
-
-_MAILBOX_PANEL_CSS = """
-<style>
-/* Mailbox-connected panel: glass card in the shared language, clean note row, aligned action buttons. */
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {
-  border:1px solid rgba(148,163,184,.17) !important; border-radius:16px !important; padding:24px 26px 24px 26px !important; gap:16px !important;
-  background:radial-gradient(70% 130% at 0% 0%, rgba(52,211,153,.09), transparent 62%), linear-gradient(180deg,#131b27 0%,#0d131b 100%) !important;
-  box-shadow:0 14px 32px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04) !important;
-}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel::before {left:0 !important; right:0 !important; top:0 !important; bottom:auto !important; width:auto !important; height:2px !important; border-radius:0 !important;
-  background:linear-gradient(90deg,#34d399,#4c8dff 55%,transparent) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-head {padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.07);}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-avatar {border-radius:50% !important; flex:0 0 52px; width:52px; height:52px;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {font-size:21px !important; font-weight:800 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin-top:0 !important; border:0 !important; border-left:2px solid rgba(52,211,153,.55) !important; border-radius:0 12px 12px 0 !important;
-  padding:12px 18px !important; background:linear-gradient(90deg, rgba(52,211,153,.07), transparent 80%) !important; color:#a9b8c9 !important; font-size:13px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:12px !important; align-items:center !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .stButton button, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stBaseButton-primary"], html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stBaseButton-secondary"] {min-height:48px !important; height:48px !important; border-radius:12px !important; white-space:nowrap !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button {--pl:60px; padding:0 40px 0 60px !important; justify-content:flex-start !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button p {text-align:left !important; width:auto !important; margin:0 !important; padding:0 !important; font-size:14px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button::before {left:12px !important; top:50% !important; transform:translateY(-50%) !important; width:30px !important; height:30px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button p::before {left:12px !important; top:50% !important; width:30px !important; height:30px !important; -webkit-mask-size:17px 17px !important; mask-size:17px 17px !important; transform:translateY(-50%) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_show_form_btn button, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_disconnect_btn button {padding-left:56px !important; padding-right:22px !important; justify-content:flex-start !important;}
-</style>
-"""
-st.markdown(_MAILBOX_PANEL_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
