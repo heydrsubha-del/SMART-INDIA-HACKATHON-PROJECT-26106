@@ -8404,6 +8404,27 @@ st.markdown(
     ".stApp .pt-red{filter:hue-rotate(var(--pt-rot)) !important; transition:none !important;}</style>",
     unsafe_allow_html=True,
 )
+_HEADER_POLISH_CSS = """
+<style>
+/* Header cards (.part-banner): clean eyebrow -- no stray top hairline, no dash-and-rule; a small glowing dot instead. */
+html body .stApp.stApp.stApp.stApp .part-banner .pb-step {
+  display:inline-flex !important; align-items:center !important; gap:9px !important; margin:0 0 10px 0 !important;
+  padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important;
+  box-shadow:none !important; text-shadow:none !important; outline:0 !important;
+  font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.17em !important; text-transform:uppercase !important;
+  color:color-mix(in srgb, var(--tone, #38bdf8) 82%, #ffffff) !important;
+}
+html body .stApp.stApp.stApp.stApp .part-banner .pb-step::before {
+  content:"" !important; display:block !important; width:6px !important; height:6px !important; border-radius:50% !important; opacity:1 !important;
+  background:var(--tone, #38bdf8) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--tone, #38bdf8) 24%, transparent), 0 0 10px var(--tone, #38bdf8) !important;
+}
+html body .stApp.stApp.stApp.stApp .part-banner .pb-step::after {display:none !important;}
+html body .stApp.stApp.stApp.stApp .part-banner .pb-title {font:750 21px/1.25 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.012em !important; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp .part-banner .pb-sub {font-size:13px !important; line-height:1.55 !important; color:rgba(226,234,244,.74) !important; max-width:72ch;}
+html body .stApp.stApp.stApp.stApp .part-banner .pb-main {border:0 !important; box-shadow:none !important;}
+</style>
+"""
+st.markdown(_HEADER_POLISH_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
