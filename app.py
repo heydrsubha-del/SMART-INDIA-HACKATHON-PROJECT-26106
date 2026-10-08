@@ -8425,6 +8425,45 @@ html body .stApp.stApp.stApp.stApp .part-banner .pb-main {border:0 !important; b
 </style>
 """
 st.markdown(_HEADER_POLISH_CSS, unsafe_allow_html=True)
+
+_EXPANDER_CSS = """
+<style>
+/* Expanders -> premium cards, keyed to the open page's nav colour. */
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) {
+  border:1px solid color-mix(in srgb, var(--panel-tone) 20%, #243041) !important; border-left:3px solid var(--panel-tone) !important;
+  border-radius:14px !important; margin:12px 0 !important; overflow:hidden !important;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--panel-tone) 6%, #131a25), #0e141c) !important;
+  box-shadow:0 14px 30px -22px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  transition:border-color .2s ease, box-shadow .2s ease !important;
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]):hover {
+  border-color:color-mix(in srgb, var(--panel-tone) 42%, #243041) !important; border-left-color:var(--panel-tone) !important;
+  box-shadow:0 16px 34px -20px rgba(0,0,0,.9), 0 0 0 1px color-mix(in srgb, var(--panel-tone) 10%, transparent), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary {
+  padding:15px 20px !important; background:transparent !important; border:0 !important; gap:12px !important;
+  font:600 14.5px/1.35 Inter,"Segoe UI",sans-serif !important; letter-spacing:.005em !important; color:#e8eef6 !important;
+  transition:background .2s ease, color .2s ease !important;
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary:hover {color:#fff !important; background:linear-gradient(90deg, color-mix(in srgb, var(--panel-tone) 9%, transparent), transparent 75%) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary p {margin:0 !important; font:inherit !important; color:inherit !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"], html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary svg {color:var(--panel-tone) !important; fill:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) summary [data-testid="stExpanderToggleIcon"] {
+  display:inline-flex !important; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;
+  background:color-mix(in srgb, var(--panel-tone) 14%, transparent); border:1px solid color-mix(in srgb, var(--panel-tone) 30%, transparent);
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) details[open] > summary {
+  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 20%, #232d3b) !important;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--panel-tone) 12%, transparent), transparent 70%) !important;
+}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] {padding:18px 24px 22px 24px !important; color:#c2cedb !important; line-height:1.65 !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] p, html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] li {font-size:13.5px !important; line-height:1.65 !important; color:#c2cedb !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] strong {color:#fff !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] a {color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp [data-testid="stExpander"]:not([data-testid="stSidebar"] [data-testid="stExpander"]) [data-testid="stExpanderDetails"] code {background:color-mix(in srgb, var(--panel-tone) 10%, #0b1018) !important; border:1px solid color-mix(in srgb, var(--panel-tone) 22%, transparent); border-radius:6px; padding:1px 6px; color:#eaf2fb !important;}
+</style>
+"""
+st.markdown(_EXPANDER_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
