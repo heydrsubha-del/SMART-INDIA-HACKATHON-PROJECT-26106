@@ -8945,6 +8945,14 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-sing
 </style>
 """
 st.markdown(_SLEEK_CSS, unsafe_allow_html=True)
+_DASH_TIGHT_CSS = """
+<style>
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dash_map_card, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dash_graph_card {padding-bottom:6px !important; margin-bottom:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dash_graph_card [data-testid="stCaptionContainer"], html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dash_map_card [data-testid="stCaptionContainer"] {margin:-2px 0 0 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dash_graph_card [data-testid="stPlotlyChart"] {margin-bottom:-6px !important;}
+</style>
+"""
+st.markdown(_DASH_TIGHT_CSS, unsafe_allow_html=True)
 _FULL_REPORT_BTN_CSS = """
 <style>
 html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn .stButton, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button {--bt:#7c93ff !important;}
@@ -12070,7 +12078,7 @@ if active_panel == "Dashboard":
                         except Exception:
                             pass
                     st_folium(
-                        dash_map, width="stretch", height=380, returned_objects=[],
+                        dash_map, width="stretch", height=300, returned_objects=[],
                         key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
                     )
                     _dash_loc = ", ".join(p for p in [_dash_origin.get("city"), _dash_origin.get("country")] if p)
@@ -12093,7 +12101,7 @@ if active_panel == "Dashboard":
                 _dash_cur_case = dict(result)
                 _dash_cur_case["_evidence_hash"] = current_evidence_hash
                 G = _build_correlation_graph([_dash_cur_case], seed=42)
-                _corr_fig = correlate.graph_figure(G, height=560)
+                _corr_fig = correlate.graph_figure(G, height=480)
                 # Full-width now (not squeezed into a half-width column), so
                 # labels can run longer before needing to be cut off.
                 _CORR_LABEL_MAX = 40
