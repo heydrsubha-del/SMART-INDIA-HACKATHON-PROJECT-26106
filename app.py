@@ -8835,6 +8835,43 @@ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-k
 </style>
 """
 st.markdown(_SIDEBAR_ACTIVE_CSS, unsafe_allow_html=True)
+
+_MAILBOX_DOSSIER_CSS = """
+<style>
+/* Live mailbox section -> one dossier-style card (same recipe as the Forensic Report hero):
+   accent spine, eyebrow + large address + pill, quiet note, action toolbar, and the browse/reload bar as the card footer. */
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {
+  position:relative; margin:6px 0 0 0 !important; padding:26px 28px 24px 32px !important; gap:0 !important;
+  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important; border-bottom:0 !important; border-radius:16px 16px 0 0 !important;
+  background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
+  box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel::before {content:"" !important; position:absolute; left:0 !important; right:auto !important; top:0 !important; bottom:0 !important; width:3px !important; height:auto !important; border-radius:0 !important; background:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-head {display:flex; align-items:center; gap:18px; padding:0 0 20px 0 !important; border-bottom:1px solid rgba(255,255,255,.07) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-avatar {flex:0 0 56px !important; width:56px !important; height:56px !important; border-radius:16px !important; font-size:22px !important; color:#06121a !important;
+  background:linear-gradient(145deg, color-mix(in srgb,var(--panel-tone) 90%,#fff), color-mix(in srgb,var(--panel-tone) 55%,#06101a)) !important; border:0 !important;
+  box-shadow:0 10px 22px -10px var(--panel-tone), inset 0 1px 0 rgba(255,255,255,.35) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-eyebrow {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; color:color-mix(in srgb,var(--panel-tone) 80%,#fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {margin-top:9px !important; font:800 27px/1.15 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.015em !important; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips {margin-top:12px !important; gap:8px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span {font:600 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.04em !important; padding:6px 10px !important; border-radius:8px !important;
+  color:#a9b8c9 !important; background:rgba(255,255,255,.035) !important; border:1px solid rgba(148,163,184,.22) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span:nth-child(3) {color:color-mix(in srgb,var(--panel-tone) 80%,#fff) !important; background:color-mix(in srgb,var(--panel-tone) 10%,transparent) !important; border-color:color-mix(in srgb,var(--panel-tone) 38%,transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {align-self:center !important; font:800 11.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.12em !important; padding:9px 14px !important; border-radius:8px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:18px 0 20px 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important;
+  font:400 13px/1.6 Inter,"Segoe UI",sans-serif !important; color:#9aa7ba !important; max-width:110ch;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:12px !important; align-items:center !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar {
+  position:relative; margin:-1rem 0 20px 0 !important; padding:16px 28px 20px 32px !important; gap:0 !important;
+  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important; border-top:1px solid rgba(255,255,255,.07) !important; border-radius:0 0 16px 16px !important;
+  background:linear-gradient(180deg,#0e151e,#0b1118) !important; box-shadow:0 18px 34px -24px rgba(0,0,0,.9) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar::before {content:"" !important; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--panel-tone); opacity:.55; pointer-events:none;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] p {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#8793a5 !important;}
+@media (max-width:640px) { html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {padding:20px 16px 18px 20px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {font-size:21px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {display:none !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar {padding:14px 16px 16px 20px !important;} }
+</style>
+"""
+st.markdown(_MAILBOX_DOSSIER_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
