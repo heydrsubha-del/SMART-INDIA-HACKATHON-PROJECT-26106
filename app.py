@@ -5173,7 +5173,6 @@ st.markdown(
         box-shadow:0 0 0 4px rgba(255,255,255,.10), 0 0 12px 2px var(--seg) !important;
         box-shadow:0 0 0 4px color-mix(in srgb,var(--seg) 22%,transparent), 0 0 12px 2px color-mix(in srgb,var(--seg) 70%,transparent) !important;
     }
-    .stApp .st-key-seg_tech_logs [data-testid="stRadio"] [role="radiogroup"] label {flex:1 1 0 !important; justify-content:center !important;}
 
 
     /* ==================================================================
@@ -7566,8 +7565,8 @@ for _bk2, (_bc2, _bi2) in _BTN_STYLE.items():
         "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>" + _BTN_ICONS[_bi2] + "</svg>",
         safe="/:=' ()",
     )
-    _bsel = '.stApp .st-key-' + _bk2 + ' button'
-    _btn_rules.append(_bsel + '{--bt:' + _bc2 + ';--tile:block;--pl:40px;}')
+    _bsel = '.stApp.stApp.stApp.stApp .st-key-' + _bk2 + ' button'
+    _btn_rules.append(_bsel + '{--bt:' + _bc2 + ';--tile:block;--pl:40px;padding-left:48px !important;padding-right:34px !important;}')
     _btn_rules.append(_bsel + ' p::before{-webkit-mask-image:url("' + _buri + '");mask-image:url("' + _buri + '");}')
 st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True)
 
@@ -11855,7 +11854,7 @@ if active_panel == "Dashboard":
             feedback_type = "success"
 
     with fb2:
-        if st.button("✕  False Positive", key="false_positive", type="secondary", use_container_width=True):
+        if st.button("False Positive", key="false_positive", type="secondary", use_container_width=True):
             add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
             training_result = maybe_retrain_from_feedback()
             if training_result["status"] == "trained":
