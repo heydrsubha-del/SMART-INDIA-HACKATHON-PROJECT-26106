@@ -8508,6 +8508,23 @@ if True:
         html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) {--cc:var(--panel-tone) !important;}
         html body .stApp.stApp.stApp.stApp.stApp :is(.rd-kicker, .right-dock-title) {color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important;}
         html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--panel-tone) !important;}
+        /* Forensic dossier header: ONE card (title, subject/sender, verdict + email picker) */
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {position:relative; padding:22px 26px 20px 28px !important; margin:6px 0 22px 0 !important; gap:0 !important; border-radius:16px !important;
+            border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
+            background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
+            box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2 {display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-main {min-width:0; flex:1 1 320px;}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-eyebrow {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; text-transform:uppercase; color:color-mix(in srgb,var(--panel-tone) 80%,#fff);}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-title {margin-top:9px; font:800 28px/1.15 Inter,'Segoe UI',sans-serif; color:#fff; letter-spacing:-.015em;}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-title span {font-size:14px; font-weight:600; color:#8793a5; margin-left:6px; letter-spacing:0;}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-sub {margin-top:6px; font:400 13px/1.45 Inter,'Segoe UI',sans-serif; color:#9aa7ba; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+        html body .stApp.stApp.stApp.stApp.stApp .dh2-pill {font:800 11.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; padding:8px 13px; border-radius:8px; border:1px solid; white-space:nowrap;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select {background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; margin:16px 0 0 0 !important; border-radius:0 !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select::before, html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select::after {display:none !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-testid="stWidgetLabel"] p {color:#8793a5 !important; letter-spacing:.14em !important;}
+        @media (max-width:640px) { html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {padding:18px 16px 16px 20px !important;} html body .stApp.stApp.stApp.stApp.stApp .dh2-title {font-size:23px;} html body .stApp.stApp.stApp.stApp.stApp .dh2-sub {white-space:normal;}}
         /* FORENSIC REPORT hierarchy -- one page colour, three clear levels:
            1 page header (full banner)  2 'Email deep dive' divider + compact banner
            3 dossier bar -> numbered sections (each wears its own module's nav colour) */
@@ -13482,7 +13499,6 @@ if active_panel == "Forensic Report":
     d_center = st.container()
     
     with d_center:
-        _banner("Dossier", "Complete Forensic Investigation Dossier", "Select an email number to view the highly detailed machine forensic analysis and AI threat report together.", tone="rose")
 
         pipeline_active = (
             st.session_state.get("forensic_report_source") == "pipeline"
@@ -13684,23 +13700,19 @@ if active_panel == "Forensic Report":
                 key="dl_joint_pipeline_report",
             )
 
-        st.markdown(
-            '<div class="part-sep"><span>' + ('END OF BATCH REPORT' if pipeline_active else 'EMAIL DEEP DIVE') + '</span></div>'
-            + _banner_html(
-                'PART 2' if pipeline_active else 'SINGLE EMAIL',
-                'Single-Email Deep Dive',
-                sub='Everything below this point is about ONE email only. Choose which one:',
-                scope='One email', tone='teal',
-            ),
-            unsafe_allow_html=True,
-        )
+        if pipeline_active:
+            st.markdown('<div class="part-sep"><span>END OF BATCH REPORT</span></div>', unsafe_allow_html=True)
 
-        sel_pos = st.selectbox(
-            "Select Email Number to Inspect",
-            key="single_email_select",
-            options=list(range(1, len(report_items) + 1)),
-            format_func=lambda num: f"Email #{num} | Row {report_items[num-1].get('row', 'Single File')} | {str(report_items[num-1]['result'].get('level','UNKNOWN')).upper()}"
-        )
+        # ONE header card: what this is (title + subject/sender + verdict) and the
+        # email picker, instead of four stacked banners/boxes.
+        with st.container(key="dossier_hero"):
+            _hero_slot = st.empty()
+            sel_pos = st.selectbox(
+                "Choose which email to inspect",
+                key="single_email_select",
+                options=list(range(1, len(report_items) + 1)),
+                format_func=lambda num: f"Email #{num} | Row {report_items[num-1].get('row', 'Single File')} | {str(report_items[num-1]['result'].get('level','UNKNOWN')).upper()}"
+            )
 
         sel_item = report_items[sel_pos - 1]
         sel_res = sel_item["result"]
@@ -13716,17 +13728,19 @@ if active_panel == "Forensic Report":
         sel_score = float(sel_res.get("score", 0))
 
         _dh_col = _LEVEL_MARKER_COLORS.get(sel_lvl, "#8b96a5")
-        st.markdown(
-            '<div class="dossier-head" style="--tone:' + _panel_hex() + ';"><div class="dh-title">Dossier: Email #' + str(sel_pos)
-            + ' <span class="dh-of">of ' + str(len(report_items)) + '</span></div>'
-            '<span class="dh-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
+        _hero_subj = html.escape(str(sel_p.get("subject") or "(no subject)")[:140])
+        _hero_from = html.escape(str(sel_p.get("from_addr") or "unknown sender")[:80])
+        _hero_slot.markdown(
+            '<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">Forensic dossier</div>'
+            '<div class="dh2-title">Email #' + str(sel_pos) + ' <span>of ' + str(len(report_items)) + '</span></div>'
+            '<div class="dh2-sub">' + _hero_subj + ' &middot; ' + _hero_from + '</div></div>'
+            '<span class="dh2-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
             + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
             unsafe_allow_html=True,
         )
 
         # --- SHOW HIGHLY DETAILED MACHINE REPORT UI USING DATAFRAMES ---
         _sec("Machine Forensic Analysis", "Deterministic telemetry for the selected email", tone="sky")
-        st.caption("Deep technical telemetry extracted deterministically. Select the email above to populate.")
         
         with st.container(border=True):
             _num_head(1, "Threat & Classification Telemetry", "#f59e0b", "Classification \u00b7 score, verdict and classifier output")
