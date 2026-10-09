@@ -8926,6 +8926,54 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-
 </style>
 """
 st.markdown(_MAILBOX_CASEFILE_CSS, unsafe_allow_html=True)
+_DOSSIER_CASEFILE_CSS = """
+<style>
+/* Forensic dossier hero = same case-file recipe as the live mailbox panel, in the panel's own tone. */
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {
+  overflow:hidden; padding:0 26px 24px 28px !important; border-radius:14px !important;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(255,255,255,.022) 31px 32px),
+    radial-gradient(70% 120% at 0% 0%, color-mix(in srgb,var(--panel-tone) 16%,transparent), transparent 60%),
+    linear-gradient(180deg,#111a26,#0a1018) !important;
+  box-shadow:0 22px 44px -26px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.015) !important;
+}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero::before {content:"" !important; top:0 !important; bottom:0 !important; width:4px !important; border-radius:0 !important;
+  background:linear-gradient(180deg,var(--panel-tone),color-mix(in srgb,var(--panel-tone) 18%,transparent)) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero::after {content:"EXAMINED"; display:block; position:absolute; right:26px; bottom:14px; transform:rotate(-7deg);
+  font:800 40px/1 ui-monospace,Consolas,monospace; letter-spacing:.22em; color:color-mix(in srgb,var(--panel-tone) 7%,transparent);
+  border:3px solid color-mix(in srgb,var(--panel-tone) 7%,transparent); padding:6px 16px; pointer-events:none; z-index:0;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero > * {position:relative; z-index:1;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab {display:flex; align-items:center; gap:14px; margin:0 -26px 22px -28px; padding:10px 26px 10px 32px;
+  font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; text-transform:uppercase; color:#7d8aa0;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--panel-tone) 14%,transparent),color-mix(in srgb,var(--panel-tone) 3%,transparent));
+  border-bottom:1px dashed color-mix(in srgb,var(--panel-tone) 32%,#1f2a3a);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-a {display:inline-flex; align-items:center; gap:8px; color:color-mix(in srgb,var(--panel-tone) 75%,#fff);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-a::before {content:""; width:7px; height:7px; background:var(--panel-tone); transform:rotate(45deg);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-b::before {content:"/"; margin-right:14px; color:#46526a;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-c {margin-left:auto;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-title {font-size:30px !important; letter-spacing:-.02em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-pill {transform:rotate(-4deg); padding:9px 16px !important; border-width:2px !important; border-style:double !important; border-radius:6px !important;
+  letter-spacing:.26em !important; text-transform:uppercase; box-shadow:0 0 22px -8px currentColor, inset 0 0 12px -8px currentColor;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta {display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1.2fr) minmax(0,.7fr); margin:20px 0 0 0;
+  border-top:1px solid rgba(255,255,255,.09); border-bottom:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.015);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta > div {padding:13px 18px; min-width:0; border-left:1px dashed rgba(255,255,255,.1);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta > div:first-child {border-left:0; padding-left:2px;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta i {display:block; font:700 9.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.22em; text-transform:uppercase; font-style:normal; color:#6b7890;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta b {display:block; margin-top:8px; font:650 15px/1.2 Inter,"Segoe UI",sans-serif; color:#e6edf7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta b.dh2-hot {color:color-mix(in srgb,var(--panel-tone) 70%,#fff); font-variant-numeric:tabular-nums;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-rule {display:flex; align-items:center; gap:12px; margin:22px 0 4px 0; font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.24em; text-transform:uppercase; color:#6b7890;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-rule::after {content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,255,255,.14),transparent);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select {margin-top:6px !important;}
+@media (max-width:640px) {
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {padding:0 16px 18px 20px !important;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero::after {display:none !important;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab {margin:0 -16px 18px -20px; padding:10px 16px 10px 22px;} html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-b, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-tab-c {display:none;}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta {grid-template-columns:1fr;} html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta > div {border-left:0; padding-left:2px; border-top:1px dashed rgba(255,255,255,.1);}
+  html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-meta > div:first-child {border-top:0;}
+}
+</style>
+"""
+st.markdown(_DOSSIER_CASEFILE_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
@@ -13806,11 +13854,17 @@ if active_panel == "Forensic Report":
         _hero_subj = html.escape(str(sel_p.get("subject") or "(no subject)")[:140])
         _hero_from = html.escape(str(sel_p.get("from_addr") or "unknown sender")[:80])
         _hero_slot.markdown(
+            '<div class="dh2-tab"><span class="dh2-tab-a">Case file</span><span class="dh2-tab-b">Forensic dossier</span>'
+            '<span class="dh2-tab-c">Evidence ' + str(sel_pos) + ' / ' + str(len(report_items)) + '</span></div>'
             '<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">Forensic dossier</div>'
-            '<div class="dh2-title">Email #' + str(sel_pos) + ' <span>of ' + str(len(report_items)) + '</span></div>'
-            '<div class="dh2-sub">' + _hero_subj + ' &middot; ' + _hero_from + '</div></div>'
-            '<span class="dh2-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
-            + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
+            '<div class="dh2-title">Email #' + str(sel_pos) + ' <span>of ' + str(len(report_items)) + '</span></div></div>'
+            '<span class="dh2-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '99;background:' + _dh_col + '1a;">'
+            + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>'
+            '<div class="dh2-meta">'
+            '<div><i>Subject</i><b>' + _hero_subj + '</b></div>'
+            '<div><i>Sender</i><b>' + _hero_from + '</b></div>'
+            '<div><i>Risk score</i><b class="dh2-hot">' + f"{sel_score:.1f}" + ' / 100</b></div></div>'
+            '<div class="dh2-rule"><span>Inspect</span></div>',
             unsafe_allow_html=True,
         )
 
