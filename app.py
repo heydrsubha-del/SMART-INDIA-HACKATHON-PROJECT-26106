@@ -8517,9 +8517,16 @@ if True:
             color:color-mix(in srgb,var(--panel-tone) 70%,#fff) !important;
             background:linear-gradient(180deg,color-mix(in srgb,var(--panel-tone) 18%,#0c1118),color-mix(in srgb,var(--panel-tone) 9%,#0a0f15)) !important;
         }
-        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) {--cc:var(--panel-tone) !important;}
         html body .stApp.stApp.stApp.stApp.stApp :is(.rd-kicker, .right-dock-title) {color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important;}
         html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--panel-tone) !important;}
+        /* DASHBOARD card headers: map = blue, correlation graph = violet; one soft wash, same dot/label/pill hue */
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dash_map_card {--cc:#4c8dff !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-dash_graph_card {--cc:#a78bfa !important;
+            background:linear-gradient(90deg,#a78bfa,rgba(167,139,250,.10) 70%,transparent) top/100% 2px no-repeat, radial-gradient(60% 30% at 0% 0%, rgba(167,139,250,.09), transparent 70%), linear-gradient(180deg,#121524,#0a0f19) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) .part-banner .pb-main {background:linear-gradient(150deg, color-mix(in srgb,var(--cc) 24%,#0a0f18) 0%, color-mix(in srgb,var(--cc) 7%,#0a0f18) 100%) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) .part-banner {--tone:var(--cc) !important; border-bottom-color:color-mix(in srgb,var(--cc) 22%,#1d2536) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) .pb-step {color:color-mix(in srgb,var(--cc) 62%,#fff) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) .pb-scope {border-color:color-mix(in srgb,var(--cc) 38%,transparent) !important; background:color-mix(in srgb,var(--cc) 9%,transparent) !important; color:color-mix(in srgb,var(--cc) 40%,#fff) !important;}
         /* Forensic dossier header: ONE card (title, subject/sender, verdict + email picker) */
         html body .stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {position:relative; padding:22px 26px 20px 28px !important; margin:6px 0 22px 0 !important; gap:0 !important; border-radius:16px !important;
             border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
@@ -8717,17 +8724,17 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid
 /* header row = first columns block */
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:first-child,
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-child {
-  background:radial-gradient(70% 170% at 100% 50%, color-mix(in srgb, var(--panel-tone) 10%, transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);
-  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 22%, #232d3b);}
+  background:linear-gradient(180deg,#131b26,#0f151e);
+  border-bottom:1px solid #232d3b;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type {gap:0 !important; align-items:center !important; flex-wrap:nowrap !important;
-  background:radial-gradient(70% 170% at 100% 50%, color-mix(in srgb, var(--panel-tone) 10%, transparent), transparent 72%), linear-gradient(180deg,#131b26,#0f151e);
-  border-bottom:1px solid color-mix(in srgb, var(--panel-tone) 22%, #232d3b);}
+  background:linear-gradient(180deg,#131b26,#0f151e);
+  border-bottom:1px solid #232d3b;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane [data-testid="stHorizontalBlock"]:first-of-type > [data-testid="stColumn"]:last-child {flex:0 0 52px !important; min-width:0 !important; padding-right:12px;}
 .rd2-head {position:relative; padding:0;}
 .rd2-left {display:inline-block; padding:16px 44px 14px 20px; clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);
   background:linear-gradient(135deg, color-mix(in srgb, var(--lv) 30%, #0d131b), color-mix(in srgb, var(--lv) 8%, #0d131b));}
-.rd2-kicker {display:inline-flex; align-items:center; gap:9px; font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:color-mix(in srgb, var(--panel-tone) 82%, #fff);}
-.rd2-kicker::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--panel-tone); box-shadow:0 0 0 3px color-mix(in srgb, var(--panel-tone) 24%, transparent), 0 0 10px var(--panel-tone);}
+.rd2-kicker {display:inline-flex; align-items:center; gap:9px; font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:color-mix(in srgb, var(--lv) 70%, #fff);}
+.rd2-kicker::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--lv); box-shadow:0 0 0 3px color-mix(in srgb, var(--lv) 24%, transparent), 0 0 10px var(--lv);}
 .rd2-title {display:flex; align-items:baseline; gap:12px; margin-top:8px; font:800 21px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.01em;}
 .rd2-lvl {color:var(--lv);} .rd2-score {color:#fff; font-size:15px; font-weight:700;} .rd2-score small {color:#8fa1b5; font-weight:500; font-size:12px;}
 .rd2-gauge {height:3px; background:rgba(255,255,255,.07);} .rd2-gauge i {display:block; height:100%; background:var(--lv); box-shadow:0 0 10px var(--lv);}
@@ -8736,7 +8743,7 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open butto
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane .st-key-copilot_panel {border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; margin:0 !important; padding:14px 18px !important; border-bottom:1px solid rgba(255,255,255,.07) !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-right_summary_pane .panel-card-head {margin:0 !important; padding:12px 18px 0 18px !important; background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; clip-path:none !important;}
 /* sections */
-.rd2-sec {padding:13px 18px 9px 18px; border-top:1px solid rgba(255,255,255,.07); font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:color-mix(in srgb, var(--panel-tone) 75%, #fff);}
+.rd2-sec {padding:13px 18px 9px 18px; border-top:1px solid rgba(255,255,255,.07); font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.17em; text-transform:uppercase; color:#9db4d6;}
 .rd2-tiles {display:grid; grid-template-columns:1fr 1fr; border-top:1px solid rgba(255,255,255,.07);}
 .rd2-tile {padding:14px 18px; display:flex; flex-direction:column; gap:3px; min-width:0; border-right:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07);}
 .rd2-tile:nth-child(2n) {border-right:0;} .rd2-tile:nth-last-child(-n+2) {border-bottom:0;}
@@ -9431,7 +9438,6 @@ def _banner(step, title, sub="", scope="", tone="batch"):
 def _banner_c(step, title, sub="", scope="", color="#38bdf8", small=False):
     """Same banner card as _banner(), but with an explicit accent colour so
     neighbouring headers on one panel can each wear their own colour."""
-    color = _panel_hex()
     cls = "part-banner part-banner-sm" if small else "part-banner"
     st.markdown(
         f'<div class="{cls}" style="--tone:{html.escape(str(color))};">'
@@ -11821,7 +11827,7 @@ if active_panel == "Dashboard":
             with st.container(border=True, key="dash_map_card"):
                 _banner_c(
                     "GLOBE-SCAN", "IP Geolocation Map", "Where the current email entered the network",
-                    str(_bn_origin.get("ip", "Unknown")), "#22d3ee", small=True,
+                    str(_bn_origin.get("ip", "Unknown")), "#4c8dff", small=True,
                 )
                 # Always the email that is currently open -- no toggle here.
                 # The all-emails / single-email switch lives on Origin & Route.
