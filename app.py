@@ -8957,6 +8957,65 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp [data-testid="stMarkdownContainer
 </style>
 """
 st.markdown(_TABLE_SCROLL_CSS, unsafe_allow_html=True)
+_NAV_SMOOTH_CSS = """
+<style>
+html, body, .stApp, [data-testid="stMain"], section.main, [data-testid="stAppViewContainer"] {scroll-behavior:smooth;}
+[data-testid="stMain"], section.main {-webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;}
+@media (prefers-reduced-motion: reduce) {html, body, .stApp, [data-testid="stMain"], section.main {scroll-behavior:auto;}}
+</style>
+"""
+st.markdown(_NAV_SMOOTH_CSS, unsafe_allow_html=True)
+components.html(
+    r"""
+    <script>
+    (function () {
+        const win = window.parent, doc = win.document;
+        if (win.__navScrollFix) return;
+        win.__navScrollFix = true;
+        const KEY = 'nav_scroll_left';
+        let bound = null, lastLabel = null;
+        const reduce = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const group = () => doc.querySelector('.st-key-topnav [role="radiogroup"]');
+        const activeOf = g => g && g.querySelector('label:has(input:checked)');
+        function center(g, smooth) {
+            const a = activeOf(g); if (!a) return;
+            const left = a.offsetLeft - (g.clientWidth - a.offsetWidth) / 2;
+            g.scrollTo({left: Math.max(0, left), behavior: (smooth && !reduce) ? 'smooth' : 'auto'});
+        }
+        function toSection() {
+            const main = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('section.main');
+            const nav = doc.querySelector('.st-key-topnav');
+            if (!main || !nav) return;
+            const top = nav.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 8;
+            main.scrollTo({top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth'});
+        }
+        function sync() {
+            const g = group(); if (!g) return;
+            if (bound !== g) {
+                bound = g;
+                const saved = parseFloat(win.sessionStorage.getItem(KEY));
+                if (!isNaN(saved)) g.scrollLeft = saved;
+                g.addEventListener('scroll', () => win.sessionStorage.setItem(KEY, String(g.scrollLeft)), {passive: true});
+            }
+            const a = activeOf(g); const txt = a ? a.textContent.trim() : null;
+            if (txt && txt !== lastLabel) {
+                const first = lastLabel === null;
+                lastLabel = txt;
+                center(g, !first);
+                if (!first) toSection();
+            }
+        }
+        let queued = false;
+        new MutationObserver(() => {
+            if (queued) return; queued = true;
+            win.requestAnimationFrame(() => { queued = false; sync(); });
+        }).observe(doc.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['checked', 'aria-checked']});
+        sync();
+    })();
+    </script>
+    """,
+    height=0,
+)
 components.html(
     r"""
     <script>
