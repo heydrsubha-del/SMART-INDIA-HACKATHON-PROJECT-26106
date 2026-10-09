@@ -12169,6 +12169,7 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero {position:relativ
  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
  background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
  box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero, html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_learn_card {height:230px !important; min-height:230px !important; max-height:230px !important; box-sizing:border-box !important; margin-top:4px !important; margin-bottom:16px !important; overflow:hidden !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:0 !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
@@ -12245,7 +12246,7 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
         model_detail = f"{feedback_count} / 20 verified samples collected."
 
     with _colB:
-        with st.container(border=True):
+        with st.container(border=True, key="ai_learn_card"):
             _sec("AI Learning Status", "Analyst-verified feedback is used for controlled model adaptation.", tone="ai")
             if is_adaptive:
                 st.success("ADAPTIVE MODEL")
