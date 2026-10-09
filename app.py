@@ -210,7 +210,7 @@ from streamlit_folium import st_folium
 
 import config as C
 import correlate
-from md_export import md_cell, md_to_html_document, md_to_word_document
+from md_export import md_cell, md_to_html_document, md_to_word_document, clean_body_snippet, group_urls
 import threat_feed
 import inspect
 
@@ -13875,8 +13875,8 @@ if active_panel == "Forensic Report":
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 
         # --- BUILD RICH MARKDOWN STRING WITH TABLES ---
-        m_urls_list = [f"| `{md_cell(u.get('url'))}` | {float(u.get('risk', 0)):.0%} |" for u in sel_i.get('urls', [])]
-        m_urls = "| Extracted URL | Risk Score |\n|---|---|\n" + "\n".join(m_urls_list) if m_urls_list else "None detected"
+        m_urls_list = [f"| `{md_cell(u['url'])}` | {u['count']} | {u['risk']:.0%} |" for u in group_urls(sel_i.get('urls', []))]
+        m_urls = "| Extracted URL | Links | Risk Score |\n|---|---|---|\n" + "\n".join(m_urls_list) if m_urls_list else "None detected"
         
         m_anoms_list = [f"| **{md_cell(a.get('severity', '').upper())}** | {md_cell(a.get('title'))} | {md_cell(a.get('detail'))} |" for a in sel_h.get('anomalies', [])]
         m_anoms = "| Severity | Title | Detail |\n|---|---|---|\n" + "\n".join(m_anoms_list) if m_anoms_list else "None"
@@ -13935,7 +13935,7 @@ if active_panel == "Forensic Report":
 
 ### Extracted Body Snippet:
 ```text
-{str(sel_p.get('body_text', 'No body text extracted'))[:1000]}
+{clean_body_snippet(sel_p.get('body_text'))}
 ```
 
 ## 4. HEADER ANOMALIES
