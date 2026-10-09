@@ -373,6 +373,17 @@ def _message_body_text(raw_bytes):
 _MAILBOX_TONES = {"emerald": "#2fb68e", "violet": "#8b7cf6", "rose": "#e0708c", "sky": "#38bdf8"}
 
 
+def _panel_ac_style():
+    """Inline --ac so a message viewer wears the nav colour of the open panel
+    (the Forensic Report keeps its hand-picked per-block colours)."""
+    try:
+        if globals().get("active_panel") != "Forensic Report":
+            return " style='--ac:{};'".format(_panel_hex())
+    except Exception:
+        pass
+    return ""
+
+
 def _mail_box(key, kicker, title, body, height, chips=(), tone="emerald", sub="", widget_key=None, label=None):
     """Read-only message viewer: one self-contained HTML card (header + scrolling
     body) so the text can never spill over the header. One accent colour per
@@ -387,12 +398,13 @@ def _mail_box(key, kicker, title, body, height, chips=(), tone="emerald", sub=""
         _txt = _txt.replace(_ch, _ent)
     _txt = _txt.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "&#10;")
     _card = (
-        "<div class='mb-card mb-{tone}' role='region' aria-label='{lbl}'>"
+        "<div class='mb-card mb-{tone}'{ac} role='region' aria-label='{lbl}'>"
         "<div class='mb-head'><div class='mb-left'>"
         "<div class='mb-kicker'>{k}</div><div class='mb-title'>{t}</div>{s}</div>"
         "<div class='mb-chips'>{c}</div></div>"
         "<div class='mb-body' tabindex='0' style='height:{h}px'>{txt}</div></div>"
     ).format(
+        ac=_panel_ac_style(),
         tone=html.escape(tone), lbl=html.escape(label or title), k=html.escape(kicker), t=html.escape(title),
         s=("<div class='mb-sub'>" + html.escape(sub) + "</div>") if sub else "",
         c=_chip_html, h=int(height), txt=_txt,
@@ -8472,6 +8484,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Remaining hard-coded accents (violet/amber/green cards, dashboard map+graph
+# cards, right-dock kickers) follow the open page's nav colour as well.
+# The Forensic Report keeps its hand-picked per-block colours.
+if st.session_state.get("active_panel") != "Forensic Report":
+    st.markdown(
+        """<style>
+        html body .stApp.stApp.stApp.stApp.stApp :is(.panel-card-head, .panel-card-body):is([class*="-violet"],[class*="-amber"],[class*="-green"],[class*="-copper"]) {
+            --tone:var(--panel-tone) !important; border-left-color:var(--panel-tone) !important;
+            border-color:color-mix(in srgb,var(--panel-tone) 40%,#232d3b) !important; border-left-color:var(--panel-tone) !important;
+        }
+        html body .stApp.stApp.stApp.stApp.stApp .panel-card-head:is([class*="-violet"],[class*="-amber"],[class*="-green"],[class*="-copper"]) {
+            color:color-mix(in srgb,var(--panel-tone) 70%,#fff) !important;
+            background:linear-gradient(180deg,color-mix(in srgb,var(--panel-tone) 18%,#0c1118),color-mix(in srgb,var(--panel-tone) 9%,#0a0f15)) !important;
+        }
+        html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) {--cc:var(--panel-tone) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp :is(.rd-kicker, .right-dock-title) {color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--panel-tone) !important;}
+        </style>""",
+        unsafe_allow_html=True,
+    )
+
 _PANEL_WIDGET_CSS = """
 <style>
 /* Every control that used Streamlit's stock red now follows the open page's nav colour (--panel-tone). */
@@ -9315,6 +9348,8 @@ def _banner(step, title, sub="", scope="", tone="batch"):
 def _banner_c(step, title, sub="", scope="", color="#38bdf8", small=False):
     """Same banner card as _banner(), but with an explicit accent colour so
     neighbouring headers on one panel can each wear their own colour."""
+    if globals().get("active_panel") != "Forensic Report":
+        color = _panel_hex()
     cls = "part-banner part-banner-sm" if small else "part-banner"
     st.markdown(
         f'<div class="{cls}" style="--tone:{html.escape(str(color))};">'
