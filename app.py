@@ -8886,6 +8886,29 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-im
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] {margin-bottom:6px !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar .stSelectbox {margin:0 !important;}
+/* polish */
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {padding:24px 28px 26px 30px !important; border-radius:18px !important;
+  border-color:color-mix(in srgb,var(--panel-tone) 34%,#1b2636) !important;
+  background:radial-gradient(60% 90% at 100% 0%, color-mix(in srgb,var(--panel-tone) 9%,transparent), transparent 65%), radial-gradient(75% 130% at 0% 0%, color-mix(in srgb,var(--panel-tone) 15%,transparent), transparent 62%), linear-gradient(180deg,#111b27,#0b121b) !important;
+  box-shadow:0 18px 40px -24px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.02) inset, 0 1px 0 rgba(255,255,255,.06) inset !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-eyebrow {gap:9px !important; letter-spacing:.22em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {margin-top:10px !important; font-size:30px !important; letter-spacing:-.02em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips {margin-top:8px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span:first-child {color:color-mix(in srgb,var(--panel-tone) 55%,#c9d4e3) !important; font-weight:600 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span + span::before {margin:0 11px !important; color:#3f4b5e !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {align-self:flex-start !important; margin-top:4px; padding:8px 14px !important; letter-spacing:.2em !important;
+  box-shadow:0 0 18px -8px var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:16px 0 20px 0 !important; padding-left:14px !important; border-left:2px solid color-mix(in srgb,var(--panel-tone) 45%,transparent) !important; color:#8d99ac !important; max-width:92ch !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin-top:22px !important; padding-top:20px !important; border-top:1px dashed rgba(255,255,255,.10) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] p {font:700 10px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.22em !important; color:#7a879b !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] > div {min-height:48px !important; border-radius:11px !important; border:1px solid rgba(255,255,255,.08) !important;
+  border-left:3px solid color-mix(in srgb,var(--panel-tone) 70%,transparent) !important; padding-left:6px !important;
+  background:linear-gradient(180deg,#0a1119,#0d151f) !important; box-shadow:inset 0 2px 6px rgba(0,0,0,.45) !important; transition:border-color .15s, box-shadow .15s;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] > div:hover {border-color:color-mix(in srgb,var(--panel-tone) 45%,transparent) !important; border-left-color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] > div:focus-within {border-color:var(--panel-tone) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-tone) 20%,transparent), inset 0 2px 6px rgba(0,0,0,.45) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] [class*="singleValue"], html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] div[value] {font:650 15px/1.2 Inter,"Segoe UI",sans-serif !important; color:#eaf0f8 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] svg {color:color-mix(in srgb,var(--panel-tone) 75%,#fff) !important; fill:currentColor !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar .stButton button {min-height:48px !important;}
 </style>
 """
 st.markdown(_MAILBOX_TIGHT_CSS, unsafe_allow_html=True)
