@@ -8501,6 +8501,10 @@ if st.session_state.get("active_panel") != "Forensic Report":
         html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) {--cc:var(--panel-tone) !important;}
         html body .stApp.stApp.stApp.stApp.stApp :is(.rd-kicker, .right-dock-title) {color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important;}
         html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--panel-tone) !important;}
+        /* primary action buttons (Run AI Scan, Connect, Scan...) take the page's nav colour;
+           destructive/verdict buttons keep their own red/green meaning */
+        html body .stApp.stApp.stApp.stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"],[class*="confirm_threat"]) *) button[kind="primary"],
+        html body .stApp.stApp.stApp.stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"],[class*="confirm_threat"]) *) button[kind="primaryFormSubmit"] {--bt:var(--panel-tone) !important;}
         </style>""",
         unsafe_allow_html=True,
     )
