@@ -12170,12 +12170,12 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero {position:relativ
  background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
  box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:16px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:0 !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
 .stApp.stApp.stApp.stApp.stApp .st-key-false_positive{width:fit-content !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat button,
 .stApp.stApp.stApp.stApp.stApp .st-key-false_positive button{
- width:auto !important;min-width:190px !important;height:44px !important;min-height:44px !important;max-height:44px !important;
+ width:100% !important;min-width:0 !important;height:44px !important;min-height:44px !important;max-height:44px !important;
  box-sizing:border-box !important;margin:0 !important;}
 </style>""", unsafe_allow_html=True)
     feedback_hash = hashlib.sha256(raw).hexdigest()
@@ -12190,11 +12190,13 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
         st.session_state["feedback_action"] = None
 
     with st.container(key="feedback_hero"):
-        st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
+        _fh_l, _fh_r = st.columns([5, 4], gap="medium", vertical_alignment="center")
+        with _fh_l:
+            st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
 <div class="dh2-title">Analyst Feedback</div>
-<div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div>
-<div class="dh2-pill" style="color:var(--panel-tone);border-color:color-mix(in srgb,var(--panel-tone) 45%,transparent);background:color-mix(in srgb,var(--panel-tone) 10%,transparent);">IMPROVES THE MODEL</div></div>""", unsafe_allow_html=True)
-        fb1, fb2, _fbsp = st.columns([1, 1, 3], gap="small")
+<div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div></div>""", unsafe_allow_html=True)
+        with _fh_r:
+            fb1, fb2 = st.columns(2, gap="small")
         feedback_message = None
         feedback_type = None
 
