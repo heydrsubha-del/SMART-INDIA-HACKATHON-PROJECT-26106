@@ -8878,9 +8878,13 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-im
 st.markdown(_MAILBOX_DOSSIER_CSS, unsafe_allow_html=True)
 _MAILBOX_TIGHT_CSS = """
 <style>
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:14px 0 16px 0 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin:16px 0 0 0 !important; padding-top:16px !important; border-top:1px solid rgba(255,255,255,.07) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] {align-items:flex-end !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:14px 0 18px 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin:0 !important; padding:0 !important; border:0 !important; gap:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] {align-items:flex-end !important; gap:12px !important; margin:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child {flex:1 1 auto !important; width:auto !important; min-width:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] {margin-bottom:6px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar .stSelectbox {margin:0 !important;}
 </style>
 """
 st.markdown(_MAILBOX_TIGHT_CSS, unsafe_allow_html=True)
@@ -10608,7 +10612,6 @@ if active_panel == "Dashboard":
                         key="imap_loaded_browse_count",
                     )
                 with _fc3:
-                    st.markdown("<div style='height: 1.8rem'></div>", unsafe_allow_html=True)
                     _reload_clicked = st.button("Reload", use_container_width=True, key="imap_reload_folder_btn")
                 if _reload_clicked:
                     try:
