@@ -12,6 +12,8 @@ Standalone:  python report.py > report.md
 import hashlib
 from datetime import datetime, timezone
 
+from md_export import md_cell
+
 SEVERITY_MARK = {"high": "[HIGH]", "medium": "[MED] ", "low": "[LOW] ",
                  "info": "[INFO]"}
 
@@ -54,7 +56,7 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     add("| --- | --- |")
     add("| Risk score | **{:.0f} / 100** |".format(result["score"]))
     add("| Classification | **{}** |".format(result["level"]))
-    add("| Primary driver | {} |".format(verdict.get("top_driver", "-")))
+    add("| Primary driver | {} |".format(md_cell(verdict.get("top_driver", "-"))))
     add("| ML phishing probability | {:.1%} |".format(result["ml"]["prob"]))
     add("")
     add("### How the score was reached")
@@ -63,7 +65,7 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     add("| --- | --- | --- | --- |")
     for c in verdict["contributions"]:
         add("| {} | {:.0%} | {} | {:.1f} |".format(
-            c["label"], c["strength"], c["weight"], c["points"]))
+            md_cell(c["label"]), c["strength"], c["weight"], c["points"]))
     add("| | | **Total** | **{:.1f}** |".format(result["score"]))
     add("")
 
@@ -83,7 +85,7 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         ("Message-ID", parsed.get("message_id")),
         ("X-Mailer", parsed.get("x_mailer")),
     ):
-        add("| {} | `{}` |".format(label, value or "(absent)"))
+        add("| {} | `{}` |".format(label, md_cell(value or "(absent)")))
     add("")
 
     # --- 3. Authentication --------------------------------------------------
@@ -143,8 +145,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         for hop in geo["hops"]:
             where = ", ".join(p for p in [hop.get("city"), hop.get("country")] if p)
             add("| {} | `{}` | {} | {} | {} | {} |".format(
-                hop.get("hop_index", "?"), hop["ip"], where or "Unknown",
-                hop.get("isp") or "-", hop.get("infra_label", "-"),
+                hop.get("hop_index", "?"), md_cell(hop["ip"]), md_cell(where or "Unknown"),
+                md_cell(hop.get("isp") or "-"), md_cell(hop.get("infra_label", "-")),
                 "Confirmed" if hop.get("tor_exit_confirmed") else "-"))
         add("")
         add("Routing order is oldest hop first, reconstructed by reversing the "
@@ -184,8 +186,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         add("| --- | --- | --- |")
         for u in iocs["urls"]:
             add("| `{}` | `{}` | {} |".format(
-                u["url"][:70], u["host"] or "-",
-                "; ".join(u["flags"]) if u["flags"] else "no indicators"))
+                md_cell(u["url"][:70]), md_cell(u["host"] or "-"),
+                md_cell("; ".join(u["flags"]) if u["flags"] else "no indicators")))
         add("")
     else:
         add("No URLs present in the message body.")
