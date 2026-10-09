@@ -12189,46 +12189,48 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
         st.session_state["feedback_email"] = current_feedback_key
         st.session_state["feedback_action"] = None
 
-    with st.container(key="feedback_hero"):
-        _fh_l, _fh_r = st.columns([5, 4], gap="medium", vertical_alignment="center")
-        with _fh_l:
-            st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
-<div class="dh2-title">Analyst Feedback</div>
-<div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div></div>""", unsafe_allow_html=True)
-        with _fh_r:
-            fb1, fb2 = st.columns(2, gap="small")
-        feedback_message = None
-        feedback_type = None
+    _colA, _colB = st.columns([1.7, 1], gap="medium")
+    with _colA:
+        with st.container(key="feedback_hero"):
+            _fh_l, _fh_r = st.columns([5, 4], gap="medium", vertical_alignment="center")
+            with _fh_l:
+                st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
+    <div class="dh2-title">Analyst Feedback</div>
+    <div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div></div>""", unsafe_allow_html=True)
+            with _fh_r:
+                fb1, fb2 = st.columns(2, gap="small")
+            feedback_message = None
+            feedback_type = None
 
-        with fb1:
-            if st.button("Confirm Threat", key="confirm_threat", type="primary"):
-                add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
-                training_result = maybe_retrain_from_feedback()
-                if training_result["status"] == "trained":
-                    get_model.clear()
-                    analyze_bytes.clear()
-                    get_sample_results.clear()
-                    feedback_message = "Threat confirmed. Adaptive model validated and accepted."
-                elif training_result["status"] == "rejected":
-                    feedback_message = f"Threat confirmed and saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-                else:
-                    feedback_message = "Threat confirmed and stored for future learning."
-                feedback_type = "success"
+            with fb1:
+                if st.button("Confirm Threat", key="confirm_threat", type="primary"):
+                    add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
+                    training_result = maybe_retrain_from_feedback()
+                    if training_result["status"] == "trained":
+                        get_model.clear()
+                        analyze_bytes.clear()
+                        get_sample_results.clear()
+                        feedback_message = "Threat confirmed. Adaptive model validated and accepted."
+                    elif training_result["status"] == "rejected":
+                        feedback_message = f"Threat confirmed and saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
+                    else:
+                        feedback_message = "Threat confirmed and stored for future learning."
+                    feedback_type = "success"
 
-        with fb2:
-            if st.button("False Positive", key="false_positive", type="secondary"):
-                add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
-                training_result = maybe_retrain_from_feedback()
-                if training_result["status"] == "trained":
-                    get_model.clear()
-                    analyze_bytes.clear()
-                    get_sample_results.clear()
-                    feedback_message = "False positive saved. Adaptive model validated and accepted."
-                elif training_result["status"] == "rejected":
-                    feedback_message = f"False positive saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-                else:
-                    feedback_message = "False-positive feedback stored for future learning."
-                feedback_type = "info"
+            with fb2:
+                if st.button("False Positive", key="false_positive", type="secondary"):
+                    add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
+                    training_result = maybe_retrain_from_feedback()
+                    if training_result["status"] == "trained":
+                        get_model.clear()
+                        analyze_bytes.clear()
+                        get_sample_results.clear()
+                        feedback_message = "False positive saved. Adaptive model validated and accepted."
+                    elif training_result["status"] == "rejected":
+                        feedback_message = f"False positive saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
+                    else:
+                        feedback_message = "False-positive feedback stored for future learning."
+                    feedback_type = "info"
 
     if feedback_message:
         show_feedback_typing(feedback_message, feedback_type)
@@ -12242,11 +12244,9 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
     else:
         model_detail = f"{feedback_count} / 20 verified samples collected."
 
-    with st.container(border=True):
-        left, right = st.columns([2.2, 1])
-        with left:
+    with _colB:
+        with st.container(border=True):
             _sec("AI Learning Status", "Analyst-verified feedback is used for controlled model adaptation.", tone="ai")
-        with right:
             if is_adaptive:
                 st.success("ADAPTIVE MODEL")
             else:
