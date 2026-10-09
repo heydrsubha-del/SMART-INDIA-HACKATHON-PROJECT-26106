@@ -8878,6 +8878,7 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-im
 st.markdown(_MAILBOX_DOSSIER_CSS, unsafe_allow_html=True)
 _MAILBOX_TIGHT_CSS = """
 <style>
+.stApp:has(.st-key-imap_connected_panel) .live-head {display:none !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:14px 0 18px 0 !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin:0 !important; padding:0 !important; border:0 !important; gap:0 !important;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stHorizontalBlock"] {align-items:flex-end !important; gap:12px !important; margin:0 !important;}
@@ -10508,12 +10509,13 @@ if active_panel == "Dashboard":
                 <div class="mbx-head">
                   <div class="mbx-avatar">{_mbx_initial}</div>
                   <div class="mbx-text">
-                    <div class="mbx-eyebrow"><span class="mbx-dot"></span>Mailbox connected</div>
+                    <div class="mbx-eyebrow"><span class="mbx-dot"></span>Live mailbox interceptor &middot; Channel A</div>
                     <div class="mbx-title">{html.escape(_mbx_user)}</div>
                     <div class="mbx-chips">
                       <span>{html.escape(str(_cfg_summary.get("host", "")))}</span>
                       <span>folder: {html.escape(str(_cfg_summary.get("folder", "INBOX")))}</span>
                       <span>{_mbx_n} headers loaded</span>
+                      <span>read-only access</span>
                     </div>
                   </div>
                   <div class="mbx-badge">&#10003; Live</div>
