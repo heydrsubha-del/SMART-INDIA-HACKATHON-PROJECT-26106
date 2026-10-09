@@ -6339,11 +6339,18 @@ st.markdown(
        (thin accent bar, no filled box, small muted text) instead of big
        bordered panels. Warnings and errors keep their full styling.
        ================================================================== */
-    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]),
-    html body .stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) {
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) {
         background:transparent !important; box-shadow:none !important; border:0 !important;
-        border-left:2px solid rgba(34,211,238,.45) !important; border-radius:0 !important;
+        border-left:2px solid color-mix(in srgb,var(--panel-tone,#22d3ee) 55%,transparent) !important; border-radius:0 !important;
         padding:2px 0 2px 10px !important; min-height:0 !important; margin:0 !important;
+    }
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) [data-testid="stAlertContainer"],
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) *::before,
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) *::after,
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"])::before,
+    html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"])::after {
+        border:0 !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important;
+        padding:0 !important; margin:0 !important; content:none !important;
     }
     html body .stApp [data-testid="stAlertContentInfo"], html body .stApp [data-testid="stAlertContentInfo"] p {
         font-size:12px !important; line-height:1.45 !important; color:#8fa3b8 !important; margin:0 !important;
@@ -8205,9 +8212,9 @@ st.markdown(r"""
 .stApp.stApp.stApp [data-testid="stBaseButton-primary"], .stApp.stApp.stApp button[kind="primary"] {
   min-height:46px !important; padding:0 22px !important; border-radius:12px !important;
   border:1px solid rgba(255,255,255,.20) !important;
-  background:linear-gradient(180deg,#32bf98 0%,#1d8568 100%) !important; color:#fff !important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bt,var(--panel-tone,#2fb68e)) 90%,#fff) 0%,color-mix(in srgb,var(--bt,var(--panel-tone,#2fb68e)) 62%,#000) 100%) !important; color:#fff !important;
   font:650 14px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.015em !important; text-shadow:0 1px 1px rgba(0,0,0,.25);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.26), 0 10px 22px -14px rgba(47,182,142,.75) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26), 0 10px 22px -14px var(--bt,var(--panel-tone,#2fb68e)) !important;
   transition:filter .18s var(--ease), transform .18s var(--ease), box-shadow .2s var(--ease) !important;
 }
 .stApp.stApp.stApp [data-testid="stBaseButton-primary"]:hover, .stApp.stApp.stApp button[kind="primary"]:hover {filter:brightness(1.08); transform:translateY(-1px); border-color:rgba(255,255,255,.34) !important;}
