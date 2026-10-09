@@ -7555,6 +7555,39 @@ st.markdown(
 
     .stApp [data-testid="stProgress"] [data-baseweb="progress-bar"] > div {height:6px !important; border-radius:6px !important; background:rgba(255,255,255,.07) !important;}
     .stApp [data-testid="stProgress"] [data-baseweb="progress-bar"] > div > div {height:6px !important; border-radius:6px !important; background:linear-gradient(90deg,var(--panel-tone,#8b7cf6),color-mix(in srgb,var(--panel-tone,#8b7cf6) 55%,#fff)) !important;}
+
+    /* ==================================================================
+       PREMIUM LOADER -- replaces the stock spinner (also used by cached
+       function "show_spinner" messages). A glass card holding a skeleton of
+       the content to come (avatar, three lines, block); a soft tinted
+       light sweeps through the shapes instead of a spinning ring. Colour
+       follows the open page.
+       ================================================================== */
+    @keyframes skelSweep {from {background-position:160% 0;} to {background-position:-60% 0;}}
+    @keyframes skelBreath {0%,100% {box-shadow:0 18px 38px -24px rgba(0,0,0,.9), 0 0 0 0 transparent, inset 0 1px 0 rgba(255,255,255,.05);} 50% {box-shadow:0 18px 38px -24px rgba(0,0,0,.9), 0 0 36px -12px color-mix(in srgb,var(--panel-tone,#8b7cf6) 55%,transparent), inset 0 1px 0 rgba(255,255,255,.07);}}
+    @keyframes skelDot {0%,100% {opacity:.35; transform:scale(.8);} 50% {opacity:1; transform:scale(1.15);}}
+    .stApp.stApp [data-testid="stSpinner"] {
+        position:relative; display:grid !important; grid-template-columns:1fr; gap:14px; width:min(100%,560px); box-sizing:border-box; margin:10px 0 14px 0;
+        padding:22px 22px 16px 22px; border-radius:18px; overflow:hidden;
+        border:1px solid color-mix(in srgb,var(--panel-tone,#8b7cf6) 22%,rgba(255,255,255,.08));
+        background:radial-gradient(90% 120% at 0% 0%, color-mix(in srgb,var(--panel-tone,#8b7cf6) 10%,transparent), transparent 60%), linear-gradient(180deg,rgba(21,28,40,.92),rgba(12,17,25,.92));
+        backdrop-filter:blur(8px); animation:skelBreath 3.4s ease-in-out infinite;
+    }
+    .stApp.stApp [data-testid="stSpinner"] > *:not(:has(p, span, [data-testid="stMarkdownContainer"])), .stApp.stApp [data-testid="stSpinner"] svg {display:none !important;}
+    .stApp.stApp [data-testid="stSpinner"]::before {
+        content:""; display:block; width:100%; aspect-ratio:540 / 130;
+        background:linear-gradient(100deg, color-mix(in srgb,var(--panel-tone,#8b7cf6) 14%,#1a2231) 25%, color-mix(in srgb,var(--panel-tone,#8b7cf6) 55%,#e8ecff) 50%, color-mix(in srgb,var(--panel-tone,#8b7cf6) 14%,#1a2231) 75%) 160% 0 / 260% 100% no-repeat;
+        -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 130' preserveAspectRatio='none'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Crect x='76' y='10' width='440' height='11' rx='5.5'/%3E%3Crect x='76' y='32' width='320' height='11' rx='5.5'/%3E%3Crect x='76' y='54' width='190' height='11' rx='5.5'/%3E%3Crect x='0' y='82' width='540' height='48' rx='14'/%3E%3C/svg%3E") center / 100% 100% no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 130' preserveAspectRatio='none'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Crect x='76' y='10' width='440' height='11' rx='5.5'/%3E%3Crect x='76' y='32' width='320' height='11' rx='5.5'/%3E%3Crect x='76' y='54' width='190' height='11' rx='5.5'/%3E%3Crect x='0' y='82' width='540' height='48' rx='14'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+        animation:skelSweep 2.1s cubic-bezier(.4,0,.2,1) infinite;
+    }
+    .stApp.stApp [data-testid="stSpinner"] :is(p, span) {
+        display:flex !important; align-items:center; gap:10px; margin:0 !important; padding-top:2px;
+        font:600 10.5px/1.2 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase; color:#8fa0b4 !important;
+    }
+    .stApp.stApp [data-testid="stSpinner"] p::before {content:""; flex:none; width:7px; height:7px; border-radius:50%; background:var(--panel-tone,#8b7cf6); box-shadow:0 0 10px var(--panel-tone,#8b7cf6); animation:skelDot 1.4s ease-in-out infinite;}
+    @media (prefers-reduced-motion: reduce) {
+        .stApp.stApp [data-testid="stSpinner"], .stApp.stApp [data-testid="stSpinner"]::before, .stApp.stApp [data-testid="stSpinner"] p::before {animation:none !important;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -12178,6 +12211,25 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
 .stApp.stApp.stApp.stApp.stApp .st-key-false_positive button{
  width:100% !important;min-width:0 !important;height:44px !important;min-height:44px !important;max-height:44px !important;
  box-sizing:border-box !important;margin:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero, html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_learn_card {height:auto !important; max-height:none !important; min-height:230px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) {width:100% !important; max-width:100% !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) :is(.stButton, [data-testid="stButton"]) {width:100% !important; display:block !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {display:grid !important; grid-template-columns:1fr 1fr !important; gap:12px !important; align-items:stretch !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > * {width:auto !important; min-width:0 !important; flex:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button {justify-content:center !important; padding-left:44px !important; padding-right:30px !important; white-space:nowrap;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero .feedback-terminal {margin:16px 0 0 0 !important; padding:11px 16px !important; border-radius:11px !important; font-size:13.5px !important; line-height:1.5 !important; box-sizing:border-box; width:100%;}
+@media (max-width:1180px){
+ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero > div > [data-testid="stHorizontalBlock"], html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important; gap:14px !important;}
+ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;}
+ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:none !important; min-width:0 !important;}
+}
+@media (max-width:1100px){
+ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) {flex-wrap:wrap !important; gap:16px !important;}
+ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;}
+}
+@media (max-width:640px){
+ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {grid-template-columns:1fr !important;}
+}
 </style>""", unsafe_allow_html=True)
     feedback_hash = hashlib.sha256(raw).hexdigest()
     review_count = get_feedback_history_count(feedback_hash)
@@ -12233,8 +12285,8 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
                         feedback_message = "False-positive feedback stored for future learning."
                     feedback_type = "info"
 
-    if feedback_message:
-        show_feedback_typing(feedback_message, feedback_type)
+            if feedback_message:
+                show_feedback_typing(feedback_message, feedback_type)
 
     feedback_count = get_feedback_count()
     adaptive_status = get_adaptive_status()
