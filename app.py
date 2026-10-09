@@ -8912,6 +8912,39 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-
 </style>
 """
 st.markdown(_MAILBOX_TIGHT_CSS, unsafe_allow_html=True)
+_SLEEK_CSS = """
+<style>
+/* compact mailbox card */
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {padding:18px 22px 18px 24px !important; margin:4px 0 16px 0 !important; border-radius:14px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel::before {top:14px !important; bottom:14px !important; width:3px !important; border-radius:0 3px 3px 0 !important; background:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-eyebrow {font-size:10px !important; letter-spacing:.2em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {margin-top:7px !important; font-size:23px !important; letter-spacing:-.015em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips {margin-top:5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span {font-size:12.5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {margin-top:0 !important; padding:6px 11px !important; font-size:10.5px !important; letter-spacing:.16em !important; border-radius:7px !important; box-shadow:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:12px 0 14px 0 !important; padding:0 0 0 12px !important; font-size:12.5px !important; line-height:1.5 !important; max-width:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .stButton button, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .stDownloadButton button {min-height:42px !important; font-size:13.5px !important; border-radius:10px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:10px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin-top:14px !important; padding-top:14px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] {margin-bottom:5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] p {font-size:9.5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] > div {min-height:42px !important; border-radius:10px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] [class*="singleValue"], html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] div[value] {font-size:14px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar .stButton button {min-height:42px !important;}
+/* dossier hero: same inset chooser, calmer pill */
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-baseweb="select"] > div {min-height:42px !important; border-radius:10px !important; border:1px solid rgba(255,255,255,.08) !important;
+  border-left:3px solid color-mix(in srgb,var(--panel-tone) 70%,transparent) !important; padding-left:6px !important;
+  background:linear-gradient(180deg,#0a1119,#0d151f) !important; box-shadow:inset 0 2px 6px rgba(0,0,0,.45) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-baseweb="select"] > div:hover {border-left-color:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-baseweb="select"] > div:focus-within {border-color:var(--panel-tone) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-tone) 20%,transparent), inset 0 2px 6px rgba(0,0,0,.45) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-baseweb="select"] svg {color:color-mix(in srgb,var(--panel-tone) 75%,#fff) !important; fill:currentColor !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-testid="stWidgetLabel"] {margin-bottom:5px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .dh2-pill {border-radius:7px !important; padding:7px 12px !important; letter-spacing:.14em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {padding:18px 22px 18px 24px !important; margin:4px 0 16px 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select {margin-top:12px !important;}
+</style>
+"""
+st.markdown(_SLEEK_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
