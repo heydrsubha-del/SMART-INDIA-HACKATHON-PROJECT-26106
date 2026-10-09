@@ -8945,6 +8945,23 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-sing
 </style>
 """
 st.markdown(_SLEEK_CSS, unsafe_allow_html=True)
+_FULL_REPORT_BTN_CSS = """
+<style>
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn .stButton, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button {--bt:#7c93ff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button[kind="primary"] {
+  background:linear-gradient(135deg,#1c2747 0%,#18203a 55%,#141a2e 100%) !important;
+  border:1px solid rgba(124,147,255,.45) !important; color:#eef2ff !important;
+  box-shadow:0 8px 22px -12px rgba(124,147,255,.55), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  transition:border-color .18s, box-shadow .18s, transform .18s, background .18s !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button p, html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button span {color:#eef2ff !important; font-weight:650 !important; letter-spacing:.01em;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button:hover {
+  background:linear-gradient(135deg,#232f58 0%,#1c2646 55%,#171e36 100%) !important;
+  border-color:rgba(160,177,255,.8) !important; transform:translateY(-1px);
+  box-shadow:0 12px 26px -12px rgba(124,147,255,.75), inset 0 1px 0 rgba(255,255,255,.1) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-mailbox_quick_full_report_btn button:active {transform:translateY(0);}
+</style>
+"""
+st.markdown(_FULL_REPORT_BTN_CSS, unsafe_allow_html=True)
 _TABLE_SCROLL_CSS = """
 <style>
 /* Wide tables scroll sideways instead of being clipped (mobile / desktop-mode on phones). */
