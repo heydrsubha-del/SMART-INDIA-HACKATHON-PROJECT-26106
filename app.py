@@ -9,6 +9,7 @@ import csv
 import io
 import os
 import json
+import base64
 import urllib.request
 import urllib.error
 import time
@@ -209,6 +210,7 @@ from streamlit_folium import st_folium
 
 import config as C
 import correlate
+from md_export import md_cell, md_to_html_document
 import threat_feed
 import inspect
 
@@ -757,8 +759,8 @@ def _sem_md_table(matches):
     ]
     for r in _sem_rows(matches):
         lines.append(
-            f"| {r['Confidence']} | {r['Match score']} | {r['Embedding similarity']} | `{r['Origin IP']}` | "
-            f"{r['Country']} | {r['Infrastructure']} | {r['Emails from this origin']} | {r['Shared traits']} |"
+            f"| {md_cell(r['Confidence'])} | {md_cell(r['Match score'])} | {md_cell(r['Embedding similarity'])} | `{md_cell(r['Origin IP'])}` | "
+            f"{md_cell(r['Country'])} | {md_cell(r['Infrastructure'])} | {md_cell(r['Emails from this origin'])} | {md_cell(r['Shared traits'])} |"
         )
     return "\n".join(lines)
 
@@ -8907,6 +8909,80 @@ components.html(
     height=0,
 )
 
+_PREMIUM_DL_TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;background:transparent;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.w{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 0 2px}
+.ring{position:relative;width:92px;height:92px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ring.off{cursor:not-allowed;opacity:.38}
+svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.tr{fill:none;stroke:rgba(255,255,255,.14);stroke-width:5}
+.pg{fill:none;stroke:#8b5cf6;stroke-width:5;stroke-linecap:round;stroke-dasharray:276.46;stroke-dashoffset:276.46}
+.core{position:absolute;inset:11px;border-radius:50%;background:linear-gradient(145deg,#7c4dff,#5b2fd0);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(109,63,216,.45);transition:transform .15s,background .3s,box-shadow .3s}
+.ring:not(.off):hover .core{transform:scale(1.05)}
+.ring:not(.off):active .core{transform:scale(.96)}
+.core svg{position:static;transform:none;width:30px;height:30px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ring.done .core{background:linear-gradient(145deg,#2bd47d,#17a85f);box-shadow:0 8px 20px rgba(34,197,94,.45)}
+.ring.done .pg{stroke:#22c55e}
+.pill{min-width:54px;text-align:center;padding:3px 12px;border-radius:999px;background:#6d3fd8;color:#fff;font-size:12px;font-weight:700;transition:background .3s}
+.pill.done{background:#17a85f}
+.lbl{color:#d7dbef;font-size:13px;font-weight:600;text-align:center;max-width:100%;line-height:1.25}
+.alt{color:#9aa3c7;font-size:11.5px;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0}
+.alt:hover{color:#c9b8ff}
+</style></head><body><div class="w">
+<div class="ring __OFF__" id="r" title="__TITLE__" role="button" aria-label="__ARIA__">
+<svg viewBox="0 0 100 100"><circle class="tr" cx="50" cy="50" r="44"/><circle class="pg" id="pg" cx="50" cy="50" r="44"/></svg>
+<div class="core"><svg id="ic" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M5 20h14"/></svg></div></div>
+<div class="pill" id="pl">__PILL__</div>
+<div class="lbl">__LABEL__</div>
+__ALT__
+</div><script>
+var D=__DATA__,C=276.46,r=document.getElementById('r'),pg=document.getElementById('pg'),
+pl=document.getElementById('pl'),ic=document.getElementById('ic'),busy=false,off=__OFFJS__;
+function save(m,n,t){var b=atob(m),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
+var u=URL.createObjectURL(new Blob([a],{type:t})),k=document.createElement('a');k.href=u;k.download=n;
+document.body.appendChild(k);k.click();document.body.removeChild(k);setTimeout(function(){URL.revokeObjectURL(u)},4000);}
+function setP(p){pg.style.strokeDashoffset=C*(1-p);pl.textContent=Math.round(p*100)+'%';}
+function reset(){r.classList.remove('done');pl.classList.remove('done');pg.style.strokeDashoffset=C;
+pl.textContent='Download';ic.innerHTML='<path d="M12 4v11"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M5 20h14"/>';busy=false;}
+if(!off){r.onclick=function(){if(busy)return;busy=true;var t0=performance.now(),T=1100;
+(function s(now){var p=Math.min(1,(now-t0)/T);setP(1-Math.pow(1-p,2));
+if(p<1){requestAnimationFrame(s);return;}
+save(D.main,D.name,'text/html;charset=utf-8');r.classList.add('done');pl.classList.add('done');pl.textContent='Downloaded';
+ic.innerHTML='<path d="M5 12.5l4.5 4.5L19 7.5"/>';setTimeout(reset,3200);})(t0);};}
+var al=document.getElementById('alt');if(al&&!off){al.onclick=function(){save(D.md,D.mdname,'text/markdown;charset=utf-8');};}
+</script></body></html>"""
+
+
+def _premium_download(label, markdown, file_name, key=None, disabled=False, help=None, primary=False):
+    """Circular progress download button (HTML report with real tables, plus
+    the raw Markdown as a secondary link). `key` and `primary` are accepted so
+    call sites mirror st.download_button; they don't change the output."""
+    base = os.path.splitext(str(file_name))[0]
+    title = base.replace("_", " ").strip().title() or "Report"
+    md_text = str(markdown or "")
+    doc = md_to_html_document(md_text, title)
+    data = {
+        "main": base64.b64encode(doc.encode("utf-8")).decode("ascii"),
+        "md": base64.b64encode(md_text.encode("utf-8")).decode("ascii"),
+        "name": base + ".html",
+        "mdname": base + ".md",
+    }
+    clean_label = re.sub(r"\s*\(\.(md|html)\)\s*$", "", str(label)).strip()
+    tip = str(help or clean_label)
+    page = (
+        _PREMIUM_DL_TEMPLATE
+        .replace("__OFF__", "off" if disabled else "")
+        .replace("__OFFJS__", "true" if disabled else "false")
+        .replace("__TITLE__", html.escape(tip, quote=True))
+        .replace("__ARIA__", html.escape(clean_label, quote=True))
+        .replace("__PILL__", "Locked" if disabled else "Download")
+        .replace("__LABEL__", html.escape(clean_label))
+        .replace("__ALT__", "" if disabled else '<button class="alt" id="alt" type="button">or raw Markdown (.md)</button>')
+        .replace("__DATA__", json.dumps(data))
+    )
+    components.html(page, height=178)
+
+
 def _clean_ai_display(text):
     cleaned = []
     for line in str(text or "").splitlines():
@@ -12175,30 +12251,24 @@ if active_panel == "AI Threat Analysis":
                     _count_tag = saved_batch.get('count')
                     bdl1, bdl2, bdl3 = st.columns(3)
                     with bdl1:
-                        st.download_button(
+                        _premium_download(
                             label="AI Summary Only (.md)",
-                            data=ai_only_batch_md.encode("utf-8"),
+                            markdown=ai_only_batch_md,
                             file_name=f"ai_campaign_summary_{_count_tag}_emails.md",
-                            mime="text/markdown",
-                            use_container_width=True,
                             key="dl_ai_campaign_md",
                         )
                     with bdl2:
-                        st.download_button(
+                        _premium_download(
                             label="Machine Results Only (.md)",
-                            data=machine_only_batch_md.encode("utf-8"),
+                            markdown=machine_only_batch_md,
                             file_name=f"machine_report_{_count_tag}_emails.md",
-                            mime="text/markdown",
-                            use_container_width=True,
                             key="dl_machine_campaign_md",
                         )
                     with bdl3:
-                        st.download_button(
+                        _premium_download(
                             label="Combined Report (.md)",
-                            data=combined_batch_md.encode("utf-8"),
+                            markdown=combined_batch_md,
                             file_name=f"combined_forensic_report_{_count_tag}_emails.md",
-                            mime="text/markdown",
-                            use_container_width=True,
                             key="dl_combined_campaign_md",
                         )
                     st.caption(
@@ -12255,12 +12325,10 @@ if active_panel == "AI Threat Analysis":
                         f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
                         f"## AI Assessment\n\n{cleaned_single}"
                     )
-                    st.download_button(
+                    _premium_download(
                         label="Download AI Assessment (.md)",
-                        data=single_markdown_report.encode("utf-8"),
+                        markdown=single_markdown_report,
                         file_name="ai_threat_assessment.md",
-                        mime="text/markdown",
-                        use_container_width=True,
                         key="dl_ai_single_md",
                     )
                     st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
@@ -13623,9 +13691,9 @@ if active_panel == "Forensic Report":
             ]
             for _row in _machine_rows:
                 _machine_table_lines.append(
-                    f"| {_row['#']} | {_row['Verdict']} | {_row['Score']} | {_row['Classifier']} | {_row['From']} | "
-                    f"{_row['Subject']} | {_row['SPF']} | {_row['DKIM']} | {_row['DMARC']} | {_row['Origin IP']} | "
-                    f"{_row['Country']} | {_row['IOCs']} | {_row['Semantic Match']} | {_row['Correlated']} |"
+                    "| " + " | ".join(md_cell(_row[_c]) for _c in (
+                        "#", "Verdict", "Score", "Classifier", "From", "Subject", "SPF", "DKIM", "DMARC",
+                        "Origin IP", "Country", "IOCs", "Semantic Match", "Correlated")) + " |"
                 )
             _machine_table_md = "\n".join(_machine_table_lines)
 
@@ -13646,14 +13714,12 @@ if active_panel == "Forensic Report":
                 "## Machine Analysis Summary\n\n" + _machine_table_md + "\n"
             )
 
-            st.download_button(
+            _premium_download(
                 label="Download Joint Report — All Emails (.md)",
-                data=_joint_md.encode("utf-8"),
+                markdown=_joint_md,
                 file_name=f"joint_forensic_report_{pipeline_result.get('count', len(report_items))}_emails.md",
-                mime="text/markdown",
-                use_container_width=True,
-                type="primary",
                 key="dl_joint_pipeline_report",
+                primary=True,
             )
 
         if pipeline_active:
@@ -13809,14 +13875,14 @@ if active_panel == "Forensic Report":
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 
         # --- BUILD RICH MARKDOWN STRING WITH TABLES ---
-        m_urls_list = [f"| `{u.get('url')}` | {float(u.get('risk', 0)):.0%} |" for u in sel_i.get('urls', [])]
+        m_urls_list = [f"| `{md_cell(u.get('url'))}` | {float(u.get('risk', 0)):.0%} |" for u in sel_i.get('urls', [])]
         m_urls = "| Extracted URL | Risk Score |\n|---|---|\n" + "\n".join(m_urls_list) if m_urls_list else "None detected"
         
-        m_anoms_list = [f"| **{a.get('severity', '').upper()}** | {a.get('title')} | {a.get('detail')} |" for a in sel_h.get('anomalies', [])]
+        m_anoms_list = [f"| **{md_cell(a.get('severity', '').upper())}** | {md_cell(a.get('title'))} | {md_cell(a.get('detail'))} |" for a in sel_h.get('anomalies', [])]
         m_anoms = "| Severity | Title | Detail |\n|---|---|---|\n" + "\n".join(m_anoms_list) if m_anoms_list else "None"
 
         m_corr_list = [
-            f"| `{s.get('indicator', '-')}` | {s.get('kind', '-')} | {', '.join(c for c in s.get('cases', []) if c != _sel_case_name) or '-'} |"
+            f"| `{md_cell(s.get('indicator', '-'))}` | {md_cell(s.get('kind', '-'))} | {md_cell(', '.join(c for c in s.get('cases', []) if c != _sel_case_name) or '-')} |"
             for s in _dossier_links
         ]
         m_corr = "| Indicator | Type | Also Seen In |\n|---|---|---|\n" + "\n".join(m_corr_list) if m_corr_list else "No shared infrastructure/indicators with other analyzed cases this session."
@@ -13967,33 +14033,27 @@ if active_panel == "Forensic Report":
         with st.container(key="forensic_download_row"):
             dl1, dl2, dl3 = st.columns(3)
             with dl1:
-                st.download_button(
+                _premium_download(
                     label="AI Result Only (.md)",
-                    data=ai_md.encode("utf-8"),
+                    markdown=ai_md,
                     file_name=f"ai_report_email_{sel_pos}.md",
-                    mime="text/markdown",
-                    use_container_width=True,
-                    disabled=not ai_markdown_body,
                     key=f"dl_ai_only_{sel_pos}",
+                    disabled=not ai_markdown_body,
                     help="Requires an AI report to be generated for this email first." if not ai_markdown_body else None,
                 )
             with dl2:
-                st.download_button(
+                _premium_download(
                     label="Machine Result Only (.md)",
-                    data=machine_md.encode("utf-8"),
+                    markdown=machine_md,
                     file_name=f"machine_report_email_{sel_pos}.md",
-                    mime="text/markdown",
-                    use_container_width=True,
                     key=f"dl_machine_only_{sel_pos}",
                 )
             with dl3:
-                st.download_button(
+                _premium_download(
                     label="Combined Report (.md)",
-                    data=combined_md.encode("utf-8"),
+                    markdown=combined_md,
                     file_name=f"combined_forensic_report_email_{sel_pos}.md",
-                    mime="text/markdown",
-                    use_container_width=True,
-                    disabled=not ai_markdown_body,
                     key=f"dl_combined_{sel_pos}",
+                    disabled=not ai_markdown_body,
                     help="Requires an AI report to be generated for this email first — otherwise this would just be the machine report again." if not ai_markdown_body else None,
                 )
