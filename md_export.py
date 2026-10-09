@@ -184,3 +184,24 @@ def md_to_html_document(md_text, title="Report"):
         "<title>%s</title><style>%s</style></head><body><main>%s</main></body></html>"
         % (html.escape(str(title)), _CSS, "\n".join(out))
     )
+
+
+_WORD_NS = ('<html xmlns:o="urn:schemas-microsoft-com:office:office" '
+            'xmlns:w="urn:schemas-microsoft-com:office:word" '
+            'xmlns="http://www.w3.org/TR/REC-html40" lang="en">')
+_WORD_HEAD = ("<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>"
+              "<w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->")
+
+
+def md_to_word_document(md_text, title="Report"):
+    """Same report as a Word-openable .doc (HTML-based; Word and LibreOffice
+    open it directly with tables intact, no extra libraries needed)."""
+    doc = md_to_html_document(md_text, title)
+    doc = doc.replace('<html lang="en">', _WORD_NS, 1)
+    doc = doc.replace("<head>", "<head>" + _WORD_HEAD, 1)
+    # Word ignores most table CSS, so give tables explicit HTML attributes.
+    doc = doc.replace("<table>", '<table border="1" cellspacing="0" cellpadding="6" width="100%" '
+                      'style="border-collapse:collapse;border:1px solid #b9bedd">')
+    doc = doc.replace("<th ", '<th bgcolor="#2b1a6b" ')
+    doc = doc.replace("body{margin:0;background:#f3f4f8;", "body{margin:0;background:#ffffff;")
+    return doc.replace("<td ", '<td valign="top" ')

@@ -210,7 +210,7 @@ from streamlit_folium import st_folium
 
 import config as C
 import correlate
-from md_export import md_cell, md_to_html_document
+from md_export import md_cell, md_to_html_document, md_to_word_document
 import threat_feed
 import inspect
 
@@ -8949,13 +8949,13 @@ if(!off){r.onclick=function(){if(busy)return;busy=true;var t0=performance.now(),
 if(p<1){requestAnimationFrame(s);return;}
 save(D.main,D.name,'text/html;charset=utf-8');r.classList.add('done');pl.classList.add('done');pl.textContent='Downloaded';
 ic.innerHTML='<path d="M5 12.5l4.5 4.5L19 7.5"/>';setTimeout(reset,3200);})(t0);};}
-var al=document.getElementById('alt');if(al&&!off){al.onclick=function(){save(D.md,D.mdname,'text/markdown;charset=utf-8');};}
+var al=document.getElementById('alt');if(al&&!off){al.onclick=function(){save(D.doc,D.docname,'application/msword');};}
 </script></body></html>"""
 
 
 def _premium_download(label, markdown, file_name, key=None, disabled=False, help=None, primary=False):
     """Circular progress download button (HTML report with real tables, plus
-    the raw Markdown as a secondary link). `key` and `primary` are accepted so
+    a Word document as a secondary link). `key` and `primary` are accepted so
     call sites mirror st.download_button; they don't change the output."""
     base = os.path.splitext(str(file_name))[0]
     title = base.replace("_", " ").strip().title() or "Report"
@@ -8963,9 +8963,9 @@ def _premium_download(label, markdown, file_name, key=None, disabled=False, help
     doc = md_to_html_document(md_text, title)
     data = {
         "main": base64.b64encode(doc.encode("utf-8")).decode("ascii"),
-        "md": base64.b64encode(md_text.encode("utf-8")).decode("ascii"),
+        "doc": base64.b64encode(md_to_word_document(md_text, title).encode("utf-8")).decode("ascii"),
         "name": base + ".html",
-        "mdname": base + ".md",
+        "docname": base + ".doc",
     }
     clean_label = re.sub(r"\s*\(\.(md|html)\)\s*$", "", str(label)).strip()
     tip = str(help or clean_label)
@@ -8977,7 +8977,7 @@ def _premium_download(label, markdown, file_name, key=None, disabled=False, help
         .replace("__ARIA__", html.escape(clean_label, quote=True))
         .replace("__PILL__", "Locked" if disabled else "Download")
         .replace("__LABEL__", html.escape(clean_label))
-        .replace("__ALT__", "" if disabled else '<button class="alt" id="alt" type="button">or raw Markdown (.md)</button>')
+        .replace("__ALT__", "" if disabled else '<button class="alt" id="alt" type="button">or Word document (.doc)</button>')
         .replace("__DATA__", json.dumps(data))
     )
     components.html(page, height=178)
