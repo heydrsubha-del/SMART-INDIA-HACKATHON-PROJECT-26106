@@ -70,8 +70,8 @@ h4,h5,h6{font-size:14px;margin:18px 0 6px;color:#43308a}
 p{margin:8px 0}
 hr{border:0;border-top:1px solid #dcdff0;margin:22px 0}
 code{background:#eef0fa;border-radius:4px;padding:1px 5px;font:13px Consolas,Menlo,monospace;word-break:break-all}
-pre{background:#14172a;color:#e8eaf6;border-radius:8px;padding:14px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
-pre code{background:none;color:inherit;padding:0}
+pre{background:#f4f5fb;color:#1b1f2a;border:1px solid #dcdff0;border-radius:8px;padding:12px 14px;overflow:auto;max-height:280px;white-space:pre-wrap;word-break:break-word;font-size:13px}
+pre code{background:none;color:inherit;padding:0;word-break:break-word}
 blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid #6d3fd8;background:#f6f3ff;color:#43308a}
 .tw{overflow-x:auto;margin:12px 0}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
@@ -205,3 +205,55 @@ def md_to_word_document(md_text, title="Report"):
     doc = doc.replace("<th ", '<th bgcolor="#2b1a6b" ')
     doc = doc.replace("body{margin:0;background:#f3f4f8;", "body{margin:0;background:#ffffff;")
     return doc.replace("<td ", '<td valign="top" ')
+
+
+_INVISIBLE = re.compile("[\u00ad\u034f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u206f\ufeff]")
+
+
+def clean_body_snippet(text, limit=1000):
+    """Display-only tidy of an email body: drop invisible padding characters
+    and collapse runs of blank lines (marketing emails are full of them)."""
+    s = _INVISIBLE.sub("", str(text or "")).replace("\xa0", " ").replace("```", "'''")
+    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in s.splitlines()]
+    s = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    return s[:limit] or "No body text extracted"
+
+
+def group_urls(urls, keep=3, example_len=110):
+    """Rows for a URL table. Flagged/risky URLs always get their own row.
+    Clean URLs from one host are listed individually up to `keep`; beyond that
+    they collapse into one row (first link as example + a count), so a
+    tracking-heavy newsletter doesn't print dozens of near-identical links."""
+    order, groups = [], {}
+    for u in urls or []:
+        host = u.get("host") or ""
+        if host not in groups:
+            groups[host] = []
+            order.append(host)
+        groups[host].append(u)
+
+    def _risk(u):
+        try:
+            return float(u.get("risk") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    rows = []
+    for host in order:
+        flagged, plain = [], []
+        for u in groups[host]:
+            (flagged if (u.get("suspicious") or u.get("flags") or _risk(u) > 0) else plain).append(u)
+        for u in flagged:
+            rows.append({"url": u.get("url", ""), "count": 1, "host": host,
+                         "risk": _risk(u), "flags": list(u.get("flags") or [])})
+        if len(plain) <= keep:
+            for u in plain:
+                rows.append({"url": u.get("url", ""), "count": 1, "host": host,
+                             "risk": _risk(u), "flags": []})
+        else:
+            url = plain[0].get("url", "")
+            if len(url) > example_len:
+                url = url[:example_len - 1] + "\u2026"
+            rows.append({"url": url, "count": len(plain), "host": host,
+                         "risk": max(_risk(u) for u in plain), "flags": []})
+    return rows
