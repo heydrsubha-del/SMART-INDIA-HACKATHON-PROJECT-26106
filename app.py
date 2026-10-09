@@ -8945,6 +8945,18 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-sing
 </style>
 """
 st.markdown(_SLEEK_CSS, unsafe_allow_html=True)
+_TABLE_SCROLL_CSS = """
+<style>
+/* Wide tables scroll sideways instead of being clipped (mobile / desktop-mode on phones). */
+html body .stApp.stApp.stApp.stApp.stApp.stApp .polished-table-wrap {max-width:100%; overflow-x:auto !important; overflow-y:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; touch-action:pan-x pan-y;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .polished-table-wrap[style*="overflow-y:auto"] {overflow:auto !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp table.polished-table {min-width:max-content;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .polished-table-wrap::-webkit-scrollbar {height:8px;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .polished-table-shell {max-width:100%;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp [data-testid="stMarkdownContainer"]:has(.polished-table-wrap), html body .stApp.stApp.stApp.stApp.stApp.stApp [data-testid="stMarkdown"]:has(.polished-table-wrap), html body .stApp.stApp.stApp.stApp.stApp.stApp [data-testid="stElementContainer"]:has(.polished-table-wrap) {max-width:100%; min-width:0; overflow:visible;}
+</style>
+"""
+st.markdown(_TABLE_SCROLL_CSS, unsafe_allow_html=True)
 components.html(
     r"""
     <script>
