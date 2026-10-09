@@ -377,7 +377,7 @@ def _panel_ac_style():
     """Inline --ac so a message viewer wears the nav colour of the open panel
     (the Forensic Report keeps its hand-picked per-block colours)."""
     try:
-        if globals().get("active_panel") != "Forensic Report":
+        if True:
             return " style='--ac:{};'".format(_panel_hex())
     except Exception:
         pass
@@ -8494,7 +8494,7 @@ st.markdown(
 # Remaining hard-coded accents (violet/amber/green cards, dashboard map+graph
 # cards, right-dock kickers) follow the open page's nav colour as well.
 # The Forensic Report keeps its hand-picked per-block colours.
-if st.session_state.get("active_panel") != "Forensic Report":
+if True:
     st.markdown(
         """<style>
         html body .stApp.stApp.stApp.stApp.stApp :is(.panel-card-head, .panel-card-body):is([class*="-violet"],[class*="-amber"],[class*="-green"],[class*="-copper"]) {
@@ -8508,6 +8508,19 @@ if st.session_state.get("active_panel") != "Forensic Report":
         html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-dash_map_card, .st-key-dash_graph_card) {--cc:var(--panel-tone) !important;}
         html body .stApp.stApp.stApp.stApp.stApp :is(.rd-kicker, .right-dock-title) {color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important;}
         html body .stApp.stApp.stApp.stApp.stApp .st-key-toggle_right_summary_open button:hover {border-color:var(--panel-tone) !important;}
+        /* FORENSIC REPORT hierarchy -- one page colour, three clear levels:
+           1 page header (full banner)  2 'Email deep dive' divider + compact banner
+           3 dossier bar -> numbered sections (each wears its own module's nav colour) */
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep {margin:44px 0 16px 0 !important; gap:16px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep::before {background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--panel-tone) 65%,transparent)) !important; height:1px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep::after {background:linear-gradient(270deg,transparent,color-mix(in srgb,var(--panel-tone) 65%,transparent)) !important; height:1px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep span {color:color-mix(in srgb,var(--panel-tone) 75%,#fff) !important; font-size:10.5px !important; letter-spacing:.26em !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep + .part-banner {padding:14px 22px 14px 28px !important; margin-top:0 !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep + .part-banner .pb-title {font-size:19px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .part-sep + .part-banner .pb-sub {font-size:12.5px !important; margin-top:2px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .st-key-single_email_select {--tone:var(--panel-tone) !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .dossier-head {margin-top:22px !important;}
+        html body .stApp.stApp.stApp.stApp.stApp .num-head {margin-top:28px !important;}
         /* primary action buttons (Run AI Scan, Connect, Scan...) take the page's nav colour;
            destructive/verdict buttons keep their own red/green meaning */
         html body .stApp.stApp.stApp.stApp.stApp :is(.stButton, .stDownloadButton, .stFormSubmitButton):not(:is([class*="st-key-nav_"],[class*="st-key-mrow_"],[class*="st-key-acq_pick_"],[class*="disconnect"],[class*="signout"],[class*="delete_my"],[class*="clear_highlight"],[class*="false_positive"],[class*="confirm_threat"]) *) button[kind="primary"],
@@ -9329,7 +9342,7 @@ def _tone_style(tone):
     """Inline --tone override: module headers take the nav colour of the open
     panel. The Forensic Report keeps its hand-picked per-block colours and
     AI blocks stay violet."""
-    if tone == "ai" or globals().get("active_panel") == "Forensic Report":
+    if tone == "ai":
         return ""
     return f' style="--tone:{_panel_hex()};"'
 
@@ -9359,8 +9372,7 @@ def _banner(step, title, sub="", scope="", tone="batch"):
 def _banner_c(step, title, sub="", scope="", color="#38bdf8", small=False):
     """Same banner card as _banner(), but with an explicit accent colour so
     neighbouring headers on one panel can each wear their own colour."""
-    if globals().get("active_panel") != "Forensic Report":
-        color = _panel_hex()
+    color = _panel_hex()
     cls = "part-banner part-banner-sm" if small else "part-banner"
     st.markdown(
         f'<div class="{cls}" style="--tone:{html.escape(str(color))};">'
@@ -13705,7 +13717,7 @@ if active_panel == "Forensic Report":
 
         _dh_col = _LEVEL_MARKER_COLORS.get(sel_lvl, "#8b96a5")
         st.markdown(
-            '<div class="dossier-head" style="--tone:' + _dh_col + ';"><div class="dh-title">Dossier: Email #' + str(sel_pos)
+            '<div class="dossier-head" style="--tone:' + _panel_hex() + ';"><div class="dh-title">Dossier: Email #' + str(sel_pos)
             + ' <span class="dh-of">of ' + str(len(report_items)) + '</span></div>'
             '<span class="dh-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
             + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
@@ -13717,7 +13729,7 @@ if active_panel == "Forensic Report":
         st.caption("Deep technical telemetry extracted deterministically. Select the email above to populate.")
         
         with st.container(border=True):
-            _num_head(1, "Threat & Classification Telemetry", "#f59e0b", "Score, verdict and classifier output")
+            _num_head(1, "Threat & Classification Telemetry", "#f59e0b", "Classification \u00b7 score, verdict and classifier output")
             _render_polished_table(tone="#f59e0b", df=pd.DataFrame([{
                 "Risk Score": f"{sel_score:.1f}/100",
                 "Verdict": sel_lvl,
@@ -13726,7 +13738,7 @@ if active_panel == "Forensic Report":
                 "ML Label": str(sel_m.get("label", "unknown")).upper()
             }]))
 
-            _num_head(2, "Extracted Message Content", "#38bdf8", "Decoded body text, first 4,000 characters")
+            _num_head(2, "Extracted Message Content", "#38bdf8", "Message \u00b7 decoded body text, first 4,000 characters")
             _ds_txt = sel_p.get("body_text", "No body text extracted.")[:4000]
             _mail_box(
                 key=str(sel_pos), kicker="Message content", title="Decoded body",
@@ -13735,7 +13747,7 @@ if active_panel == "Forensic Report":
                 widget_key=f"dossier_body_{sel_pos}", label="Dossier Message Content",
             )
 
-            _num_head(3, "Authentication & Header Intelligence", "#34d399", "SPF, DKIM, DMARC and header anomalies")
+            _num_head(3, "Authentication & Header Intelligence", "#34d399", "Headers & Auth \u00b7 SPF, DKIM, DMARC and header anomalies")
             _render_polished_table(tone="#34d399", df=pd.DataFrame([{
                 "SPF": str(sel_h.get('spf', 'None')).upper(),
                 "DKIM": str(sel_h.get('dkim', 'None')).upper(),
@@ -13749,7 +13761,7 @@ if active_panel == "Forensic Report":
                 anomalies_df = pd.DataFrame(sel_h['anomalies'])
                 _render_polished_table(tone="#34d399", df=anomalies_df[['severity', 'title', 'detail']])
 
-            _num_head(4, "Origin & Network Routing", "#22d3ee", "Where the message really came from")
+            _num_head(4, "Origin & Network Routing", "#22d3ee", "Origin & Route \u00b7 where the message really came from")
             sel_nt = assess_network_trust(
                 sel_p.get("from_addr", ""),
                 sel_g.get('origin', {}).get('ip', ''),
@@ -13768,7 +13780,7 @@ if active_panel == "Forensic Report":
             if sel_nt["level"] != "ok" or sel_nt["is_new_sender"]:
                 st.caption("Network Trust — " + " ".join(sel_nt["reasons"]))
 
-            _num_head(5, "Payload & Indicators of Compromise", "#fb7185", "Links, domains and addresses found inside")
+            _num_head(5, "Payload & Indicators of Compromise", "#fb7185", "Indicators \u00b7 links, domains and addresses found inside")
             _render_polished_table(tone="#fb7185", df=pd.DataFrame([{
                 "Total Links": len(sel_i.get('urls', [])),
                 "Suspicious Links": sel_i.get('counts', {}).get('suspicious', 0),
@@ -13776,7 +13788,7 @@ if active_panel == "Forensic Report":
                 "Extracted Emails": len(sel_i.get('emails', []))
             }]))
 
-            _num_head(6, "Campaign Correlation & Semantic Origin Match", "#c084fc", "Shared infrastructure across analysed emails")
+            _num_head(6, "Campaign Correlation & Semantic Origin Match", "#c084fc", "Correlation \u00b7 shared infrastructure across analysed emails")
             # Same methodology as the dedicated Correlation panel: shared
             # infrastructure/indicators across every case analyzed so far
             # this session, via correlate.py.
