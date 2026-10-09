@@ -7435,6 +7435,61 @@ st.markdown(
         .stApp.stApp.stApp.stApp .st-key-geo_summary_card .geo-head {flex-direction:column;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-left {clip-path:none; padding-right:24px;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card .gh-sub {padding:12px 24px 16px 24px;}
         .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important;} .stApp.stApp.stApp.stApp .st-key-geo_summary_card [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 50% !important;}
     }
+
+    /* ==================================================================
+       SYNAPSE COPILOT PANEL FIX -- the global button system made every
+       button content-width, so each quick action shrank to its own text
+       and sat off-centre in its grid cell (misaligned, and clicks landing in
+       the empty part of the cell hit nothing), and the send button was
+       squeezed until its label was clipped. In this panel the controls now
+       fill their cells: three equal chips, and an input + 46px send key.
+       ================================================================== */
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel [data-testid="stElementContainer"]:has(> :is(.stButton, .stFormSubmitButton, [data-testid="stFormSubmitButton"])),
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel :is(.stButton, .stFormSubmitButton, [data-testid="stFormSubmitButton"]) {width:100% !important; max-width:100% !important; display:block !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel button {width:100% !important; max-width:100% !important; cursor:pointer !important; padding:0 10px !important; justify-content:center !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel button::before, .stApp.stApp.stApp.stApp .st-key-copilot_panel button::after {display:none !important; content:none !important;}
+
+    /* quick actions: three equal, evenly spaced chips, one tone each */
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions {margin:14px 0 0 0 !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="stHorizontalBlock"] {display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:8px !important; align-items:stretch !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="stHorizontalBlock"] > * {width:auto !important; min-width:0 !important; flex:none !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(1), .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="column"]:nth-child(1) {--ct:#2fb68e;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(2), .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="column"]:nth-child(2) {--ct:#d9a35f;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="stColumn"]:nth-child(3), .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions [data-testid="column"]:nth-child(3) {--ct:#8b7cf6;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions .stButton button {
+        height:44px !important; min-height:44px !important; max-height:44px !important; border-radius:12px !important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--ct) 13%,#111a27),color-mix(in srgb,var(--ct) 5%,#0d1520)) !important;
+        border:1px solid color-mix(in srgb,var(--ct) 38%,#243046) !important; color:#e3eaf4 !important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important; transform:none !important;
+        transition:border-color .2s var(--ease), background .2s var(--ease), box-shadow .25s var(--ease), transform .18s var(--ease) !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions .stButton button:hover {
+        border-color:var(--ct) !important; color:#fff !important; transform:translateY(-1px) !important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--ct) 24%,#111a27),color-mix(in srgb,var(--ct) 9%,#0d1520)) !important;
+        box-shadow:0 8px 16px -10px var(--ct) !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions .stButton button:active {transform:translateY(0) scale(.985) !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions .stButton button p {gap:8px !important; font:600 12px/1.2 Inter,"Segoe UI",sans-serif !important; text-overflow:clip !important; overflow:visible !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_quick_actions .stButton button p::before {background-color:var(--ct) !important; display:inline-block !important; width:15px !important; height:15px !important;}
+
+    /* command row: input fills, send key is a fixed 46px square-ish key */
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row {margin:12px 0 0 0 !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stForm"] [data-testid="stHorizontalBlock"] {display:grid !important; grid-template-columns:minmax(0,1fr) 46px !important; gap:8px !important; align-items:center !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stForm"] [data-testid="stHorizontalBlock"] > * {width:auto !important; min-width:0 !important; flex:none !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button {
+        height:42px !important; min-height:42px !important; max-height:42px !important; width:46px !important; padding:0 !important; border-radius:12px !important;
+        font-size:0 !important; color:transparent !important;
+        background:linear-gradient(180deg,color-mix(in srgb,#2fb68e 30%,#101a26),color-mix(in srgb,#2fb68e 14%,#0c141e)) !important;
+        border:1px solid color-mix(in srgb,#2fb68e 60%,#243046) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button p, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button p {font-size:0 !important; line-height:0 !important; display:flex !important; justify-content:center !important; width:100% !important;}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button p::before, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button p::before {
+        content:"" !important; display:block !important; position:static !important; transform:none !important; width:18px !important; height:18px !important; margin:0 !important;
+        background-color:#e9fff7 !important; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2L11 13'/%3E%3Cpath d='M22 2l-7 20-4-9-9-4z'/%3E%3C/svg%3E") center / contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2L11 13'/%3E%3Cpath d='M22 2l-7 20-4-9-9-4z'/%3E%3C/svg%3E") center / contain no-repeat;
+        transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button:hover p::before, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button:hover p::before {transform:translate(2px,-2px) scale(1.08);}
+    .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button:hover, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button:hover {border-color:#2fb68e !important; transform:translateY(-1px) !important; box-shadow:0 8px 16px -10px #2fb68e !important;}
     </style>
     """,
     unsafe_allow_html=True,
