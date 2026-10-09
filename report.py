@@ -12,7 +12,7 @@ Standalone:  python report.py > report.md
 import hashlib
 from datetime import datetime, timezone
 
-from md_export import md_cell
+from md_export import md_cell, group_urls
 
 SEVERITY_MARK = {"high": "[HIGH]", "medium": "[MED] ", "low": "[LOW] ",
                  "info": "[INFO]"}
@@ -184,10 +184,12 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     if iocs["urls"]:
         add("| URL | Host | Assessment |")
         add("| --- | --- | --- |")
-        for u in iocs["urls"]:
+        for u in group_urls(iocs["urls"]):
+            note = "; ".join(u["flags"]) if u["flags"] else "no indicators"
+            if u["count"] > 1:
+                note += " ({} similar links grouped, first shown)".format(u["count"])
             add("| `{}` | `{}` | {} |".format(
-                md_cell(u["url"][:70]), md_cell(u["host"] or "-"),
-                md_cell("; ".join(u["flags"]) if u["flags"] else "no indicators")))
+                md_cell(u["url"][:70]), md_cell(u["host"] or "-"), md_cell(note)))
         add("")
     else:
         add("No URLs present in the message body.")
