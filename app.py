@@ -7610,12 +7610,13 @@ _SB_ICONS = {
     "bug": "<path d='M12 21a5 5 0 0 1-5-5v-4a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z'/><path d='M12 7V4M7 12H3M21 12h-4M8 8L5 5M16 8l3-3M8 18l-3 3M16 18l3 3'/>",
     "sliders": "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/><circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>",
     "info": "<circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 8h.01'/>",
+    "list": "<path d='M8 6h13M8 12h13M8 18h13'/><path d='M3.5 6h.01M3.5 12h.01M3.5 18h.01'/>",
 }
 _SB_NAV_STYLE = {
     "nav_dash_top": (_SB_BLUE, "grid"), "nav_upload": (_SB_BLUE, "upload"), "nav_live": (_SB_BLUE, "mail"),
     "nav_ai_copilot_side": (_SB_BLUE, "chip"), "nav_nomic_side": (_SB_BLUE, "radiate"),
     "nav_map_side": (_SB_GREEN, "globe"), "nav_graph_side": (_SB_GREEN, "network"), "nav_analytics_side": (_SB_GREEN, "bars"),
-    "nav_history_side": (_SB_VIOLET, "clock"), "nav_ioc_side": (_SB_VIOLET, "search"), "nav_urlhaus_side": (_SB_VIOLET, "feed"),
+    "nav_history_side": (_SB_VIOLET, "clock"), "nav_techlogs_side": (_SB_VIOLET, "list"), "nav_ioc_side": (_SB_VIOLET, "search"), "nav_urlhaus_side": (_SB_VIOLET, "feed"),
     "nav_av_side": (_SB_ROSE, "bug"),
     "nav_settings_side": (_SB_SLATE, "sliders"), "nav_about_side": (_SB_SLATE, "info"),
 }
@@ -7786,6 +7787,8 @@ with st.sidebar:
     _mode_now = st.session_state.get("input_mode_radio", _LIVE_MODE)
     _on_origin_route = st.session_state.get("active_panel") == "Origin & Route"
     _origin_focus = st.session_state.get("origin_route_focus", "map")
+    _on_threat_history = st.session_state.get("active_panel") == "Threat History"
+    _th_focus = st.session_state.get("threat_history_focus", "history")
 
     _nav_button(
         "Dashboard", "Dashboard", key="nav_dash_top",
@@ -7827,7 +7830,16 @@ with st.sidebar:
         _nav_button("Analytics", "Classification", key="nav_analytics_side")
 
         _nav_group("Intelligence", accent="violet")
-        _nav_button("Threat History", "Threat History", key="nav_history_side")
+        _nav_button(
+            "Threat History", "Threat History", key="nav_history_side",
+            active_when=_on_threat_history and _th_focus == "history",
+            on_click_set={"threat_history_focus": "history"},
+        )
+        _nav_button(
+            "Technical Logs", "Threat History", key="nav_techlogs_side",
+            active_when=_on_threat_history and _th_focus == "logs",
+            on_click_set={"threat_history_focus": "logs"},
+        )
         _nav_button("IOC Lookup", "Indicators", key="nav_ioc_side")
         _nav_button("URLHaus Feed", "URLHaus Feed", key="nav_urlhaus_side")
 
@@ -11219,86 +11231,6 @@ if active_panel == "Dashboard":
         st.info("Please select a threat acquisition mode.")
         st.stop()
 
-    def _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash):
-        """Shared 'Email Results / Antivirus Scan' tab block. Called once per
-        run — either from the CSV Deep Dive flow (right after the row
-        selector) or from the single-file Dashboard flow — never both, so
-        there is exactly one copy of this section on screen.
-
-        The AI Copilot used to live in a third tab here as a plain
-        st.chat_message thread; it now lives as the always-visible Synapse
-        Copilot panel in whichever right-hand dock is on screen (the bulk
-        scan dock when a CSV bulk scan has results, otherwise the per-email
-        dossier dock in _dashboard()) via the shared _render_copilot_panel()
-        so the command vocabulary is identical either way."""
-
-        _sec("Technical Logs & Antivirus", tone="teal")
-        _tech_logs_container = st.container(key="seg_tech_logs")
-        with _tech_logs_container:
-            _tech_logs_view = st.radio(
-                "Technical Logs & Antivirus view", ["Email Results", "Antivirus Scan"],
-                horizontal=True, label_visibility="collapsed", key="tech_logs_tabs_radio",
-            )
-
-        if _tech_logs_view == "Email Results":
-            st.caption(
-                "Want a full multi-email report? Ask the **Synapse Copilot** in the sidebar to "
-                "*\"track my last 10 emails\"* — machine + AI + semantic analysis across your recent "
-                "mail, ending on a downloadable Forensic Report."
-            )
-            st.divider()
-
-            _is_current_csv = uploaded is not None and uploaded.name.lower().endswith(".csv")
-            unified_table = st.session_state.get("unified_email_table") if _is_current_csv else None
-            if unified_table is not None and not unified_table.empty:
-                _render_email_results_table(unified_table, height=280)
-            else:
-                log_rows = [{
-                    "Row #": i,
-                    "Email": (r.get("parsed", {}) or {}).get("from_addr", "Unknown"),
-                    "Origin IP": (r.get("geo", {}) or {}).get("origin", {}).get("ip", "Unknown"),
-                    "Country": (r.get("geo", {}) or {}).get("origin", {}).get("country", "Unknown"),
-                    "Threat Score": round(float(r.get("score", 0)), 1),
-                    "Verdict": str(r.get("level", "unknown")).upper(),
-                    "Subject": (r.get("parsed", {}) or {}).get("subject", "No Subject"),
-                } for i, r in enumerate(cases)]
-                _render_email_results_table(pd.DataFrame(log_rows), height=280)
-
-        if _tech_logs_view == "Antivirus Scan":
-            av_up = _clamd_up_cached()
-            _av_backend = _antivirus_backend_cached()
-            if av_up and _av_backend == "cloud":
-                st.success("Antivirus scanning available via VirusTotal (cloud fallback) - local ClamAV daemon not reachable.")
-            elif av_up:
-                st.success(f" ClamAV connected - {clamd_version() or 'clamd daemon'}")
-            else:
-                st.warning("Antivirus scanning unavailable right now (no local clamd, no SIH26106_VT_API_KEY set) - showing the built-in risky-extension check instead.")
-            files_scanned, threats_found, av_rows = 0, 0, []
-            for r in cases:
-                for att in (r.get("parsed", {}) or {}).get("attachments", []) or []:
-                    files_scanned += 1
-                    if av_up:
-                        outcome = _scan_bytes_cached(att.get("data") or b"")
-                        infected = bool(outcome.get("infected"))
-                        status = "INFECTED" if infected else ("Scan error" if not outcome.get("ok") else "Clean")
-                        detail = outcome.get("signature") or ("-" if outcome.get("ok") else outcome.get("error"))
-                    else:
-                        infected = bool(att.get("risky"))
-                        status = "Risky extension" if infected else "Clean"
-                        detail = "-"
-                    if infected:
-                        threats_found += 1
-                    av_rows.append({"Case": r.get("name", "-"), "Filename": att.get("filename", "-"),
-                                     "Size (bytes)": att.get("size", 0), "Status": status, "Detail": detail})
-            am1, am2, am3 = st.columns(3)
-            am1.metric("Files Scanned", files_scanned)
-            am2.metric("Threats Found", threats_found)
-            am3.metric("Clean", files_scanned - threats_found)
-            if av_rows:
-                _render_polished_table(pd.DataFrame(av_rows))
-            else:
-                st.info("No attachments found across the currently analyzed emails.")
-
     if uploaded is not None:
         if uploaded.name.endswith(".csv"):
             _csv_bytes = uploaded.getvalue()
@@ -11489,8 +11421,6 @@ if active_panel == "Dashboard":
                         _tagged = dict(dd_result)
                         _tagged["_evidence_hash"] = dd_current_hash
                         dd_cases.append(_tagged)
-                    _render_technical_logs_block(dd_cases, raw, case_name, dd_result, dd_current_hash)
-
                     # --- DEEP DIVE MESSAGE CONTENT ---
                     dd_res = st.session_state["bulk_scan_cases"][selected_row]
                     dd_p = dd_res.get("parsed", {})
@@ -12004,18 +11934,6 @@ if active_panel == "Dashboard":
                 st.plotly_chart(_corr_fig, width="stretch")
                 st.caption("Connections of the current email. Compare up to 10 emails, or pick another one, on **Correlation Graph** in the sidebar.")
 
-        # ================= BOTTOM (technical logs, antivirus, AI copilot) =================
-        # In CSV mode this section already rendered earlier (between the Deep
-        # Dive selector and the message content box) — don't show it twice.
-        #
-        # Full-width below BOTH columns (not confined to col_center's ~68%)
-        # -- by this point the THREAT SUMMARY dock has already finished
-        # rendering above, so there's no more "blank gap" risk from the dock
-        # running taller than this section; keeping it width-capped to
-        # col_center just wasted the space to the right where the dock had
-        # already ended, which is what this table needs to stretch into.
-        if not (uploaded is not None and uploaded.name.lower().endswith(".csv")):
-            _render_technical_logs_block(cases, raw, case_name, result, current_evidence_hash)
 
     if _csv_awaiting_scan:
         st.info("The threat summary, origin map, and correlation graph will appear here once you run a scan above.")
@@ -13384,27 +13302,58 @@ if active_panel == "Correlation":
 # --------------------------------------------------------------------------
 if active_panel == "Threat History":
     def _threat_history():
-        _banner("THREAT HISTORY", "Threat History", "Every message this workbench has scored", "ALL ANALYZED", "batch")
-        st.caption("Every message this workbench has scored, pulled from the local threat_memory.db (attackers table).")
-        try:
-            conn = get_connection()
-            hist_df = pd.read_sql_query(
-                "SELECT date, ip, country, score, verdict FROM attackers ORDER BY date DESC LIMIT 200", conn
-            )
-            conn.close()
-        except Exception:
-            hist_df = pd.DataFrame(columns=["date", "ip", "country", "score", "verdict"])
+        _banner("THREAT HISTORY", "Threat History & Technical Logs", "Per-email results for this session, plus every message this workbench has scored", "ALL ANALYZED", "batch")
 
-        if hist_df.empty:
-            st.info("No history yet - analyze an email to start building this record.")
-            return
+        def _logs_section():
+            _sec("Technical logs", "Origin, score and verdict for every email analysed this session", tone="batch")
+            unified_table = st.session_state.get("unified_email_table")
+            if unified_table is not None and not unified_table.empty:
+                _render_email_results_table(unified_table, height=280)
+                return
+            log_cases = [r for r in _corr_cases.values() if "error" not in r]
+            if not log_cases:
+                st.info("No emails analysed yet - open one from the Dashboard to see its technical log here.")
+                return
+            log_rows = [{
+                "Row #": i,
+                "Email": (r.get("parsed", {}) or {}).get("from_addr", "Unknown"),
+                "Origin IP": (r.get("geo", {}) or {}).get("origin", {}).get("ip", "Unknown"),
+                "Country": (r.get("geo", {}) or {}).get("origin", {}).get("country", "Unknown"),
+                "Threat Score": round(float(r.get("score", 0)), 1),
+                "Verdict": str(r.get("level", "unknown")).upper(),
+                "Subject": (r.get("parsed", {}) or {}).get("subject", "No Subject"),
+            } for i, r in enumerate(log_cases)]
+            _render_email_results_table(pd.DataFrame(log_rows), height=280)
 
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Total Logged", len(hist_df))
-        m2.metric("Critical / High", int((hist_df["verdict"].isin(["CRITICAL", "HIGH"])).sum()))
-        m3.metric("Average Score", f"{hist_df['score'].mean():.1f}")
-        _hist_view = hist_df.rename(columns={"date": "Date", "ip": "IP", "country": "Country", "score": "Threat Score", "verdict": "Verdict"})
-        _render_email_results_table(_hist_view, height=360)
+        def _history_section():
+            _sec("Scoring history", "Every message this workbench has scored (threat_memory.db)", tone="batch")
+            try:
+                conn = get_connection()
+                hist_df = pd.read_sql_query(
+                    "SELECT date, ip, country, score, verdict FROM attackers ORDER BY date DESC LIMIT 200", conn
+                )
+                conn.close()
+            except Exception:
+                hist_df = pd.DataFrame(columns=["date", "ip", "country", "score", "verdict"])
+
+            if hist_df.empty:
+                st.info("No history yet - analyze an email to start building this record.")
+                return
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total Logged", len(hist_df))
+            m2.metric("Critical / High", int((hist_df["verdict"].isin(["CRITICAL", "HIGH"])).sum()))
+            m3.metric("Average Score", f"{hist_df['score'].mean():.1f}")
+            _hist_view = hist_df.rename(columns={"date": "Date", "ip": "IP", "country": "Country", "score": "Threat Score", "verdict": "Verdict"})
+            _render_email_results_table(_hist_view, height=360)
+
+        # Whichever sidebar item opened the page (Technical Logs / Threat History) goes first.
+        if st.session_state.get("threat_history_focus", "history") == "logs":
+            _logs_section()
+            _history_section()
+        else:
+            _history_section()
+            _logs_section()
 
     panel(_threat_history, "Threat History")
 
