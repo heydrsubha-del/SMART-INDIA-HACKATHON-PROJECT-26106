@@ -219,18 +219,19 @@ def clean_body_snippet(text, limit=1000):
     return s[:limit] or "No body text extracted"
 
 
-def group_urls(urls, keep=3, example_len=110):
-    """Rows for a URL table. Flagged/risky URLs always get their own row.
-    Clean URLs from one host are listed individually up to `keep`; beyond that
-    they collapse into one row (first link as example + a count), so a
-    tracking-heavy newsletter doesn't print dozens of near-identical links."""
-    order, groups = [], {}
-    for u in urls or []:
-        host = u.get("host") or ""
-        if host not in groups:
-            groups[host] = []
-            order.append(host)
-        groups[host].append(u)
+def _url_key(url):
+    """Identity of a URL for copy-detection: HTML entities decoded, fragment
+    dropped, scheme and host lower-cased. The path/query stay case-sensitive
+    because tracking tokens are, so different links are never merged."""
+    u = html.unescape(str(url or "")).strip().split("#", 1)[0]
+    mt = re.match(r"^([A-Za-z][\w+.-]*://)([^/?#]*)(.*)$", u, re.S)
+    return (mt.group(1).lower() + mt.group(2).lower() + mt.group(3)) if mt else u
+
+
+def group_urls(urls):
+    """One row per DISTINCT URL (exact copies merged, with a copy count).
+    Different links are never collapsed, even if they share a host or prefix."""
+    rows, index = [], {}
 
     def _risk(u):
         try:
@@ -238,22 +239,12 @@ def group_urls(urls, keep=3, example_len=110):
         except (TypeError, ValueError):
             return 0.0
 
-    rows = []
-    for host in order:
-        flagged, plain = [], []
-        for u in groups[host]:
-            (flagged if (u.get("suspicious") or u.get("flags") or _risk(u) > 0) else plain).append(u)
-        for u in flagged:
-            rows.append({"url": u.get("url", ""), "count": 1, "host": host,
-                         "risk": _risk(u), "flags": list(u.get("flags") or [])})
-        if len(plain) <= keep:
-            for u in plain:
-                rows.append({"url": u.get("url", ""), "count": 1, "host": host,
-                             "risk": _risk(u), "flags": []})
-        else:
-            url = plain[0].get("url", "")
-            if len(url) > example_len:
-                url = url[:example_len - 1] + "\u2026"
-            rows.append({"url": url, "count": len(plain), "host": host,
-                         "risk": max(_risk(u) for u in plain), "flags": []})
+    for u in urls or []:
+        key = _url_key(u.get("url"))
+        if key in index:
+            rows[index[key]]["count"] += 1
+            continue
+        index[key] = len(rows)
+        rows.append({"url": u.get("url", ""), "count": 1, "host": u.get("host") or "",
+                     "risk": _risk(u), "flags": list(u.get("flags") or [])})
     return rows

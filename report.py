@@ -187,7 +187,7 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         for u in group_urls(iocs["urls"]):
             note = "; ".join(u["flags"]) if u["flags"] else "no indicators"
             if u["count"] > 1:
-                note += " ({} similar links grouped, first shown)".format(u["count"])
+                note += " (appears {} times)".format(u["count"])
             add("| `{}` | `{}` | {} |".format(
                 md_cell(u["url"][:70]), md_cell(u["host"] or "-"), md_cell(note)))
         add("")

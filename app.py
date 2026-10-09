@@ -13875,8 +13875,8 @@ if active_panel == "Forensic Report":
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 
         # --- BUILD RICH MARKDOWN STRING WITH TABLES ---
-        m_urls_list = [f"| `{md_cell(u['url'])}` | {u['count']} | {u['risk']:.0%} |" for u in group_urls(sel_i.get('urls', []))]
-        m_urls = "| Extracted URL | Links | Risk Score |\n|---|---|---|\n" + "\n".join(m_urls_list) if m_urls_list else "None detected"
+        m_urls_list = [f"| `{md_cell(u['url'])}`{' (x%d)' % u['count'] if u['count'] > 1 else ''} | {u['risk']:.0%} |" for u in group_urls(sel_i.get('urls', []))]
+        m_urls = "| Extracted URL | Risk Score |\n|---|---|\n" + "\n".join(m_urls_list) if m_urls_list else "None detected"
         
         m_anoms_list = [f"| **{md_cell(a.get('severity', '').upper())}** | {md_cell(a.get('title'))} | {md_cell(a.get('detail'))} |" for a in sel_h.get('anomalies', [])]
         m_anoms = "| Severity | Title | Detail |\n|---|---|---|\n" + "\n".join(m_anoms_list) if m_anoms_list else "None"
