@@ -8838,37 +8838,30 @@ st.markdown(_SIDEBAR_ACTIVE_CSS, unsafe_allow_html=True)
 
 _MAILBOX_DOSSIER_CSS = """
 <style>
-/* Live mailbox section -> one dossier-style card (same recipe as the Forensic Report hero):
-   accent spine, eyebrow + large address + pill, quiet note, action toolbar, and the browse/reload bar as the card footer. */
+/* Live mailbox section = the Forensic Dossier hero recipe: spine, eyebrow, big title, sub line, pill, controls inside ONE card. */
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {
-  position:relative; margin:6px 0 0 0 !important; padding:26px 28px 24px 32px !important; gap:0 !important;
-  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important; border-bottom:0 !important; border-radius:16px 16px 0 0 !important;
+  position:relative; padding:22px 26px 22px 28px !important; margin:6px 0 22px 0 !important; gap:0 !important; border-radius:16px !important;
+  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
   background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
   box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel::before {content:"" !important; position:absolute; left:0 !important; right:auto !important; top:0 !important; bottom:0 !important; width:3px !important; height:auto !important; border-radius:0 !important; background:var(--panel-tone) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-head {display:flex; align-items:center; gap:18px; padding:0 0 20px 0 !important; border-bottom:1px solid rgba(255,255,255,.07) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-avatar {flex:0 0 56px !important; width:56px !important; height:56px !important; border-radius:16px !important; font-size:22px !important; color:#06121a !important;
-  background:linear-gradient(145deg, color-mix(in srgb,var(--panel-tone) 90%,#fff), color-mix(in srgb,var(--panel-tone) 55%,#06101a)) !important; border:0 !important;
-  box-shadow:0 10px 22px -10px var(--panel-tone), inset 0 1px 0 rgba(255,255,255,.35) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-eyebrow {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; color:color-mix(in srgb,var(--panel-tone) 80%,#fff) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {margin-top:9px !important; font:800 27px/1.15 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.015em !important; color:#fff !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips {margin-top:12px !important; gap:8px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span {font:600 11px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.04em !important; padding:6px 10px !important; border-radius:8px !important;
-  color:#a9b8c9 !important; background:rgba(255,255,255,.035) !important; border:1px solid rgba(148,163,184,.22) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span:nth-child(3) {color:color-mix(in srgb,var(--panel-tone) 80%,#fff) !important; background:color-mix(in srgb,var(--panel-tone) 10%,transparent) !important; border-color:color-mix(in srgb,var(--panel-tone) 38%,transparent) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {align-self:center !important; font:800 11.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.12em !important; padding:9px 14px !important; border-radius:8px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:18px 0 20px 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important;
-  font:400 13px/1.6 Inter,"Segoe UI",sans-serif !important; color:#9aa7ba !important; max-width:110ch;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel::before {content:"" !important; position:absolute; left:0 !important; right:auto !important; top:18px !important; bottom:18px !important; width:3px !important; height:auto !important; border-radius:0 3px 3px 0 !important; background:var(--panel-tone) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-head {display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:0 !important; border:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-avatar {display:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-text {min-width:0; flex:1 1 320px;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-eyebrow {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.2em !important; text-transform:uppercase; color:color-mix(in srgb,var(--panel-tone) 80%,#fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {margin-top:9px !important; font:800 28px/1.15 Inter,"Segoe UI",sans-serif !important; letter-spacing:-.015em !important; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips {display:flex; flex-wrap:wrap; margin-top:6px !important; gap:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span {padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important; font:400 13px/1.45 Inter,"Segoe UI",sans-serif !important; letter-spacing:0 !important; color:#9aa7ba !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-chips span + span::before {content:"·"; margin:0 9px; color:#5b6678;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {align-self:center !important; font:800 11.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.12em !important; padding:8px 13px !important; border-radius:8px !important; white-space:nowrap;
+  color:color-mix(in srgb,var(--panel-tone) 82%,#fff) !important; border:1px solid color-mix(in srgb,var(--panel-tone) 55%,transparent) !important; background:color-mix(in srgb,var(--panel-tone) 10%,transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note {margin:14px 0 18px 0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important; font:400 13px/1.55 Inter,"Segoe UI",sans-serif !important; color:#8793a5 !important; max-width:110ch;}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel [data-testid="stHorizontalBlock"] {gap:12px !important; align-items:center !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar {
-  position:relative; margin:-1rem 0 20px 0 !important; padding:16px 28px 20px 32px !important; gap:0 !important;
-  border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important; border-top:1px solid rgba(255,255,255,.07) !important; border-radius:0 0 16px 16px !important;
-  background:linear-gradient(180deg,#0e151e,#0b1118) !important; box-shadow:0 18px 34px -24px rgba(0,0,0,.9) !important;
-}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar::before {content:"" !important; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--panel-tone); opacity:.55; pointer-events:none;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] p {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#8793a5 !important;}
-@media (max-width:640px) { html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {padding:20px 16px 18px 20px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {font-size:21px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {display:none !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_loaded_folder_bar {padding:14px 16px 16px 20px !important;} }
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar {margin:18px 0 0 0 !important; padding:0 !important; gap:0 !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar::before, html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar::after {display:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-testid="stWidgetLabel"] p {font:700 10.5px/1 ui-monospace,Consolas,monospace !important; letter-spacing:.14em !important; text-transform:uppercase !important; color:#8793a5 !important;}
+@media (max-width:640px) { html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel {padding:18px 16px 16px 20px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-title {font-size:23px !important;} html body .stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-badge {display:none !important;} }
 </style>
 """
 st.markdown(_MAILBOX_DOSSIER_CSS, unsafe_allow_html=True)
@@ -10433,7 +10426,8 @@ if active_panel == "Dashboard":
             _mbx_initial = html.escape((_mbx_user[:1] or "?").upper())
             # One panel (header + note + actions) instead of a card with a
             # second box stacked under it.
-            with st.container(key="imap_connected_panel"):
+            _mbx_panel = st.container(key="imap_connected_panel")
+            with _mbx_panel:
                 st.markdown(f"""
                 <div class="mbx-head">
                   <div class="mbx-avatar">{_mbx_initial}</div>
@@ -10533,7 +10527,7 @@ if active_panel == "Dashboard":
             browse_count = st.session_state.get("imap_browse_count", 10)
             auth_mode = _cfg_summary.get("auth_mode", "App Password / Password")
 
-            with st.container(key="imap_loaded_folder_bar"):
+            with _mbx_panel.container(key="imap_loaded_folder_bar"):
                 _fc2, _fc3 = st.columns([3, 1])
                 with _fc2:
                     _new_browse_count = st.selectbox(
