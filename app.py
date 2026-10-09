@@ -9,14 +9,12 @@ import csv
 import io
 import os
 import json
-import random
 import urllib.request
 import urllib.error
 import time
 import threading
 import html
 import re
-import textwrap
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -44,16 +42,9 @@ pio.templates["sih26106_dark"] = go.layout.Template(
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama
-from nomic_embed import nomic_available, embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
+from nomic_embed import embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
-
-try:
-    from docx import Document
-    from docx.shared import Inches, Pt
-    DOCX_AVAILABLE = True
-except ImportError:
-    DOCX_AVAILABLE = False
 
 try:
     from google_Oauth import (
@@ -297,9 +288,8 @@ def _cached_correlation_view(graph_scope, _cases, cases_to_show, seed, use_seman
         G_view.graph.get("total_case_count"),
     )
 
-from analyzer import analyze_all_samples, analyze_email, list_samples
+from analyzer import analyze_all_samples, analyze_email
 from classifier import (
-    cached_metrics,
     load_or_train,
     maybe_retrain_from_feedback,
     get_adaptive_status,
@@ -492,7 +482,7 @@ def _ensure_live_cases_from_prefetch(max_new=10):
             _corr_cases.pop(next(iter(_corr_cases)))
 
 
-from antivirus_scan import clamd_available, clamd_version, scan_bytes, antivirus_usable, antivirus_backend
+from antivirus_scan import clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 # ALGORITHMISTIC brand mark, embedded as a base64 PNG so the app stays a
 # single self-contained file (no separate asset to lose track of). Resized
@@ -9156,26 +9146,6 @@ def _case_label(case, fallback):
     if frm and nm:
         return f"{frm}  ·  {nm}"
     return frm or nm or fallback
-
-
-def _case_origin_point(case):
-    """This case's origin as a map point, or None if it has no resolvable
-    lat/lon yet (unresolved hop, error case, etc.)."""
-    g = case.get("geo", {}) or {}
-    o = g.get("origin", {}) or {}
-    if o.get("lat") is None or o.get("lon") is None:
-        return None
-    p = case.get("parsed", {}) or {}
-    return {
-        "sender": p.get("from_addr") or "Unknown sender",
-        "case_name": case.get("name") or "Unnamed",
-        "ip": o.get("ip", "Unknown"),
-        "city": o.get("city", ""),
-        "country": o.get("country", ""),
-        "infra_label": o.get("infra_label", "Unattributed"),
-        "lat": o["lat"], "lon": o["lon"],
-        "level": str(case.get("level", "unknown")).upper(),
-    }
 
 
 def _case_row_number(case):
