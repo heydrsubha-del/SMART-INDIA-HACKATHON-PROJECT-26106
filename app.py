@@ -12172,13 +12172,11 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero {position:relativ
 html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
 html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:16px !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
-.stApp.stApp.stApp.stApp.stApp .st-key-false_positive,
-.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat .stButton,
-.stApp.stApp.stApp.stApp.stApp .st-key-false_positive .stButton{width:100% !important;}
+.stApp.stApp.stApp.stApp.stApp .st-key-false_positive{width:fit-content !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat button,
 .stApp.stApp.stApp.stApp.stApp .st-key-false_positive button{
- width:100% !important;height:52px !important;min-height:52px !important;max-height:52px !important;
- box-sizing:border-box !important;margin:0 !important;display:flex !important;align-items:center !important;justify-content:center !important;}
+ width:auto !important;min-width:190px !important;height:44px !important;min-height:44px !important;max-height:44px !important;
+ box-sizing:border-box !important;margin:0 !important;}
 </style>""", unsafe_allow_html=True)
     feedback_hash = hashlib.sha256(raw).hexdigest()
     review_count = get_feedback_history_count(feedback_hash)
@@ -12196,12 +12194,12 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
 <div class="dh2-title">Analyst Feedback</div>
 <div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div>
 <div class="dh2-pill" style="color:var(--panel-tone);border-color:color-mix(in srgb,var(--panel-tone) 45%,transparent);background:color-mix(in srgb,var(--panel-tone) 10%,transparent);">IMPROVES THE MODEL</div></div>""", unsafe_allow_html=True)
-        fb1, fb2 = st.columns(2, gap="medium")
+        fb1, fb2, _fbsp = st.columns([1, 1, 3], gap="small")
         feedback_message = None
         feedback_type = None
 
         with fb1:
-            if st.button("Confirm Threat", key="confirm_threat", type="primary", use_container_width=True):
+            if st.button("Confirm Threat", key="confirm_threat", type="primary"):
                 add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
                 training_result = maybe_retrain_from_feedback()
                 if training_result["status"] == "trained":
@@ -12216,7 +12214,7 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stH
                 feedback_type = "success"
 
         with fb2:
-            if st.button("False Positive", key="false_positive", type="secondary", use_container_width=True):
+            if st.button("False Positive", key="false_positive", type="secondary"):
                 add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
                 training_result = maybe_retrain_from_feedback()
                 if training_result["status"] == "trained":
