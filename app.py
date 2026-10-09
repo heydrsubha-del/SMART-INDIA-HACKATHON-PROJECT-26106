@@ -7490,6 +7490,60 @@ st.markdown(
     }
     .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button:hover p::before, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button:hover p::before {transform:translate(2px,-2px) scale(1.08);}
     .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row .stFormSubmitButton button:hover, .stApp.stApp.stApp.stApp .st-key-copilot_panel .st-key-copilot_command_row [data-testid="stFormSubmitButton"] button:hover {border-color:#2fb68e !important; transform:translateY(-1px) !important; box-shadow:0 8px 16px -10px #2fb68e !important;}
+
+    /* ==================================================================
+       AI REPORT FRAME v2 -- same card language as the message body and
+       summary cards: violet accent bar, compact header row (kicker pill +
+       neutral chip), and the report in an inset, padded well with proper
+       section labels. Progress bar slimmed to match.
+       ================================================================== */
+    .stApp.stApp.stApp.stApp .ai-report-frame {
+        --ac:#8b7cf6; position:relative; overflow:hidden; margin:10px 0 18px 0; border-radius:14px;
+        border:1px solid rgba(255,255,255,.09);
+        background:radial-gradient(90% 120% at 0% 0%, color-mix(in srgb,var(--ac) 12%,transparent), transparent 55%), linear-gradient(180deg,#131824,#0c1018);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 28px -20px rgba(0,0,0,.9);
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame::before {content:""; position:absolute; left:0; top:16px; bottom:16px; width:3px; border-radius:0 3px 3px 0; background:var(--ac); box-shadow:0 0 12px -1px var(--ac);}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-bar {
+        display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px; padding:16px 22px 14px 24px;
+        background:none; border-bottom:0; color:var(--ac);
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-bar > span:first-child {
+        display:inline-flex; align-items:center; gap:8px; padding:5px 12px 5px 9px; border-radius:999px; color:var(--ac);
+        font:700 10px/1 ui-monospace,"JetBrains Mono",Consolas,monospace; letter-spacing:.16em; text-transform:uppercase;
+        background:color-mix(in srgb,var(--ac) 12%,transparent); border:1px solid color-mix(in srgb,var(--ac) 38%,transparent);
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-bar > span:first-child::before {content:""; width:6px; height:6px; border-radius:50%; background:var(--ac); box-shadow:0 0 8px var(--ac);}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-chip {
+        display:inline-flex; align-items:center; gap:8px; padding:6px 12px !important; border-radius:999px !important; max-width:60%;
+        font:600 11px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.03em !important; text-transform:none !important; color:#dfe7f1 !important;
+        background:rgba(255,255,255,.045) !important; border:1px solid rgba(255,255,255,.12) !important;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-chip::before {content:""; flex:none; width:6px; height:6px; border-radius:50%; background:var(--ac); box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 25%,transparent);}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body {
+        margin:2px 16px 16px 16px; padding:18px 24px 20px 24px; border-radius:11px; background:#080c13;
+        border:1px solid rgba(255,255,255,.07); box-shadow:inset 0 1px 6px rgba(0,0,0,.45);
+        font:400 14px/1.75 Inter,"Segoe UI",sans-serif; color:#d9dfea;
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body > :first-child {margin-top:0 !important;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body > :last-child {margin-bottom:0 !important;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body p {margin:0 0 12px 0;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body :is(h1,h2,h3), .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body p:has(> strong:only-child) {
+        display:flex; align-items:center; gap:10px; margin:22px 0 8px 0 !important; padding:0;
+        font:700 11px/1.3 ui-monospace,"JetBrains Mono",Consolas,monospace !important; letter-spacing:.16em; text-transform:uppercase; color:var(--ac) !important;
+    }
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body :is(h1,h2,h3)::before, .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body p:has(> strong:only-child)::before {content:""; flex:none; width:14px; height:1px; background:currentColor; opacity:.7;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body p > strong:only-child {font-weight:700; color:inherit;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body strong {color:#fff; font-weight:650;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body ul, .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body ol {margin:0 0 12px 0; padding-left:22px;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body li {margin:4px 0; padding-left:2px;}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body li::marker {color:var(--ac);}
+    .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body code {color:#cfc8ff; background:color-mix(in srgb,var(--ac) 12%,transparent); border:1px solid color-mix(in srgb,var(--ac) 28%,transparent); border-radius:6px; padding:1px 6px; font-size:12.5px;}
+    @media (max-width:700px) {.stApp.stApp.stApp.stApp .ai-report-frame .ai-report-bar {padding:14px 16px 12px 18px;} .stApp.stApp.stApp.stApp .ai-report-frame .ai-report-body {margin:2px 10px 12px 10px; padding:14px 16px 16px 16px;}}
+
+    .stApp [data-testid="stProgress"] [data-baseweb="progress-bar"] > div {height:6px !important; border-radius:6px !important; background:rgba(255,255,255,.07) !important;}
+    .stApp [data-testid="stProgress"] [data-baseweb="progress-bar"] > div > div {height:6px !important; border-radius:6px !important; background:linear-gradient(90deg,var(--panel-tone,#8b7cf6),color-mix(in srgb,var(--panel-tone,#8b7cf6) 55%,#fff)) !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -11959,14 +12013,10 @@ if active_panel == "Dashboard":
 # --------------------------------------------------------------------------
 if active_panel == "AI Threat Analysis":
     def _ai_threat_analysis():
-        st.markdown(
-            """<div class="ai-console-head">
-                <div class="ai-console-status"><span class="ai-pulse"></span>LOCAL QWEN INFERENCE NODE // READY</div>
-                <div class="ai-console-title">AI Threat Analysis</div>
-                <div class="ai-console-sub">Evidence-bound local LLM assessment · no external API calls</div>
-                <div class="ai-console-track"><span></span></div>
-            </div>""",
-            unsafe_allow_html=True,
+        _banner(
+            "Local Qwen node · ready", "AI Threat Analysis",
+            "Evidence-bound local LLM assessment · no external API calls",
+            scope="On-device · no external calls", tone="ai",
         )
 
         is_csv_mode = uploaded is not None and uploaded.name.lower().endswith(".csv") and data
