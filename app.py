@@ -12164,14 +12164,17 @@ if active_panel == "Dashboard":
     # correlation graph) before being asked to weigh in on it.
     # --------------------------------------------------------------------------
     st.divider()
-    st.markdown("""
-    <div class="feedback-panel">
-        <div class="feedback-title">Analyst Feedback</div>
-        <div class="feedback-subtitle">
-            Validate the detection to improve future model decisions.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    _banner("ANALYST FEEDBACK", "Analyst Feedback", "Validate the detection to improve future model decisions.", scope="Improves the model", tone="rose")
+    st.markdown("""<style>
+.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
+.stApp.stApp.stApp.stApp.stApp .st-key-false_positive,
+.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat .stButton,
+.stApp.stApp.stApp.stApp.stApp .st-key-false_positive .stButton{width:100% !important;}
+.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat button,
+.stApp.stApp.stApp.stApp.stApp .st-key-false_positive button{
+ width:100% !important;height:52px !important;min-height:52px !important;max-height:52px !important;
+ box-sizing:border-box !important;margin:0 !important;display:flex !important;align-items:center !important;justify-content:center !important;}
+</style>""", unsafe_allow_html=True)
 
     feedback_hash = hashlib.sha256(raw).hexdigest()
     review_count = get_feedback_history_count(feedback_hash)
