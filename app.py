@@ -12164,8 +12164,13 @@ if active_panel == "Dashboard":
     # correlation graph) before being asked to weigh in on it.
     # --------------------------------------------------------------------------
     st.divider()
-    _banner("ANALYST FEEDBACK", "Analyst Feedback", "Validate the detection to improve future model decisions.", scope="Improves the model", tone="rose")
     st.markdown("""<style>
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero {position:relative; padding:18px 22px 20px 24px !important; margin:4px 0 16px 0 !important; gap:0 !important; border-radius:16px !important;
+ border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
+ background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
+ box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:16px !important;}
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
 .stApp.stApp.stApp.stApp.stApp .st-key-false_positive,
 .stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat .stButton,
@@ -12175,7 +12180,6 @@ if active_panel == "Dashboard":
  width:100% !important;height:52px !important;min-height:52px !important;max-height:52px !important;
  box-sizing:border-box !important;margin:0 !important;display:flex !important;align-items:center !important;justify-content:center !important;}
 </style>""", unsafe_allow_html=True)
-
     feedback_hash = hashlib.sha256(raw).hexdigest()
     review_count = get_feedback_history_count(feedback_hash)
 
@@ -12187,39 +12191,44 @@ if active_panel == "Dashboard":
         st.session_state["feedback_email"] = current_feedback_key
         st.session_state["feedback_action"] = None
 
-    fb1, fb2 = st.columns(2, gap="medium")
-    feedback_message = None
-    feedback_type = None
+    with st.container(key="feedback_hero"):
+        st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
+<div class="dh2-title">Analyst Feedback</div>
+<div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div>
+<div class="dh2-pill" style="color:var(--panel-tone);border-color:color-mix(in srgb,var(--panel-tone) 45%,transparent);background:color-mix(in srgb,var(--panel-tone) 10%,transparent);">IMPROVES THE MODEL</div></div>""", unsafe_allow_html=True)
+        fb1, fb2 = st.columns(2, gap="medium")
+        feedback_message = None
+        feedback_type = None
 
-    with fb1:
-        if st.button("Confirm Threat", key="confirm_threat", type="primary", use_container_width=True):
-            add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
-            training_result = maybe_retrain_from_feedback()
-            if training_result["status"] == "trained":
-                get_model.clear()
-                analyze_bytes.clear()
-                get_sample_results.clear()
-                feedback_message = "Threat confirmed. Adaptive model validated and accepted."
-            elif training_result["status"] == "rejected":
-                feedback_message = f"Threat confirmed and saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-            else:
-                feedback_message = "Threat confirmed and stored for future learning."
-            feedback_type = "success"
+        with fb1:
+            if st.button("Confirm Threat", key="confirm_threat", type="primary", use_container_width=True):
+                add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
+                training_result = maybe_retrain_from_feedback()
+                if training_result["status"] == "trained":
+                    get_model.clear()
+                    analyze_bytes.clear()
+                    get_sample_results.clear()
+                    feedback_message = "Threat confirmed. Adaptive model validated and accepted."
+                elif training_result["status"] == "rejected":
+                    feedback_message = f"Threat confirmed and saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
+                else:
+                    feedback_message = "Threat confirmed and stored for future learning."
+                feedback_type = "success"
 
-    with fb2:
-        if st.button("False Positive", key="false_positive", type="secondary", use_container_width=True):
-            add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
-            training_result = maybe_retrain_from_feedback()
-            if training_result["status"] == "trained":
-                get_model.clear()
-                analyze_bytes.clear()
-                get_sample_results.clear()
-                feedback_message = "False positive saved. Adaptive model validated and accepted."
-            elif training_result["status"] == "rejected":
-                feedback_message = f"False positive saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-            else:
-                feedback_message = "False-positive feedback stored for future learning."
-            feedback_type = "info"
+        with fb2:
+            if st.button("False Positive", key="false_positive", type="secondary", use_container_width=True):
+                add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
+                training_result = maybe_retrain_from_feedback()
+                if training_result["status"] == "trained":
+                    get_model.clear()
+                    analyze_bytes.clear()
+                    get_sample_results.clear()
+                    feedback_message = "False positive saved. Adaptive model validated and accepted."
+                elif training_result["status"] == "rejected":
+                    feedback_message = f"False positive saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
+                else:
+                    feedback_message = "False-positive feedback stored for future learning."
+                feedback_type = "info"
 
     if feedback_message:
         show_feedback_typing(feedback_message, feedback_type)
