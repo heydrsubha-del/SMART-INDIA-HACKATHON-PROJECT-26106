@@ -394,7 +394,7 @@ def _mail_box(key, kicker, title, body, height, chips=(), tone="emerald", sub=""
         "<div class='mb-head'><div class='mb-left'>"
         "<div class='mb-kicker'>{k}</div><div class='mb-title'>{t}</div>{s}</div>"
         "<div class='mb-chips'>{c}</div></div>"
-        "<div class='mb-body' tabindex='0' style='height:{h}px'>{txt}</div></div>"
+        "<div class='mb-body' tabindex='0' style='height:auto;max-height:{h}px'>{txt}</div></div>"
     ).format(
         ac=_panel_ac_style(),
         tone=html.escape(tone), lbl=html.escape(label or title), k=html.escape(kicker), t=html.escape(title),
