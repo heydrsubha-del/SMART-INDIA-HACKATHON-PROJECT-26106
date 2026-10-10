@@ -198,6 +198,8 @@ from tracker import (
     init_db,
     log_threat,
     check_history,
+    lookup_indicator,
+    remember_indicator,
     add_feedback,
     get_feedback_history_count,
     get_connection,
@@ -301,6 +303,8 @@ from geolocate import INFRA_LABEL
 from network_trust import assess_network_trust, load_vpn_ranges, scan_cases_for_vpn
 import tor_check
 import origin_intel
+import domain_intel
+import retro_hunt
 import importlib
 origin_intel = importlib.reload(origin_intel)  # Streamlit reruns must not keep a stale copy of the module
 try:
@@ -5149,6 +5153,7 @@ st.markdown(
     .stApp .st-key-seg_tech_logs      {--seg:#2fb68e;}
     .stApp .st-key-seg_scan_count     {--seg:#38b2c8;}
     .stApp .st-key-seg_origin_intel   {--seg:#22d3ee;}
+    .stApp .st-key-seg_domain_intel   {--seg:#8b7cf6;}
     .stApp [class*="st-key-seg_"] [data-testid="stRadio"] {width:100% !important;}
     .stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] {
         display:flex !important; margin:0 0 8px 2px !important; padding:0 !important;
@@ -9563,6 +9568,237 @@ def _origin_intel_markdown(case, raw_bytes=None, ehash=None):
         return f"Origin intelligence could not be generated ({e})."
 
 
+# ---------------------------------------------------------------------------
+# Domain & DNS intelligence -- thin glue only. All logic lives in
+# domain_intel.py. Lookups (DNS-over-HTTPS + RDAP, fixed https services, never
+# the domain itself) run ONLY when the analyst presses the button; reports use
+# whatever was already looked up. Never changes the threat score.
+# ---------------------------------------------------------------------------
+def _domain_run_key(case):
+    return str(case.get("_evidence_hash") or case.get("name") or "case")
+
+
+def _domain_runs():
+    return st.session_state.setdefault("_domain_intel_runs", {})
+
+
+def _domain_intel_bundle(case, run, origin_b, is_loaded=False):
+    """Findings / IP join / correlation for a stored lookup run (no network)."""
+    recs = run["records"]
+    a = origin_b["assessment"]
+    geo = case.get("geo", {}) or {}
+    ips = []
+    for r in recs:
+        for t in ("A", "AAAA"):
+            for x in r["dns"]["records"].get(t, []):
+                v = x.get("value")
+                if v and domain_intel.is_public_ip(v) and v not in ips:
+                    ips.append(v)
+    hist = {}
+    self_ip = (geo.get("origin") or {}).get("ip") if is_loaded else None
+    for ip in ips[:12]:
+        try:
+            c, m = check_history(ip)
+            c, m = int(c or 0), float(m or 0)
+            hist[ip] = (max(c - 1, 0) if ip == self_ip else c, m)
+        except Exception:
+            hist[ip] = (0, 0)
+    ctx = {"route_ips": origin_intel.route_ips(a), "origin_ip": a.get("selected_ip")}
+    mem = {}
+    for r in recs:  # threat_intel row: id, indicator, type, reputation, category, first_seen, last_seen, observations, source
+        try:
+            row = lookup_indicator(r["domain"], "domain")
+            if row:
+                mem[r["domain"]] = {"reputation": row[3], "first_seen": row[5], "last_seen": row[6],
+                                    "observations": row[7], "source": row[8]}
+        except Exception:
+            pass
+    flags = domain_intel.analyze(recs, ctx, hist, mem)
+    cases = [r for r in _corr_cases.values() if "error" not in r]
+    # Retro-hunt: search earlier emails + threat memory for this email's domains and IPs (local, read-only).
+    _hd = [r["domain"] for r in recs] + [domain_intel.registrable(r["domain"]) for r in recs]
+    _hunt_inds = retro_hunt.build_indicators(_hd, ips + ctx["route_ips"])
+    _conns = []
+    try:
+        for _shared in ((False, True) if MULTIUSER else (False,)):
+            try:
+                _conns.append(get_connection(shared=_shared))
+            except Exception:
+                pass
+        hunt_rows = retro_hunt.hunt(_hunt_inds, cases, _conns, case.get("name"), case.get("_evidence_hash"), self_ip)
+    finally:
+        for _c in _conns:
+            try:
+                _c.close()
+            except Exception:
+                pass
+    return {
+        "hunt_rows": hunt_rows, "hunt_n": len(_hunt_inds),
+        "records": recs, "flags": flags, "skipped": run.get("skipped", 0),
+        "ip_rows": domain_intel.ip_rows(recs, geo, hist),
+        "corr_rows": domain_intel.correlate(recs, cases, case.get("name"), case.get("_evidence_hash"),
+                                            st.session_state.get("_domain_intel_cache")),
+    }
+
+
+def _domain_intel_markdown(case, raw_bytes=None, ehash=None):
+    """Markdown section for the forensic reports. Uses stored lookups only;
+    makes no network call and never raises."""
+    try:
+        c = dict(case)
+        c["_evidence_hash"] = ehash or c.get("_evidence_hash")
+        run = _domain_runs().get(_domain_run_key(c))
+        if not run:
+            return domain_intel.to_markdown([], [])
+        loaded = ehash is not None and ehash == current_evidence_hash
+        ob = _origin_intel_for_case(c, raw_bytes, is_loaded=loaded)
+        b = _domain_intel_bundle(c, run, ob, is_loaded=loaded)
+        return (domain_intel.to_markdown(b["records"], b["flags"], b["ip_rows"], b["corr_rows"], b["skipped"])
+                + "\n\n### Retro-hunt (earlier emails and threat memory)\n\n" + retro_hunt.to_markdown(b["hunt_rows"], b["hunt_n"]))
+    except Exception as e:
+        return f"Domain & DNS intelligence could not be generated ({e})."
+
+
+def _render_domain_intel(case, origin_b, is_loaded=False):
+    """Button-triggered lookup, then ONE view at a time (st.radio pill pattern)."""
+    st.markdown(_ORIGIN_CARD_CSS, unsafe_allow_html=True)
+    doms, skipped = domain_intel.collect_domains(case.get("parsed", {}) or {}, case.get("iocs", {}) or {})
+    if not doms:
+        st.caption("No valid public domains were found in the sender headers or extracted indicators, so there is nothing to look up.")
+        return
+    rk = _domain_run_key(case)
+    run = _domain_runs().get(rk)
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        st.caption("Domains found: " + ", ".join(f"`{d['domain']}` ({'/'.join(d['roles'])})" for d in doms)
+                   + (f" - {skipped} more not looked up (cap {domain_intel.MAX_DOMAINS})." if skipped else ""))
+        st.caption("Lookup sends each domain name to a public DNS-over-HTTPS resolver (Cloudflare) and the registry's RDAP service. "
+                   "Nothing connects to the domain itself or to any IP from the email.")
+    with c2:
+        go_lookup = st.button("Refresh lookup" if run else "Run DNS & RDAP lookup", key=f"domain_intel_run_{rk[:16]}",
+                              type="primary", use_container_width=True)
+    if go_lookup:
+        cache = st.session_state.setdefault("_domain_intel_cache", {})
+        if run:
+            for d in doms:
+                for k in [k for k in cache if k[0] == d["domain"]]:
+                    cache.pop(k, None)
+        with st.spinner("Looking up DNS records and registration data..."):
+            recs = domain_intel.lookup_all(doms, cache=cache)
+        run = {"records": recs, "skipped": skipped}
+        _domain_runs()[rk] = run
+        # Retro-hunt / threat memory: remember the public IPs these domains resolve to (same
+        # neutral 0.50 "observed" reputation analyzer.py gives body IPs; scoring never reads it).
+        for r in recs:
+            for t in ("A", "AAAA"):
+                for x in r["dns"]["records"].get(t, [])[:4]:
+                    if domain_intel.is_public_ip(x.get("value")):
+                        try:
+                            remember_indicator(x["value"], "ip", 0.5, "resolved_from_domain", "domain_intel")
+                        except Exception:
+                            pass
+    if not run:
+        st.info("Not run yet. Press the button to retrieve DNS records and registration (RDAP) data for these domains.")
+        return
+
+    # Entity graph: hand the DNS results to the case so correlate.build_graph can link
+    # emails whose domains differ but resolve to the same IP.
+    _dns_links = [{"domain": r["domain"], "ips": [x["value"] for t in ("A", "AAAA") for x in r["dns"]["records"].get(t, [])
+                                                  if domain_intel.is_public_ip(x.get("value"))][:4]} for r in run["records"]]
+    case["domain_dns"] = _dns_links
+    _stored = _corr_cases.get(case.get("_evidence_hash"))
+    if isinstance(_stored, dict):
+        _stored["domain_dns"] = _dns_links
+
+    b = _domain_intel_bundle(case, run, origin_b, is_loaded=is_loaded)
+    sev, text = domain_intel.overall(b["flags"])
+    _col = {"high": "#e0708c", "medium": "#d9a35f", "low": "#8b7cf6", "info": "#38b2c8", "none": "#2fb68e"}.get(sev, "#8b96a5")
+    _stamp = max((r["dns"]["looked_up_at"] for r in b["records"]), default="-")
+    st.markdown(
+        f'<div class="oi-hero" style="--oi-col:{_col}"><div class="oi-top"><div>'
+        '<div class="oi-eyebrow">Domain &amp; DNS intelligence</div>'
+        f'<div class="oi-ip" style="font-size:22px">{len(b["records"])} domain(s) looked up</div></div>'
+        f'<span class="oi-pill" style="color:{_col};border-color:{_col}66;background:{_col}1a;">'
+        f'{html.escape(sev.upper())}</span></div>'
+        f'<p class="oi-sum" style="margin-top:12px">{html.escape(text)}</p>'
+        f'<div class="oi-note">Looked up {html.escape(_stamp)}. {html.escape(domain_intel.SCORE_NOTE)}</div></div>',
+        unsafe_allow_html=True)
+
+    with st.container(key="seg_domain_intel"):
+        view = st.radio("Domain intelligence view", ["Findings", "DNS records", "Registration", "Infrastructure", "Related", "Retro-Hunt", "Notes"],
+                        horizontal=True, label_visibility="collapsed", key="domain_intel_view")
+
+    tone = _panel_hex()
+    if view == "Findings":
+        if b["flags"]:
+            _render_polished_table(pd.DataFrame([{
+                "Severity": f["severity"], "Basis": "Verified fact" if f["basis"] == "fact" else "Inference",
+                "Domain": f["domain"], "Finding": f["title"], "Evidence": f["evidence"]} for f in b["flags"]]), tone=tone)
+            st.caption("Verified fact = a value returned by the lookup. Inference = our reading of it; treat as a lead, not proof.")
+        else:
+            st.caption("No irregularities in the data that could be retrieved.")
+    elif view == "DNS records":
+        rows = []
+        for r in b["records"]:
+            for t in domain_intel.RECORD_TYPES:
+                vals = r["dns"]["records"].get(t, [])
+                if not vals:
+                    st_ = r["dns"]["status"].get(t, "")
+                    rows.append({"Domain": r["domain"], "Type": t, "Value": "NXDOMAIN" if st_ == "nxdomain" else
+                                 ("lookup failed (" + st_.split(":")[-1] + ")" if st_.startswith("error") else "none"),
+                                 "TTL": "-", "Looked up": r["dns"]["looked_up_at"]})
+                for x in vals:
+                    rows.append({"Domain": r["domain"], "Type": t,
+                                 "Value": (f"{x['priority']} " if x.get("priority") is not None else "") + str(x["value"]),
+                                 "TTL": x.get("ttl") if x.get("ttl") is not None else "-", "Looked up": r["dns"]["looked_up_at"]})
+            for x in r["dns"].get("dmarc", []):
+                rows.append({"Domain": r["domain"], "Type": "TXT (_dmarc)", "Value": x["value"], "TTL": x.get("ttl") or "-",
+                             "Looked up": r["dns"]["looked_up_at"]})
+        _render_polished_table(pd.DataFrame(rows), tone=tone)
+        _errs = [f"{r['domain']}: {e}" for r in b["records"] for e in r["dns"]["errors"]]
+        if _errs:
+            st.caption("Lookup problems: " + "; ".join(_errs[:6]))
+    elif view == "Registration":
+        rows = []
+        for r in b["records"]:
+            rd = r.get("rdap") or {}
+            d = rd.get("data") or {}
+            rows.append({
+                "Domain": r["domain"], "Registered name": rd.get("queried") or "-",
+                "Registrar": d.get("registrar") or "unavailable",
+                "Created": (d.get("created") or "unavailable") + (f" ({d['age_days']}d ago)" if d.get("age_days") is not None else ""),
+                "Expires": d.get("expires") or "unavailable", "Status": ", ".join(d.get("status", [])) or "unavailable",
+                "Name servers": ", ".join(d.get("nameservers", [])[:4]) or "unavailable",
+                "Source": rd.get("source", "-") if rd.get("state") == "ok" else f"{rd.get('state', '-')}: {rd.get('error', '')}",
+                "Looked up": rd.get("looked_up_at", "-")})
+        _render_polished_table(pd.DataFrame(rows), tone=tone)
+    elif view == "Infrastructure":
+        if b["ip_rows"]:
+            _render_polished_table(pd.DataFrame(b["ip_rows"]), tone="#d9a35f")
+            st.caption("ASN comes from this email's geolocation record when the IP is in its route, otherwise from the local "
+                       "GeoLite2-ASN database if installed; 'unavailable' means neither had it.")
+        else:
+            st.caption("None of the looked-up domains resolved to a public IP address.")
+    elif view == "Related":
+        if b["corr_rows"]:
+            _render_polished_table(pd.DataFrame(b["corr_rows"]), tone="#c084fc")
+        else:
+            st.caption("No other email analysed this session, and no other domain looked up this session, shares these domains, IPs, "
+                       "name servers or registration details.")
+    elif view == "Retro-Hunt":
+        st.caption(retro_hunt.summary(b["hunt_rows"], b["hunt_n"]))
+        if b["hunt_rows"]:
+            _render_polished_table(pd.DataFrame(b["hunt_rows"]), tone="#e0708c")
+            st.caption("Searches earlier emails analysed this session and the local threat-memory database (threat_intel and the "
+                       "scored-email log). Local and read-only; 'Times' for threat memory includes this email's own analysis where it was logged.")
+    else:
+        st.markdown("- Verified facts are values returned by DNS or RDAP at the time shown. Inferences are labelled as such.")
+        st.markdown("- Lookups describe the domain now, not when the email was sent; records may have changed.")
+        st.markdown("- RDAP data can be redacted, rate-limited or missing for some registries; those cases are shown as unavailable, never guessed.")
+        st.markdown("- The registered name for a subdomain is estimated without a full public-suffix list.")
+        st.markdown("- A recently registered domain is a prompt to look closer, not evidence of malice; findings never change the threat score.")
+
+
 _ORIGIN_CARD_CSS = """<style>
 html body .stApp.stApp.stApp.stApp.stApp .oi-hero {position:relative; padding:20px 24px 18px 26px; margin:4px 0 18px 0; border-radius:16px;
     border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a);
@@ -9577,8 +9813,8 @@ html body .stApp.stApp.stApp.stApp.stApp .oi-meter {height:6px; border-radius:6p
 html body .stApp.stApp.stApp.stApp.stApp .oi-meter > div {height:100%; border-radius:6px; background:linear-gradient(90deg,color-mix(in srgb,var(--oi-col) 60%,#000),var(--oi-col));}
 html body .stApp.stApp.stApp.stApp.stApp .oi-sum {font:400 13.5px/1.55 Inter,'Segoe UI',sans-serif; color:#aab6c8; margin:0;}
 html body .stApp.stApp.stApp.stApp.stApp .oi-note {margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.07); font:400 12px/1.5 Inter,'Segoe UI',sans-serif; color:#8793a5;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-seg_origin_intel {margin:0 0 12px 0 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-seg_origin_intel label:has(input:checked) :is([data-baseweb="radio"] > :first-child, div:empty, span:empty) {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-tone) 25%,transparent) !important;}
+html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-seg_origin_intel,.st-key-seg_domain_intel) {margin:0 0 12px 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp :is(.st-key-seg_origin_intel,.st-key-seg_domain_intel) label:has(input:checked) :is([data-baseweb="radio"] > :first-child, div:empty, span:empty) {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-tone) 25%,transparent) !important;}
 </style>"""
 _ORIGIN_BAND_COL = {"High": "#2fb68e", "Medium": "#d9a35f", "Low": "#e0708c"}
 
@@ -12653,6 +12889,9 @@ if active_panel == "AI Threat Analysis":
                                 + "\n\n## Origin Intelligence Assessment\n\n"
                                 + _origin_intel_markdown(_bi_result, _bi.get("_raw"),
                                                          hashlib.sha256(_bi["_raw"]).hexdigest() if _bi.get("_raw") else None)
+                                + "\n\n## Domain & DNS Intelligence\n\n"
+                                + _domain_intel_markdown(_bi_result, _bi.get("_raw"),
+                                                         hashlib.sha256(_bi["_raw"]).hexdigest() if _bi.get("_raw") else None)
                             )
                         except Exception as e:
                             _batch_machine_sections.append(
@@ -13375,6 +13614,17 @@ if active_panel == "Origin & Route":
         except Exception as _oi_err:
             st.warning(f"Origin intelligence unavailable for this email ({type(_oi_err).__name__}: {_oi_err}). "
                        "The existing origin summary above is unaffected.")
+            st.code(traceback.format_exc())
+
+        # Domain & DNS Intelligence (domain_intel.py): DNS records + RDAP registration for
+        # the domains this email claims or links to. Lookup runs only on button press.
+        _sec("Domain & DNS Intelligence",
+             "DNS records, registration details and suspicious-domain indicators, tied to the IP and origin evidence above", "gold")
+        try:
+            _render_domain_intel(_active_case, _origin_intel_for_case(
+                _active_case, raw if _oi_is_loaded else None, is_loaded=_oi_is_loaded), is_loaded=_oi_is_loaded)
+        except Exception as _di_err:
+            st.warning(f"Domain intelligence unavailable for this email ({type(_di_err).__name__}: {_di_err}). Everything above is unaffected.")
             st.code(traceback.format_exc())
 
         # ------------------------------------------------------------------
@@ -14344,6 +14594,7 @@ if active_panel == "Forensic Report":
             m_sem = "Semantic origin comparison was unavailable when this report was generated (Ollama / nomic-embed-text not reachable)."
 
         m_origin = _origin_intel_markdown(sel_res, sel_raw, sel_hash)
+        m_domain = _domain_intel_markdown(sel_res, sel_raw, sel_hash)
 
         machine_md = f"""# ALGORITHMISTIC - DIGITAL FORENSIC EVIDENCE REPORT
 
@@ -14400,6 +14651,9 @@ if active_panel == "Forensic Report":
 
 ## 7. ORIGIN INTELLIGENCE ASSESSMENT
 {m_origin}
+
+## 8. DOMAIN & DNS INTELLIGENCE
+{m_domain}
 """
 
         # --------------------------------------------------------------------
