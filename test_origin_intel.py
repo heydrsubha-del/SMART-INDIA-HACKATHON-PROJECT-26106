@@ -150,5 +150,21 @@ class T(unittest.TestCase):
         self.assertIn("No origin assessment", oi.to_markdown(oi.assess_origin({}, {})))
         self.assertIn("No origin assessment", oi.to_markdown(None))
 
+class HistoryConsistency(unittest.TestCase):
+    def test_session_rows_deduplicated_and_history_wording_names_its_source(self):
+        other = {"name": "other", "_evidence_hash": "h2", "level": "phishing", "score": 91, "parsed": {"from_addr": "x@evil.test"},
+                 "iocs": {}, "geo": {"hops": [{"ip": "45.33.32.156"}]}}
+        me = {"name": "me", "_evidence_hash": "h1", "geo": GEO}
+        _, rows = oi.correlate_history(["45.33.32.156"], "me", "h1", [me, other, dict(other)])
+        self.assertEqual(len(rows), 1)                                   # same email supplied twice -> one sighting
+        a = oi.assess_origin({"received_chain": CLEAN}, GEO)
+        none = oi.to_markdown(a, None, [], {"45.33.32.156": (0, 0)})
+        self.assertIn("scored-email log", none); self.assertNotIn("in threat memory", none)   # no claim about a store it did not read
+        self.assertIn("Retro-Hunt", none)
+        some = oi.to_markdown(a, None, rows, {"45.33.32.156": (2, 80.0)})
+        self.assertIn("2 time(s) in the scored-email log", some)
+        self.assertNotIn("None of these IPs appear", some)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

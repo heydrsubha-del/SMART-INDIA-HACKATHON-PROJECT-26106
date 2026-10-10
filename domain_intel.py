@@ -509,7 +509,7 @@ def analyze(records, ctx=None, history=None, memory=None):
 
     ctx: {"route_ips": [...], "origin_ip": str|None}
     history: {ip: (prior_count, max_score)} from the threat-memory DB.
-    memory: {domain: {"observations", "reputation", "first_seen", "last_seen", "source"}}
+    memory: {domain: {"prior", "reputation", "first_seen", "last_seen", "source"}}
             from tracker.lookup_indicator(domain, "domain").
     Returns a list of flags sorted by severity (highest first)."""
     ctx, history = ctx or {}, history or {}
@@ -624,17 +624,20 @@ def analyze(records, ctx=None, history=None, memory=None):
             c, m = history.get(ip, (0, 0))
             if c:
                 add("medium" if m >= HISTORY_MEDIUM_SCORE else "low", "IP_IN_THREAT_MEMORY", d,
-                    "Domain's IP was seen in earlier analyses",
-                    f"{ip} appears {c} time(s) in threat memory (highest score {m:.0f}).", "fact")
+                    "Domain's IP is in the scored-email log from earlier analyses",
+                    f"{ip} appears {c} time(s) in the scored-email log (highest score {m:.0f}).", "fact")
         mem = (memory or {}).get(d)
         if mem:
-            obs, rep = int(mem.get("observations") or 0), float(mem.get("reputation") or 0)
-            if rep >= MEMORY_REP_MEDIUM or obs > 1:
+            rep = float(mem.get("reputation") or 0)
+            # "prior" = recordings OTHER than this email's own analysis (caller computes it);
+            # without it we cannot tell, so we do not claim an earlier sighting.
+            prior = int(mem.get("prior") or 0)
+            if rep >= MEMORY_REP_MEDIUM or prior >= 1:
                 add("medium" if rep >= MEMORY_REP_MEDIUM else "info", "DOMAIN_IN_THREAT_MEMORY", d,
                     "Domain is already in threat memory",
-                    f"Recorded {obs} time(s), reputation {rep:.2f}, first seen {mem.get('first_seen') or '?'}, "
-                    f"last seen {mem.get('last_seen') or '?'} (source: {mem.get('source') or '?'}). The count includes "
-                    "this email's own analysis; a default 0.50 reputation only means 'observed', not 'bad'.", "fact")
+                    f"{prior} earlier recording(s) besides this email's own analysis, reputation {rep:.2f}, "
+                    f"first seen {mem.get('first_seen') or '?'}, last seen {mem.get('last_seen') or '?'} "
+                    f"(source: {mem.get('source') or '?'}). A default 0.50 reputation only means 'observed', not 'bad'.", "fact")
         # composite: young + something else (still an inference, never "malicious")
         age = rdd.get("age_days")
         others = [f for f in mine if f["code"] not in ("NEW_DOMAIN", "EXPIRING_SOON", "IP_IN_ROUTE", "ORIGIN_IN_SPF", "SHORT_TTL")
@@ -721,19 +724,30 @@ def ip_rows(records, geo=None, history=None, asn_fn=None):
                 "Domain": rec["domain"], "IP": ip,
                 "ASN": asn or "unavailable", "Network": org or g.get("isp") or "unavailable",
                 "Infrastructure": g.get("infra_label") or "not in this email's route",
-                "Threat memory": f"{c} sighting(s), max score {mx:.0f}" if c else "none",
+                "Scored-email log": f"{c} entr{'y' if c == 1 else 'ies'}, max score {mx:.0f}" if c else "none",
             })
     return rows
 
 
 def correlate(records, cases, current_name=None, current_hash=None, cache=None):
     """Other emails / cached domains that share a domain, IP, name server or
-    registration fingerprint with the current lookups. Evidence rows only."""
-    rows, mine = [], {r["domain"]: r for r in records}
-    my_reg = {registrable(d): d for d in mine}
+    registration fingerprint with the current lookups. Evidence rows only.
+
+    Deduplicated, never lossy: an email appears once per related domain (strongest
+    relation, with every matching domain and role listed); an email supplied twice,
+    or a domain cached under two keys, is counted once."""
+    mine = {r["domain"]: r for r in records}
+    my_reg = {}
+    for d in mine:
+        my_reg.setdefault(registrable(d), d)
+    found, done = {}, set()
     for case in cases or []:
-        if case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
+        if not isinstance(case, dict):
             continue
+        ck = str(case.get("_evidence_hash") or case.get("name") or id(case))
+        if ck in done or case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
+            continue
+        done.add(ck)
         p, io = case.get("parsed", {}) or {}, case.get("iocs", {}) or {}
         try:
             doms, _ = collect_domains(p, io, limit=60)
@@ -742,16 +756,29 @@ def correlate(records, cases, current_name=None, current_hash=None, cache=None):
         for item in doms:
             d = item["domain"]
             rel = "same domain" if d in mine else "same registrable domain" if registrable(d) in my_reg else None
-            if rel:
-                rows.append({"Domain": my_reg.get(registrable(d), d), "Relation": rel,
-                             "Other email": case.get("name", "-"), "Their role": ", ".join(item["roles"]),
-                             "Verdict": str(case.get("level", "-")).upper(),
-                             "Score": round(float(case.get("score", 0) or 0), 1)})
+            if not rel:
+                continue
+            mine_dom = d if d in mine else my_reg[registrable(d)]
+            key = (mine_dom, ck)
+            detail = f"{d}: {', '.join(item['roles'])}"
+            cur = found.get(key)
+            if cur is None:
+                found[key] = {"case": case, "rel": rel, "details": [detail]}
+            else:
+                if detail not in cur["details"]:
+                    cur["details"].append(detail)
+                if rel == "same domain":
+                    cur["rel"] = rel
+    rows = [{"Domain": k[0], "Relation": v["rel"], "Other email": v["case"].get("name", "-"),
+             "Their role": "; ".join(v["details"]), "Verdict": str(v["case"].get("level", "-")).upper(),
+             "Score": round(float(v["case"].get("score", 0) or 0), 1)} for k, v in found.items()]
     # infrastructure shared with other domains already looked up this session
+    seen_other, shared_rows = set(), set()
     for (od, _), hit in list((cache or {}).items()):
         other = hit.get("rec") if isinstance(hit, dict) else None
-        if not other or od in mine:
+        if not other or od in mine or od in seen_other:   # one cached domain may sit under two keys
             continue
+        seen_other.add(od)
         for d, rec in mine.items():
             if registrable(od) == registrable(d):
                 continue
@@ -761,15 +788,14 @@ def correlate(records, cases, current_name=None, current_hash=None, cache=None):
             fp = bool(r1.get("registrar") and r1.get("registrar") == r2.get("registrar")
                       and r1.get("created") and r1.get("created") == r2.get("created"))
             for shared in sorted(ips):
-                rows.append({"Domain": d, "Relation": "shared IP", "Other email": "-",
-                             "Their role": f"{od} ({shared})", "Verdict": "-", "Score": "-"})
+                shared_rows.add((d, "shared IP", f"{od} ({shared})"))
             for n in sorted(ns):
                 weak = any(g in n for g in _GENERIC_NS)
-                rows.append({"Domain": d, "Relation": "shared name server" + (" (weak: common provider)" if weak else ""),
-                             "Other email": "-", "Their role": f"{od} ({n})", "Verdict": "-", "Score": "-"})
+                shared_rows.add((d, "shared name server" + (" (weak: common provider)" if weak else ""), f"{od} ({n})"))
             if fp:
-                rows.append({"Domain": d, "Relation": "same registrar + creation date", "Other email": "-",
-                             "Their role": f"{od} ({r1['registrar']}, {r1['created']})", "Verdict": "-", "Score": "-"})
+                shared_rows.add((d, "same registrar + creation date", f"{od} ({r1['registrar']}, {r1['created']})"))
+    for d, rel, detail in sorted(shared_rows):
+        rows.append({"Domain": d, "Relation": rel, "Other email": "-", "Their role": detail, "Verdict": "-", "Score": "-"})
     return rows[:60]
 
 
@@ -807,8 +833,8 @@ def to_markdown(records, flags, ip_rows_=None, corr_rows=None, skipped=0):
     else:
         out.append("None found in the retrievable data.")
     if ip_rows_:
-        out += ["", "### Domain-to-IP infrastructure", "", "| Domain | IP | ASN | Network | Infrastructure | Threat memory |", "|---|---|---|---|---|---|"]
-        out += ["| " + " | ".join(_md(r[k]) for k in ("Domain", "IP", "ASN", "Network", "Infrastructure", "Threat memory")) + " |" for r in ip_rows_]
+        out += ["", "### Domain-to-IP infrastructure", "", "| Domain | IP | ASN | Network | Infrastructure | Scored-email log |", "|---|---|---|---|---|---|"]
+        out += ["| " + " | ".join(_md(r[k]) for k in ("Domain", "IP", "ASN", "Network", "Infrastructure", "Scored-email log")) + " |" for r in ip_rows_]
     if corr_rows:
         out += ["", "### Related emails and domains", "", "| Domain | Relation | Other email / detail | Verdict | Score |", "|---|---|---|---|---|"]
         out += ["| " + " | ".join(_md(x) for x in (r["Domain"], r["Relation"], (r["Other email"] if r["Other email"] != "-" else r["Their role"]),

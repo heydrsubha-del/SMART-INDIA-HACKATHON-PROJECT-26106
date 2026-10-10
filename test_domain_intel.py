@@ -236,12 +236,12 @@ class T(unittest.TestCase):
 
     def test_threat_memory_domain(self):
         rec = self.lookup(EVIL_ZONE, rdap_obj(created="2015-01-01T00:00:00Z"))
-        mem = {"evil-example.com": {"observations": 3, "reputation": 0.9, "first_seen": "2026-09-01", "last_seen": "2026-10-05", "source": "urlhaus"}}
+        mem = {"evil-example.com": {"prior": 3, "reputation": 0.9, "first_seen": "2026-09-01", "last_seen": "2026-10-05", "source": "urlhaus"}}
         f = next(f for f in di.analyze([rec], memory=mem) if f["code"] == "DOMAIN_IN_THREAT_MEMORY")
         self.assertEqual((f["severity"], f["basis"]), ("medium", "fact"))
         mem["evil-example.com"].update(reputation=0.5)
         self.assertEqual(next(f for f in di.analyze([rec], memory=mem) if f["code"] == "DOMAIN_IN_THREAT_MEMORY")["severity"], "info")
-        mem["evil-example.com"].update(observations=1)
+        mem["evil-example.com"].update(prior=0)
         self.assertNotIn("DOMAIN_IN_THREAT_MEMORY", {f["code"] for f in di.analyze([rec], memory=mem)})
 
     def test_entity_graph_links_different_domains_by_ip(self):
@@ -265,6 +265,24 @@ class T(unittest.TestCase):
         # cases without domain_dns behave exactly as before
         G3 = correlate.build_graph([{k: v for k, v in c.items() if k != "domain_dns"}])
         self.assertNotIn("resolves to", {d["rel"] for _, _, d in G3.edges(data=True)})
+
+    def test_related_rows_are_deduplicated_but_distinct_evidence_kept(self):
+        rec = self.lookup(EVIL_ZONE, rdap_obj())
+        mk = lambda n, **kw: dict({"name": n, "_evidence_hash": n, "level": "phishing", "score": 90, "parsed": {}, "iocs": {}}, **kw)
+        dup = mk("dup", parsed={"from_addr": "a@mail.evil-example.com"}, iocs={"domains": ["evil-example.com", "x.evil-example.com"],
+                                                                              "urls": [{"url": "http://evil-example.com/a"}]})
+        other = mk("other2", parsed={"from_addr": "q@evil-example.com"})
+        rows = di.correlate([rec], [dup, dict(dup), other, mk("me")], "me", "me")
+        mine = [r for r in rows if r["Other email"] == "dup"]
+        self.assertEqual(len(mine), 1)                                  # same email twice + many matching domains -> 1 row
+        self.assertEqual(mine[0]["Relation"], "same domain")
+        for part in ("mail.evil-example.com", "x.evil-example.com", "From", "Body domain", "Link host"):
+            self.assertIn(part, mine[0]["Their role"])                  # evidence merged, not lost
+        self.assertEqual(sum(1 for r in rows if r["Other email"] == "other2"), 1)   # a different email stays separate
+        sib = lambda: {"domain": "sibling-example.net", "dns": {"records": {"A": [{"value": "45.33.32.9"}], "NS": [], "MX": [], "AAAA": [], "TXT": [], "CNAME": []}}, "rdap": {}}
+        cache = {("sibling-example.net", ""): {"_t": 0, "rec": sib()}, ("sibling-example.net", "dmarc"): {"_t": 0, "rec": sib()}}
+        shared = [r for r in di.correlate([rec], [], cache=cache) if r["Relation"] == "shared IP"]
+        self.assertEqual(len(shared), 1)                                # same domain cached under two keys -> 1 row
 
     # ---- cache / batch ----
     def test_cache_and_ratelimit_batch(self):
@@ -292,7 +310,8 @@ class T(unittest.TestCase):
         rows = di.correlate([rec], [me, other_case], "me", "h1", cache={("sibling-example.net", ""): {"_t": 0, "rec": sib}})
         rel = {r["Relation"] for r in rows}
         self.assertTrue({"same domain", "shared IP", "shared name server", "same registrar + creation date"} <= rel, rel)
-        self.assertEqual(sum(1 for r in rows if r["Other email"] == "other"), 2)
+        self.assertEqual(sum(1 for r in rows if r["Other email"] == "other"), 1)   # one email = one related-domain row
+        self.assertEqual(next(r for r in rows if r["Other email"] == "other")["Relation"], "same domain")
         self.assertFalse(any(r["Other email"] == "me" for r in rows))
 
     def test_ip_rows_reuse_geo_and_never_invent(self):
@@ -300,7 +319,7 @@ class T(unittest.TestCase):
         geo = {"hops": [{"ip": "45.33.32.9", "asn": "AS64500 ExampleNet", "infra_label": "Datacenter"}]}
         r = di.ip_rows([rec], geo, {"45.33.32.9": (2, 80.0)}, asn_fn=lambda ip: (None, None))[0]
         self.assertEqual((r["ASN"], r["Network"], r["Infrastructure"]), ("AS64500", "ExampleNet", "Datacenter"))
-        self.assertIn("2 sighting", r["Threat memory"])
+        self.assertIn("2 entries", r["Scored-email log"])
         r2 = di.ip_rows([rec], {}, None, asn_fn=lambda ip: (None, None))[0]
         self.assertEqual((r2["ASN"], r2["Network"]), ("unavailable", "unavailable"))
 
