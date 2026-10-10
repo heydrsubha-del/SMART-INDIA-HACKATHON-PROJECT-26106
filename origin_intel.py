@@ -6,9 +6,8 @@ ON TOP of what geolocate.py / network_trust.py / tor_check.py / tracker.py /
 correlate.py already produce. It re-uses their output; it never replaces it.
 
 Design rules (match the rest of the app):
-  * Offline. No network call is ever made here. ASN/org data comes only from
-    an optional local MaxMind GeoLite2-ASN file (data/GeoLite2-ASN.mmdb), the
-    same "drop a file in data/" convention geolocate.py uses for GeoLite2-City.
+  * Makes no network call of its own. ASN/ISP data is whatever geolocate.py
+    already resolved for each IP (live lookup, cache, or local GeoLite2).
   * Pure stdlib. Streamlit is not imported, so this is unit-testable.
   * Never touches the threat score. Nothing here is a scoring weight.
   * Never invents intelligence. A field with no source says "unavailable".
@@ -17,7 +16,6 @@ Design rules (match the rest of the app):
 from __future__ import annotations
 
 import ipaddress
-import os
 import re
 from datetime import timezone
 from email.parser import BytesHeaderParser, HeaderParser
@@ -200,7 +198,7 @@ def _flag(sev, code, title, evidence, hops=()):
     return {"severity": sev, "code": code, "title": title, "evidence": evidence, "hops": list(hops)}
 
 
-def reconstruct_route(parsed, geo, asn_lookup=None):
+def reconstruct_route(parsed, geo):
     """Return (hops, flags). `parsed['received_chain']` is oldest-hop-first,
     as the app already documents."""
     chain = list((parsed or {}).get("received_chain") or [])
@@ -216,9 +214,7 @@ def reconstruct_route(parsed, geo, asn_lookup=None):
         h["infra"] = (g.get("infra") or "").lower()
         h["infra_label"] = g.get("infra_label") or ""
         h["tor_exit"] = bool(g.get("tor_exit_confirmed"))
-        a = asn_lookup(h["from_ip"]) if (asn_lookup and h["public"]) else None
-        h["asn"] = (a or {}).get("asn")
-        h["as_org"] = (a or {}).get("org")
+        h["asn"], h["as_org"] = _split_asn(g.get("asn"))
         h["delta_s"] = None
         h["flags"] = []
         hops.append(h)
@@ -300,7 +296,7 @@ def _ev(effect, indicator, detail):
     return {"effect": effect, "indicator": indicator, "detail": detail}
 
 
-def assess_origin(parsed, geo, raw=None, asn_lookup=None):
+def assess_origin(parsed, geo, raw=None):
     """Score every public IP seen in the route and explain the best candidate.
 
     Returns a dict (see keys at the bottom). Confidence expresses how likely it
@@ -308,7 +304,7 @@ def assess_origin(parsed, geo, raw=None, asn_lookup=None):
     connection chain -- not who the sender is.
     """
     geo = geo or {}
-    hops, flags = reconstruct_route(parsed, geo, asn_lookup)
+    hops, flags = reconstruct_route(parsed, geo)
     corro = header_corroboration(raw)
     existing = ((geo.get("origin") or {}).get("ip")) or None
     limitations = [
@@ -403,52 +399,22 @@ def assess_origin(parsed, geo, raw=None, asn_lookup=None):
 
 
 # ---------------------------------------------------------------------------
-# 4. Infrastructure intelligence (existing fields + optional local ASN DB)
+# 4. Infrastructure intelligence (uses fields geolocate.py already provides)
 # ---------------------------------------------------------------------------
-_ASN_READER = {"reader": None, "path": None, "failed": False}
+def _split_asn(text):
+    """'AS32934 Facebook, Inc.' -> ('AS32934', 'Facebook, Inc.'); '' -> (None, None)."""
+    m = re.match(r"\s*(AS\d+)\s*(.*)$", str(text or ""), re.I)
+    return (m.group(1).upper(), m.group(2).strip() or None) if m else (None, None)
 
 
-def make_asn_lookup(path=None):
-    """Return fn(ip) -> {'asn','org'} | None using a local GeoLite2-ASN file,
-    or None when no such file/library exists (graceful, offline). Re-checks
-    for the file cheaply, so dropping it into data/ works without a restart."""
-    path = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "GeoLite2-ASN.mmdb")
-    if _ASN_READER["path"] != path:
-        _ASN_READER.update(reader=None, path=path, failed=False)
-    if _ASN_READER["reader"] is None and not _ASN_READER["failed"] and os.path.exists(path):
-        try:
-            import maxminddb  # type: ignore
-            _ASN_READER["reader"] = maxminddb.open_database(path)
-        except Exception:
-            try:
-                import geoip2.database  # type: ignore
-                _ASN_READER["reader"] = geoip2.database.Reader(path)
-            except Exception:
-                _ASN_READER["failed"] = True
-    reader = _ASN_READER["reader"]
-    if reader is None:
-        return None
-
-    def lookup(ip):
-        try:
-            if hasattr(reader, "get"):
-                r = reader.get(ip) or {}
-                return {"asn": r.get("autonomous_system_number"), "org": r.get("autonomous_system_organization")}
-            r = reader.asn(ip)
-            return {"asn": r.autonomous_system_number, "org": r.autonomous_system_organization}
-        except Exception:
-            return None
-    return lookup
-
-
-def infrastructure_profile(ips, geo, asn_lookup=None, history=None):
+def infrastructure_profile(ips, geo, history=None):
     """One row per IP, built only from data we really have. `history` maps
     ip -> (prior_count, max_score) from the threat-memory DB."""
     gidx = _geo_index(geo)
     rows = []
     for ip in ips:
         g = gidx.get(ip, {})
-        a = asn_lookup(ip) if (asn_lookup and is_public_ip(ip)) else None
+        asn, as_org = _split_asn(g.get("asn"))
         infra = (g.get("infra_label") or "").strip()
         low = infra.lower()
         signals = []
@@ -464,8 +430,8 @@ def infrastructure_profile(ips, geo, asn_lookup=None, history=None):
             signals.append(f"Seen {prior} time(s) before in threat memory (max score {top:.0f})")
         rows.append({
             "IP": ip,
-            "ASN": f"AS{a['asn']}" if a and a.get("asn") else "unavailable",
-            "AS organization": (a or {}).get("org") or "unavailable",
+            "ASN": asn or "unavailable",
+            "AS organization": as_org or "unavailable",
             "ISP / network": g.get("isp") or "unavailable",
             "Infrastructure": infra or "unattributed",
             "Hosting provider": "Yes" if hosting else ("No" if infra else "unknown"),

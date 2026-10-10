@@ -9527,8 +9527,7 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
     cache = st.session_state.setdefault("_origin_intel_cache", {})
     if key in cache:
         return cache[key]
-    asn = origin_intel.make_asn_lookup()
-    a = origin_intel.assess_origin(parsed, geo, raw=raw_bytes, asn_lookup=asn)
+    a = origin_intel.assess_origin(parsed, geo, raw=raw_bytes)
     ips = origin_intel.route_ips(a)
     try:
         history, session_rows = origin_intel.correlate_history(
@@ -9540,8 +9539,8 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
         history, session_rows = {}, []
     bundle = {
         "assessment": a, "history": history, "session_rows": session_rows,
-        "infra_rows": origin_intel.infrastructure_profile(ips, geo, asn, history),
-        "asn_available": asn is not None, "raw_used": bool(raw_bytes),
+        "infra_rows": origin_intel.infrastructure_profile(ips, geo, history),
+        "raw_used": bool(raw_bytes),
     }
     if len(cache) > 50:
         cache.clear()
@@ -9598,7 +9597,7 @@ def _render_origin_intel(b):
             "Time": h["ts_text"] or "-",
             "Delta": (f"{int(h['delta_s'])}s" if h["delta_s"] is not None else "-"),
             "Country": h["country"] or "-",
-            "Network": (f"AS{h['asn']} " if h["asn"] else "") + (h["network"] or h["as_org"] or "-"),
+            "Network": (f"{h['asn']} " if h["asn"] else "") + (h["network"] or h["as_org"] or "-"),
             "Flags": ", ".join(h["flags"]) or "-",
         } for h in a["route"]]), tone="#22d3ee")
 
@@ -9616,12 +9615,9 @@ def _render_origin_intel(b):
         _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
     else:
         st.caption("No other email analysed this session shares these IPs.")
-    notes = []
-    if not b["asn_available"]:
-        notes.append("ASN / AS organization need a local `data/GeoLite2-ASN.mmdb`; until then they read 'unavailable'. "
-                     "No external reputation feed is queried.")
-    notes.append("Threat-memory counts for the loaded email exclude its own log entry.")
-    st.caption(" ".join(notes))
+    st.caption("ASN and ISP come from the geolocation lookup (live, bundled cache, or local GeoLite2 files in `data/`); "
+               "'unavailable' means none of those had it. No external reputation feed is queried. "
+               "Threat-memory counts for the loaded email exclude its own log entry.")
     with st.expander("Limitations of this assessment"):
         for lim in a["limitations"]:
             st.markdown("- " + lim)
@@ -13356,7 +13352,7 @@ if active_panel == "Origin & Route":
             st.markdown(
                 "- Mail servers **prepend** `Received` headers, so the **last** one in the file is the **earliest** hop. We reverse the chain and take the first globally routable IP.\n"
                 "- Private, loopback and reserved ranges are skipped - they are internal relays and say nothing about the origin.\n"
-                "- Lookup order is bundled cache, then a local MaxMind GeoLite2 database if you drop one at `data/GeoLite2-City.mmdb`, then 'unresolved'. **No live API is ever called**, so the demo cannot fail on conference wifi and gives identical output every run.\n"
+                "- Lookup order is the live IP-API lookup (each IP is sent to ip-api.com), then the bundled cache, then local MaxMind GeoLite2 databases (`data/GeoLite2-City.mmdb` and `data/GeoLite2-ASN.mmdb`) if present, then 'unresolved'. The cache and GeoLite2 tiers work offline.\n"
                 "- Headers **below the first trusted hop can be forged**. Only hops added by servers you control are dependable evidence.\n"
                 "- Infrastructure classes: {}\n"
                 "- **Tor Exit Confirmation** is a separate, independent check from the infrastructure "
