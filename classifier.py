@@ -30,6 +30,7 @@ from sklearn.pipeline import Pipeline
 
 import config as C
 import gen_data
+import model_audit as A
 
 # Public-hosting mode (SIH26106_MULTIUSER=1): the phishing model is shared by
 # every visitor, so it must NEVER be retrained from visitor-submitted feedback
@@ -132,6 +133,10 @@ def train(save=True):
         "confusion": confusion_matrix(test_df["label"], predictions,
                                       labels=["legit", "phish"]).tolist(),
         "split": "grouped by template (unseen wording)",
+        # Leakage audit: train/test rows sharing a template key, and brands whose label is (almost)
+        # determined by the name alone. Both should stay near zero / short.
+        "leakage": A.leakage_report(train_df, test_df),
+        "brand_one_sided": A.brand_label_report(df)["one_sided"],
     }
 
     # The shipped model is then refit on ALL rows so it benefits from every
@@ -204,6 +209,17 @@ def train_with_feedback(min_samples=20, save=True):
     base_train = base_df.iloc[train_idx]
     base_test = base_df.iloc[test_idx]
 
+    # Leakage safeguards: one example per template key (near-duplicate feedback must not dominate
+    # training) and nothing that duplicates a held-out evaluation row (it would inflate validation).
+    feedback_df, dropped = A.drop_feedback_leaks(feedback_df, base_test)
+    if len(feedback_df) < min_samples or feedback_df["label"].nunique() < 2:
+        return None, {
+            "status": "waiting",
+            "feedback_samples": len(feedback_df),
+            "required_samples": min_samples,
+            "dropped": dropped,
+        }
+
     # --------------------------------------------------------------
     # 1. Baseline model
     # --------------------------------------------------------------
@@ -241,6 +257,22 @@ def train_with_feedback(min_samples=20, save=True):
         subset=["text"]
     ).reset_index(drop=True)
 
+    # Brand/label imbalance gate: feedback must not turn a brand name into a label giveaway.
+    new_one_sided = sorted(
+        set(A.brand_label_report(combined_train)["one_sided"])
+        - set(A.brand_label_report(base_train)["one_sided"])
+    )
+    if new_one_sided:
+        return None, {
+            "status": "rejected",
+            "feedback_samples": len(feedback_df),
+            "one_sided_brands": new_one_sided,
+            "message": (
+                "Adaptive model rejected: feedback would make these brand names near-perfect label "
+                "predictors: " + ", ".join(new_one_sided) + ". Verify examples of the other class."
+            ),
+        }
+
     candidate_model = _build()
 
     candidate_model.fit(
@@ -265,6 +297,19 @@ def train_with_feedback(min_samples=20, save=True):
     # Do not reject an adaptive candidate for tiny holdout-set noise.
     # A 3 percentage-point guardrail prevents an inconsequential fluctuation
     # from making every analyst feedback action look like a failure.
+    independent = A.load_independent_eval()
+    if independent is not None:
+        base_ind = A.evaluate(baseline_model, independent)["accuracy"]
+        cand_ind = A.evaluate(candidate_model, independent)["accuracy"]
+        if cand_ind + 0.05 < base_ind:
+            return None, {
+                "status": "rejected",
+                "feedback_samples": len(feedback_df),
+                "baseline_independent_accuracy": base_ind,
+                "candidate_independent_accuracy": cand_ind,
+                "message": "Adaptive model rejected: accuracy on the independently authored set regressed.",
+            }
+
     validation_tolerance = 0.03
     if candidate_accuracy + validation_tolerance < baseline_accuracy:
 
