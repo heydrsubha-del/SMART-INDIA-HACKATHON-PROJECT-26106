@@ -170,6 +170,21 @@ def _email_block(parsed, body):
     }
 
 
+def _auth_label(headers, mech):
+    """Outcome WITH its provenance, so the model cannot read an unverified header claim as an
+    established authentication result."""
+    val = _safe(headers.get(mech))
+    ev = headers.get("auth_evidence")
+    if not isinstance(ev, dict) or not isinstance(ev.get(mech), dict):
+        return "{} (provenance not recorded - treat as an unverified claim)".format(val)
+    p = ev[mech].get("provenance", "unknown")
+    if p == "verified":
+        return "{} (verified: stamped by a trusted receiving server)".format(val)
+    if p == "unverified":
+        return "{} (UNVERIFIED claim found in the headers - not established, proves nothing by itself)".format(val)
+    return "{} (no result present)".format(val)
+
+
 def _auth_evidence_block(headers):
     ev = headers.get("auth_evidence")
     if not isinstance(ev, dict):
@@ -244,22 +259,49 @@ def _calibration(result):
     }
 
 
+_PHISH_TYPE_RE = re.compile(r"(ATTACK TYPE:\s*[*_#]*\s*)(Credential Phishing|Phishing|Business Email Compromise)\b", re.I)
+_SAFE_REC_RE = re.compile(
+    r"\b(?:mark|flag|label|classify|tag|set)\w*\s+(?:the\s+|this\s+)?(?:email|message|sender|it)?\s*as\s+"
+    r"(?:safe|legitimate|not phishing|benign|trusted)\b|\b(?:whitelist|allow-?list)\w*\b|\bsafe to (?:open|click|deliver)\b", re.I)
+_HOLD_REC_RE = re.compile(
+    r"\b(?:do not|don't|should not|avoid|never)\s+(?:\w+\s+){0,3}(?:click|open|follow|act)\w*|\buntil\b[^.\n]{0,60}\bverif", re.I)
+
+
+def _recommendation_section(answer):
+    m = re.search(r"RECOMMENDED ACTION:(.*?)(?:\n\s*[*#_]*\s*ANALYST NOTE:|\Z)", answer, re.I | re.S)
+    return m.group(1) if m else ""
+
+
 def _calibration_note(answer, result):
-    """If the model overstates relative to the evidence, append a clearly labelled application note.
-    The model's own text is never rewritten and the machine verdict is never copied into it."""
+    """Keep the AI's conclusions consistent with the evidence. The model's reasoning is never rewritten
+    and the machine verdict is never copied in, but (1) an ATTACK TYPE of phishing that the evidence does not
+    support is shown as 'Unconfirmed' with the model's original claim preserved, and (2) clearly labelled
+    notes are appended for overstated confidence and for contradictory recommendations."""
     try:
         cal = _calibration(result)
-        if cal["hard_evidence_present"]:
-            return answer
+        notes = []
         level = str(result.get("level", "")).lower()
-        high_conf = re.search(r"CONFIDENCE:\s*[*_#\s]*High\b", answer, re.I)
-        phish_type = (level in ("low", "medium") and
-                      re.search(r"ATTACK TYPE:\s*[*_#\s]*(Credential Phishing|Phishing|Business Email Compromise)\b", answer, re.I))
-        if high_conf or phish_type:
-            return (answer.rstrip() + "\n\n**Application calibration note:** the assessment above is stronger than the "
-                    "supplied evidence supports. The machine verdict is " + cal["machine_verdict"] + " and no confirmed "
-                    "hard evidence was found (model prediction: " + cal["model_prediction"] + "). Treat the message as "
-                    "suspicious but unconfirmed pending analyst review.")
+        if not cal["hard_evidence_present"]:
+            high_conf = re.search(r"CONFIDENCE:\s*[*_#\s]*High\b", answer, re.I)
+            phish = level in ("low", "medium") and _PHISH_TYPE_RE.search(answer)
+            if phish:
+                answer = _PHISH_TYPE_RE.sub(
+                    lambda m: m.group(1) + "Unconfirmed (model stated: " + m.group(2) + "; see calibration note)", answer, count=1)
+            if high_conf or phish:
+                notes.append("**Application calibration note:** the assessment above is stronger than the supplied evidence "
+                             "supports. The machine verdict is " + cal["machine_verdict"] + " and no confirmed hard evidence "
+                             "was found (model prediction: " + cal["model_prediction"] + "). Treat the message as suspicious "
+                             "but unconfirmed pending analyst review.")
+        rec = _recommendation_section(answer)
+        safe_hit = any(not re.search(r"(?:do not|don't|never|avoid|not|without)\W+(?:\w+\W+){0,3}$", rec[:m.start()], re.I)
+                       for m in _SAFE_REC_RE.finditer(rec))      # "do not allowlist" is consistent, not a conflict
+        if rec and safe_hit and _HOLD_REC_RE.search(rec):
+            notes.append("**Application consistency note:** the recommendations both advise holding back on links until the "
+                         "sender is verified and marking the message safe. These conflict. Until the sender is verified out of "
+                         "band, keep the message in review; do not mark it safe or allowlist the sender. (Machine verdict: "
+                         + cal["machine_verdict"] + ".)")
+        if notes:
+            return answer.rstrip() + "\n\n" + "\n\n".join(notes)
     except Exception:
         pass
     return answer
@@ -305,17 +347,11 @@ def build_evidence(result, network_trust=None):
                 ml.get("label")
             ),
 
-            "spf": _safe(
-                headers.get("spf")
-            ),
+            "spf": _auth_label(headers, "spf"),
 
-            "dkim": _safe(
-                headers.get("dkim")
-            ),
+            "dkim": _auth_label(headers, "dkim"),
 
-            "dmarc": _safe(
-                headers.get("dmarc")
-            ),
+            "dmarc": _auth_label(headers, "dmarc"),
 
             "authentication_evidence": _auth_evidence_block(headers),
 
@@ -464,6 +500,14 @@ RULES:
 - A sender/envelope difference on related subdomains of one organisation is routine, not spoofing, and an
   authentication PASS does not prove a message safe. Treat authentication whose provenance is "unverified" as a claim.
 - origin_intelligence.confidence and machine_analysis.origin_risk are different metrics; never merge or compare them.
+- spf/dkim/dmarc values carry their provenance in brackets. Only results marked "verified" are established; "UNVERIFIED"
+  results are claims in the headers and must never be described as proven authentication or alignment.
+- Origin-confidence evidence marked "UNVERIFIED header claim" has reduced weight; do not call it independent confirmation.
+  If a route flag reports a broken or unverifiable handoff, do not describe the route as fully consistent.
+- Keep RECOMMENDED ACTION consistent with your verdict and with itself: never advise holding back on links until
+  verification AND marking the message safe. If verification is pending, recommend review/quarantine, not an allowlist or "safe" label.
+- ATTACK TYPE must agree with your verdict text and the calibration block: if you judge the message likely legitimate or low
+  risk, choose Low Risk or Unclear, not Phishing.
 - Be compact but complete. Use the full available response budget.
 - Prefer dense, evidence-backed detail over filler.
 - Clearly distinguish evidence from interpretation.
