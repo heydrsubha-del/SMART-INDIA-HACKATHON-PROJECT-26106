@@ -301,6 +301,8 @@ from geolocate import INFRA_LABEL
 from network_trust import assess_network_trust, load_vpn_ranges, scan_cases_for_vpn
 import tor_check
 import origin_intel
+import importlib
+origin_intel = importlib.reload(origin_intel)  # Streamlit reruns must not keep a stale copy of the module
 try:
     from fetch_vpn_ranges import fetch_category as _fetch_vpn_category
     FETCH_VPN_RANGES_AVAILABLE = True
@@ -9522,7 +9524,7 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
     parsed = case.get("parsed", {}) or {}
     geo = case.get("geo", {}) or {}
     cases = [r for r in _corr_cases.values() if "error" not in r]
-    key = (case.get("name"), case.get("_evidence_hash"), (geo.get("origin") or {}).get("ip"),
+    key = (getattr(origin_intel, "PANEL_VERSION", "0"), case.get("name"), case.get("_evidence_hash"), (geo.get("origin") or {}).get("ip"),
            hash(tuple(parsed.get("received_chain") or [])), hash(frozenset(_corr_cases)),
            bool(raw_bytes), is_loaded)
     cache = st.session_state.setdefault("_origin_intel_cache", {})
@@ -9572,6 +9574,7 @@ def _render_origin_intel(b):
         st.caption(a["location_disclaimer"])
         return
     st.caption(summary)
+    st.caption(f"Panel build: {getattr(origin_intel, 'PANEL_VERSION', 'unknown')}")
     st.caption("Locations below are where the network infrastructure is registered - not where the sender is. "
                "An IP address cannot identify a person or an address.")
 
@@ -13339,7 +13342,9 @@ if active_panel == "Origin & Route":
             _render_origin_intel(_origin_intel_for_case(
                 _active_case, raw if _oi_is_loaded else None, is_loaded=_oi_is_loaded))
         except Exception as _oi_err:
-            st.caption(f"Origin intelligence unavailable for this email ({_oi_err}). The existing origin summary above is unaffected.")
+            st.warning(f"Origin intelligence unavailable for this email ({type(_oi_err).__name__}: {_oi_err}). "
+                       "The existing origin summary above is unaffected.")
+            st.code(traceback.format_exc())
 
         # ------------------------------------------------------------------
         # Tor exit-node list status (read-only) -- the Tor Exit
