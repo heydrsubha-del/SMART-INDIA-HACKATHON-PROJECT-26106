@@ -121,6 +121,23 @@ def lookalike_brand(host):
     return None
 
 
+def _credential_path(path):
+    """True when the URL path names a credential-entry page.
+
+    Whole path tokens are compared (split on / . - _ etc.), so a generic word fused into a longer
+    token - "AccountChooser", "accountsettings" - is not a credential lure by itself. Compound tokens
+    that fuse TWO OR MORE lure words ("verifyaccount.php", "secureloginpaypal") still count.
+    """
+    for tok in re.split(r"[^a-z0-9]+", (path or "").lower()):
+        if not tok:
+            continue
+        if tok in CRED_PATH_WORDS:
+            return True
+        if sum(w in tok for w in CRED_PATH_WORDS) >= 2:
+            return True
+    return False
+
+
 def _judge_url(url):
     """Classify one URL. Returns a dict with flags and a 0..1 risk."""
     normalised = url if "://" in url else "http://" + url
@@ -156,7 +173,7 @@ def _judge_url(url):
         flags.append("Low-reputation / high-abuse TLD .{}".format(tld))
         risk = max(risk, 0.55)
 
-    if any(w in path.lower() for w in CRED_PATH_WORDS):
+    if _credential_path(path):
         flags.append("Path suggests a credential-entry page")
         risk = max(risk, 0.5)
 
