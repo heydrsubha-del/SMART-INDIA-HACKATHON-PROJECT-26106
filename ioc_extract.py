@@ -22,6 +22,9 @@ BTC_RE = re.compile(r"\b(?:bc1[a-z0-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b
 SUSPICIOUS_TLDS = {"tk", "ml", "ga", "cf", "gq", "top", "xyz", "online",
                    "click", "link", "zip", "mov", "ru", "su", "cn", "work",
                    "support", "rest", "buzz"}
+# Version of the offline URL heuristics in _judge_url(). Stored next to every locally derived URL score in
+# threat memory; BUMP IT whenever those heuristics change so older cached scores are recomputed, not reused.
+URL_SCORE_VERSION = 2
 CRED_PATH_WORDS = ("login", "signin", "verify", "secure", "account", "update",
                    "confirm", "auth", "password", "billing", "unlock", "webscr")
 

@@ -144,6 +144,12 @@ def _create_schema(conn, wal=False):
         )
     """)
 
+    # Scoring-version stamp for locally derived scores (NULL = stored before versioning existed).
+    # Added as a trailing nullable column, so existing databases and positional readers keep working.
+    cols = {r[1] for r in c.execute("PRAGMA table_info(threat_intel)").fetchall()}
+    if "score_version" not in cols:
+        c.execute("ALTER TABLE threat_intel ADD COLUMN score_version INTEGER")
+
     # Verified analyst feedback
     c.execute("""
         CREATE TABLE IF NOT EXISTS feedback (
@@ -280,10 +286,16 @@ def remember_indicator(
     indicator_type,
     reputation,
     category="unknown",
-    source="local_analysis"
+    source="local_analysis",
+    score_version=None
 ):
     """
     Remember an IP/domain/URL/hash observed during analysis.
+
+    score_version stamps a locally derived score with the heuristics version that produced it. A
+    stored local_analysis score from a DIFFERENT version is replaced by the fresh one instead of being
+    max-merged, so an obsolete heuristic result cannot persist. Scores from other sources (URLhaus,
+    ...) are intelligence, not heuristics, and always keep the max-merge behaviour.
     Existing indicators are updated instead of duplicated.
 
     Public URLhaus feed entries go to the shared database; everything
@@ -322,7 +334,7 @@ def remember_indicator(
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     c.execute("""
-        SELECT id, observations
+        SELECT id, observations, source, score_version
         FROM threat_intel
         WHERE indicator = ? AND indicator_type = ?
     """, (indicator, indicator_type))
@@ -330,15 +342,25 @@ def remember_indicator(
     existing = c.fetchone()
 
     if existing:
+        stale_local = (
+            score_version is not None
+            and str(existing[2] or "").strip().lower() == "local_analysis"
+            and existing[3] != score_version
+        )
         c.execute("""
             UPDATE threat_intel
-            SET reputation = MAX(reputation, ?),
+            SET reputation = CASE WHEN ? THEN ? ELSE MAX(reputation, ?) END,
+                score_version = CASE WHEN ? THEN ? ELSE score_version END,
                 category = ?,
                 last_seen = ?,
                 observations = ?
             WHERE id = ?
         """, (
+            1 if stale_local else 0,
             reputation,
+            reputation,
+            1 if stale_local else 0,
+            score_version,
             category,
             now,
             existing[1] + 1,
@@ -355,9 +377,10 @@ def remember_indicator(
                 first_seen,
                 last_seen,
                 observations,
-                source
+                source,
+                score_version
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             indicator,
             indicator_type,
@@ -366,7 +389,8 @@ def remember_indicator(
             now,
             now,
             1,
-            source
+            source,
+            score_version
         ))
 
     conn.commit()
@@ -375,6 +399,61 @@ def remember_indicator(
     _LOOKUP_CACHE.pop((_db_path(False), indicator, indicator_type), None)
     _LOOKUP_CACHE.pop((_db_path(False), indicator, None), None)
     return True             # one observation was written (insert or +1)
+
+
+def stored_reputation(row, score_version=None):
+    """Reputation from a lookup_indicator() row, or None when it is an obsolete local heuristic score.
+
+    A local_analysis score stamped with a different (or no) score_version came from an older version of
+    the URL heuristics and must not be reused as evidence. Intelligence from other sources (URLhaus,
+    ...) is always honoured.
+    """
+    if not row:
+        return None
+    source = str(row[8] if len(row) > 8 else "").strip().lower()
+    version = row[9] if len(row) > 9 else None
+    if score_version is not None and source == "local_analysis" and version != score_version:
+        return None
+    return float(row[3] or 0.0)
+
+
+_SCORES_REFRESHED = set()
+
+
+def refresh_stale_url_scores(rescore, score_version):
+    """Recompute locally derived URL scores stored by an older scoring version (once per database per
+    process). Only source='local_analysis' URL rows are touched; first_seen, observation counts,
+    categories and every other indicator (feed intelligence, IPs, domains) are preserved.
+
+    rescore(url) -> 0..1 risk under the current heuristics. Returns the number of rows updated."""
+    path = _db_path(False)
+    if path in _SCORES_REFRESHED:
+        return 0
+    conn = get_connection()
+    updated = 0
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, indicator FROM threat_intel WHERE indicator_type = 'url' "
+            "AND LOWER(source) = 'local_analysis' AND (score_version IS NULL OR score_version != ?)",
+            (score_version,),
+        )
+        for row_id, url in c.fetchall():
+            try:
+                fresh = float(rescore(url))
+            except Exception:
+                continue
+            c.execute("UPDATE threat_intel SET reputation = ?, score_version = ? WHERE id = ?",
+                      (fresh, score_version, row_id))
+            updated += 1
+        conn.commit()
+    finally:
+        conn.close()
+    if path != ":memory:":
+        _SCORES_REFRESHED.add(path)
+    for key in [k for k in _LOOKUP_CACHE if k and k[0] == path]:
+        _LOOKUP_CACHE.pop(key, None)
+    return updated
 
 
 def _query_indicator(conn, indicator, indicator_type):
