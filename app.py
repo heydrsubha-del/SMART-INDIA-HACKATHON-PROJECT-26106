@@ -9604,13 +9604,21 @@ def _domain_intel_bundle(case, run, origin_b, is_loaded=False):
         except Exception:
             hist[ip] = (0, 0)
     ctx = {"route_ips": origin_intel.route_ips(a), "origin_ip": a.get("selected_ip")}
+    _io = case.get("iocs", {}) or {}
+    _self_rec = {("domain", str(d.get("domain") if isinstance(d, dict) else d).strip().lower()) for d in (_io.get("domains") or [])}
+    _self_rec |= {("ip", str(i).strip().lower()) for i in (_io.get("ips") or [])}
+    _self_rec |= {("url", str(u.get("url") if isinstance(u, dict) else u).strip().lower()) for u in (_io.get("urls") or [])}
     mem = {}
     for r in recs:  # threat_intel row: id, indicator, type, reputation, category, first_seen, last_seen, observations, source
         try:
             row = lookup_indicator(r["domain"], "domain")
             if row:
+                obs = int(row[7] or 0)
+                # analyzer.py records this email's own domains in threat_intel, so one observation
+                # belongs to this email; only the rest are earlier sightings.
                 mem[r["domain"]] = {"reputation": row[3], "first_seen": row[5], "last_seen": row[6],
-                                    "observations": row[7], "source": row[8]}
+                                    "observations": obs, "source": row[8],
+                                    "prior": max(obs - 1, 0) if ("domain", r["domain"]) in _self_rec else obs}
         except Exception:
             pass
     flags = domain_intel.analyze(recs, ctx, hist, mem)
@@ -9625,7 +9633,7 @@ def _domain_intel_bundle(case, run, origin_b, is_loaded=False):
                 _conns.append(get_connection(shared=_shared))
             except Exception:
                 pass
-        hunt_rows = retro_hunt.hunt(_hunt_inds, cases, _conns, case.get("name"), case.get("_evidence_hash"), self_ip)
+        hunt_rows = retro_hunt.hunt(_hunt_inds, cases, _conns, case.get("name"), case.get("_evidence_hash"), self_ip, _self_rec)
     finally:
         for _c in _conns:
             try:
@@ -9687,16 +9695,6 @@ def _render_domain_intel(case, origin_b, is_loaded=False):
             recs = domain_intel.lookup_all(doms, cache=cache)
         run = {"records": recs, "skipped": skipped}
         _domain_runs()[rk] = run
-        # Retro-hunt / threat memory: remember the public IPs these domains resolve to (same
-        # neutral 0.50 "observed" reputation analyzer.py gives body IPs; scoring never reads it).
-        for r in recs:
-            for t in ("A", "AAAA"):
-                for x in r["dns"]["records"].get(t, [])[:4]:
-                    if domain_intel.is_public_ip(x.get("value")):
-                        try:
-                            remember_indicator(x["value"], "ip", 0.5, "resolved_from_domain", "domain_intel")
-                        except Exception:
-                            pass
     if not run:
         st.info("Not run yet. Press the button to retrieve DNS records and registration (RDAP) data for these domains.")
         return
@@ -9790,7 +9788,7 @@ def _render_domain_intel(case, origin_b, is_loaded=False):
         if b["hunt_rows"]:
             _render_polished_table(pd.DataFrame(b["hunt_rows"]), tone="#e0708c")
             st.caption("Searches earlier emails analysed this session and the local threat-memory database (threat_intel and the "
-                       "scored-email log). Local and read-only; 'Times' for threat memory includes this email's own analysis where it was logged.")
+                       "scored-email log). Local and read-only; Threat-memory counts exclude this email's own analysis where the app recorded it.")
     else:
         st.markdown("- Verified facts are values returned by DNS or RDAP at the time shown. Inferences are labelled as such.")
         st.markdown("- Lookups describe the domain now, not when the email was sent; records may have changed.")
@@ -9900,18 +9898,18 @@ def _render_origin_intel(b):
             st.caption(origin_intel.asn_diagnostic(_asn_miss, b.get("geo_sources")))
 
     elif view == "History":
-        hist = [{"IP": ip, "Logged sightings": v[0], "Highest score": round(v[1])}
+        hist = [{"IP": ip, "Logged sightings (scored-email log)": v[0], "Highest score": round(v[1])}
                 for ip, v in b["history"].items() if v[0]]
         if hist:
             _render_polished_table(pd.DataFrame(hist), tone="#c084fc")
         if b["session_rows"]:
             _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
         if not hist and not b["session_rows"]:
-            st.caption("No earlier sightings: none of these IPs are in the threat-memory database, and no other "
-                       "email analysed this session shares them.")
+            st.caption("No earlier sightings here: none of these IPs are in the scored-email log from earlier analyses, and no other "
+                       "email analysed this session shares them. Indicator records and domain matches are covered by Retro-Hunt.")
         else:
-            st.caption("Sightings for the loaded email exclude its own log entry; for other emails the count may "
-                       "include their own earlier log entry.")
+            st.caption("'Logged sightings' counts earlier scored emails (the loaded email's own log entry is excluded); the table "
+                       "below lists other emails this session that share these IPs.")
 
     else:  # Notes
         for lim in a["limitations"]:
