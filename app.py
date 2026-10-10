@@ -3684,10 +3684,37 @@ st.markdown(
     div[data-testid="stMetricLabel"] p {font-size:12px !important; font-weight:600 !important; letter-spacing:.3px !important; color:var(--muted) !important;}
     div[data-testid="stMetricValue"] {letter-spacing:-.3px !important;}
 
-    /* Alerts: same card material, severity keeps its own left-edge color. */
-    .stAlert, div[data-testid="stAlertContainer"], div[data-testid="stAlert"] {
-        background:linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
-        border-top-color:var(--line) !important; border-right-color:var(--line) !important; border-bottom-color:var(--line) !important;
+    /* Alerts: same card material, severity keeps its own accent color.
+       BUG FIX (curved "crescent" before the text): a 3px border-left next to
+       1px, near-invisible borders on a rounded box renders as a curved
+       sliver. The accent is now a straight 3px strip painted as a background
+       layer (clipped cleanly by the corner radius) and every border is a
+       uniform 1px, so there is no crescent. Severity colour comes from
+       --alert-accent. */
+    html body .stAlert, html body div[data-testid="stAlertContainer"], html body div[data-testid="stAlert"] {
+        --alert-accent: var(--line-strong);
+        background:
+            linear-gradient(var(--alert-accent), var(--alert-accent)) left top / 3px 100% no-repeat,
+            linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
+        border:1px solid var(--line) !important;
+        border-radius:var(--r-md) !important;
+        overflow:hidden;
+    }
+    html body div[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]),
+    html body div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) {--alert-accent:var(--green);}
+    html body div[data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]),
+    html body div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) {--alert-accent:var(--cyan);}
+    html body div[data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]),
+    html body div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) {--alert-accent:var(--amber);}
+    html body div[data-testid="stAlert"]:has([data-testid="stAlertContentError"]),
+    html body div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]) {--alert-accent:var(--red);}
+    /* alert elements nested inside another alert element are plain wrappers */
+    html body .stAlert .stAlert,
+    html body .stAlert div[data-testid="stAlertContainer"],
+    html body div[data-testid="stAlert"] div[data-testid="stAlertContainer"],
+    html body div[data-testid="stAlertContainer"] div[data-testid="stAlertContainer"] {
+        background:transparent !important; border:none !important; border-radius:0 !important;
+        box-shadow:none !important; padding:0 !important; overflow:visible;
     }
 
     /* Expanders. */
