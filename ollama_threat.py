@@ -215,6 +215,25 @@ def _auth_evidence_block(headers):
     return out
 
 
+def _auth_unverified(result):
+    """True when SPF/DKIM/DMARC results exist but at least one is not stamped by a trusted receiving server."""
+    ev = (result.get("headers") or {}).get("auth_evidence")
+    if not isinstance(ev, dict):
+        return False
+    return any(isinstance(ev.get(m), dict) and ev[m].get("result") and ev[m].get("provenance") != "verified"
+               for m in ("spf", "dkim", "dmarc"))
+
+
+def _threat_memory_counts(result):
+    """(prior_local_sightings, external_feed_matches) from the Retro-Hunt counts the app attached, else None.
+    A sighting means 'seen before by this app'; only feed rows (e.g. URLhaus) are malicious-intelligence matches."""
+    rh = result.get("retro_hunt")
+    if not isinstance(rh, dict):
+        return None
+    intel, feed = int(rh.get("intel", 0) or 0), int(rh.get("intel_feed", 0) or 0)
+    return max(intel - feed, 0), feed
+
+
 def _calibration(result):
     """Separates confirmed facts, suspicious indicators and the model prediction, and states how
     strong a disposition the evidence supports. Does NOT change the machine score or verdict."""
@@ -245,6 +264,9 @@ def _calibration(result):
         facts.append("Business Email Compromise pattern detected by the header analysis")
     if int(intel.get("urlhaus_matches", 0) or 0) > 0:
         facts.append("URL matched a URLhaus threat-feed entry")
+    _tm = _threat_memory_counts(result)
+    if _tm and _tm[1] > 0:
+        facts.append(f"{_tm[1]} threat-memory record(s) from an external threat feed matched an indicator")
     if origin.get("tor_exit_confirmed"):
         facts.append("Origin IP is a confirmed Tor exit node (anonymisation, not proof of malice)")
     if any(isinstance(x, dict) and x.get("risky") for x in parsed.get("attachments") or []):
@@ -275,7 +297,14 @@ def _calibration(result):
                              f"the probability with the final score."),
         "hard_evidence_present": hard,
         "disposition_limit": limit,
+        "authenticity_limit": (
+            "Authentication provenance is UNVERIFIED (results are only claimed in headers, not stamped by a trusted "
+            "receiving server). A low risk score means no strong evidence of malice; it does NOT prove the message is "
+            "authentic. Do not call it 'legitimate', 'safe' or 'verified', and do not recommend marking it safe or "
+            "allowlisting the sender; say 'low risk, authenticity unverified' and advise verifying out of band."
+            if _auth_unverified(result) else "Authentication provenance is verified or not applicable."),
         "uncertainty": ["Authentication passing does not prove a message is safe.",
+                        "Earlier local sightings of an indicator are not malicious-intelligence matches.",
                         "Sender and envelope on related subdomains of one organisation is routine (INFO), not spoofing."],
     }
 
@@ -321,11 +350,30 @@ def _calibration_note(answer, result):
                          "sender is verified and marking the message safe. These conflict. Until the sender is verified out of "
                          "band, keep the message in review; do not mark it safe or allowlist the sender. (Machine verdict: "
                          + cal["machine_verdict"] + ".)")
+        elif rec and safe_hit and _auth_unverified(result):
+            notes.append("**Application caution note:** authentication provenance is unverified, so a low risk score is not "
+                         "proof the message is authentic. Do not mark it safe or allowlist the sender until it is verified "
+                         "out of band. (Machine verdict: " + cal["machine_verdict"] + ".)")
         if notes:
             return answer.rstrip() + "\n\n" + "\n\n".join(notes)
     except Exception:
         pass
     return answer
+
+
+def _threat_memory_block(result):
+    tm = _threat_memory_counts(result)
+    if tm is None:
+        return {"status": "not evaluated for this email", "note": "No Retro-Hunt result was supplied; make no claim about "
+                "local or feed matches."}
+    prior, feed = tm
+    return {"status": "evaluated",
+            "earlier_local_sightings": prior,
+            "external_feed_matches": feed,
+            "note": "earlier_local_sightings means this app recorded the same indicator before (routine for a sender "
+                    "you receive mail from); it is NOT evidence of malice. Only external_feed_matches are confirmed "
+                    "malicious-intelligence matches. Report both numbers accurately; never say there are 'no local-memory "
+                    "matches' when earlier_local_sightings > 0."}
 
 
 def build_evidence(result, network_trust=None):
@@ -414,6 +462,8 @@ def build_evidence(result, network_trust=None):
                 []
             )),
 
+            "link_extraction": iocs.get("link_extraction") or {"status": "unknown"},
+
             "suspicious_urls": _cap_list(iocs.get(
                 "suspicious_urls",
                 []
@@ -470,6 +520,8 @@ def build_evidence(result, network_trust=None):
                 0
             ),
 
+            "threat_memory": _threat_memory_block(result),
+
             "risk_score": float(
                 result.get(
                     "score",
@@ -515,6 +567,10 @@ RULES:
 - Use the "calibration" block: keep confirmed facts, suspicious indicators and the ML prediction separate, and obey its
   "disposition_limit". If your disposition is stronger than the machine verdict, name the specific confirmed fact that
   justifies it; an ML probability or a URL risk score alone is not proof of phishing.
+- Use calibration.authenticity_limit and evidence.threat_memory exactly: distinguish low risk from proven authenticity,
+  and distinguish earlier local sightings (not malicious) from external-feed matches (confirmed intelligence).
+- If evidence.link_extraction.status is "not_extracted", the message refers to a link whose destination could not be
+  extracted: say so; never state that the message has no links or URLs.
 - A sender/envelope difference on related subdomains of one organisation is routine, not spoofing, and an
   authentication PASS does not prove a message safe. Treat authentication whose provenance is "unverified" as a claim.
 - email_addresses lists addresses (masked) with their roles. An address appearing in the message as sender, recipient or

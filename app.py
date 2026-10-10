@@ -570,7 +570,8 @@ _SEM_METHOD_NOTE = (
     "(Ollama) and compared by cosine similarity. Match score = embedding similarity plus a small bonus "
     "(up to +16 points) for verifiable shared traits: same origin IP, same /24 network block, same "
     "infrastructure class, same country. Bands: Strong >= 85%, Related >= 70%, Weak >= 55%; anything "
-    "below 55% is not reported. A semantic match is an investigative lead, not proof of a common operator."
+    "below 55% is not reported. A semantic match is an investigative lead, not proof of a common operator. "
+    "A match whose only shared trait is the country is weak evidence: many unrelated senders use the same country."
 )
 
 
@@ -740,7 +741,17 @@ def _sem_norm(m):
     return m
 
 
+_SEM_COUNTRY_ONLY_NOTE = "same country only - weak evidence; does not indicate a common attacker or operator"
+
+
+def _sem_country_only(m):
+    """True when the only verifiable shared trait is the country."""
+    return _sem_norm(m)["reasons"] == ["same country"]
+
+
 def _sem_reason_text(m):
+    if _sem_country_only(m):
+        return _SEM_COUNTRY_ONLY_NOTE
     return "; ".join(_sem_norm(m)["reasons"]) or "embedding similarity only"
 
 
@@ -9612,6 +9623,15 @@ def _domain_runs():
     return st.session_state.setdefault("_domain_intel_runs", {})
 
 
+def _with_retro(res):
+    """Copy of an analysis result carrying this email's Retro-Hunt counts, when a lookup has been run."""
+    try:
+        rc = st.session_state.get("_retro_counts", {}).get(_domain_run_key(res))
+        return dict(res, retro_hunt=rc) if rc else res
+    except Exception:
+        return res
+
+
 def _domain_intel_bundle(case, run, origin_b, is_loaded=False):
     """Findings / IP join / correlation for a stored lookup run (no network)."""
     recs = run["records"]
@@ -9670,6 +9690,10 @@ def _domain_intel_bundle(case, run, origin_b, is_loaded=False):
                 _c.close()
             except Exception:
                 pass
+    try:   # let the AI report use the same Retro-Hunt counts the user sees (sightings vs feed matches)
+        st.session_state.setdefault("_retro_counts", {})[_domain_run_key(case)] = retro_hunt.counts(hunt_rows)
+    except Exception:
+        pass
     return {
         "hunt_rows": hunt_rows, "hunt_n": len(_hunt_inds),
         "records": recs, "flags": flags, "skipped": run.get("skipped", 0),
@@ -12999,7 +13023,7 @@ if active_panel == "AI Threat Analysis":
                     _single_nt = assess_network_trust((result.get("parsed") or {}).get("from_addr", ""), _o.get("ip", ""), _o.get("infra_label", ""), _o.get("country", ""))
                 except Exception:
                     _single_nt = None
-                single_ai_result = analyze_with_ollama(result, timeout=600, progress_callback=_qwen_single_progress, network_trust=_single_nt)
+                single_ai_result = analyze_with_ollama(_with_retro(result), timeout=600, progress_callback=_qwen_single_progress, network_trust=_single_nt)
                 ai_progress.progress(1.0, text="Qwen AI analysis: 100% · Complete")
                 single_reports[current_evidence_hash] = single_ai_result
                 st.session_state["single_ai_reports"] = single_reports
@@ -13847,7 +13871,11 @@ if active_panel == "Indicators":
                     for flag in u["flags"]:
                         st.caption(f"• {flag}")
         else:
-            st.info("No URLs in the body. For BEC this can be expected because the threat may rely on identity and intent rather than links.")
+            _le = iocs.get("link_extraction") or {}
+            if _le.get("status") == "not_extracted":
+                st.warning(_le.get("note", "A link is mentioned but its destination could not be extracted."))
+            else:
+                st.info("No URLs in the body. For BEC this can be expected because the threat may rely on identity and intent rather than links.")
 
         for label, values in (("Domains", iocs.get("domains", [])), ("IPs in body", iocs.get("ips", [])), ("Email addresses", iocs.get("emails", [])), ("Crypto wallets", iocs.get("wallets", []))):
             if values:
@@ -14407,6 +14435,7 @@ if active_panel == "Forensic Report":
                     "IOCs": f"{_i.get('counts', {}).get('suspicious', 0)}/{len(_i.get('urls', []))} links",
                     "Semantic Match": (
                         f"{_sem_norm(_sem)['band']} {_sem_norm(_sem)['score']:.0%} · {_sem.get('infra_label') or _sem.get('ip') or 'related origin'}"
+                        + (" · country only (weak)" if _sem_country_only(_sem) else "")
                         if _sem else "-"
                     ),
                     "Correlated": f"Yes ({_corr_hits})" if _corr_hits else "No",
@@ -14711,7 +14740,7 @@ if active_panel == "Forensic Report":
                     )
 
                 saved_ai_for_email = analyze_with_ollama(
-                    sel_res, timeout=600, progress_callback=_ai_dossier_progress, network_trust=sel_nt
+                    _with_retro(sel_res), timeout=600, progress_callback=_ai_dossier_progress, network_trust=sel_nt
                 )
                 single_reports[sel_hash] = saved_ai_for_email
                 st.session_state["single_ai_reports"] = single_reports

@@ -25,6 +25,9 @@ SUSPICIOUS_TLDS = {"tk", "ml", "ga", "cf", "gq", "top", "xyz", "online",
 # Version of the offline URL heuristics in _judge_url(). Stored next to every locally derived URL score in
 # threat memory; BUMP IT whenever those heuristics change so older cached scores are recomputed, not reused.
 URL_SCORE_VERSION = 2
+LINK_WORDS_RE = re.compile(
+    r"\b(?:unsubscribe|opt[- ]out|manage (?:your )?(?:email )?(?:preferences|subscriptions?)|click here|"
+    r"view (?:this )?(?:email |message )?in (?:your |a )?browser|update (?:your )?(?:email )?preferences)\b", re.I)
 CRED_PATH_WORDS = ("login", "signin", "verify", "secure", "account", "update",
                    "confirm", "auth", "password", "billing", "unlock", "webscr")
 
@@ -245,6 +248,33 @@ def extract(parsed):
         seen.add(clean.lower())
         urls.append(_judge_url(clean))
 
+    # Real link destinations: <a href> targets are not visible in the tag-stripped body text.
+    non_web = 0
+    for link in parsed.get("html_links") or []:
+        href = str((link or {}).get("href", "")).strip()
+        if not re.match(r"(?i)https?://", href):
+            non_web += 1 if href else 0          # mailto:, tel:, #anchor ...
+            continue
+        clean = href.rstrip(".,);:!?'\"")
+        if clean.lower() in seen:
+            continue
+        seen.add(clean.lower())
+        u = _judge_url(clean)
+        u["source"] = "html href"
+        u["anchor_text"] = str(link.get("text", ""))[:80]
+        urls.append(u)
+
+    mentions_link = bool(LINK_WORDS_RE.search(text))
+    if urls:
+        link_status, link_note = "extracted", "{} URL(s) extracted and analysed.".format(len(urls))
+    elif mentions_link:
+        link_status = "not_extracted"
+        link_note = ("The message refers to a link (e.g. 'unsubscribe') but no destination URL could be extracted "
+                     "(no HTML part, link text without an href, or a non-web link). The absence of URLs here is NOT "
+                     "evidence that the message has no links.")
+    else:
+        link_status, link_note = "none", "No URLs found in the body or HTML links."
+
     emails = sorted({e.lower() for e in EMAIL_RE.findall(text)})
     ips = sorted({i for i in IPV4_RE.findall(text)})
     wallets = sorted(set(BTC_RE.findall(text)))
@@ -262,6 +292,9 @@ def extract(parsed):
         "email_details": email_details(parsed, emails),
         "wallets": wallets,
         "url_score": url_score,
+        "link_extraction": {"status": link_status, "mentions_link": mentions_link,
+                            "href_urls": sum(1 for u in urls if u.get("source") == "html href"),
+                            "non_web_links": non_web, "note": link_note},
         "counts": {"urls": len(urls), "suspicious": len(suspicious),
                    "domains": len(domains), "ips": len(ips),
                    "emails": len(emails), "wallets": len(wallets)},
