@@ -76,10 +76,16 @@ def lookalike_brand(host):
     if reg in C.BRAND_DOMAINS:
         return None                      # genuinely the brand's own domain
 
-    labels = [p for p in re.split(r"[.\-_]", host) if p]
     tld = host.rsplit(".", 1)[-1] if "." in host else ""
     # The TLD itself is not a squat: .sbi and .apple are brand-owned gTLDs.
-    body_labels = [p for p in labels if p != tld]
+    # Labels are split by WHO CONTROLS THEM: the registered name (the part an attacker must register,
+    # e.g. "paypa1-support" in paypa1-support.com) vs subdomain labels (anyone who owns the domain can
+    # choose them, e.g. "links.email" under claude.com).
+    sub = host[:-len(reg)].strip(".") if host.endswith(reg) else ""
+    own_labels = [p for p in re.split(r"[.\-_]", reg) if p and p != tld]
+    sub_labels = [p for p in re.split(r"[.\-_]", sub) if p and p != tld]
+    body_labels = own_labels + sub_labels
+    own_set = set(own_labels)
 
     for brand in C.KNOWN_BRANDS:
         if reg == brand or reg.startswith(brand + "."):
@@ -88,7 +94,8 @@ def lookalike_brand(host):
             return None                  # brand-owned top-level domain
 
         norm_brand = _normalise(brand)
-        for label in body_labels:
+        for idx, label in enumerate(body_labels):
+            in_registered_name = idx < len(own_labels)
             if label == brand:
                 # Brand name present, but it does not own the registered domain.
                 return brand, ('"{}" appears in the hostname but the registered '
@@ -99,7 +106,11 @@ def lookalike_brand(host):
                 if norm_label == norm_brand:
                     return brand, ('"{}" imitates "{}" using look-alike '
                                    "characters".format(label, brand))
-                if (abs(len(norm_label) - len(norm_brand)) <= 2
+                # One-character typo-squats are judged only on the registered name. In a subdomain an
+                # ordinary word ("email" is one letter from "gmail") is not evidence of impersonation;
+                # exact brand names, homoglyphs and credential-lure prefixes are still caught anywhere.
+                if (in_registered_name
+                        and abs(len(norm_label) - len(norm_brand)) <= 2
                         and 0 < edit_distance(norm_label, norm_brand) <= 1):
                     return brand, ('"{}" is one character away from "{}" '
                                    "(typo-squat)".format(label, brand))
@@ -167,6 +178,40 @@ def _judge_url(url):
     }
 
 
+def mask_email(addr):
+    """'jane@gmail.com' -> 'j***@gmail.com': keeps the provider, hides the person. Used wherever an
+    address could leave the analyst's machine (AI prompts, shared threat intelligence)."""
+    local, _, dom = str(addr or "").partition("@")
+    return "{}***@{}".format(local[:1], dom) if dom else "***"
+
+
+def _addr_list(value):
+    return [a.lower() for a in EMAIL_RE.findall(str(value or ""))]
+
+
+def email_details(parsed, body_emails):
+    """Every address with the ROLE it plays. Appearing in a message is not evidence of malice, so no
+    verdict is attached here; a role (sender, envelope sender, Reply-To, recipient, body mention) is
+    what lets a reader judge whether an address matters."""
+    roles = {}
+
+    def add(addr, role):
+        if addr:
+            r = roles.setdefault(addr, [])
+            if role not in r:
+                r.append(role)
+
+    for key, role in (("from_addr", "sender (From)"), ("return_path", "envelope sender (Return-Path)"),
+                      ("reply_to", "Reply-To")):
+        for a in _addr_list(parsed.get(key)):
+            add(a, role)
+    for a in _addr_list(parsed.get("to")):
+        add(a, "recipient (To)")
+    for a in body_emails:
+        add(a, "mentioned in body")
+    return [{"address": a, "roles": r, "in_body": "mentioned in body" in r} for a, r in sorted(roles.items())]
+
+
 def extract(parsed):
     """Returns {urls[], domains[], ips[], emails[], wallets[], url_score, ...}."""
     body = parsed.get("body_text", "") or ""
@@ -194,6 +239,7 @@ def extract(parsed):
         "domains": domains,
         "ips": ips,
         "emails": emails,
+        "email_details": email_details(parsed, emails),
         "wallets": wallets,
         "url_score": url_score,
         "counts": {"urls": len(urls), "suspicious": len(suspicious),

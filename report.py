@@ -206,12 +206,26 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
 
     for label, values in (("Domains", iocs["domains"]),
                           ("IP addresses in body", iocs["ips"]),
-                          ("Email addresses", iocs["emails"]),
                           ("Cryptocurrency wallets", iocs["wallets"])):
         if values:
             add("**{}:** {}".format(
                 label, ", ".join("`{}`".format(v) for v in values)))
             add("")
+
+    details = iocs.get("email_details")
+    if isinstance(details, list) and details:
+        add("**Email addresses and their roles** (an address appearing in a message is not, by itself, "
+            "evidence of malice):")
+        add("")
+        add("| Address | Role(s) |")
+        add("| --- | --- |")
+        for d in details:
+            add("| `{}` | {} |".format(md_cell(d["address"]), md_cell(", ".join(d["roles"]))))
+        add("")
+    elif iocs.get("emails"):
+        add("**Email addresses (role not recorded):** {}".format(
+            ", ".join("`{}`".format(v) for v in iocs["emails"])))
+        add("")
 
     if parsed.get("attachments"):
         add("**Attachments:**")

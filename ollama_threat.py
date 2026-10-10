@@ -170,6 +170,23 @@ def _email_block(parsed, body):
     }
 
 
+try:
+    from ioc_extract import mask_email as _mask_email
+except Exception:                       # keep this module usable on its own
+    def _mask_email(addr):
+        local, _, dom = str(addr or "").partition("@")
+        return "{}***@{}".format(local[:1], dom) if dom else "***"
+
+
+def _email_addresses_block(iocs):
+    """Addresses with the ROLE each plays, masked: the model needs the role (sender / recipient / Reply-To /
+    body mention), not a stranger's full address, and appearing in a message is not evidence of malice."""
+    det = iocs.get("email_details")
+    if not isinstance(det, list):
+        return [{"address_masked": _mask_email(e), "roles": ["role not recorded"]} for e in (iocs.get("emails") or [])][:20]
+    return [{"address_masked": _mask_email(d.get("address")), "roles": list(d.get("roles") or [])} for d in det[:20]]
+
+
 def _auth_label(headers, mech):
     """Outcome WITH its provenance, so the model cannot read an unverified header claim as an
     established authentication result."""
@@ -408,10 +425,7 @@ def build_evidence(result, network_trust=None):
                 []
             )),
 
-            "email_iocs": _cap_list(iocs.get(
-                "emails",
-                []
-            )),
+            "email_addresses": _email_addresses_block(iocs),
 
             "url_score": float(
                 iocs.get(
@@ -499,6 +513,11 @@ RULES:
   justifies it; an ML probability or a URL risk score alone is not proof of phishing.
 - A sender/envelope difference on related subdomains of one organisation is routine, not spoofing, and an
   authentication PASS does not prove a message safe. Treat authentication whose provenance is "unverified" as a claim.
+- email_addresses lists addresses (masked) with their roles. An address appearing in the message as sender, recipient or
+  body mention is not an indicator of malice by itself: call one suspicious only if its role and other supplied evidence
+  (e.g. a Reply-To redirect or display-name mismatch) support it, and always state its role.
+- URL risk comes only from the supplied url flags. A subdomain such as links.email.<brand-owner>.com is not a brand
+  look-alike merely because a label resembles a word; do not describe a URL as malicious beyond its listed flags.
 - origin_intelligence.confidence and machine_analysis.origin_risk are different metrics; never merge or compare them.
 - spf/dkim/dmarc values carry their provenance in brackets. Only results marked "verified" are established; "UNVERIFIED"
   results are claims in the headers and must never be described as proven authentication or alignment.
@@ -872,7 +891,7 @@ def _batch_prompt(batch_items):
             "suspicious_urls",
             "domains",
             "ips",
-            "email_iocs",
+            "email_addresses",
         ):
             machine[key] = _cap_list(machine.get(key), limit=5)
 
