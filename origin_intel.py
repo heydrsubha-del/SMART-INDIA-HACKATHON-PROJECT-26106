@@ -25,6 +25,7 @@ from email.utils import parsedate_to_datetime
 # ---------------------------------------------------------------------------
 # Constants (all tunables live here, visible and documented)
 # ---------------------------------------------------------------------------
+PANEL_VERSION = "tabbed-views-2"  # bump on UI-affecting changes; part of the app's cache key
 CONFIDENCE_CAP = 90          # headers can be forged -> never claim certainty
 BAND_HIGH = 70
 BAND_MEDIUM = 45
