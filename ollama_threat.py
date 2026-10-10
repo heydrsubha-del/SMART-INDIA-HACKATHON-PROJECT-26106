@@ -97,14 +97,14 @@ def _prioritised_cap(values, limit=_MAX_IOC_LIST_ITEMS):
     return sorted(values, key=lambda u: -_risk_of(u))[:limit]
 
 
-def _prompt_limits(iocs):
+def _prompt_limits(iocs, limit=_MAX_IOC_LIST_ITEMS):
     """Truthful shown/omitted counts for lists the prompt had to cap."""
     out = {}
     for key in ("urls", "suspicious_urls", "domains", "ips"):
         vals = iocs.get(key, [])
         if isinstance(vals, list):
             total = len(vals)
-            shown = min(total, _MAX_IOC_LIST_ITEMS)
+            shown = min(total, limit)
             out[key] = {"total": total, "shown_to_you": shown, "omitted_from_prompt": total - shown}
     out["note"] = ("Omitted items WERE still analysed by the machine pipeline (url_score covers every extracted URL); "
                    "they are only absent from this prompt. Do not claim the omitted items are safe or unseen. "
@@ -407,7 +407,7 @@ def _threat_memory_block(result):
                     "matches' when earlier_local_sightings > 0."}
 
 
-def build_evidence(result, network_trust=None):
+def build_evidence(result, network_trust=None, compact=False):
     """
     Extract relevant forensic evidence from the
     existing SIH26106 analysis result.
@@ -431,7 +431,8 @@ def build_evidence(result, network_trust=None):
     )
 
     # Keep the prompt small for CPU-based Qwen.
-    body = str(body)[:5000]
+    body = str(body)[:1500 if compact else 5000]
+    lim = 5 if compact else _MAX_IOC_LIST_ITEMS
 
     return {
         "email": _email_block(parsed, body),
@@ -469,7 +470,10 @@ def build_evidence(result, network_trust=None):
                 ) or 0.0
             ),
 
-            "header_anomalies": headers.get(
+            "header_anomalies": _cap_list(headers.get(
+                "anomalies",
+                []
+            ), 8) if compact else headers.get(
                 "anomalies",
                 []
             ),
@@ -491,26 +495,29 @@ def build_evidence(result, network_trust=None):
             "urls": _prioritised_cap(iocs.get(
                 "urls",
                 []
-            )),
+            ), lim),
 
-            "prompt_limits": _prompt_limits(iocs),
+            "prompt_limits": _prompt_limits(iocs, lim),
+
+            "compact_mode": ("Reduced evidence (body cut to 1500 chars, shorter lists) because the first request was too large "
+                             "for the cloud API. Treat missing detail as not supplied, not as absent.") if compact else False,
 
             "link_extraction": iocs.get("link_extraction") or {"status": "unknown"},
 
             "suspicious_urls": _prioritised_cap(iocs.get(
                 "suspicious_urls",
                 []
-            )),
+            ), lim),
 
             "domains": _cap_list(iocs.get(
                 "domains",
                 []
-            )),
+            ), lim),
 
             "ips": _cap_list(iocs.get(
                 "ips",
                 []
-            )),
+            ), lim),
 
             "email_addresses": _email_addresses_block(iocs),
 
@@ -577,12 +584,12 @@ def build_evidence(result, network_trust=None):
     }
 
 
-def build_prompt(result, network_trust=None):
+def build_prompt(result, network_trust=None, compact=False):
     """
     Build the prompt for single-email Qwen analysis.
     """
 
-    evidence = build_evidence(result, network_trust=network_trust)
+    evidence = build_evidence(result, network_trust=network_trust, compact=compact)
 
     return f"""
 
@@ -1019,7 +1026,16 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
         if progress_callback:
             progress_callback(20, "Qwen request sent...")
         meta = {}
-        answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback, meta=meta)
+        try:
+            answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback, meta=meta)
+        except requests.exceptions.HTTPError as exc:
+            if not _is_413(exc):
+                raise
+            if progress_callback:
+                progress_callback(20, "Request too large for the cloud API - retrying with reduced evidence...")
+            payload = _base_payload(build_prompt(result, network_trust=network_trust, compact=True))
+            meta = {}
+            answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback, meta=meta)
         diagnostics = _completion_diagnostics(meta, answer)
         answer = _calibration_note(answer, result)
         if not diagnostics["complete"]:
@@ -1035,7 +1051,10 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
     except requests.exceptions.Timeout:
         return {"ok": False, "error": "Ollama analysis timed out. The local model may be busy."}
     except requests.exceptions.HTTPError as exc:
-        return {"ok": False, "error": f"Ollama HTTP error: {exc}"}
+        if _is_413(exc):
+            return {"ok": False, "error": "AI HTTP 413: even the reduced request is too large for the cloud API "
+                    "(Groq per-request token limit). Try again later or use a plan/model with a larger limit."}
+        return {"ok": False, "error": f"AI backend HTTP error: {exc}"}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
 

@@ -195,5 +195,50 @@ class BackendIdentity(unittest.TestCase):
         self.assertEqual(O.generation_summary({"ok": True}), "")
 
 
+class Groq413(unittest.TestCase):
+    def _resp413(self):
+        r = _Resp([], 413)
+        err = O.requests.exceptions.HTTPError("413 Payload Too Large")
+        err.response = r
+        r.raise_for_status = mock.Mock(side_effect=err)
+        return r
+
+    def _run(self, responses, res=None):
+        bodies = []
+        def post(url, **kw):
+            bodies.append(len(json.dumps(kw.get("json"))))
+            return responses.pop(0)
+        ok = [b"data: " + json.dumps({"choices": [{"delta": {"content": Sections.FULL}, "finish_reason": "stop"}]}).encode(),
+              b"data: [DONE]"]
+        responses = [self._resp413() if r == "413" else _Resp(ok) for r in responses]
+        res = res or T.result_for(T.raw_mail())
+        with mock.patch.object(O, "resolve_backend", return_value=("cloud", "k")), \
+             mock.patch.object(O, "_ollama_available", return_value=False), \
+             mock.patch.object(O.requests, "post", side_effect=post):
+            return O.analyze_with_ollama(res), bodies
+
+    def _big(self):
+        res = T.result_for(T.raw_mail())
+        res["parsed"]["body_text"] = "word " * 4000
+        return res
+
+    def test_413_retries_once_with_smaller_prompt_and_succeeds(self):
+        r, bodies = self._run(["413", "ok"], self._big())
+        self.assertTrue(r["ok"]); self.assertEqual(len(bodies), 2); self.assertLess(bodies[1], bodies[0])
+        self.assertEqual(r["backend"], "cloud")
+
+    def test_compact_prompt_labels_reduction_and_keeps_counts(self):
+        res = self._big(); res["iocs"] = ioc_extract.extract({"subject": "s", "body_text": _urls_body()})
+        ma = O.build_evidence(res, compact=True)["machine_analysis"]
+        self.assertIn("Reduced evidence", ma["compact_mode"])
+        self.assertEqual(ma["prompt_limits"]["urls"], {"total": 12, "shown_to_you": 5, "omitted_from_prompt": 7})
+        self.assertIs(O.build_evidence(res)["machine_analysis"]["compact_mode"], False)
+
+    def test_persistent_413_gives_clear_backend_neutral_error(self):
+        r, bodies = self._run(["413", "413"])
+        self.assertFalse(r["ok"]); self.assertEqual(len(bodies), 2)
+        self.assertIn("413", r["error"]); self.assertNotIn("Ollama", r["error"])
+
+
 if __name__ == "__main__":
     unittest.main()
