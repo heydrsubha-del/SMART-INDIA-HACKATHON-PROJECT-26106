@@ -2199,18 +2199,6 @@ st.markdown(
         box-shadow:none !important;
         padding:0 !important;
     }
-    .stAlert:has([data-testid="stAlertContentSuccess"]),
-    div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]),
-    div[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) {border-left-color:var(--green) !important;}
-    .stAlert:has([data-testid="stAlertContentInfo"]),
-    div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]),
-    div[data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) {border-left-color:var(--cyan) !important;}
-    .stAlert:has([data-testid="stAlertContentWarning"]),
-    div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]),
-    div[data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]) {border-left-color:var(--amber) !important;}
-    .stAlert:has([data-testid="stAlertContentError"]),
-    div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]),
-    div[data-testid="stAlert"]:has([data-testid="stAlertContentError"]) {border-left-color:var(--red) !important;}
     [data-testid="stAlertContentSuccess"] {color:#9be8c7 !important;}
     [data-testid="stAlertContentInfo"] {color:#bfe9ff !important;}
     [data-testid="stAlertContentWarning"] {color:#ffe3a3 !important;}
@@ -3698,8 +3686,12 @@ st.markdown(
             linear-gradient(180deg,var(--panel-2),var(--panel)) !important;
         border:1px solid var(--line) !important;
         border-radius:var(--r-md) !important;
-        overflow:hidden;
     }
+    html body .stAlert:has([data-testid="stAlertContentSuccess"]),
+    html body .stAlert:has([data-testid="stAlertContentInfo"]) {--alert-accent:var(--cyan);}
+    html body .stAlert:has([data-testid="stAlertContentSuccess"]) {--alert-accent:var(--green);}
+    html body .stAlert:has([data-testid="stAlertContentWarning"]) {--alert-accent:var(--amber);}
+    html body .stAlert:has([data-testid="stAlertContentError"]) {--alert-accent:var(--red);}
     html body div[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]),
     html body div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) {--alert-accent:var(--green);}
     html body div[data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]),
@@ -9587,90 +9579,73 @@ def _origin_intel_markdown(case, raw_bytes=None, ehash=None):
 
 
 def _render_origin_intel(b):
+    """Compact view: one summary table, plain subheadings, no stacked cards."""
     a = b["assessment"]
     if not a["selected_ip"] and not a["route"]:
-        st.info("No public IP was found in the Received headers, so no origin assessment is possible. "
-                "Recorded as unresolved rather than guessed.")
+        st.caption("No public IP was found in the Received headers, so no origin assessment is possible. "
+                   "Recorded as unresolved rather than guessed.")
         st.caption(a["location_disclaimer"])
         return
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Likely origin IP", a["selected_ip"] or "unresolved")
-    c2.metric("Origin confidence", f"{a['confidence']}/100", a["band"], delta_color="off")
-    c3.metric("Route hops parsed", len(a["route"]))
-    c4.metric("Route flags", len(a["flags"]))
-    st.info(a["location_disclaimer"])
+    _render_polished_table(pd.DataFrame([{
+        "IP": a["selected_ip"] or "unresolved",
+        "Confidence": f"{a['confidence']}/100 · {a['band']}",
+        "Hops Parsed": len(a["route"]),
+        "Route Flags": len(a["flags"]),
+    }]), tone="#22d3ee")
+    st.caption(a["location_disclaimer"])
     if a["disagreement_note"]:
-        st.warning(a["disagreement_note"])
+        st.caption("**Note:** " + a["disagreement_note"])
 
-    _sec("Why this IP", tone="teal")
+    st.markdown("###### Why this IP")
     _render_polished_table(pd.DataFrame([
         {"Effect": e["effect"], "Indicator": e["indicator"], "Detail": e["detail"]} for e in a["evidence"]
     ]), empty_text="No supporting indicators.", tone="#22d3ee")
     if a["alternatives"]:
-        st.caption("Other candidates considered: " + "; ".join(
+        st.caption("Other candidates: " + "; ".join(
             f"{c['ip']} ({c['score']}/100{', hop ' + str(c['hop']) if c['hop'] else ''})" for c in a["alternatives"]))
 
     if a["route"]:
-        _sec("Reconstructed mail route", "Oldest hop first - one row per Received header", tone="teal")
-        chips = []
-        for h in a["route"]:
-            bad = bool(h["flags"])
-            label = html.escape(h["from_ip"] or "internal/unknown")
-            chips.append(
-                f'<span style="display:inline-block;padding:3px 9px;border-radius:999px;margin:2px 0;'
-                f'font-size:12px;color:{"#ffd1da" if bad else "#cfe3ff"};'
-                f'background:{"rgba(224,112,140,.18)" if bad else "rgba(47,216,255,.12)"};'
-                f'border:1px solid {"#e0708c" if bad else "#2fd8ff55"};">{h["n"]} · {label}</span>')
-        st.markdown(" &rarr; ".join(chips), unsafe_allow_html=True)
+        st.markdown("###### Reconstructed mail route")
+        st.caption("Oldest hop first: " + "  →  ".join(
+            f"{h['n']}: {h['from_ip'] or 'internal'}{' ⚑' if h['flags'] else ''}" for h in a["route"]))
         _render_polished_table(pd.DataFrame([{
             "Hop": h["n"],
             "From (HELO / rDNS)": h["helo"] or h["rdns"] or "-",
             "IP": h["from_ip"] or "-",
             "Received by": h["by"] or "-",
-            "Protocol": h["protocol"] or "-",
             "Time": h["ts_text"] or "-",
             "Delta": (f"{int(h['delta_s'])}s" if h["delta_s"] is not None else "-"),
             "Country": h["country"] or "-",
-            "ASN": (f"AS{h['asn']}" if h["asn"] else "-"),
-            "Network": h["network"] or h["as_org"] or "-",
-            "Infrastructure": h["infra_label"] or "-",
+            "Network": (f"AS{h['asn']} " if h["asn"] else "") + (h["network"] or h["as_org"] or "-"),
             "Flags": ", ".join(h["flags"]) or "-",
         } for h in a["route"]]), tone="#22d3ee")
 
-    _sec("Route consistency", tone="teal")
+    st.markdown("###### Route consistency")
     if a["flags"]:
         _render_polished_table(pd.DataFrame([
             {"Severity": f["severity"], "Finding": f["title"], "Evidence": f["evidence"]} for f in a["flags"]
         ]), tone="#e0708c")
     else:
-        st.success("No routing inconsistencies detected in the parsed Received chain.")
+        st.caption("No routing inconsistencies detected in the parsed Received chain.")
 
-    _sec("Infrastructure intelligence", tone="teal")
+    st.markdown("###### Infrastructure & history")
     _render_polished_table(pd.DataFrame(b["infra_rows"]), empty_text="No public IPs to profile.", tone="#22d3ee")
-    if not b["asn_available"]:
-        st.caption("ASN / AS-organization need a local `data/GeoLite2-ASN.mmdb` (same offline convention as the "
-                   "GeoLite2-City file). Until it is installed those columns read 'unavailable' - nothing is guessed. "
-                   "No external reputation feed is queried.")
-
-    _sec("Historical correlation", "Threat memory + emails analysed this session", tone="teal")
-    hist = [{"IP": ip, "Logged sightings": v[0], "Highest score": round(v[1])}
-            for ip, v in b["history"].items() if v[0]]
-    if hist:
-        _render_polished_table(pd.DataFrame(hist), tone="#c084fc")
-    else:
-        st.caption("None of these IPs appear in the threat-memory database.")
     if b["session_rows"]:
         _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
     else:
         st.caption("No other email analysed this session shares these IPs.")
-    st.caption("Sightings for the loaded email exclude its own log entry; for other emails the count may include "
-               "their own earlier log entry.")
+    notes = []
+    if not b["asn_available"]:
+        notes.append("ASN / AS organization need a local `data/GeoLite2-ASN.mmdb`; until then they read 'unavailable'. "
+                     "No external reputation feed is queried.")
+    notes.append("Threat-memory counts for the loaded email exclude its own log entry.")
+    st.caption(" ".join(notes))
     with st.expander("Limitations of this assessment"):
         for lim in a["limitations"]:
             st.markdown("- " + lim)
         if not b["raw_used"]:
             st.markdown("- Raw headers for this email were not available here, so independent header corroboration "
-                        "(X-Originating-IP, Received-SPF, Authentication-Results) was not used.")
+                        "was not used.")
 
 
 _MAP_CSS = """<style>
