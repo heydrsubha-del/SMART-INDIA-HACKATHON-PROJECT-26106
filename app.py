@@ -300,6 +300,7 @@ from classifier import (
 from geolocate import INFRA_LABEL
 from network_trust import assess_network_trust, load_vpn_ranges, scan_cases_for_vpn
 import tor_check
+import origin_intel
 try:
     from fetch_vpn_ranges import fetch_category as _fetch_vpn_category
     FETCH_VPN_RANGES_AVAILABLE = True
@@ -9491,6 +9492,142 @@ def _case_hop_points(case):
     return []
 
 
+# ---------------------------------------------------------------------------
+# Origin intelligence -- thin glue only. All logic lives in origin_intel.py
+# (offline, no network). It re-uses the hops/origin geolocate.py already
+# produced, tracker.check_history() and the cases analysed this session, and
+# never changes the threat score.
+# ---------------------------------------------------------------------------
+def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
+    """Assessment + infra + history for one case, cached per session."""
+    parsed = case.get("parsed", {}) or {}
+    geo = case.get("geo", {}) or {}
+    cases = [r for r in _corr_cases.values() if "error" not in r]
+    key = (case.get("name"), case.get("_evidence_hash"), (geo.get("origin") or {}).get("ip"),
+           len(parsed.get("received_chain") or []), len(cases), bool(raw_bytes), is_loaded)
+    cache = st.session_state.setdefault("_origin_intel_cache", {})
+    if key in cache:
+        return cache[key]
+    asn = origin_intel.make_asn_lookup()
+    a = origin_intel.assess_origin(parsed, geo, raw=raw_bytes, asn_lookup=asn)
+    ips = origin_intel.route_ips(a)
+    try:
+        history, session_rows = origin_intel.correlate_history(
+            ips, case.get("name"), case.get("_evidence_hash"), cases,
+            history_fn=check_history,
+            self_logged_ip=(geo.get("origin") or {}).get("ip") if is_loaded else None,
+        )
+    except Exception:
+        history, session_rows = {}, []
+    bundle = {
+        "assessment": a, "history": history, "session_rows": session_rows,
+        "infra_rows": origin_intel.infrastructure_profile(ips, geo, asn, history),
+        "asn_available": asn is not None, "raw_used": bool(raw_bytes),
+    }
+    if len(cache) > 50:
+        cache.clear()
+    cache[key] = bundle
+    return bundle
+
+
+def _origin_intel_markdown(case, raw_bytes=None, ehash=None):
+    """Markdown section for the forensic reports. Never raises."""
+    try:
+        c = dict(case)
+        c["_evidence_hash"] = ehash or c.get("_evidence_hash")
+        b = _origin_intel_for_case(c, raw_bytes, is_loaded=(ehash is not None and ehash == current_evidence_hash))
+        return origin_intel.to_markdown(b["assessment"], b["infra_rows"], b["session_rows"], b["history"])
+    except Exception as e:
+        return f"Origin intelligence could not be generated ({e})."
+
+
+def _render_origin_intel(b):
+    a = b["assessment"]
+    if not a["selected_ip"] and not a["route"]:
+        st.info("No public IP was found in the Received headers, so no origin assessment is possible. "
+                "Recorded as unresolved rather than guessed.")
+        st.caption(a["location_disclaimer"])
+        return
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Likely origin IP", a["selected_ip"] or "unresolved")
+    c2.metric("Origin confidence", f"{a['confidence']}/100", a["band"], delta_color="off")
+    c3.metric("Route hops parsed", len(a["route"]))
+    c4.metric("Route flags", len(a["flags"]))
+    st.info(a["location_disclaimer"])
+    if a["disagreement_note"]:
+        st.warning(a["disagreement_note"])
+
+    _sec("Why this IP", tone="teal")
+    _render_polished_table(pd.DataFrame([
+        {"Effect": e["effect"], "Indicator": e["indicator"], "Detail": e["detail"]} for e in a["evidence"]
+    ]), empty_text="No supporting indicators.", tone="#22d3ee")
+    if a["alternatives"]:
+        st.caption("Other candidates considered: " + "; ".join(
+            f"{c['ip']} ({c['score']}/100{', hop ' + str(c['hop']) if c['hop'] else ''})" for c in a["alternatives"]))
+
+    if a["route"]:
+        _sec("Reconstructed mail route", "Oldest hop first - one row per Received header", tone="teal")
+        chips = []
+        for h in a["route"]:
+            bad = bool(h["flags"])
+            label = html.escape(h["from_ip"] or "internal/unknown")
+            chips.append(
+                f'<span style="display:inline-block;padding:3px 9px;border-radius:999px;margin:2px 0;'
+                f'font-size:12px;color:{"#ffd1da" if bad else "#cfe3ff"};'
+                f'background:{"rgba(224,112,140,.18)" if bad else "rgba(47,216,255,.12)"};'
+                f'border:1px solid {"#e0708c" if bad else "#2fd8ff55"};">{h["n"]} · {label}</span>')
+        st.markdown(" &rarr; ".join(chips), unsafe_allow_html=True)
+        _render_polished_table(pd.DataFrame([{
+            "Hop": h["n"],
+            "From (HELO / rDNS)": h["helo"] or h["rdns"] or "-",
+            "IP": h["from_ip"] or "-",
+            "Received by": h["by"] or "-",
+            "Protocol": h["protocol"] or "-",
+            "Time": h["ts_text"] or "-",
+            "Delta": (f"{int(h['delta_s'])}s" if h["delta_s"] is not None else "-"),
+            "Country": h["country"] or "-",
+            "ASN": (f"AS{h['asn']}" if h["asn"] else "-"),
+            "Network": h["network"] or h["as_org"] or "-",
+            "Infrastructure": h["infra_label"] or "-",
+            "Flags": ", ".join(h["flags"]) or "-",
+        } for h in a["route"]]), tone="#22d3ee")
+
+    _sec("Route consistency", tone="teal")
+    if a["flags"]:
+        _render_polished_table(pd.DataFrame([
+            {"Severity": f["severity"], "Finding": f["title"], "Evidence": f["evidence"]} for f in a["flags"]
+        ]), tone="#e0708c")
+    else:
+        st.success("No routing inconsistencies detected in the parsed Received chain.")
+
+    _sec("Infrastructure intelligence", tone="teal")
+    _render_polished_table(pd.DataFrame(b["infra_rows"]), empty_text="No public IPs to profile.", tone="#22d3ee")
+    if not b["asn_available"]:
+        st.caption("ASN / AS-organization need a local `data/GeoLite2-ASN.mmdb` (same offline convention as the "
+                   "GeoLite2-City file). Until it is installed those columns read 'unavailable' - nothing is guessed. "
+                   "No external reputation feed is queried.")
+
+    _sec("Historical correlation", "Threat memory + emails analysed this session", tone="teal")
+    hist = [{"IP": ip, "Logged sightings": v[0], "Highest score": round(v[1])}
+            for ip, v in b["history"].items() if v[0]]
+    if hist:
+        _render_polished_table(pd.DataFrame(hist), tone="#c084fc")
+    else:
+        st.caption("None of these IPs appear in the threat-memory database.")
+    if b["session_rows"]:
+        _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
+    else:
+        st.caption("No other email analysed this session shares these IPs.")
+    st.caption("Sightings for the loaded email exclude its own log entry; for other emails the count may include "
+               "their own earlier log entry.")
+    with st.expander("Limitations of this assessment"):
+        for lim in a["limitations"]:
+            st.markdown("- " + lim)
+        if not b["raw_used"]:
+            st.markdown("- Raw headers for this email were not available here, so independent header corroboration "
+                        "(X-Originating-IP, Received-SPF, Authentication-Results) was not used.")
+
+
 _MAP_CSS = """<style>
 .leaflet-container{background:#0a1322 !important;font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;border-radius:12px;}
 .leaflet-control-attribution{display:none !important;}
@@ -12453,6 +12590,9 @@ if active_panel == "AI Threat Analysis":
                             _batch_machine_sections.append(
                                 f"{_bi_header}\n\n"
                                 + build_report(_bi_result, _bi.get("_raw"), analyst="ALGORITHMISTIC automated triage")
+                                + "\n\n## Origin Intelligence Assessment\n\n"
+                                + _origin_intel_markdown(_bi_result, _bi.get("_raw"),
+                                                         hashlib.sha256(_bi["_raw"]).hexdigest() if _bi.get("_raw") else None)
                             )
                         except Exception as e:
                             _batch_machine_sections.append(
@@ -13161,6 +13301,19 @@ if active_panel == "Origin & Route":
                     origin.get("ip", "unknown"), "; ".join(origin.get("tor_exit_sources", []))
                 )
             )
+
+        # ------------------------------------------------------------------
+        # Origin Confidence & Route Reconstruction (origin_intel.py). Adds to,
+        # and never replaces, the summary / map / routing chain above.
+        # ------------------------------------------------------------------
+        _sec("Origin Confidence & Route Reconstruction",
+             "Which IP most likely originated this message, why, and whether the route hangs together", "teal")
+        try:
+            _oi_is_loaded = _active_case.get("_evidence_hash") in (None, current_evidence_hash)
+            _render_origin_intel(_origin_intel_for_case(
+                _active_case, raw if _oi_is_loaded else None, is_loaded=_oi_is_loaded))
+        except Exception as _oi_err:
+            st.caption(f"Origin intelligence unavailable for this email ({_oi_err}). The existing origin summary above is unaffected.")
 
         # ------------------------------------------------------------------
         # Tor exit-node list status (read-only) -- the Tor Exit
@@ -14128,6 +14281,8 @@ if active_panel == "Forensic Report":
         else:
             m_sem = "Semantic origin comparison was unavailable when this report was generated (Ollama / nomic-embed-text not reachable)."
 
+        m_origin = _origin_intel_markdown(sel_res, sel_raw, sel_hash)
+
         machine_md = f"""# ALGORITHMISTIC - DIGITAL FORENSIC EVIDENCE REPORT
 
 ## 1. EVIDENCE IDENTIFIERS
@@ -14180,6 +14335,9 @@ if active_panel == "Forensic Report":
 
 ### Semantically similar origins
 {m_sem}
+
+## 7. ORIGIN INTELLIGENCE ASSESSMENT
+{m_origin}
 """
 
         # --------------------------------------------------------------------
