@@ -158,6 +158,24 @@ LEGIT_HARD = [
     "moment? Nothing customer-facing is affected.",
 ]
 
+# Genuine service notifications that NAME a brand (sign-in / access / receipt / password-changed
+# notices). Without them every brand token ("google", "apple", "paypal", ...) occurs ONLY in phishing rows,
+# so the model learns "brand name => phishing" and over-scores real notifications from those services.
+LEGIT_BRAND = [
+    "{brand}: a new app was granted access to your {brand} account on {month} {day}. "
+    "If you did this, no action is needed. You can review connected apps and recent "
+    "activity in your account settings whenever you like.",
+    "{brand} security notice: a new device signed in to your account on {month} {day}. "
+    "If you recognise it, you can ignore this email. Otherwise review your recent "
+    "security activity from your account page.",
+    "{brand}: your receipt for order #{num} is available. Thank you for your purchase. "
+    "You can view or manage your orders from your account.",
+    "{brand}: your password was changed on {month} {day}. If you made this change, no "
+    "further action is required. This is an automatic notification.",
+    "Hi {first}, you have been added to a shared folder in {brand}. You can open it "
+    "from your {brand} account whenever it suits you.",
+]
+
 # Phishing without the loud giveaway words - forces the model past keywords.
 PHISH_SOFT = [
     "Hello, I hope you are well. Our records show a small discrepancy in your "
@@ -232,6 +250,16 @@ def _hard_legit_email(rng):
             "legit_hard_{}".format(idx))
 
 
+def _brand_legit_email(rng):
+    """Legitimate service notification that names a brand - keeps brand tokens from leaking the label."""
+    idx = rng.randrange(len(LEGIT_BRAND))
+    body = LEGIT_BRAND[idx].format(
+        brand=rng.choice(PHISH_BRANDS), first=rng.choice(LEGIT_FIRST),
+        month=rng.choice(MONTHS), day=rng.randint(1, 28), num=rng.randint(10000, 99999))
+    return (_wrap(rng, body, ["Hello", "Hi", "Dear"]),
+            "legit_brand_{}".format(idx))
+
+
 def _legit_email(rng):
     """One synthetic legitimate message."""
     idx = rng.randrange(len(LEGIT_TEMPLATES))
@@ -245,7 +273,7 @@ def generate(n_per_class=300, path=None):
 
     Composition per class (deliberate, see LEGIT_HARD):
       phish : 55% loud credential phishing, 25% BEC, 20% soft/polite phishing
-      legit : 60% ordinary business mail, 40% HARD NEGATIVES
+      legit : 45% ordinary business mail, 40% HARD NEGATIVES, 15% brand-naming service notices
 
     template_id records WHICH template produced each row so the classifier can
     hold out entire unseen templates instead of unseen slot-fills. Without that,
@@ -258,7 +286,8 @@ def generate(n_per_class=300, path=None):
     n_soft = int(n_per_class * 0.20)
     n_loud = n_per_class - n_bec - n_soft
     n_hard = int(n_per_class * 0.40)
-    n_plain = n_per_class - n_hard
+    n_brand = int(n_per_class * 0.15)
+    n_plain = n_per_class - n_hard - n_brand
 
     rows = []
     for maker, count, label in (
@@ -267,6 +296,7 @@ def generate(n_per_class=300, path=None):
         (_soft_phish_email, n_soft, "phish"),
         (_legit_email, n_plain, "legit"),
         (_hard_legit_email, n_hard, "legit"),
+        (_brand_legit_email, n_brand, "legit"),
     ):
         for _ in range(count):
             text, template_id = maker(rng)
