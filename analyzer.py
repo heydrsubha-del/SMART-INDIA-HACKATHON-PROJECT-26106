@@ -27,6 +27,11 @@ from classifier import load_or_train, predict
 from email_parser import parse_eml
 from tracker import remember_indicator, lookup_indicator
 
+try:                                    # optional: offline origin-confidence engine
+    import origin_intel
+except Exception:
+    origin_intel = None
+
 
 def analyze_email(raw, name="uploaded", pipe=None):
     """Run every module over one raw email. Returns one result dict."""
@@ -125,6 +130,16 @@ def analyze_email(raw, name="uploaded", pipe=None):
     # ------------------------------------------------------------------
     geo = geolocate.trace(parsed)
 
+    # Origin confidence is computed ONCE here, with the raw headers, and stored on the result. The
+    # Origin panel and the AI assessment both read this object, so they cannot report different numbers
+    # for the same metric. (Never affects the score.)
+    origin_assessment = None
+    if origin_intel is not None:
+        try:
+            origin_assessment = origin_intel.assess_origin(parsed, geo, raw=raw)
+        except Exception:
+            origin_assessment = None
+
     # ------------------------------------------------------------------
     # Final weighted risk score
     # ------------------------------------------------------------------
@@ -151,6 +166,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
         "headers": headers,
         "iocs": iocs,
         "geo": geo,
+        "origin_intel": origin_assessment,
         "score": verdict["score"],
         "level": verdict["level"],
         "color": verdict["color"],

@@ -7,6 +7,7 @@ No external AI API key is required.
 
 import json
 import os
+import re
 import time
 import requests
 
@@ -99,24 +100,36 @@ def _vpn_tor_evidence(origin, network_trust=None):
         ),
         "tor_exit_node_confirmed": bool(origin.get("tor_exit_confirmed", False)),
         "tor_exit_confirmation_sources": _cap_list(origin.get("tor_exit_sources", []) or []),
-        "network_trust_badge": _safe(nt.get("badge"), "Not evaluated for this run"),
+        "network_trust_badge": _safe(nt.get("badge"), "Not evaluated by this AI step (no network-trust result was supplied)"),
         "network_trust_reasons": nt.get("reasons", []) or [],
     }
 
 
 def _origin_intel_evidence(result):
     """Compact origin-confidence block for the prompt (see origin_intel.py).
+    Uses the assessment stored on the analysis result (computed once at ingestion WITH the raw
+    headers) so the AI and the Origin panel quote the same number. Only if that is missing does
+    it recompute -- without raw headers, which can score lower; that case is labelled.
     Bounded in size for the small context window; never raises."""
-    if _origin_intel is None:
+    stored = result.get("origin_intel")
+    recomputed = False
+    if isinstance(stored, dict) and stored.get("selected_ip") is not None:
+        a = stored
+    elif _origin_intel is None:
         return {"available": False, "reason": "origin_intel module not installed"}
-    try:
-        a = _origin_intel.assess_origin(result.get("parsed", {}) or {}, result.get("geo", {}) or {})
-    except Exception:
-        return {"available": False, "reason": "origin assessment failed"}
+    else:
+        try:
+            a = _origin_intel.assess_origin(result.get("parsed", {}) or {}, result.get("geo", {}) or {})
+            recomputed = True
+        except Exception:
+            return {"available": False, "reason": "origin assessment failed"}
     if not a.get("selected_ip"):
         return {"available": False, "reason": "no public IP found in the Received headers"}
     return {
         "available": True,
+        "metric": "origin_confidence: how likely this IP is the externally observed origin of the mail route (origin_intel.assess_origin)",
+        "source": ("recomputed without raw-header corroboration; the Origin panel may show a higher value"
+                   if recomputed else "same assessment object the Origin panel uses"),
         "likely_origin_ip": a["selected_ip"],
         "confidence": f"{a['confidence']}/100",
         "confidence_band": a["band"],
@@ -133,6 +146,123 @@ def _origin_intel_evidence(result):
         "limits": "Infrastructure location only, never the sender's physical location. "
                   "Received headers can be forged. Independent header corroboration was not checked here.",
     }
+
+
+_FAILISH = ("fail", "softfail", "permerror", "temperror", "policy")
+
+
+def _email_block(parsed, body):
+    """Sender identity from the parser's REAL field names (from_display / from_addr / ...).
+    The old code read parsed['from'], a key the parser never sets, so the sender was always 'Unknown'."""
+    disp, addr = parsed.get("from_display") or "", parsed.get("from_addr") or ""
+    shown = f"{disp} <{addr}>" if disp and addr else (addr or disp or parsed.get("from"))
+    return {
+        "from": _safe(shown),
+        "from_address": _safe(addr),
+        "from_display_name": _safe(disp, "(none)"),
+        "from_domain": _safe(parsed.get("from_domain")),
+        "return_path": _safe(parsed.get("return_path")),
+        "return_path_domain": _safe(parsed.get("return_path_domain")),
+        "reply_to": _safe(parsed.get("reply_to")),
+        "reply_to_domain": _safe(parsed.get("reply_to_domain")),
+        "subject": _safe(parsed.get("subject")),
+        "body": body,
+    }
+
+
+def _auth_evidence_block(headers):
+    ev = headers.get("auth_evidence")
+    if not isinstance(ev, dict):
+        return {"available": False, "note": "authentication provenance was not recorded for this result"}
+    out = {m: {"result": (ev.get(m) or {}).get("result", "none"),
+               "provenance": (ev.get(m) or {}).get("provenance", "unknown"),
+               "confidence": (ev.get(m) or {}).get("confidence", "none")}
+           for m in ("spf", "dkim", "dmarc")}
+    out["note"] = ((headers.get("auth_trust") or {}).get("limitation")
+                   or "Unverified results are claims in the headers and prove nothing by themselves.")
+    return out
+
+
+def _calibration(result):
+    """Separates confirmed facts, suspicious indicators and the model prediction, and states how
+    strong a disposition the evidence supports. Does NOT change the machine score or verdict."""
+    parsed = result.get("parsed", {}) or {}
+    headers = result.get("headers", {}) or {}
+    iocs = result.get("iocs", {}) or {}
+    geo = result.get("geo", {}) or {}
+    origin = geo.get("origin", {}) or {}
+    intel = result.get("intelligence", {}) or {}
+    bec = headers.get("bec", {}) or {}
+    ml = result.get("ml", {}) or {}
+    ev = headers.get("auth_evidence") if isinstance(headers.get("auth_evidence"), dict) else {}
+
+    facts, suspicious = [], []
+    for m in ("spf", "dkim", "dmarc"):
+        e = ev.get(m) or {}
+        if e.get("provenance") == "verified" and e.get("result") in _FAILISH:
+            facts.append(f"{m.upper()} {e['result']} stamped by a trusted receiving server")
+        elif e.get("provenance") == "unverified" and e.get("result") in _FAILISH:
+            suspicious.append(f"{m.upper()} {e['result']} claimed in headers (unverified)")
+    for a in headers.get("anomalies") or []:
+        title = str(a.get("title", ""))
+        if a.get("severity") == "high" and not re.match(r"^(SPF|DKIM|DMARC) ", title):
+            facts.append(f"High-severity header finding: {title}")
+        elif a.get("severity") in ("medium", "low"):
+            suspicious.append(f"{a.get('severity')}-severity header finding: {title}")
+    if bec.get("is_bec"):
+        facts.append("Business Email Compromise pattern detected by the header analysis")
+    if int(intel.get("urlhaus_matches", 0) or 0) > 0:
+        facts.append("URL matched a URLhaus threat-feed entry")
+    if origin.get("tor_exit_confirmed"):
+        facts.append("Origin IP is a confirmed Tor exit node (anonymisation, not proof of malice)")
+    if any(isinstance(x, dict) and x.get("risky") for x in parsed.get("attachments") or []):
+        facts.append("Attachment with a dangerous file type")
+    n_susp = len(iocs.get("suspicious_urls") or [])
+    if n_susp or float(iocs.get("url_score", 0) or 0) > 0:
+        suspicious.append(f"{n_susp} URL(s) given a non-zero risk score; a URL pattern or a legitimate-domain "
+                          "path is not proof of phishing")
+    prob = float(ml.get("prob", 0) or 0)
+    level = str(result.get("level", "Unknown"))
+    hard = bool(facts)
+    if hard:
+        limit = ("Hard evidence is listed in confirmed_facts. A disposition stronger than the machine level is "
+                 "allowed only if it cites that evidence.")
+    else:
+        limit = ("NO confirmed hard evidence of malice. Describe the message as suspicious / unconfirmed at most. "
+                 "Do not state it is confirmed phishing, do not use High confidence, and do not recommend marking it "
+                 "as confirmed phishing. Do not choose an ATTACK TYPE of Phishing/Credential Phishing/BEC unless the "
+                 "machine level is High or Critical; use Unclear or Low Risk.")
+    return {
+        "machine_verdict": f"{level} ({float(result.get('score', 0) or 0):.1f}/100)",
+        "confirmed_facts": facts,
+        "suspicious_indicators": suspicious,
+        "model_prediction": f"ML phishing probability {prob:.1%} - a probabilistic estimate, not proof",
+        "hard_evidence_present": hard,
+        "disposition_limit": limit,
+        "uncertainty": ["Authentication passing does not prove a message is safe.",
+                        "Sender and envelope on related subdomains of one organisation is routine (INFO), not spoofing."],
+    }
+
+
+def _calibration_note(answer, result):
+    """If the model overstates relative to the evidence, append a clearly labelled application note.
+    The model's own text is never rewritten and the machine verdict is never copied into it."""
+    try:
+        cal = _calibration(result)
+        if cal["hard_evidence_present"]:
+            return answer
+        level = str(result.get("level", "")).lower()
+        high_conf = re.search(r"CONFIDENCE:\s*[*_#\s]*High\b", answer, re.I)
+        phish_type = (level in ("low", "medium") and
+                      re.search(r"ATTACK TYPE:\s*[*_#\s]*(Credential Phishing|Phishing|Business Email Compromise)\b", answer, re.I))
+        if high_conf or phish_type:
+            return (answer.rstrip() + "\n\n**Application calibration note:** the assessment above is stronger than the "
+                    "supplied evidence supports. The machine verdict is " + cal["machine_verdict"] + " and no confirmed "
+                    "hard evidence was found (model prediction: " + cal["model_prediction"] + "). Treat the message as "
+                    "suspicious but unconfirmed pending analyst review.")
+    except Exception:
+        pass
+    return answer
 
 
 def build_evidence(result, network_trust=None):
@@ -162,12 +292,8 @@ def build_evidence(result, network_trust=None):
     body = str(body)[:5000]
 
     return {
-        "email": {
-            "from": _safe(parsed.get("from")),
-            "reply_to": _safe(parsed.get("reply_to")),
-            "subject": _safe(parsed.get("subject")),
-            "body": body,
-        },
+        "email": _email_block(parsed, body),
+        "calibration": _calibration(result),
 
         "machine_analysis": {
             "ml_phishing_probability": round(
@@ -190,6 +316,8 @@ def build_evidence(result, network_trust=None):
             "dmarc": _safe(
                 headers.get("dmarc")
             ),
+
+            "authentication_evidence": _auth_evidence_block(headers),
 
             "authentication_fail_score": float(
                 headers.get(
@@ -268,6 +396,9 @@ def build_evidence(result, network_trust=None):
                 origin.get("infra_label")
             ),
 
+            "origin_risk_note": "origin_risk (0-1) is the infrastructure-reputation input to the risk score; "
+                                "it is a DIFFERENT metric from origin_intelligence.confidence.",
+
             "origin_risk": float(
                 geo.get(
                     "origin_risk",
@@ -327,6 +458,12 @@ RULES:
   without supporting evidence.
 - Do not recalculate the risk score if you do not have beneficial evidence to do so.
 - Treat the existing risk score as evidence.
+- Use the "calibration" block: keep confirmed facts, suspicious indicators and the ML prediction separate, and obey its
+  "disposition_limit". If your disposition is stronger than the machine verdict, name the specific confirmed fact that
+  justifies it; an ML probability or a URL risk score alone is not proof of phishing.
+- A sender/envelope difference on related subdomains of one organisation is routine, not spoofing, and an
+  authentication PASS does not prove a message safe. Treat authentication whose provenance is "unverified" as a claim.
+- origin_intelligence.confidence and machine_analysis.origin_risk are different metrics; never merge or compare them.
 - Be compact but complete. Use the full available response budget.
 - Prefer dense, evidence-backed detail over filler.
 - Clearly distinguish evidence from interpretation.
@@ -656,6 +793,7 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
         if progress_callback:
             progress_callback(20, "Qwen request sent...")
         answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback)
+        answer = _calibration_note(answer, result)
         if progress_callback:
             progress_callback(100, "Qwen analysis complete")
         return {"ok": True, "model": OLLAMA_MODEL, "analysis": answer}
