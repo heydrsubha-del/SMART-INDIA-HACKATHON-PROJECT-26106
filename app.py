@@ -5146,7 +5146,6 @@ st.markdown(
     .stApp .st-key-seg_infra_scan     {--seg:#d9a35f;}
     .stApp .st-key-seg_tech_logs      {--seg:#2fb68e;}
     .stApp .st-key-seg_scan_count     {--seg:#38b2c8;}
-    .stApp .st-key-seg_origin_intel   {--seg:#22d3ee;}
     .stApp [class*="st-key-seg_"] [data-testid="stRadio"] {width:100% !important;}
     .stApp [class*="st-key-seg_"] [data-testid="stWidgetLabel"] {
         display:flex !important; margin:0 0 8px 2px !important; padding:0 !important;
@@ -9562,96 +9561,73 @@ def _origin_intel_markdown(case, raw_bytes=None, ehash=None):
 
 
 def _render_origin_intel(b):
-    """Headline + plain-language summary, then ONE view at a time (the app's
-    st.radio pill pattern -- st.tabs is deliberately not used in this app)."""
+    """Compact view: one summary table, plain subheadings, no stacked cards."""
     a = b["assessment"]
-    title, summary = origin_intel.headline(a)
-    st.markdown(f"##### {title}")
     if not a["selected_ip"] and not a["route"]:
-        st.caption(summary)
+        st.caption("No public IP was found in the Received headers, so no origin assessment is possible. "
+                   "Recorded as unresolved rather than guessed.")
         st.caption(a["location_disclaimer"])
         return
-    st.caption(summary)
-    st.caption("Locations below are where the network infrastructure is registered - not where the sender is. "
-               "An IP address cannot identify a person or an address.")
+    _render_polished_table(pd.DataFrame([{
+        "IP": a["selected_ip"] or "unresolved",
+        "Confidence": f"{a['confidence']}/100 · {a['band']}",
+        "Hops Parsed": len(a["route"]),
+        "Route Flags": len(a["flags"]),
+    }]), tone="#22d3ee")
+    st.caption(a["location_disclaimer"])
+    if a["disagreement_note"]:
+        st.caption("**Note:** " + a["disagreement_note"])
 
-    with st.container(key="seg_origin_intel"):
-        view = st.radio("Origin intelligence view",
-                        ["Why this IP", "Route", "Infrastructure", "History", "Notes"],
-                        horizontal=True, label_visibility="collapsed", key="origin_intel_view")
+    st.markdown("###### Why this IP")
+    _render_polished_table(pd.DataFrame([
+        {"Effect": e["effect"], "Indicator": e["indicator"], "Detail": e["detail"]} for e in a["evidence"]
+    ]), empty_text="No supporting indicators.", tone="#22d3ee")
+    if a["alternatives"]:
+        st.caption("Other candidates: " + "; ".join(
+            f"{c['ip']} ({c['score']}/100{', hop ' + str(c['hop']) if c['hop'] else ''})" for c in a["alternatives"]))
 
-    if view == "Why this IP":
+    if a["route"]:
+        st.markdown("###### Reconstructed mail route")
+        st.caption("Oldest hop first: " + "  →  ".join(
+            f"{h['n']}: {h['from_ip'] or 'internal'}{' ⚑' if h['flags'] else ''}" for h in a["route"]))
+        _render_polished_table(pd.DataFrame([{
+            "Hop": h["n"],
+            "From (HELO / rDNS)": h["helo"] or h["rdns"] or "-",
+            "IP": h["from_ip"] or "-",
+            "Received by": h["by"] or "-",
+            "Time": h["ts_text"] or "-",
+            "Delta": (f"{int(h['delta_s'])}s" if h["delta_s"] is not None else "-"),
+            "Country": h["country"] or "-",
+            "Network": (f"{h['asn']} " if h["asn"] else "") + (h["network"] or h["as_org"] or "-"),
+            "Flags": ", ".join(h["flags"]) or "-",
+        } for h in a["route"]]), tone="#22d3ee")
+
+    st.markdown("###### Route consistency")
+    if a["flags"]:
         _render_polished_table(pd.DataFrame([
-            {"Effect": e["effect"], "Indicator": e["indicator"], "Detail": e["detail"]} for e in a["evidence"]
-        ]), empty_text="No supporting indicators.", tone="#22d3ee")
-        if a["alternatives"]:
-            st.caption("Other candidates considered: " + "; ".join(
-                f"{c['ip']} ({c['score']}/100)" for c in a["alternatives"]))
+            {"Severity": f["severity"], "Finding": f["title"], "Evidence": f["evidence"]} for f in a["flags"]
+        ]), tone="#e0708c")
+    else:
+        st.caption("No routing inconsistencies detected in the parsed Received chain.")
 
-    elif view == "Route":
-        if a["route"]:
-            st.caption("Oldest hop first: " + "  →  ".join(
-                f"{h['n']}: {h['from_ip'] or 'internal'}{' ⚑' if h['flags'] else ''}" for h in a["route"]))
-            _render_polished_table(pd.DataFrame([{
-                "Hop": h["n"],
-                "Server": h["helo"] or h["rdns"] or "-",
-                "IP": h["from_ip"] or "-",
-                "Received by": h["by"] or "-",
-                "Time": (h["ts_text"] or "-") + (f"  (+{int(h['delta_s'])}s)" if h["delta_s"] is not None else ""),
-                "Where": " · ".join(x for x in (h["country"], ((h["asn"] + " ") if h["asn"] else "") + (h["network"] or h["as_org"] or "")) if x.strip()) or "-",
-                "Flags": ", ".join(h["flags"]) or "-",
-            } for h in a["route"]]), tone="#22d3ee")
-        else:
-            st.caption("No Received headers could be parsed.")
-        if a["flags"]:
-            _render_polished_table(pd.DataFrame([
-                {"Severity": f["severity"], "Finding": f["title"], "Evidence": f["evidence"]} for f in a["flags"]
-            ]), tone="#e0708c")
-        else:
-            st.caption("No routing inconsistencies detected in the parsed Received chain.")
-
-    elif view == "Infrastructure":
-        rows = []
-        for r in b["infra_rows"]:
-            asn_ok = r["ASN"] != "unavailable"
-            net = " · ".join(x for x in (r["ASN"] if asn_ok else "",
-                                         r["AS organization"] if r["AS organization"] != "unavailable" else
-                                         (r["ISP / network"] if r["ISP / network"] != "unavailable" else "")) if x)
-            rows.append({
-                "IP": r["IP"],
-                "Network": net or "unavailable",
-                "Type": r["Infrastructure"] + (" · hosting" if r["Hosting provider"] == "Yes" and "hosting" not in r["Infrastructure"].lower() else ""),
-                "Infra location": r["Infra location"],
-                "Signals": "none" if r["Reputation signals"].startswith("none") else r["Reputation signals"],
-            })
-        _render_polished_table(pd.DataFrame(rows), empty_text="No public IPs to profile.", tone="#22d3ee")
-        _asn_miss = [r["IP"] for r in b["infra_rows"] if r["ASN"] == "unavailable"]
-        if _asn_miss:
-            st.caption(origin_intel.asn_diagnostic(_asn_miss, b.get("geo_sources")))
-
-    elif view == "History":
-        hist = [{"IP": ip, "Logged sightings": v[0], "Highest score": round(v[1])}
-                for ip, v in b["history"].items() if v[0]]
-        if hist:
-            _render_polished_table(pd.DataFrame(hist), tone="#c084fc")
-        if b["session_rows"]:
-            _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
-        if not hist and not b["session_rows"]:
-            st.caption("No earlier sightings: none of these IPs are in the threat-memory database, and no other "
-                       "email analysed this session shares them.")
-        else:
-            st.caption("Sightings for the loaded email exclude its own log entry; for other emails the count may "
-                       "include their own earlier log entry.")
-
-    else:  # Notes
+    st.markdown("###### Infrastructure & history")
+    _render_polished_table(pd.DataFrame(b["infra_rows"]), empty_text="No public IPs to profile.", tone="#22d3ee")
+    if b["session_rows"]:
+        _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
+    else:
+        st.caption("No other email analysed this session shares these IPs.")
+    _asn_miss = [r["IP"] for r in b["infra_rows"] if r["ASN"] == "unavailable"]
+    if _asn_miss:
+        st.caption(origin_intel.asn_diagnostic(_asn_miss, b.get("geo_sources")))
+    st.caption("ASN and ISP come from the geolocation lookup (live, bundled cache, or local GeoLite2 files in `data/`); "
+               "'unavailable' means none of those had it. No external reputation feed is queried. "
+               "Threat-memory counts for the loaded email exclude its own log entry.")
+    with st.expander("Limitations of this assessment"):
         for lim in a["limitations"]:
             st.markdown("- " + lim)
         if not b["raw_used"]:
             st.markdown("- Raw headers for this email were not available here, so independent header corroboration "
                         "was not used.")
-        st.markdown("- Sources: this email's headers, the geolocation lookup (live, bundled cache or local GeoLite2), "
-                    "published Tor exit lists, the threat-memory database and emails analysed this session. "
-                    "No external reputation feed is queried.")
 
 
 _MAP_CSS = """<style>
