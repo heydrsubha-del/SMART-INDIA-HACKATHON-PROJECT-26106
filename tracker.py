@@ -288,10 +288,14 @@ def remember_indicator(
 
     Public URLhaus feed entries go to the shared database; everything
     derived from a visitor's own emails goes to that visitor's private one.
+
+    Returns True only when this call actually wrote an observation (insert or +1), False when
+    it was skipped (empty value, or already handled in this process). Callers that need to know
+    which observations belong to the current email (Retro-Hunt self-exclusion) rely on this.
     """
 
     if not indicator:
-        return
+        return False
 
     indicator = str(indicator).strip().lower()
     reputation = float(reputation)
@@ -307,7 +311,7 @@ def remember_indicator(
             _INDICATOR_CACHE[cache_key],
             reputation
         )
-        return
+        return False        # already handled in this process: no new observation was written
 
     _trim_caches()
     _INDICATOR_CACHE[cache_key] = reputation
@@ -370,6 +374,7 @@ def remember_indicator(
 
     _LOOKUP_CACHE.pop((_db_path(False), indicator, indicator_type), None)
     _LOOKUP_CACHE.pop((_db_path(False), indicator, None), None)
+    return True             # one observation was written (insert or +1)
 
 
 def _query_indicator(conn, indicator, indicator_type):

@@ -50,6 +50,11 @@ def analyze_email(raw, name="uploaded", pipe=None):
     # Local threat-intelligence memory
     # ------------------------------------------------------------------
     memory_url_risk = float(iocs.get("url_score", 0.0) or 0.0)
+    recorded = []   # (type, value) observations THIS analysis actually wrote to threat memory
+
+    def _record(indicator, kind, reputation, category, source):
+        if remember_indicator(indicator, kind, reputation, category, source):
+            recorded.append((kind, str(indicator).strip().lower()))
 
     # Remember URLs and reuse previous URL reputation.
     try:
@@ -66,13 +71,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
                 continue
 
             # Save this URL in local memory.
-            remember_indicator(
-                indicator,
-                "url",
-                current_risk,
-                "observed",
-                "local_analysis"
-            )
+            _record(indicator, "url", current_risk, "observed", "local_analysis")
 
             # Check whether this URL was previously seen.
             previous = lookup_indicator(indicator, "url")
@@ -101,25 +100,13 @@ def analyze_email(raw, name="uploaded", pipe=None):
             indicator = str(ip).strip()
 
             if indicator:
-                remember_indicator(
-                    indicator,
-                    "ip",
-                    0.5,
-                    "observed",
-                    "local_analysis"
-                )
+                _record(indicator, "ip", 0.5, "observed", "local_analysis")
 
         for domain in iocs.get("domains", []):
             indicator = str(domain).strip()
 
             if indicator:
-                remember_indicator(
-                    indicator,
-                    "domain",
-                    0.5,
-                    "observed",
-                    "local_analysis"
-                )
+                _record(indicator, "domain", 0.5, "observed", "local_analysis")
 
     except Exception:
         # Threat memory must never break email analysis.
@@ -167,6 +154,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
         "iocs": iocs,
         "geo": geo,
         "origin_intel": origin_assessment,
+        "recorded_indicators": recorded,
         "score": verdict["score"],
         "level": verdict["level"],
         "color": verdict["color"],
