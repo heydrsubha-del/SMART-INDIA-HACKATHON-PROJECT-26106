@@ -17,6 +17,57 @@ import config as C
 
 SEV_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 
+try:                                    # reuse the app's registrable-domain helper
+    from domain_intel import registrable as _registrable
+except Exception:                       # keep this module usable on its own
+    def _registrable(domain):
+        parts = (domain or "").split(".")
+        return ".".join(parts[-2:]) if len(parts) > 2 else domain
+
+
+def org_domain(domain):
+    """Organisational (registrable) domain: 'scoutcamp.bounces.google.com' -> 'google.com'.
+    Hosts under a shared-hosting parent (github.io, blogspot.com, ...) are different
+    organisations, so for those the tenant label is kept: 'a.github.io'."""
+    d = (domain or "").strip().lower().rstrip(".")
+    if not d:
+        return ""
+    for suffix in getattr(C, "SHARED_HOSTING_SUFFIXES", ()):
+        if d == suffix or d.endswith("." + suffix):
+            return ".".join(d.split(".")[-(len(suffix.split(".")) + 1):])
+    return _registrable(d)
+
+
+def same_org(a, b):
+    return bool(a and b and org_domain(a) == org_domain(b))
+
+
+def _domains_after(auth_text, key):
+    """Domains named by `key=` in the auth header (smtp.mailfrom=, header.d=, header.i=)."""
+    out = []
+    for value in re.findall(r"\b{}\s*=\s*\"?([^\s;()\"<>]+)".format(re.escape(key)), auth_text or "", re.I):
+        dom = value.rsplit("@", 1)[-1].strip().lower().rstrip(".")
+        if dom and dom not in out:
+            out.append(dom)
+    return out
+
+
+def alignment_evidence(parsed, spf, dkim, dmarc):
+    """What the receiving server's own verdicts prove about From / envelope alignment.
+    Nothing here is assumed from a shared parent domain: SPF counts as aligned only on an
+    SPF pass whose envelope domain is in From's organisation, DKIM only on a DKIM pass signed
+    by a domain in From's organisation."""
+    auth = parsed.get("auth_results", "") or ""
+    from_d = parsed.get("from_domain", "") or ""
+    mailfrom = _domains_after(auth, "smtp.mailfrom") or ([parsed.get("return_path_domain")] if parsed.get("return_path_domain") else [])
+    signers = _domains_after(auth, "header.d") + _domains_after(auth, "header.i")
+    return {
+        "dmarc_pass": dmarc == "pass",
+        "spf_aligned": spf == "pass" and any(same_org(from_d, m) for m in mailfrom),
+        "dkim_aligned": dkim == "pass" and any(same_org(from_d, s) for s in signers),
+        "mailfrom": mailfrom, "signers": signers,
+    }
+
 
 def _verdict(auth_text, mechanism):
     """Pull 'spf=pass' / 'dkim=fail' style results out of the auth header."""
@@ -73,15 +124,48 @@ def analyze(parsed):
             flag("low", "{} result absent".format(mech),
                  "No {} verdict was stamped on this message.".format(mech))
 
+    ev = alignment_evidence(parsed, spf, dkim, dmarc)
+    results = "SPF {}, DKIM {}, DMARC {}".format(spf, dkim, dmarc)
+
     if from_domain and return_domain and from_domain != return_domain:
-        flag("high", "Envelope / header sender mismatch",
-             "From is @{} but the envelope Return-Path is @{}. Legitimate bulk "
-             "senders usually align these.".format(from_domain, return_domain))
+        if same_org(from_domain, return_domain):
+            org = org_domain(from_domain)
+            if ev["dmarc_pass"] and ev["spf_aligned"]:
+                flag("info", "Envelope sender on a related subdomain (authenticated)",
+                     "From is @{} and the envelope Return-Path is @{}: different hosts of the same "
+                     "organisational domain ({}). The receiving server reported SPF pass for the envelope "
+                     "domain and DMARC pass for From, so the relationship is verified by authentication, "
+                     "not assumed from the shared parent. Routine for mail sent through a provider's bounce "
+                     "domain.".format(from_domain, return_domain, org))
+            else:
+                flag("low", "Envelope sender on a related subdomain (not proven)",
+                     "From is @{} and the envelope Return-Path is @{}: the same organisational domain ({}), "
+                     "but the authentication results ({}) do not prove the two are aligned. A shared parent "
+                     "alone is not trusted.".format(from_domain, return_domain, org, results))
+        elif ev["dmarc_pass"] and ev["dkim_aligned"]:
+            flag("low", "Envelope sender on a third-party domain (DKIM-aligned)",
+                 "From is @{} but the envelope Return-Path is @{}, a different organisation. DMARC passed "
+                 "through a DKIM signature by the From organisation, which authenticates the From domain. "
+                 "Typical of third-party mail services; confirm the provider is expected.".format(
+                     from_domain, return_domain))
+        else:
+            flag("high", "Envelope / header sender mismatch",
+                 "From is @{} but the envelope Return-Path is @{}. Legitimate bulk "
+                 "senders usually align these.".format(from_domain, return_domain))
 
     if reply_domain and from_domain and reply_domain != from_domain:
-        flag("high", "Reply-To redirects elsewhere",
-             "Replies would go to @{} instead of @{} - a classic way to "
-             "capture a victim's response.".format(reply_domain, from_domain))
+        if same_org(from_domain, reply_domain):
+            sev = "info" if ev["dmarc_pass"] else "low"
+            flag(sev, "Reply-To on a related subdomain",
+                 "Replies go to @{} instead of @{}: the same organisational domain ({}). {} Reply-To itself "
+                 "is not authenticated by SPF or DKIM.".format(
+                     reply_domain, from_domain, org_domain(from_domain),
+                     "DMARC passed for the From domain." if ev["dmarc_pass"]
+                     else "The From domain was not confirmed by DMARC ({}).".format(results)))
+        else:
+            flag("high", "Reply-To redirects elsewhere",
+                 "Replies would go to @{} instead of @{} - a classic way to "
+                 "capture a victim's response.".format(reply_domain, from_domain))
 
     # Display name claims a brand the sending domain does not belong to.
     display_low = display.lower()

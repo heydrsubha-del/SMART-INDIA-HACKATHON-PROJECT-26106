@@ -55,6 +55,17 @@ HOMOGLYPHS = [
     ("|", "l"), ("!", "i"), ("$", "s"),
 ]
 
+# Shared-hosting / multi-tenant parents. Two hosts under one of these are NOT the same
+# organisation (a.github.io and b.github.io belong to different people), so a shared parent
+# here is never treated as organisational alignment by header_analysis.
+SHARED_HOSTING_SUFFIXES = {
+    "github.io", "gitlab.io", "blogspot.com", "herokuapp.com", "azurewebsites.net", "cloudfront.net",
+    "appspot.com", "web.app", "firebaseapp.com", "netlify.app", "vercel.app", "pages.dev", "workers.dev",
+    "wordpress.com", "weebly.com", "wixsite.com", "myshopify.com", "amazonaws.com", "sharepoint.com",
+    "onmicrosoft.com", "googleusercontent.com", "fly.dev", "onrender.com", "ngrok.io", "duckdns.org",
+    "no-ip.org", "ddns.net", "000webhostapp.com", "business.site", "sites.google.com",
+}
+
 # Free mail providers (a "CEO" writing from one of these is a BEC red flag).
 FREEMAIL_DOMAINS = [
     "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com",
