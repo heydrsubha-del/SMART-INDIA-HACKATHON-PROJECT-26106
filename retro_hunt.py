@@ -95,29 +95,49 @@ def _case_artifacts(case):
     return doms, ips
 
 
+def _case_key(case):
+    return str(case.get("_evidence_hash") or case.get("name") or id(case))
+
+
+def _specificity(match, indicator):
+    return (1 if match == "exact" else 0, len(indicator))
+
+
 def hunt_cases(indicators, cases, current_name=None, current_hash=None):
-    """Other emails analysed this session that contain any of the indicators."""
-    rows = []
+    """Other emails analysed this session that contain any of the indicators.
+
+    One row per (email, matched artifact): an artifact reachable through several
+    hunted indicators (exact host AND its registrable parent) or several fields
+    (origin IP that is also a relay hop) is ONE sighting, reported with all the
+    fields it appeared in and the most specific indicator that matched."""
+    found = {}          # (case_key, type, artifact) -> info
+    done = set()        # an email supplied twice is hunted once
     for case in cases or []:
         if not isinstance(case, dict) or "error" in case:
             continue
-        if case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
+        ck = _case_key(case)
+        if ck in done or case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
             continue
+        done.add(ck)
         doms, ips = _case_artifacts(case)
-        seen = set()
         for typ, val in indicators:
-            if typ == "domain":
-                for host, field in doms:
-                    m = _host_matches(host, val)
-                    if m and (val, field, m) not in seen:
-                        seen.add((val, field, m))
-                        rows.append(_case_row(case, val, "domain", field, m, host))
-            else:
-                for ip, field in ips:
-                    if _norm(ip) == val and (val, field) not in seen:
-                        seen.add((val, field))
-                        rows.append(_case_row(case, val, "ip", field, "exact", ip))
-    rows.sort(key=lambda r: -float(r["Score"] or 0))
+            pool = doms if typ == "domain" else ips
+            for artifact, field in pool:
+                m = _host_matches(artifact, val) if typ == "domain" else ("exact" if _norm(artifact) == val else None)
+                if not m:
+                    continue
+                key = (ck, typ, _norm(artifact))
+                cur = found.get(key)
+                if cur is None:
+                    found[key] = {"case": case, "indicator": val, "match": m, "fields": [field], "artifact": _norm(artifact)}
+                else:
+                    if field not in cur["fields"]:
+                        cur["fields"].append(field)
+                    if _specificity(m, val) > _specificity(cur["match"], cur["indicator"]):
+                        cur["indicator"], cur["match"] = val, m
+    rows = [_case_row(i["case"], i["indicator"], "domain" if _norm(i["artifact"]) and not _is_ip(i["artifact"]) else "ip",
+                      ", ".join(i["fields"]), i["match"], i["artifact"]) for i in found.values()]
+    rows.sort(key=lambda r: (-float(r["Score"] or 0), r["Where"], r["Indicator"]))
     return rows[:MAX_ROWS]
 
 
@@ -129,10 +149,18 @@ def _case_row(case, indicator, typ, field, match, found):
             "Verdict": str(case.get("level", "-")).upper(), "Score": round(float(case.get("score", 0) or 0), 1)}
 
 
-def hunt_memory(indicators, conns, self_logged_ip=None):
+def hunt_memory(indicators, conns, self_logged_ip=None, self_indicators=()):
     """Threat-memory hits. `conns` = iterable of open sqlite3 connections (private DB,
     plus the shared feed DB when the app runs multi-user). Read-only; failures on one
-    connection are skipped, never raised."""
+    connection are skipped, never raised.
+
+    self_indicators: {(type, stored_value)} that THIS email's own analysis recorded in
+    threat_intel (analyzer.py stores its domains, body IPs and URLs). Each such row
+    carries one observation that belongs to this email, so only observations - 1 are
+    earlier sightings, and a row with none left is not reported.
+    Identical stored records reached by several hunted indicators, or present in both
+    databases, are reported once; records that differ in dates/counts/source stay separate."""
+    selfset = {(t, _norm(v)) for t, v in (self_indicators or ())}
     rows = []
     for conn in conns or []:
         try:
@@ -143,7 +171,7 @@ def hunt_memory(indicators, conns, self_logged_ip=None):
                     c.execute("SELECT indicator, reputation, category, first_seen, last_seen, observations, source FROM threat_intel "
                               "WHERE indicator_type='domain' AND (indicator=? OR indicator LIKE ? ESCAPE '\\') LIMIT 25", (val, like))
                     for ind, rep, cat, fs, ls, obs, src in c.fetchall():
-                        rows.append(_mem_row(ind, "domain", _host_matches(ind, val) or "exact", rep, cat, fs, ls, obs, src))
+                        rows.append(_mem_row(ind, "domain", _host_matches(ind, val) or "exact", rep, cat, fs, ls, obs, src, selfset))
                     c.execute("SELECT indicator, reputation, category, first_seen, last_seen, observations, source FROM threat_intel "
                               "WHERE indicator_type='url' AND instr(indicator, ?) > 0 LIMIT 200", (val,))
                     for ind, rep, cat, fs, ls, obs, src in c.fetchall():
@@ -153,12 +181,12 @@ def hunt_memory(indicators, conns, self_logged_ip=None):
                             host = None
                         m = _host_matches(host or "", val)
                         if m:
-                            rows.append(_mem_row(ind[:90], "url", m, rep, cat, fs, ls, obs, src))
+                            rows.append(_mem_row(ind, "url", m, rep, cat, fs, ls, obs, src, selfset))
                 else:
                     c.execute("SELECT indicator, reputation, category, first_seen, last_seen, observations, source FROM threat_intel "
                               "WHERE indicator_type='ip' AND indicator=? LIMIT 5", (val,))
                     for ind, rep, cat, fs, ls, obs, src in c.fetchall():
-                        rows.append(_mem_row(ind, "ip", "exact", rep, cat, fs, ls, obs, src))
+                        rows.append(_mem_row(ind, "ip", "exact", rep, cat, fs, ls, obs, src, selfset))
                     c.execute("SELECT count(*), min(date), max(date), max(score), group_concat(DISTINCT verdict) FROM attackers WHERE ip=?", (val,))
                     n, d0, d1, top, verdicts = c.fetchone() or (0, None, None, None, None)
                     if n:
@@ -169,32 +197,58 @@ def hunt_memory(indicators, conns, self_logged_ip=None):
                                          "Times": n_prior, "Verdict": "-", "Score": round(float(top or 0), 1)})
         except Exception:
             continue
-    return rows[:MAX_ROWS]
+    return _dedupe_memory([r for r in rows if r])[:MAX_ROWS]
 
 
-def _mem_row(ind, typ, match, rep, cat, fs, ls, obs, src):
+def _dedupe_memory(rows):
+    best = {}
+    for r in rows:
+        key = (r["Source"], r["Type"], r["Indicator"], r["First seen"], r["Last seen"], r["Times"], r["Where"], r["Score"])
+        if key not in best or (r["Match"] == "exact" and best[key]["Match"] != "exact"):
+            best[key] = r
+    out = list(best.values())
+    for r in out:   # long URLs are shortened only for display, after identity is settled
+        if r["Type"] == "url" and len(r["Indicator"]) > 90:
+            r["Indicator"] = r["Indicator"][:90]
+    return out
+
+
+def _mem_row(ind, typ, match, rep, cat, fs, ls, obs, src, selfset=frozenset()):
+    if (typ, _norm(ind)) in selfset:
+        obs = max(int(obs or 0) - 1, 0)
+        if obs == 0:
+            return None
     return {"Source": "Threat memory", "Indicator": ind, "Type": typ, "Match": match,
             "Where": f"{cat or 'unknown'} via {src or '?'} (reputation {float(rep or 0):.2f})",
             "First seen": fs or "-", "Last seen": ls or "-", "Times": int(obs or 0), "Verdict": "-", "Score": "-"}
 
 
-def hunt(indicators, cases, conns, current_name=None, current_hash=None, self_logged_ip=None):
+def hunt(indicators, cases, conns, current_name=None, current_hash=None, self_logged_ip=None, self_indicators=()):
     """All hits: earlier emails first, then threat memory. Never raises."""
     try:
-        rows = hunt_cases(indicators, cases, current_name, current_hash) + hunt_memory(indicators, conns, self_logged_ip)
+        rows = hunt_cases(indicators, cases, current_name, current_hash) + hunt_memory(indicators, conns, self_logged_ip, self_indicators)
     except Exception:
         rows = []
     return rows[:MAX_ROWS]
 
 
-def summary(rows, n_indicators):
-    if not rows:
-        return (f"Hunted {n_indicators} indicator(s) through earlier emails and threat memory: no earlier sighting found. "
-                "That only means this app has not recorded them before.")
+def counts(rows):
+    """The three history buckets, derived from the rows themselves (never separately)."""
+    rows = rows or []
     emails = {r["Where"].split(" (")[0] for r in rows if r["Source"] == "Earlier email"}
-    mem = sum(1 for r in rows if r["Source"] != "Earlier email")
-    return (f"{len(rows)} earlier sighting(s) of {n_indicators} hunted indicator(s): {len(emails)} other email(s) this session and "
-            f"{mem} threat-memory record(s). A sighting means 'seen before', not 'malicious'.")
+    return {"emails": len(emails), "email_rows": sum(1 for r in rows if r["Source"] == "Earlier email"),
+            "intel": sum(1 for r in rows if r["Source"] == "Threat memory"),
+            "log": sum(1 for r in rows if r["Source"] == "Scored-email log")}
+
+
+def summary(rows, n_indicators):
+    c = counts(rows)
+    base = (f"Hunted {n_indicators} indicator(s). Earlier emails this session: {c['emails']} email(s) "
+            f"({c['email_rows']} matching artifact(s)). Threat-memory indicator records: {c['intel']}. "
+            f"Scored-email log entries: {c['log']}.")
+    if not rows:
+        return base + " No earlier sighting was found; that only means this app has not recorded these indicators before."
+    return base + " A sighting means 'seen before', not 'malicious'."
 
 
 def to_markdown(rows, n_indicators=0):

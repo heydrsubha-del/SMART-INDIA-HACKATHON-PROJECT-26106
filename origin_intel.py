@@ -25,7 +25,7 @@ from email.utils import parsedate_to_datetime
 # ---------------------------------------------------------------------------
 # Constants (all tunables live here, visible and documented)
 # ---------------------------------------------------------------------------
-PANEL_VERSION = "tabbed-views-2"  # bump on UI-affecting changes; part of the app's cache key
+PANEL_VERSION = "tabbed-views-3"  # bump on UI-affecting changes; part of the app's cache key
 CONFIDENCE_CAP = 90          # headers can be forged -> never claim certainty
 BAND_HIGH = 70
 BAND_MEDIUM = 45
@@ -489,7 +489,7 @@ def infrastructure_profile(ips, geo, history=None):
             signals.append("Hosting / datacenter range")
         prior, top = (history or {}).get(ip, (0, 0))
         if prior:
-            signals.append(f"Seen {prior} time(s) before in threat memory (max score {top:.0f})")
+            signals.append(f"In the scored-email log {prior} time(s) before (max score {top:.0f})")
         rows.append({
             "IP": ip,
             "ASN": asn or "unavailable",
@@ -533,10 +533,14 @@ def correlate_history(ips, current_name, current_hash, cases, history_fn=None, s
                 history[ip] = (c, m)
             except Exception:
                 history[ip] = (0, 0)
-    rows = []
+    rows, done = [], set()
     for case in cases or []:
         if case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
             continue
+        ck = str(case.get("_evidence_hash") or case.get("name") or id(case))
+        if ck in done:      # the same email supplied twice is one sighting
+            continue
+        done.add(ck)
         shared = sorted(set(ips) & _case_ips(case))
         if not shared:
             continue
@@ -604,8 +608,9 @@ def to_markdown(a, infra_rows=None, session_rows=None, history=None):
                      f"{_cell(r['Infrastructure'])} | {_cell(r['Reputation signals'])} |")
     L.append("\n### Historical correlation")
     prior = [(ip, v) for ip, v in (history or {}).items() if v[0]]
-    L.append("\n".join(f"- `{ip}` seen {v[0]} time(s) previously in threat memory (max score {v[1]:.0f})." for ip, v in prior)
-             or "- No previous sightings of these IPs in threat memory.")
+    L.append("\n".join(f"- `{ip}` appears {v[0]} time(s) in the scored-email log from earlier analyses (max score {v[1]:.0f})." for ip, v in prior)
+             or "- None of these IPs appear in the scored-email log from earlier analyses. (Indicator records and other "
+                "emails are covered by the Retro-Hunt section.)")
     if session_rows:
         L.append("\n| Shared IP | Email | From | Verdict | Score | Domains | URLs |\n|---|---|---|---|---|---|---|")
         for r in session_rows:
