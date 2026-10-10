@@ -25,7 +25,8 @@ import risk
 
 from classifier import load_or_train, predict
 from email_parser import parse_eml
-from tracker import remember_indicator, lookup_indicator
+from tracker import (remember_indicator, lookup_indicator, stored_reputation,
+                     refresh_stale_url_scores)
 
 try:                                    # optional: offline origin-confidence engine
     import origin_intel
@@ -52,9 +53,16 @@ def analyze_email(raw, name="uploaded", pipe=None):
     memory_url_risk = float(iocs.get("url_score", 0.0) or 0.0)
     recorded = []   # (type, value) observations THIS analysis actually wrote to threat memory
 
-    def _record(indicator, kind, reputation, category, source):
-        if remember_indicator(indicator, kind, reputation, category, source):
+    def _record(indicator, kind, reputation, category, source, score_version=None):
+        if remember_indicator(indicator, kind, reputation, category, source, score_version):
             recorded.append((kind, str(indicator).strip().lower()))
+
+    # Locally cached URL scores from an older version of the URL heuristics are recomputed once, so an
+    # obsolete result (e.g. a false positive since fixed) is not reused as evidence.
+    try:
+        refresh_stale_url_scores(lambda u: ioc_extract._judge_url(u)["risk"], ioc_extract.URL_SCORE_VERSION)
+    except Exception:
+        pass
 
     # Remember URLs and reuse previous URL reputation.
     try:
@@ -71,22 +79,26 @@ def analyze_email(raw, name="uploaded", pipe=None):
                 continue
 
             # Save this URL in local memory.
-            _record(indicator, "url", current_risk, "observed", "local_analysis")
+            _record(indicator, "url", current_risk, "observed", "local_analysis",
+                    ioc_extract.URL_SCORE_VERSION)
 
             # Check whether this URL was previously seen.
             previous = lookup_indicator(indicator, "url")
 
             if previous:
-                previous_reputation = float(
-                    previous[3] or 0.0
+                # Obsolete local heuristic scores (older score_version) are ignored; feed
+                # intelligence and current-version scores are kept.
+                previous_reputation = stored_reputation(
+                    previous, ioc_extract.URL_SCORE_VERSION
                 )
 
                 # Previous evidence can increase risk,
                 # but never reduce current evidence.
-                memory_url_risk = max(
-                    memory_url_risk,
-                    previous_reputation
-                )
+                if previous_reputation is not None:
+                    memory_url_risk = max(
+                        memory_url_risk,
+                        previous_reputation
+                    )
 
     except Exception:
         # Threat memory must never break email analysis.
