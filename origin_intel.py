@@ -16,6 +16,7 @@ Design rules (match the rest of the app):
 from __future__ import annotations
 
 import ipaddress
+import os
 import re
 from datetime import timezone
 from email.parser import BytesHeaderParser, HeaderParser
@@ -405,6 +406,37 @@ def _split_asn(text):
     """'AS32934 Facebook, Inc.' -> ('AS32934', 'Facebook, Inc.'); '' -> (None, None)."""
     m = re.match(r"\s*(AS\d+)\s*(.*)$", str(text or ""), re.I)
     return (m.group(1).upper(), m.group(2).strip() or None) if m else (None, None)
+
+
+def geodb_status():
+    """Where geolocate.py looks for the local GeoLite2 files, and whether they
+    (and the maxminddb package) are actually present on this machine."""
+    try:
+        import geolocate as _g
+        d = _g._DATA_DIR
+    except Exception:
+        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    try:
+        import maxminddb  # noqa: F401
+        lib = True
+    except Exception:
+        lib = False
+    return {"dir": d, "maxminddb": lib,
+            "asn_db": os.path.exists(os.path.join(d, "GeoLite2-ASN.mmdb")),
+            "city_db": os.path.exists(os.path.join(d, "GeoLite2-City.mmdb"))}
+
+
+def asn_diagnostic(ips, sources=None):
+    """One honest sentence explaining why ASN data is missing for `ips`."""
+    st_ = geodb_status()
+    src = sorted({str((sources or {}).get(ip) or "unknown") for ip in ips})
+    out = [f"ASN unavailable for {', '.join(ips)} (lookup source: {', '.join(src)}).",
+           f"GeoLite2-ASN.mmdb: {'found' if st_['asn_db'] else 'NOT found'} in {st_['dir']}.",
+           f"maxminddb package: {'installed' if st_['maxminddb'] else 'NOT installed'}."]
+    if st_["asn_db"] and st_["maxminddb"]:
+        out.append("Both are present, so the database simply has no entry for this IP, "
+                   "or this record was cached before the fix (reboot the app).")
+    return " ".join(out)
 
 
 def infrastructure_profile(ips, geo, history=None):

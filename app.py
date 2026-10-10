@@ -9541,6 +9541,7 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
         "assessment": a, "history": history, "session_rows": session_rows,
         "infra_rows": origin_intel.infrastructure_profile(ips, geo, history),
         "raw_used": bool(raw_bytes),
+        "geo_sources": {h.get("ip"): h.get("source") for h in (geo.get("hops") or []) if h.get("ip")},
     }
     if len(cache) > 50:
         cache.clear()
@@ -9615,6 +9616,9 @@ def _render_origin_intel(b):
         _render_polished_table(pd.DataFrame(b["session_rows"]), tone="#c084fc")
     else:
         st.caption("No other email analysed this session shares these IPs.")
+    _asn_miss = [r["IP"] for r in b["infra_rows"] if r["ASN"] == "unavailable"]
+    if _asn_miss:
+        st.caption(origin_intel.asn_diagnostic(_asn_miss, b.get("geo_sources")))
     st.caption("ASN and ISP come from the geolocation lookup (live, bundled cache, or local GeoLite2 files in `data/`); "
                "'unavailable' means none of those had it. No external reputation feed is queried. "
                "Threat-memory counts for the loaded email exclude its own log entry.")
