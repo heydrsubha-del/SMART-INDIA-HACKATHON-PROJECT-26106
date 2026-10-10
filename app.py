@@ -16,6 +16,7 @@ import time
 import threading
 import html
 import re
+import copy as _copy
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -9363,13 +9364,39 @@ AUTH_COLOR = {"pass": "#2e7d32", "fail": "#b71c1c", "softfail": "#e65100", "none
 def get_model(model_version=0):
     return load_or_train()
 
+# st.cache_data only hashes a function's own arguments and body, NOT the modules it calls. After
+# header_analysis.py / risk.py / ... were fixed, cached results computed by the OLD code kept being
+# served (e.g. a stale HIGH sender-mismatch), so reports showed findings the current code no longer
+# produces. The version below changes whenever an analysis module changes and is part of the cache key.
+_ANALYSIS_MODULES = ("analyzer.py", "header_analysis.py", "email_parser.py", "config.py", "risk.py",
+                     "ioc_extract.py", "geolocate.py", "origin_intel.py", "domain_intel.py",
+                     "network_trust.py", "tor_check.py", "classifier.py", "tracker.py")
+
+def _analysis_code_version():
+    _stamp = []
+    for _m in _ANALYSIS_MODULES:
+        try:
+            _st = os.stat(os.path.join(os.path.dirname(os.path.abspath(__file__)), _m))
+            _stamp.append(f"{_m}:{_st.st_mtime_ns}:{_st.st_size}")
+        except OSError:
+            _stamp.append(f"{_m}:-")
+    return hashlib.sha256("|".join(_stamp).encode()).hexdigest()[:16]
+
 @st.cache_data(show_spinner="Analysing shipped samples...")
-def get_sample_results():
+def _get_sample_results_cached(code_version):
     return analyze_all_samples(get_model())
 
+def get_sample_results():
+    return _get_sample_results_cached(_analysis_code_version())
+get_sample_results.clear = _get_sample_results_cached.clear
+
 @st.cache_data(show_spinner="Analysing message...")
-def analyze_bytes(raw_bytes, name, analysis_nonce=0):
+def _analyze_bytes_cached(raw_bytes, name, analysis_nonce, code_version):
     return analyze_email(raw_bytes, name, get_model())
+
+def analyze_bytes(raw_bytes, name, analysis_nonce=0):
+    return _analyze_bytes_cached(raw_bytes, name, analysis_nonce, _analysis_code_version())
+analyze_bytes.clear = _analyze_bytes_cached.clear
 
 def panel(fn, label):
     try:
@@ -9535,7 +9562,9 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
     cache = st.session_state.setdefault("_origin_intel_cache", {})
     if key in cache:
         return cache[key]
-    a = origin_intel.assess_origin(parsed, geo, raw=raw_bytes)
+    # Prefer the assessment analyze_email stored (computed once with raw headers) so the panel and the
+    # AI assessment quote the same origin confidence.
+    a = _copy.deepcopy(case.get("origin_intel")) if isinstance(case.get("origin_intel"), dict) and case.get("origin_intel", {}).get("selected_ip") is not None else origin_intel.assess_origin(parsed, geo, raw=raw_bytes)
     ips = origin_intel.route_ips(a)
     try:
         history, session_rows = origin_intel.correlate_history(
@@ -12964,7 +12993,12 @@ if active_panel == "AI Threat Analysis":
                         text=f"Qwen AI analysis: {int(percent)}% · {message}",
                     )
 
-                single_ai_result = analyze_with_ollama(result, timeout=600, progress_callback=_qwen_single_progress)
+                try:
+                    _o = (result.get("geo") or {}).get("origin") or {}
+                    _single_nt = assess_network_trust((result.get("parsed") or {}).get("from_addr", ""), _o.get("ip", ""), _o.get("infra_label", ""), _o.get("country", ""))
+                except Exception:
+                    _single_nt = None
+                single_ai_result = analyze_with_ollama(result, timeout=600, progress_callback=_qwen_single_progress, network_trust=_single_nt)
                 ai_progress.progress(1.0, text="Qwen AI analysis: 100% · Complete")
                 single_reports[current_evidence_hash] = single_ai_result
                 st.session_state["single_ai_reports"] = single_reports
