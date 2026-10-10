@@ -2181,6 +2181,24 @@ st.markdown(
         box-shadow:0 8px 20px rgba(0,0,0,.18) !important;
         padding:12px 16px !important;
     }
+    /* BUG FIX: the rule above targets .stAlert AND stAlertContainer AND
+       stAlert, but current Streamlit nests those elements, so every alert
+       got 2-3 stacked rounded left borders (the curved "buggy lines" before
+       the text). Only the outermost element keeps the card chrome; any
+       alert element nested inside another is reset to a plain wrapper. */
+    .stAlert .stAlert,
+    .stAlert div[data-testid="stAlertContainer"],
+    div[data-testid="stAlert"] .stAlert,
+    div[data-testid="stAlert"] div[data-testid="stAlertContainer"],
+    div[data-testid="stAlertContainer"] div[data-testid="stAlertContainer"],
+    div[data-testid="stAlertContainer"] div[data-testid="stAlert"] {
+        background:transparent !important;
+        border:none !important;
+        border-left-width:0 !important;
+        border-radius:0 !important;
+        box-shadow:none !important;
+        padding:0 !important;
+    }
     .stAlert:has([data-testid="stAlertContentSuccess"]),
     div[data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]),
     div[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) {border-left-color:var(--green) !important;}
