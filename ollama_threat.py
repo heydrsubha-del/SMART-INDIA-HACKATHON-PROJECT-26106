@@ -12,6 +12,11 @@ import requests
 
 from cloud_backend import BackendError, resolve_backend
 
+try:  # offline origin-confidence engine; AI analysis still works without it
+    import origin_intel as _origin_intel
+except Exception:  # pragma: no cover
+    _origin_intel = None
+
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
 OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
@@ -96,6 +101,37 @@ def _vpn_tor_evidence(origin, network_trust=None):
         "tor_exit_confirmation_sources": _cap_list(origin.get("tor_exit_sources", []) or []),
         "network_trust_badge": _safe(nt.get("badge"), "Not evaluated for this run"),
         "network_trust_reasons": nt.get("reasons", []) or [],
+    }
+
+
+def _origin_intel_evidence(result):
+    """Compact origin-confidence block for the prompt (see origin_intel.py).
+    Bounded in size for the small context window; never raises."""
+    if _origin_intel is None:
+        return {"available": False, "reason": "origin_intel module not installed"}
+    try:
+        a = _origin_intel.assess_origin(result.get("parsed", {}) or {}, result.get("geo", {}) or {})
+    except Exception:
+        return {"available": False, "reason": "origin assessment failed"}
+    if not a.get("selected_ip"):
+        return {"available": False, "reason": "no public IP found in the Received headers"}
+    return {
+        "available": True,
+        "likely_origin_ip": a["selected_ip"],
+        "confidence": f"{a['confidence']}/100",
+        "confidence_band": a["band"],
+        "existing_origin_ip": a.get("existing_origin_ip") or "Unknown",
+        "disagreement_note": str(a.get("disagreement_note") or "")[:200],
+        "top_supporting_indicators": [
+            f"{e['indicator']}: {e['detail']}"[:160]
+            for e in a["evidence"] if e.get("effect") != "base"
+        ][:4],
+        "route_hops_parsed": len(a.get("route", [])),
+        "route_flags": [
+            f"{f['severity']}: {f['title']} - {f['evidence']}"[:220] for f in a.get("flags", [])
+        ][:4],
+        "limits": "Infrastructure location only, never the sender's physical location. "
+                  "Received headers can be forged. Independent header corroboration was not checked here.",
     }
 
 
@@ -265,6 +301,8 @@ def build_evidence(result, network_trust=None):
             ),
 
             "vpn_tor_assessment": _vpn_tor_evidence(origin, network_trust),
+
+            "origin_intelligence": _origin_intel_evidence(result),
         }
     }
 
@@ -324,6 +362,11 @@ Explain SPF, DKIM, DMARC, header anomalies, BEC indicators, display-name/reply-t
 
 ORIGIN & INFRASTRUCTURE:
 Summarize the supplied origin IP, country, route/hops, infrastructure classification, and origin risk. Clearly mark unknown fields.
+Then, using ONLY the "origin_intelligence" evidence block: state the likely origin IP with its confidence
+and the strongest supporting indicators, say whether it differs from the existing origin IP, and list any
+route_flags (or say none were found). If "available" is false, say the origin assessment was unavailable
+and why. The location describes network infrastructure only: never state or imply the sender's physical
+location, identity or address, and never present the confidence as certainty.
 
 VPN / TOR / ANONYMIZATION:
 This section is MANDATORY and must never be skipped, even when nothing was
@@ -668,6 +711,14 @@ def _batch_prompt(batch_items):
             vpn_tor["network_trust_reasons"] = _cap_list(
                 vpn_tor["network_trust_reasons"], limit=3
             )
+
+        oi = machine.get("origin_intelligence") or {}
+        machine["origin_intelligence"] = {
+            "available": oi.get("available", False),
+            "likely_origin_ip": oi.get("likely_origin_ip"),
+            "confidence_band": oi.get("confidence_band"),
+            "route_flags": [str(f)[:80] for f in (oi.get("route_flags") or [])[:2]],
+        }
 
         compact.append({
             "position": item.get("position"),
