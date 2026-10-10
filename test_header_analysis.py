@@ -1,4 +1,6 @@
 import unittest
+
+import config as C
 import header_analysis as ha
 from email_parser import parse_eml
 
@@ -22,6 +24,17 @@ def flags(r, word):
 
 
 class Mismatch(unittest.TestCase):
+    # These fixtures model a deployment whose receiving server is mx.corp-example.org.
+    # Without that trust configuration every result is unverified (see test_auth_trust.py).
+    @classmethod
+    def setUpClass(cls):
+        cls._saved = set(C.TRUSTED_AUTHSERV_IDS)
+        C.TRUSTED_AUTHSERV_IDS = {"mx.corp-example.org"}
+
+    @classmethod
+    def tearDownClass(cls):
+        C.TRUSTED_AUTHSERV_IDS = cls._saved
+
     def test_google_aligned_subdomain_is_not_high(self):
         p = mail("noreply@google.com", "bounce@scoutcamp.bounces.google.com", GOOD)
         self.assertEqual((p["from_domain"], p["return_path_domain"]), ("google.com", "scoutcamp.bounces.google.com"))
@@ -57,7 +70,6 @@ class Mismatch(unittest.TestCase):
             r = ha.analyze(mail("noreply@google.com", rp, "spf=pass smtp.mailfrom=" + rp + "; dkim=none; dmarc=fail header.from=google.com"))
             self.assertEqual(flags(r, "sender mismatch")[0]["severity"], "high", rp)
             self.assertFalse(flags(r, "related subdomain"), rp)
-            # even with aligned DKIM it is a third-party relationship, never a "related subdomain"
             r2 = ha.analyze(mail("noreply@google.com", rp, GOOD.replace("scoutcamp.bounces.google.com", dom)))
             self.assertFalse(flags(r2, "related subdomain"), rp)
 
@@ -72,11 +84,11 @@ class Mismatch(unittest.TestCase):
         base = "spf=pass smtp.mailfrom=b@bounces.espmail-example.net; dmarc=pass header.from=brand-example.com; dkim=pass {}"
         low = ha.analyze(mail("news@brand-example.com", "b@bounces.espmail-example.net", base.format("header.d=brand-example.com")))
         self.assertEqual(flags(low, "third-party")[0]["severity"], "low")
-        for dk in ("header.d=espmail-example.net", ""):     # ESP signed it, or alignment not shown -> stays high
+        for dk in ("header.d=espmail-example.net", ""):
             r = ha.analyze(mail("news@brand-example.com", "b@bounces.espmail-example.net", base.format(dk)))
             self.assertEqual(flags(r, "sender mismatch")[0]["severity"], "high", dk)
         r = ha.analyze(mail("news@brand-example.com", "b@bounces.espmail-example.net", "spf=pass; dkim=fail header.d=brand-example.com; dmarc=pass"))
-        self.assertEqual(flags(r, "sender mismatch")[0]["severity"], "high")      # DKIM must PASS to count
+        self.assertEqual(flags(r, "sender mismatch")[0]["severity"], "high")
 
     def test_reply_to(self):
         sub = ha.analyze(mail("a@google.com", "a@google.com", GOOD, reply_to="support@help.google.com"))
@@ -103,6 +115,7 @@ class Mismatch(unittest.TestCase):
         titles = {a["title"] for a in r["anomalies"]}
         for t in ("Display-name brand impersonation", "Executive identity on a free mail account", "No Received chain", "Dangerous attachment type"):
             self.assertIn(t, titles)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -109,3 +109,12 @@ RISK_LEVELS = [
     (30, "Medium", "#f9a825"),
     (0, "Low", "#2e7d32"),
 ]
+
+# --- Authentication trust -----------------------------------------------------
+# authserv-ids (the first token of an Authentication-Results header) of the mail
+# servers YOUR deployment receives mail through, e.g. {"mx.google.com"}. An
+# authentication result is treated as verified only when it was stamped under one of
+# these ids AND sits in the receiving server's own header block. Empty by default:
+# the app cannot know your mail provider, so every result is "unverified" until you
+# configure this (or set ALGORITHMISTIC_TRUSTED_AUTHSERV, comma-separated).
+TRUSTED_AUTHSERV_IDS = set()

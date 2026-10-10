@@ -91,14 +91,23 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     # --- 3. Authentication --------------------------------------------------
     add("## 3. Authentication results")
     add("")
-    add("| Mechanism | Result |")
-    add("| --- | --- |")
+    add("| Mechanism | Result | Evidence provenance | Confidence |")
+    add("| --- | --- | --- | --- |")
+    evid = headers.get("auth_evidence") or {}
     for mech in ("spf", "dkim", "dmarc"):
-        add("| {} | **{}** |".format(mech.upper(), headers.get(mech, "none").upper()))
+        e = evid.get(mech) or {"provenance": "unknown", "confidence": "none"}
+        add("| {} | **{}** | {} | {} |".format(
+            mech.upper(), headers.get(mech, "none").upper(),
+            e["provenance"], e["confidence"]))
     add("")
-    add("> These are the verdicts stamped by the receiving mail server at "
-        "delivery time. They are re-read, not re-computed, because DNS records "
-        "may have changed since delivery.")
+    if any((evid.get(m) or {}).get("provenance") == "verified" for m in ("spf", "dkim", "dmarc")):
+        add("> Rows marked *verified* were stamped by a configured trusted receiving "
+            "server and re-read, not re-computed. Rows marked *unverified* are claims "
+            "found in the headers; they do not prove the message authentic.")
+    else:
+        add("> No authentication result could be verified as coming from a trusted "
+            "receiving server. Any values above are claims found in the message "
+            "headers, which a sender can forge; they neither clear nor condemn the message.")
     add("")
 
     add("### Anomalies detected")
