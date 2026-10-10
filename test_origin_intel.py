@@ -87,7 +87,41 @@ class T(unittest.TestCase):
         self.assertEqual(r2["ISP / network"], "unavailable")
 
     def test_asn_lookup_graceful_without_db(self):
-        self.assertIsNone(oi.make_asn_lookup("/nonexistent/x.mmdb")) if not oi._ASN_READER["tried"] else None
+        self.assertIsNone(oi.make_asn_lookup("/nonexistent/x.mmdb"))
+        self.assertIsNone(oi.make_asn_lookup("/nonexistent/y.mmdb"))
+
+    def test_asn_lookup_with_fake_reader(self):
+        class R:
+            def get(self, ip): return {"autonomous_system_number": 64500, "autonomous_system_organization": "ExampleNet"}
+        oi._ASN_READER.update(reader=R(), path="/fake.mmdb", failed=False)
+        look = oi.make_asn_lookup("/fake.mmdb")
+        rows = oi.infrastructure_profile(["45.33.32.156"], {}, look)
+        self.assertEqual((rows[0]["ASN"], rows[0]["AS organization"]), ("AS64500", "ExampleNet"))
+        a = oi.assess_origin({"received_chain": CLEAN}, GEO, asn_lookup=look)
+        self.assertEqual(a["route"][0]["asn"], 64500)
+        oi._ASN_READER.update(reader=None, path=None, failed=False)
+
+    def test_corroboration_headers_only_and_large_body(self):
+        raw = b"X-Originating-IP: [45.33.32.156]\r\n\r\n" + b"A" * 5_000_000
+        self.assertEqual(oi.header_corroboration(raw), [("45.33.32.156", "X-Originating-IP")])
+        self.assertEqual(oi.header_corroboration(None), [])
+        self.assertEqual(oi.header_corroboration(b"\xff\xfe not a mail"), [])
+
+    def test_ipv6_hop(self):
+        h = oi.parse_received("from mx.example.com (mx.example.com [IPv6:2606:4700:4700::1111]) by r.org with ESMTP; Mon, 5 Oct 2026 10:00:00 +0000")
+        self.assertEqual(h["from_ip"], "2606:4700:4700::1111")
+        self.assertTrue(oi.is_public_ip(h["from_ip"]))
+
+    def test_duplicate_ip_and_missing_timestamps(self):
+        chain = ["from a.example.com (a.example.com [45.33.32.156]) by b.example.com with SMTP",
+                 "from b.example.com (b.example.com [45.33.32.156]) by c.rcpt.org with SMTP"]
+        a = oi.assess_origin({"received_chain": chain}, {})
+        self.assertEqual(a["selected_ip"], "45.33.32.156"); self.assertEqual(len(a["alternatives"]), 0)
+
+    def test_no_input_mutation(self):
+        import copy
+        p = {"received_chain": list(CLEAN), "from_addr": "a@x.com"}; g = copy.deepcopy(GEO); p0 = copy.deepcopy(p)
+        oi.assess_origin(p, g); self.assertEqual((p, g), (p0, GEO))
 
     def test_markdown_pipe_escape_and_sections(self):
         chain = [CLEAN[0].replace("mail-out.sender-example.com [", "a|b.example.com [")]
