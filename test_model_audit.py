@@ -99,3 +99,9 @@ class Retraining(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SanitizeTraining(unittest.TestCase):
+    def test_strips_personal_identifiers_keeps_host(self):
+        out = A.sanitize_for_training("Mail jane.doe@gmail.com see https://accounts.google.com/AccountChooser?Email=jane%40x.com&id=9")
+        self.assertNotIn("jane", out); self.assertNotIn("Email=", out); self.assertIn("https://accounts.google.com/", out)

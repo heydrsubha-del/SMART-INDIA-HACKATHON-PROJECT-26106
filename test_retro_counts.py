@@ -13,7 +13,13 @@ class T(unittest.TestCase):
     def test_current_email_not_counted_and_empty(self):
         case = {"name": "cur", "_evidence_hash": "h", "parsed": {"from_domain": "evil.example"}}
         self.assertEqual(R.hunt_cases([("domain", "evil.example")], [case], "cur", "h"), [])
-        self.assertEqual(R.counts([]), {"emails": 0, "email_rows": 0, "intel": 0, "log": 0})
+        self.assertEqual(R.counts([]), {"emails": 0, "email_rows": 0, "intel": 0, "intel_feed": 0, "log": 0})
 
 if __name__ == "__main__":
     unittest.main()
+
+class FeedSplit(unittest.TestCase):
+    def test_local_sightings_not_counted_as_feed(self):
+        row = lambda src: {"Source": "Threat memory", "Where": f"observed via {src} (reputation 0.30)"}
+        c = R.counts([row("local_analysis"), row("URLhaus")])
+        self.assertEqual((c["intel"], c["intel_feed"]), (2, 1))

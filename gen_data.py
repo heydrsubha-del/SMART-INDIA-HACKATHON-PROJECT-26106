@@ -176,6 +176,21 @@ LEGIT_BRAND = [
     "from your {brand} account whenever it suits you.",
 ]
 
+# Legitimate notifications that carry real, personalised-style URLs (query strings, tracking params), so that
+# "contains a URL" / tokens like "com" do not by themselves signal phishing. Domains are the brands' genuine ones.
+LEGIT_URL = [
+    "{brand}: a new app was granted access to some of your account data on {month} {day}. If you did this, "
+    "no action is needed. Review access at https://{domain}/connections?continue=https%3A%2F%2F{domain}%2Fhome&ref=notif{num}",
+    "{brand} security notice: new sign-in on {month} {day}. If it was you, ignore this email. Otherwise review "
+    "activity at https://{domain}/security/activity?utm_source=email&utm_campaign=alert{num}",
+    "{brand}: your receipt for order #{num} is ready. View it at https://{domain}/orders/{num}?src=email. "
+    "You can manage orders from your account.",
+    "Hi {first}, you were added to a shared folder on {brand}. Open it from https://{domain}/shared/{num} "
+    "or from your account whenever it suits you.",
+]
+LEGIT_DOMAINS = {"paypal": "paypal.com", "microsoft": "microsoft.com", "apple": "apple.com", "amazon": "amazon.com",
+                 "netflix": "netflix.com", "google": "google.com"}
+
 # Phishing without the loud giveaway words - forces the model past keywords.
 PHISH_SOFT = [
     "Hello, I hope you are well. Our records show a small discrepancy in your "
@@ -260,6 +275,17 @@ def _brand_legit_email(rng):
             "legit_brand_{}".format(idx))
 
 
+def _url_legit_email(rng):
+    """Legitimate brand notification containing a genuine-domain URL with query parameters."""
+    idx = rng.randrange(len(LEGIT_URL))
+    brand = rng.choice(PHISH_BRANDS)
+    key = brand.split()[0].lower()
+    body = LEGIT_URL[idx].format(
+        brand=brand, first=rng.choice(LEGIT_FIRST), month=rng.choice(MONTHS), day=rng.randint(1, 28),
+        num=rng.randint(10000, 99999), domain=LEGIT_DOMAINS.get(key, key + ".com"))
+    return (_wrap(rng, body, ["Hello", "Hi", "Dear"]), "legit_url_{}".format(idx))
+
+
 def _legit_email(rng):
     """One synthetic legitimate message."""
     idx = rng.randrange(len(LEGIT_TEMPLATES))
@@ -273,7 +299,7 @@ def generate(n_per_class=300, path=None):
 
     Composition per class (deliberate, see LEGIT_HARD):
       phish : 55% loud credential phishing, 25% BEC, 20% soft/polite phishing
-      legit : 45% ordinary business mail, 40% HARD NEGATIVES, 15% brand-naming service notices
+      legit : 35% ordinary business mail, 35% HARD NEGATIVES, 15% brand-naming service notices, 15% same with genuine URLs
 
     template_id records WHICH template produced each row so the classifier can
     hold out entire unseen templates instead of unseen slot-fills. Without that,
@@ -285,9 +311,10 @@ def generate(n_per_class=300, path=None):
     n_bec = int(n_per_class * 0.25)
     n_soft = int(n_per_class * 0.20)
     n_loud = n_per_class - n_bec - n_soft
-    n_hard = int(n_per_class * 0.40)
+    n_hard = int(n_per_class * 0.35)
     n_brand = int(n_per_class * 0.15)
-    n_plain = n_per_class - n_hard - n_brand
+    n_url = int(n_per_class * 0.15)
+    n_plain = n_per_class - n_hard - n_brand - n_url
 
     rows = []
     for maker, count, label in (
@@ -297,6 +324,7 @@ def generate(n_per_class=300, path=None):
         (_legit_email, n_plain, "legit"),
         (_hard_legit_email, n_hard, "legit"),
         (_brand_legit_email, n_brand, "legit"),
+        (_url_legit_email, n_url, "legit"),
     ):
         for _ in range(count):
             text, template_id = maker(rng)

@@ -268,7 +268,11 @@ def _calibration(result):
         "machine_verdict": f"{level} ({float(result.get('score', 0) or 0):.1f}/100)",
         "confirmed_facts": facts,
         "suspicious_indicators": suspicious,
-        "model_prediction": f"ML phishing probability {prob:.1%} - a probabilistic estimate, not proof",
+        "model_prediction": (f"ML phishing probability {prob:.1%} ({'at/above' if prob >= 0.5 else 'below'} the 50% "
+                             f"classifier threshold) - a probabilistic estimate, not proof. It is only one weighted input to "
+                             f"the final threat score ({float(result.get('score', 0) or 0):.1f}/100, {level}); do not call the "
+                             f"language 'typical of legitimate mail' if this probability is at/above 50%, and do not equate "
+                             f"the probability with the final score."),
         "hard_evidence_present": hard,
         "disposition_limit": limit,
         "uncertainty": ["Authentication passing does not prove a message is safe.",

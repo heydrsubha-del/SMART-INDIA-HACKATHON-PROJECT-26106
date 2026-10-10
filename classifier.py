@@ -90,6 +90,7 @@ Load analyst-verified samples collected by the application.
         if df.empty:
             return pd.DataFrame(columns=["text", "label"])
 
+        df["text"] = df["text"].map(A.sanitize_for_training)   # no personal identifiers in training data
         return df.drop_duplicates(subset=["text"])
 
     except Exception:

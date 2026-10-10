@@ -13,6 +13,10 @@ PHISH = ("Google Account: we detected unusual sign-in activity on your account. 
          "in permanent account closure.")
 
 
+URL_NOTICE = ("Security alert. Claude was given access to some of your Google Account data. Review: "
+              "https://accounts.google.com/AccountChooser?continue=https://myaccount.google.com/connections&Email=user@example.com")
+
+
 class BrandBalance(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -36,6 +40,9 @@ class BrandBalance(unittest.TestCase):
 
     def test_legit_notification_scores_below_threshold(self):
         self.assertLess(K.predict(self.pipe, NOTICE)[0], 0.5)
+
+    def test_genuine_url_notice_not_pushed_over_threshold_by_url_alone(self):
+        self.assertLess(K.predict(self.pipe, URL_NOTICE)[0], 0.5)
 
     def test_brand_phishing_still_detected(self):
         self.assertGreaterEqual(K.predict(self.pipe, PHISH)[0], 0.9)
