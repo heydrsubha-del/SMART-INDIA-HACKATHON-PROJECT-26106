@@ -408,6 +408,35 @@ def _split_asn(text):
     return (m.group(1).upper(), m.group(2).strip() or None) if m else (None, None)
 
 
+_SEV_RANK = {"low": 1, "medium": 2, "high": 3}
+
+
+def headline(a):
+    """(title, plain-language summary) for the top of the Origin panel."""
+    ip = (a or {}).get("selected_ip")
+    if not ip:
+        return ("Origin could not be determined",
+                "No public IP address was found in the Received headers, so nothing is guessed.")
+    title = f"{ip} - {a['band'].lower()} confidence ({a['confidence']}/100)"
+    plus = [e["indicator"] for e in a["evidence"] if str(e["effect"]).startswith("+")]
+    minus = [e["indicator"] for e in a["evidence"] if str(e["effect"]).startswith("-")]
+    parts = ["Most likely the externally observed origin of this message."]
+    if plus:
+        parts.append("Supported by: " + ", ".join(plus[:3]).lower() + ".")
+    if minus:
+        parts.append("Weakened by: " + ", ".join(minus[:2]).lower() + ".")
+    n_hops, flags = len(a.get("route", [])), a.get("flags", [])
+    if flags:
+        top = max(flags, key=lambda f: _SEV_RANK.get(f["severity"], 0))["severity"]
+        parts.append(f"{n_hops} hop(s) parsed; {len(flags)} routing inconsistenc{'y' if len(flags) == 1 else 'ies'} "
+                     f"flagged (highest: {top}).")
+    elif n_hops:
+        parts.append(f"{n_hops} hop(s) parsed; no routing inconsistencies found.")
+    if a.get("disagreement_note"):
+        parts.append(a["disagreement_note"])
+    return title, " ".join(parts)
+
+
 def geodb_status():
     """Where geolocate.py looks for the local GeoLite2 files, and whether they
     (and the maxminddb package) are actually present on this machine."""
