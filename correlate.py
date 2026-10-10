@@ -60,6 +60,8 @@ REL_STYLE = {
     "at domain":       {"color": "#e879f9", "dash": "solid",   "width": 1.8},
     "replies to":      {"color": "#fbbf24", "dash": "solid",   "width": 2.0},
     "links to":        {"color": "#34d399", "dash": "solid",   "width": 1.6},
+    # Added by domain_intel: a looked-up domain's A/AAAA record points at this IP.
+    "resolves to":     {"color": "#22d3ee", "dash": "dot",     "width": 1.6},
     "originated at":   {"color": "#f87171", "dash": "solid",   "width": 2.4},
     "relayed via":     {"color": "#fb923c", "dash": "dash",    "width": 1.6},
     "pay to":          {"color": "#4ade80", "dash": "solid",   "width": 1.8},
@@ -183,6 +185,28 @@ def build_graph(cases, max_cases=None, seed=None):
             domain_id = "domain:" + domain
             add(domain_id, "domain", domain)
             G.add_edge(case_id, domain_id, rel="links to")
+
+        # Optional: DNS results attached by domain_intel (case["domain_dns"] =
+        # [{"domain": ..., "ips": [...]}]). Absent for cases never looked up, so
+        # existing behaviour is unchanged. A shared IP then links emails whose
+        # domains differ -- the "same attacker, different infrastructure" case.
+        for rec in (case.get("domain_dns") or [])[:10]:
+            if not isinstance(rec, dict):
+                continue
+            dom = _norm(rec.get("domain"))
+            if not dom:
+                continue
+            domain_id = "domain:" + dom
+            add(domain_id, "domain", dom)
+            for dip in (rec.get("ips") or [])[:4]:
+                dip = _norm(dip)
+                if not dip:
+                    continue
+                dip_id = "ip:" + dip
+                add(dip_id, "ip", dip)
+                G.add_edge(domain_id, dip_id, rel="resolves to")
+                if not G.has_edge(case_id, dip_id):  # never overwrite "originated at" / "relayed via"
+                    G.add_edge(case_id, dip_id, rel="resolves to")
 
         origin_record = geo.get("origin") or {}
         origin = _norm(origin_record.get("ip"))
