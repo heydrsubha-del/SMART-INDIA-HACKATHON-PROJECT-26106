@@ -9370,7 +9370,8 @@ def get_model(model_version=0):
 # produces. The version below changes whenever an analysis module changes and is part of the cache key.
 _ANALYSIS_MODULES = ("analyzer.py", "header_analysis.py", "email_parser.py", "config.py", "risk.py",
                      "ioc_extract.py", "geolocate.py", "origin_intel.py", "domain_intel.py",
-                     "network_trust.py", "tor_check.py", "classifier.py", "tracker.py")
+                     "network_trust.py", "tor_check.py", "classifier.py", "tracker.py",
+                     "gen_data.py", "retro_hunt.py", "ollama_threat.py", "data/model.joblib")
 
 def _analysis_code_version():
     _stamp = []
