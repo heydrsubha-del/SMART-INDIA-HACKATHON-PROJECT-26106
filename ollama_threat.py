@@ -724,7 +724,7 @@ def _missing_sections(answer, sections=REQUIRED_SECTIONS):
 
 def _new_meta(backend):
     """Completion metadata. None = unavailable from the backend (never 0)."""
-    return {"backend": backend, "finish_reason": None, "prompt_tokens": None, "completion_tokens": None,
+    return {"backend": backend, "model": None, "finish_reason": None, "prompt_tokens": None, "completion_tokens": None,
             "output_limit": None, "context_limit": None}
 
 
@@ -738,6 +738,23 @@ def _completion_diagnostics(meta, answer):
     d["missing_sections"] = _missing_sections(answer)
     d["complete"] = not d["missing_sections"] and d["output_truncated"] is not True
     return d
+
+
+def generation_summary(res):
+    """One privacy-safe line (counts/reasons only) for display after a scan. Unavailable values say so."""
+    d = (res or {}).get("diagnostics") or {}
+    if not d:
+        return ""
+    na = lambda v: "unavailable" if v is None else v
+    where = {"cloud": "Groq (cloud)", "local": "Ollama (local)"}.get(d.get("backend"), "unknown backend")
+    state = "complete" if d.get("complete") else "possibly incomplete"
+    if d.get("output_truncated"):
+        state += " - stopped at output-token limit"
+    elif d.get("missing_sections"):
+        state += " - missing %d section(s)" % len(d["missing_sections"])
+    return ("AI backend: %s · model: %s · status: %s · finish: %s · prompt tokens: %s · output tokens: %s"
+            % (where, na(d.get("model")), state, na(d.get("finish_reason")), na(d.get("prompt_tokens")),
+               na(d.get("completion_tokens"))))
 
 
 def _looks_like_dumped_evidence(answer, required_heading):
@@ -784,6 +801,7 @@ def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_ca
     meta.update(_new_meta(backend))
     opts = payload.get("options") or {}
 
+    meta["model"] = GROQ_MODEL if backend == "cloud" else payload.get("model", OLLAMA_MODEL)
     if backend == "cloud":
         meta["output_limit"] = _groq_payload(payload).get("max_tokens")
         answer = _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, meta=meta)
@@ -915,6 +933,12 @@ def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, ma
                     chunk = json.loads(data)
                 except ValueError:
                     continue
+                if meta is not None:
+                    usage = chunk.get("usage") or (chunk.get("x_groq") or {}).get("usage") or {}
+                    if usage.get("prompt_tokens") is not None:
+                        meta["prompt_tokens"] = usage.get("prompt_tokens")
+                    if usage.get("completion_tokens") is not None:
+                        meta["completion_tokens"] = usage.get("completion_tokens")
                 choices = chunk.get("choices") or []
                 if not choices:
                     continue
@@ -924,14 +948,9 @@ def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, ma
                     tokens_seen += 1
                     if progress_callback:
                         pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
-                        progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
-                if choices[0].get("finish_reason"):
-                    if meta is not None:
-                        usage = chunk.get("usage") or (chunk.get("x_groq") or {}).get("usage") or {}
-                        meta["finish_reason"] = choices[0].get("finish_reason")
-                        meta["prompt_tokens"] = usage.get("prompt_tokens")
-                        meta["completion_tokens"] = usage.get("completion_tokens")
-                    break
+                        progress_callback(pct, f"AI is writing the report... ({tokens_seen} tokens)")
+                if choices[0].get("finish_reason") and meta is not None:
+                    meta["finish_reason"] = choices[0].get("finish_reason")   # keep reading: usage may follow
         return answer
     return ""
 
@@ -1009,7 +1028,8 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
             answer += f"\n\n> Note: this AI report may be incomplete ({why}). Rely on the machine findings for any missing part."
         if progress_callback:
             progress_callback(100, "Qwen analysis complete")
-        return {"ok": True, "model": OLLAMA_MODEL, "analysis": answer, "diagnostics": diagnostics}
+        return {"ok": True, "model": OLLAMA_MODEL, "analysis": answer, "diagnostics": diagnostics,
+                "model": diagnostics.get("model") or OLLAMA_MODEL, "backend": diagnostics.get("backend")}
     except requests.exceptions.ConnectionError:
         return {"ok": False, "error": "Ollama is not running. Start Ollama and try again."}
     except requests.exceptions.Timeout:

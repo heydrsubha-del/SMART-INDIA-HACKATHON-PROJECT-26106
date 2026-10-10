@@ -43,7 +43,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
     )
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
-from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama
+from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama, generation_summary
 from nomic_embed import embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
@@ -13035,13 +13035,15 @@ if active_panel == "AI Threat Analysis":
                     st.markdown(
                         f"""<div class="ai-report-frame">
                             <div class="ai-report-bar">
-                                <span>QWEN // SINGLE-EMAIL THREAT ASSESSMENT</span>
+                                <span>AI // SINGLE-EMAIL THREAT ASSESSMENT</span>
                                 <span class="ai-report-chip">{case_name[:40]}</span>
                             </div>
                             <div class="ai-report-body">{_ai_markdown_to_html(cleaned_single)}</div>
                         </div>""",
                         unsafe_allow_html=True,
                     )
+                    if generation_summary(saved_single):
+                        st.caption(generation_summary(saved_single))
 
                     _sec("Download AI Threat Report", tone="ai")
                     single_markdown_report = (
@@ -14756,13 +14758,15 @@ if active_panel == "Forensic Report":
                 st.markdown(
                     f"""<div class="ai-report-frame">
                         <div class="ai-report-bar">
-                            <span>QWEN // SINGLE-EMAIL THREAT ASSESSMENT</span>
+                            <span>AI // SINGLE-EMAIL THREAT ASSESSMENT</span>
                             <span class="ai-report-chip">EMAIL #{sel_pos}</span>
                         </div>
                         <div class="ai-report-body">{_ai_markdown_to_html(cleaned_ai)}</div>
                     </div>""",
                     unsafe_allow_html=True,
                 )
+                if generation_summary(saved_ai_for_email):
+                    st.caption(generation_summary(saved_ai_for_email))
             else:
                 st.error(f"AI Analysis Error: {saved_ai_for_email.get('error', 'Unknown Error')}")
 
