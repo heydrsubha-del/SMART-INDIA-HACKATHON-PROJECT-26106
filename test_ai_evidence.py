@@ -94,13 +94,14 @@ class Calibration(unittest.TestCase):
         self.assertIn("Medium (32.7/100)", cal["machine_verdict"])
         self.assertIn("not proof", cal["model_prediction"])
 
-    def test_overstated_ai_gets_note_without_rewriting_text(self):
+    def test_overstated_ai_gets_note_and_label_keeps_original_claim(self):
         res = result_for(raw_mail())
         ans = "THREAT VERDICT:\nPhishing.\n\nATTACK TYPE:\nCredential Phishing\n\nCONFIDENCE:\nHigh - sender mismatch."
         out = O._calibration_note(ans, res)
-        self.assertTrue(out.startswith(ans))
         self.assertIn("Application calibration note", out)
         self.assertIn("32.7/100", out)
+        self.assertIn("Unconfirmed (model stated: Credential Phishing", out)   # original claim preserved, not erased
+        self.assertIn("THREAT VERDICT:\nPhishing.", out)                       # reasoning text untouched
 
     def test_calibrated_ai_gets_no_note(self):
         res = result_for(raw_mail())
