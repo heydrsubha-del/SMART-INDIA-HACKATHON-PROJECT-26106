@@ -105,6 +105,12 @@ class T(unittest.TestCase):
         self.assertEqual(oi.header_corroboration(None), [])
         self.assertEqual(oi.header_corroboration(b"\xff\xfe not a mail"), [])
 
+    def test_asn_diagnostic_is_specific(self):
+        msg = oi.asn_diagnostic(["45.33.32.156"], {"45.33.32.156": "local cache"})
+        for part in ("45.33.32.156", "local cache", "GeoLite2-ASN.mmdb", "maxminddb package"):
+            self.assertIn(part, msg)
+        self.assertEqual(set(oi.geodb_status()), {"dir", "maxminddb", "asn_db", "city_db"})
+
     def test_ipv6_hop(self):
         h = oi.parse_received("from mx.example.com (mx.example.com [IPv6:2606:4700:4700::1111]) by r.org with ESMTP; Mon, 5 Oct 2026 10:00:00 +0000")
         self.assertEqual(h["from_ip"], "2606:4700:4700::1111")
