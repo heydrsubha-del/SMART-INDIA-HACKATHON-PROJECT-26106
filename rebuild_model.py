@@ -20,7 +20,7 @@ import config as C
 import gen_data as G
 import model_audit as A
 
-GEN_PREFIXES = ("phish_loud_", "bec_", "phish_soft_", "legit_plain_", "legit_hard_", "legit_brand_")
+GEN_PREFIXES = ("phish_loud_", "bec_", "phish_soft_", "legit_plain_", "legit_hard_", "legit_brand_", "legit_url_")
 SIDE_FILES = (".metrics", ".adaptive")
 
 

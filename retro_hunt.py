@@ -238,13 +238,15 @@ def counts(rows):
     emails = {r["Where"].rsplit(" (", 1)[0] for r in rows if r["Source"] == "Earlier email"}
     return {"emails": len(emails), "email_rows": sum(1 for r in rows if r["Source"] == "Earlier email"),
             "intel": sum(1 for r in rows if r["Source"] == "Threat memory"),
+            "intel_feed": sum(1 for r in rows if r["Source"] == "Threat memory" and not r["Where"].split(" (reputation")[0].endswith("via local_analysis")),
             "log": sum(1 for r in rows if r["Source"] == "Scored-email log")}
 
 
 def summary(rows, n_indicators):
     c = counts(rows)
     base = (f"Hunted {n_indicators} indicator(s). Earlier emails this session: {c['emails']} email(s) "
-            f"({c['email_rows']} matching artifact(s)). Threat-memory indicator records: {c['intel']}. "
+            f"({c['email_rows']} matching artifact(s)). Threat-memory indicator records: {c['intel']} "
+            f"({c['intel_feed']} from external feeds, {c['intel'] - c['intel_feed']} earlier local sightings only). "
             f"Scored-email log entries: {c['log']}.")
     if not rows:
         return base + " No earlier sighting was found; that only means this app has not recorded these indicators before."
