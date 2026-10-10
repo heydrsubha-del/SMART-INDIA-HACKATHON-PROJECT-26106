@@ -47,3 +47,7 @@ Voicemail received. Open the attached file and enter your email password to list
 Security alert: someone used your Apple ID to buy 899.00 USD. Cancel the order by verifying your card at http://apple-order-cancel.top.,phish
 "Dear customer, your electricity connection will be cut tonight for unpaid dues. Pay immediately via http://power-bill-pay.click.",phish
 We noticed a problem with your tax refund. Submit your bank details at http://tax-refund-claim.xyz to receive it.,phish
+"Security alert: Claude was granted access to some of your Google Account data after you used Sign in with Google. If this was you, no action is needed. Manage access: https://accounts.google.com/AccountChooser?continue=https://myaccount.google.com/connections&Email=user%40example.com",legit
+"Your GitHub sign-in from a new browser was recorded. If this was you, nothing more is needed. Review sessions at https://github.com/settings/sessions",legit
+"Amazon: your return was received. Refund status is available at https://www.amazon.com/gp/css/order-history?ref=ppx_yo2ov_dt_b_fed_order_details",legit
+"Dropbox: Priya shared Q3-Planning with you. Open it at https://www.dropbox.com/scl/fo/abc123/xyz?rlkey=k9s&dl=0",legit

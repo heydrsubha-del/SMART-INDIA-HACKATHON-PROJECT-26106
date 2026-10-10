@@ -24,6 +24,17 @@ def normalize_text(text):
     return re.sub(r"[^a-z0]+", " ", t).strip()
 
 
+_EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+_URL_FULL = re.compile(r"((?:https?://)?[^\s/?#<>\"']+)[/?#]\S*", re.I)
+
+
+def sanitize_for_training(text):
+    """Privacy: remove personal identifiers before text enters a training set. Email addresses become
+    user@example.com; URLs keep scheme+host but lose path/query/fragment (personalised tokens, IDs)."""
+    t = _EMAIL.sub("user@example.com", str(text or ""))
+    return re.sub(r"(?i)(https?://[^\s/?#<>\"']+)[/?#]\S*", r"\1/", t)
+
+
 def brand_tokens():
     """Brand words used for the balance audit: first word of each generator brand + config brands."""
     names = set()
