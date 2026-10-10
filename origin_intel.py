@@ -219,6 +219,7 @@ def reconstruct_route(parsed, geo):
         h["asn"], h["as_org"] = _split_asn(g.get("asn"))
         h["delta_s"] = None
         h["flags"] = []
+        h["handoff"] = "none"      # state of the handoff INTO this hop: ok | break | unverifiable
         hops.append(h)
 
     flags = []
@@ -243,6 +244,7 @@ def reconstruct_route(parsed, geo):
     for prev, cur in zip(hops, hops[1:]):
         a = _host_suffix(prev["by"])
         names = {_host_suffix(cur["helo"]), _host_suffix(cur["rdns"])} - {""}
+        cur["handoff"] = "unverifiable" if not (a and names) else ("break" if a not in names else "ok")
         if a and names and a not in names:
             flags.append(_flag("low", "CHAIN_BREAK", "Hop handoff does not line up",
                 f"Hop {prev['n']} was received by '{prev['by']}', but hop {cur['n']} claims "
@@ -298,6 +300,17 @@ def _ev(effect, indicator, detail):
     return {"effect": effect, "indicator": indicator, "detail": detail}
 
 
+def _auth_results_verified(parsed):
+    """True only if the SPF result in Authentication-Results was stamped by a configured trusted
+    receiving server (see header_analysis.collect_auth_evidence). X-Originating-IP and Received-SPF
+    are never verified. Failure to establish provenance means unverified, never an error."""
+    try:
+        import header_analysis
+        return header_analysis.collect_auth_evidence(parsed or {})["spf"]["provenance"] == "verified"
+    except Exception:
+        return False
+
+
 def assess_origin(parsed, geo, raw=None):
     """Score every public IP seen in the route and explain the best candidate.
 
@@ -308,6 +321,7 @@ def assess_origin(parsed, geo, raw=None):
     geo = geo or {}
     hops, flags = reconstruct_route(parsed, geo)
     corro = header_corroboration(raw)
+    auth_verified = _auth_results_verified(parsed)
     existing = ((geo.get("origin") or {}).get("ip")) or None
     limitations = [
         "Received headers added below the first server you control can be forged; "
@@ -349,8 +363,20 @@ def assess_origin(parsed, geo, raw=None):
                 ev.append(_ev(f"-{8 * downstream_breaks}", "Handoff gaps downstream",
                     f"{len(breaks)} hop handoff(s) between this hop and the recipient do not line up."))
             elif last_n - h["n"] >= 1:
-                score += 15
-                ev.append(_ev("+15", "Unbroken handoff chain", "Every handoff from this hop to the recipient lines up."))
+                down = [x for x in hops if x["n"] > h["n"]]
+                unchecked = [x for x in down if x.get("handoff") != "ok"]
+                if unchecked:
+                    ev.append(_ev("0", "Handoffs not verifiable",
+                        f"{len(unchecked)} of {len(down)} handoff(s) from this hop to the recipient could not be compared "
+                        "(HELO / reverse-DNS / 'by' host missing), so no credit is given for an unbroken chain."))
+                elif any(f["code"] == "CHAIN_BREAK" for f in flags):
+                    ev.append(_ev("0", "Handoff break elsewhere in the route",
+                        "Handoffs after this hop line up, but a handoff earlier in the route does not "
+                        "(see the route flags); no credit is given for an unbroken chain."))
+                else:
+                    score += 15
+                    ev.append(_ev("+15", "Unbroken handoff chain",
+                        "Every handoff from this hop to the recipient was compared and lines up."))
             if "TS_BACKWARDS" in h["flags"]:
                 score -= 10
                 ev.append(_ev("-10", "Timestamp anomaly", "This hop's timestamp precedes the previous hop's."))
@@ -364,10 +390,17 @@ def assess_origin(parsed, geo, raw=None):
             ev.append(_ev("0", "Not a Received hop", "IP asserted by a header or by the existing geolocation only."))
         kinds = sorted({k for i2, k in corro if i2 == ip})
         if kinds:
-            bonus = min(25, 15 * len(kinds))
+            ver = [k for k in kinds if auth_verified and k.startswith("Authentication-Results")]
+            unv = [k for k in kinds if k not in ver]
+            bonus = min(25, 15 * len(ver) + 5 * len(unv))
             score += bonus
-            ev.append(_ev(f"+{bonus}", "Independent header agrees", "; ".join(kinds)
-                + " names this same IP (only as trustworthy as the server that stamped it)."))
+            parts = []
+            if ver:
+                parts.append("; ".join(ver) + " names this same IP (stamped by a verified trusted receiving server)")
+            if unv:
+                parts.append("; ".join(unv) + " names this same IP but is an UNVERIFIED header claim "
+                             "(reduced weight: the sender or an intermediate server could have written it)")
+            ev.append(_ev(f"+{bonus}", "Header corroboration" if unv else "Independent header agrees", ". ".join(parts) + "."))
         if existing and ip == existing:
             score += 5
             ev.append(_ev("+5", "Matches existing geolocation origin", "Same IP the Origin & Route summary uses."))
