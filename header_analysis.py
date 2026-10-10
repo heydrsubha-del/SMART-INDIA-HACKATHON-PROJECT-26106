@@ -11,6 +11,7 @@ it does not own, and the classic BEC pattern.
 
 Standalone:  python header_analysis.py samples/phishing_bec.eml
 """
+import os
 import re
 
 import config as C
@@ -52,12 +53,124 @@ def _domains_after(auth_text, key):
     return out
 
 
-def alignment_evidence(parsed, spf, dkim, dmarc):
+_FAILISH = ("fail", "softfail", "permerror", "temperror", "policy")
+_MECHS = ("spf", "dkim", "dmarc")
+
+
+def trusted_authservs(override=None):
+    """authserv-ids whose Authentication-Results this deployment trusts."""
+    ids = set(override) if override is not None else set(getattr(C, "TRUSTED_AUTHSERV_IDS", ()) or ())
+    if override is None:
+        ids |= {x.strip() for x in os.environ.get("ALGORITHMISTIC_TRUSTED_AUTHSERV", "").split(",") if x.strip()}
+    return {str(i).strip().lower().rstrip(".") for i in ids if str(i).strip()}
+
+
+def _authserv_id(value):
+    first = (value or "").split(";", 1)[0].split()
+    return first[0].strip().lower().rstrip(".") if first else ""
+
+
+def _find(value, mech):
+    m = re.search(r"\b{}\s*=\s*([a-z]+)".format(mech), value or "", re.I)
+    return m.group(1).lower() if m else None
+
+
+def _boundary_problem(h, parsed):
+    """None when the header sits in the receiving server's own block, else why not.
+    Receivers PREPEND their headers, so headers the sender wrote are below every
+    receiver-added Received header. A trusted result must be above the second Received
+    header (or above the only one)."""
+    idx, recv = h.get("index"), parsed.get("received_positions") or []
+    if idx is None or not recv:
+        return "header position / Received chain unavailable, so the receiving boundary cannot be established"
+    limit = recv[1] if len(recv) > 1 else recv[0]
+    return None if idx < limit else "header sits below the receiving server's block (could have been written by the sender)"
+
+
+def _auth_headers(parsed):
+    hs = parsed.get("auth_headers")
+    if hs is not None:
+        return hs
+    legacy = parsed.get("auth_results", "")      # flattened input with no provenance
+    return [{"name": "Authentication-Results", "value": legacy, "index": None}] if legacy else []
+
+
+def _rank(r):
+    return 2 if r in _FAILISH else (0 if r == "pass" else 1)
+
+
+def collect_auth_evidence(parsed, trusted=None):
+    """Per mechanism: {result, provenance: verified|unverified|unknown, confidence, source, note}.
+    A result is 'verified' only if its Authentication-Results header (1) names a configured
+    trusted authserv-id, (2) is the topmost header with that id (lower duplicates are not
+    evidence: a compliant receiver strips pre-existing ones), and (3) lies in the receiving
+    server's own header block. Received-SPF and ARC headers carry no authserv-id and are never
+    verified. Parsing alone cannot prove a header was not forged; this is the safest rule
+    available without the provider's own configuration."""
+    trusted = trusted_authservs() if trusted is None else {str(t).lower() for t in trusted}
+    claims = {m: [] for m in _MECHS}
+    seen = set()
+    verified_text = []
+    for h in _auth_headers(parsed):
+        name, value = (h.get("name") or "").lower(), h.get("value") or ""
+        sid, ok, why = "", False, ""
+        if name == "authentication-results":
+            sid = _authserv_id(value)
+            first = sid not in seen
+            seen.add(sid)
+            if not sid:
+                why = "no authserv-id"
+            elif sid not in trusted:
+                why = "authserv-id '{}' is not a configured trusted server".format(sid)
+            elif not first:
+                why = "not the topmost header for '{}'".format(sid)
+            else:
+                why = _boundary_problem(h, parsed) or ""
+                ok = not why
+        elif name == "received-spf":
+            why = "Received-SPF carries no authserv-id"
+        else:
+            why = "ARC header is not a receiving-server verdict"
+        src = "{}{}".format(h.get("name") or "header", " ({})".format(sid) if sid else "")
+        if ok:
+            verified_text.append(value)
+        for m in _MECHS:
+            if name == "received-spf":
+                r = None
+                if m == "spf":
+                    w = re.match(r"\s*([a-z]+)", value, re.I)
+                    r = w.group(1).lower() if w else None
+            else:
+                r = _find(value, m)
+            if r:
+                claims[m].append({"result": r, "verified": ok, "source": src, "why": why})
+    out = {}
+    for m in _MECHS:
+        cl = claims[m]
+        ver = [c for c in cl if c["verified"]]
+        if ver:
+            c = ver[0]
+            clash = any(x is not c and x["result"] != c["result"] for x in cl)
+            out[m] = {"result": c["result"], "provenance": "verified", "confidence": "high", "source": c["source"],
+                      "note": "stamped by a trusted receiving server" + ("; conflicting lower claims ignored" if clash else "")}
+        elif cl:
+            c = max(cl, key=lambda x: _rank(x["result"]))
+            clash = len({x["result"] for x in cl}) > 1
+            out[m] = {"result": c["result"], "provenance": "unverified", "confidence": "low", "source": c["source"],
+                      "note": "claimed in a header; " + c["why"] + ("; claims conflict, worst one shown" if clash else "")}
+        else:
+            out[m] = {"result": "none", "provenance": "unknown", "confidence": "none", "source": "-",
+                      "note": "no result present"}
+    out["_verified_text"] = " ".join(verified_text)
+    return out
+
+
+def alignment_evidence(parsed, spf, dkim, dmarc, auth_text=None):
     """What the receiving server's own verdicts prove about From / envelope alignment.
     Nothing here is assumed from a shared parent domain: SPF counts as aligned only on an
     SPF pass whose envelope domain is in From's organisation, DKIM only on a DKIM pass signed
     by a domain in From's organisation."""
-    auth = parsed.get("auth_results", "") or ""
+    auth = (auth_text if auth_text is not None else parsed.get("auth_results", "")) or ""
     from_d = parsed.get("from_domain", "") or ""
     mailfrom = _domains_after(auth, "smtp.mailfrom") or ([parsed.get("return_path_domain")] if parsed.get("return_path_domain") else [])
     signers = _domains_after(auth, "header.d") + _domains_after(auth, "header.i")
@@ -89,12 +202,15 @@ def _contains_any(text, words):
     return [w for w in words if w in low]
 
 
-def analyze(parsed):
-    """Returns {spf, dkim, dmarc, auth_fail_score, anomalies[], bec{}}."""
-    auth = parsed.get("auth_results", "")
-    spf = _verdict(auth, "spf")
-    dkim = _verdict(auth, "dkim")
-    dmarc = _verdict(auth, "dmarc")
+def analyze(parsed, trusted=None):
+    """Returns {spf, dkim, dmarc, auth_evidence, auth_trust, auth_fail_score, anomalies[], bec{}}.
+    spf/dkim/dmarc are the outcome; auth_evidence[mech] separately records provenance and confidence."""
+    evid = collect_auth_evidence(parsed, trusted_authservs(trusted))
+    spf, dkim, dmarc = (evid[m]["result"] for m in _MECHS)
+    # Only VERIFIED results may prove alignment or downgrade a mismatch finding.
+    v_spf, v_dkim, v_dmarc = (evid[m]["result"] if evid[m]["provenance"] == "verified" else "none"
+                              for m in _MECHS)
+    verified_text = evid.pop("_verified_text")
 
     # Score 0..1 - an outright fail is worse than a missing result.
     score = 0.0
@@ -119,13 +235,21 @@ def analyze(parsed):
         if value in ("fail", "softfail", "permerror", "temperror"):
             flag("high", "{} {}".format(mech, value),
                  "The receiving server could not validate the sender against "
-                 "the domain's published {} policy.".format(mech))
+                 "the domain's published {} policy.{}".format(
+                     mech, "" if evid[mech.lower()]["provenance"] == "verified"
+                     else " (This failure is an unverified claim in the headers.)"))
         elif value == "none":
             flag("low", "{} result absent".format(mech),
                  "No {} verdict was stamped on this message.".format(mech))
 
-    ev = alignment_evidence(parsed, spf, dkim, dmarc)
+    ev = alignment_evidence(parsed, v_spf, v_dkim, v_dmarc, auth_text=verified_text)
     results = "SPF {}, DKIM {}, DMARC {}".format(spf, dkim, dmarc)
+    unverified = [m.upper() for m in _MECHS if evid[m]["provenance"] == "unverified"]
+    if unverified:
+        flag("info", "Authentication results unverified",
+             "{} result(s) appear in the headers but their origin could not be established as a trusted "
+             "receiving server, so they are treated as claims: they cannot prove alignment or clear a "
+             "spoofing finding. This is not itself evidence of malice.".format(", ".join(unverified)))
 
     if from_domain and return_domain and from_domain != return_domain:
         if same_org(from_domain, return_domain):
@@ -227,6 +351,14 @@ def analyze(parsed):
 
     return {
         "spf": spf, "dkim": dkim, "dmarc": dmarc,
+        "auth_evidence": evid,
+        "auth_trust": {
+            "trusted_authservs": sorted(trusted_authservs(trusted)),
+            "any_verified": any(e["provenance"] == "verified" for e in evid.values()),
+            "limitation": "Header parsing cannot prove an Authentication-Results header is genuine. Results "
+                          "are verified only when stamped under a configured trusted authserv-id inside the "
+                          "receiving server's header block.",
+        },
         "auth_fail_score": auth_fail_score,
         "anomalies": anomalies,
         "anomaly_score": min(1.0, 0.34 * high + 0.15 * medium),
