@@ -19,8 +19,8 @@ from __future__ import annotations
 import ipaddress
 import os
 import re
-from datetime import datetime, timezone
-from email import message_from_bytes, message_from_string
+from datetime import timezone
+from email.parser import BytesHeaderParser, HeaderParser
 from email.utils import parsedate_to_datetime
 
 # ---------------------------------------------------------------------------
@@ -155,8 +155,11 @@ def header_corroboration(raw):
     out = []
     if not raw:
         return out
-    try:
-        msg = message_from_bytes(raw) if isinstance(raw, (bytes, bytearray)) else message_from_string(str(raw))
+    try:  # headers only: never decode the body or attachments (can be many MB)
+        if isinstance(raw, (bytes, bytearray)):
+            msg = BytesHeaderParser().parsebytes(bytes(raw[:262144]))
+        else:
+            msg = HeaderParser().parsestr(str(raw)[:262144])
     except Exception:
         return out
 
@@ -402,25 +405,26 @@ def assess_origin(parsed, geo, raw=None, asn_lookup=None):
 # ---------------------------------------------------------------------------
 # 4. Infrastructure intelligence (existing fields + optional local ASN DB)
 # ---------------------------------------------------------------------------
-_ASN_READER = {"tried": False, "reader": None}
+_ASN_READER = {"reader": None, "path": None, "failed": False}
 
 
 def make_asn_lookup(path=None):
     """Return fn(ip) -> {'asn','org'} | None using a local GeoLite2-ASN file,
-    or None when no such file/library exists (graceful, offline)."""
+    or None when no such file/library exists (graceful, offline). Re-checks
+    for the file cheaply, so dropping it into data/ works without a restart."""
     path = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "GeoLite2-ASN.mmdb")
-    if not _ASN_READER["tried"]:
-        _ASN_READER["tried"] = True
-        if os.path.exists(path):
+    if _ASN_READER["path"] != path:
+        _ASN_READER.update(reader=None, path=path, failed=False)
+    if _ASN_READER["reader"] is None and not _ASN_READER["failed"] and os.path.exists(path):
+        try:
+            import maxminddb  # type: ignore
+            _ASN_READER["reader"] = maxminddb.open_database(path)
+        except Exception:
             try:
-                import maxminddb  # type: ignore
-                _ASN_READER["reader"] = maxminddb.open_database(path)
+                import geoip2.database  # type: ignore
+                _ASN_READER["reader"] = geoip2.database.Reader(path)
             except Exception:
-                try:
-                    import geoip2.database  # type: ignore
-                    _ASN_READER["reader"] = geoip2.database.Reader(path)
-                except Exception:
-                    _ASN_READER["reader"] = None
+                _ASN_READER["failed"] = True
     reader = _ASN_READER["reader"]
     if reader is None:
         return None

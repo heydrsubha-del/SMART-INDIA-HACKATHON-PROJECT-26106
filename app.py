@@ -2181,24 +2181,6 @@ st.markdown(
         box-shadow:0 8px 20px rgba(0,0,0,.18) !important;
         padding:12px 16px !important;
     }
-    /* BUG FIX: the rule above targets .stAlert AND stAlertContainer AND
-       stAlert, but current Streamlit nests those elements, so every alert
-       got 2-3 stacked rounded left borders (the curved "buggy lines" before
-       the text). Only the outermost element keeps the card chrome; any
-       alert element nested inside another is reset to a plain wrapper. */
-    .stAlert .stAlert,
-    .stAlert div[data-testid="stAlertContainer"],
-    div[data-testid="stAlert"] .stAlert,
-    div[data-testid="stAlert"] div[data-testid="stAlertContainer"],
-    div[data-testid="stAlertContainer"] div[data-testid="stAlertContainer"],
-    div[data-testid="stAlertContainer"] div[data-testid="stAlert"] {
-        background:transparent !important;
-        border:none !important;
-        border-left-width:0 !important;
-        border-radius:0 !important;
-        box-shadow:none !important;
-        padding:0 !important;
-    }
     [data-testid="stAlertContentSuccess"] {color:#9be8c7 !important;}
     [data-testid="stAlertContentInfo"] {color:#bfe9ff !important;}
     [data-testid="stAlertContentWarning"] {color:#ffe3a3 !important;}
@@ -3687,7 +3669,6 @@ st.markdown(
         border:1px solid var(--line) !important;
         border-radius:var(--r-md) !important;
     }
-    html body .stAlert:has([data-testid="stAlertContentSuccess"]),
     html body .stAlert:has([data-testid="stAlertContentInfo"]) {--alert-accent:var(--cyan);}
     html body .stAlert:has([data-testid="stAlertContentSuccess"]) {--alert-accent:var(--green);}
     html body .stAlert:has([data-testid="stAlertContentWarning"]) {--alert-accent:var(--amber);}
@@ -9541,7 +9522,8 @@ def _origin_intel_for_case(case, raw_bytes=None, is_loaded=False):
     geo = case.get("geo", {}) or {}
     cases = [r for r in _corr_cases.values() if "error" not in r]
     key = (case.get("name"), case.get("_evidence_hash"), (geo.get("origin") or {}).get("ip"),
-           len(parsed.get("received_chain") or []), len(cases), bool(raw_bytes), is_loaded)
+           hash(tuple(parsed.get("received_chain") or [])), hash(frozenset(_corr_cases)),
+           bool(raw_bytes), is_loaded)
     cache = st.session_state.setdefault("_origin_intel_cache", {})
     if key in cache:
         return cache[key]
