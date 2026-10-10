@@ -79,18 +79,23 @@ def _geolite_reader(filename):
         return None
     return _geolite_readers[filename]
 
+def _geolite_asn(ip):
+    """Raw GeoLite2-ASN record for an IP, or {} (no file / no match / bad IP)."""
+    db = _geolite_reader("GeoLite2-ASN.mmdb")
+    try:
+        return (db.get(ip) if db else None) or {}
+    except Exception:
+        return {}
+
 def _geolite_lookup(ip):
-    city_db, asn_db = _geolite_reader("GeoLite2-City.mmdb"), _geolite_reader("GeoLite2-ASN.mmdb")
-    if city_db is None and asn_db is None:
+    city_db = _geolite_reader("GeoLite2-City.mmdb")
+    if city_db is None and _geolite_reader("GeoLite2-ASN.mmdb") is None:
         return None
     try:
         c = (city_db.get(ip) if city_db else None) or {}
     except Exception:
         c = {}
-    try:
-        a = (asn_db.get(ip) if asn_db else None) or {}
-    except Exception:
-        a = {}
+    a = _geolite_asn(ip)
     if not c and not a:
         return None
     def name(d):
@@ -154,6 +159,12 @@ def geolocate(ip):
         record["ip"] = ip
         record.setdefault("infra", "unknown")
         record["source"] = "local cache"
+        if not record.get("asn"):  # older cache entries have no ASN: fill only that gap, offline
+            a = _geolite_asn(ip)
+            if a.get("autonomous_system_number"):
+                org = a.get("autonomous_system_organization") or ""
+                record["asn"] = f"AS{a['autonomous_system_number']} {org}".strip()
+                record["isp"] = record.get("isp") or org
         return record
 
     # 3. LOCAL GEOLITE2 DATABASES (optional)
