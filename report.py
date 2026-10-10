@@ -201,7 +201,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
                 md_cell(u["url"][:70]), md_cell(u["host"] or "-"), md_cell(note)))
         add("")
     else:
-        add("No URLs present in the message body.")
+        _le = iocs.get("link_extraction") or {}
+        add(_le["note"] if _le.get("status") == "not_extracted" else "No URLs present in the message body.")
         add("")
 
     for label, values in (("Domains", iocs["domains"]),

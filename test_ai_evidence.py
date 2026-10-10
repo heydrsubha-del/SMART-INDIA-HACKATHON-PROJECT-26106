@@ -147,5 +147,52 @@ class NetworkTrustState(unittest.TestCase):
         self.assertEqual(v2["network_trust_badge"], "Consistent")
 
 
+class ThreatMemoryAndAuthenticity(unittest.TestCase):
+    SAFE = "THREAT VERDICT:\nLegitimate notification.\n\nRECOMMENDED ACTION:\nMark the email as safe and allowlist the sender."
+
+    def _res(self, trusted=(), rh=None):
+        r = result_for(raw_mail(), level="Low", score=10.5, prob=0.231, trusted=trusted, suspicious_urls=0)
+        if rh is not None:
+            r["retro_hunt"] = rh
+        return r
+
+    def test_local_sightings_reported_but_not_as_malicious_matches(self):
+        tm = O.build_evidence(self._res(rh={"intel": 17, "intel_feed": 0}))["machine_analysis"]["threat_memory"]
+        self.assertEqual((tm["earlier_local_sightings"], tm["external_feed_matches"]), (17, 0))
+        self.assertIn("NOT evidence of malice", tm["note"])
+
+    def test_local_sightings_are_not_hard_evidence(self):
+        cal = O.build_evidence(self._res(rh={"intel": 17, "intel_feed": 0}))["calibration"]
+        self.assertFalse(cal["hard_evidence_present"])
+
+    def test_feed_match_is_hard_evidence_and_separate_from_sightings(self):
+        ev = O.build_evidence(self._res(rh={"intel": 20, "intel_feed": 3}))
+        self.assertEqual((ev["machine_analysis"]["threat_memory"]["earlier_local_sightings"], ev["machine_analysis"]["threat_memory"]["external_feed_matches"]), (17, 3))
+        self.assertTrue(ev["calibration"]["hard_evidence_present"])
+
+    def test_no_retro_result_is_not_claimed_as_zero(self):
+        self.assertEqual(O.build_evidence(self._res())["machine_analysis"]["threat_memory"]["status"], "not evaluated for this email")
+
+    def test_unverified_auth_discourages_legitimate_and_safe_wording(self):
+        lim = O.build_evidence(self._res(trusted=()))["calibration"]["authenticity_limit"]
+        self.assertIn("UNVERIFIED", lim); self.assertIn("does NOT prove", lim)
+
+    def test_verified_auth_has_no_authenticity_caution(self):
+        lim = O.build_evidence(self._res(trusted=("mx.corp-example.org",)))["calibration"]["authenticity_limit"]
+        self.assertNotIn("UNVERIFIED", lim)
+
+    def test_safe_recommendation_with_unverified_auth_gets_caution_note(self):
+        out = O._calibration_note(self.SAFE, self._res(trusted=()))
+        self.assertIn("Application caution note", out); self.assertIn("unverified", out)
+
+    def test_safe_recommendation_with_verified_auth_unchanged(self):
+        res = self._res(trusted=("mx.corp-example.org",))
+        self.assertEqual(O._calibration_note(self.SAFE, res), self.SAFE)
+
+    def test_cautious_wording_gets_no_note(self):
+        ans = "RECOMMENDED ACTION:\nLow risk, authenticity unverified. Do not allowlist the sender; verify out of band."
+        self.assertEqual(O._calibration_note(ans, self._res(trusted=())), ans)
+
+
 if __name__ == "__main__":
     unittest.main()

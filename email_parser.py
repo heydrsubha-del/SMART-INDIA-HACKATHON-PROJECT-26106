@@ -73,6 +73,39 @@ def _extract_body(msg):
     return "\n".join(chunks)
 
 
+_A_HREF_RE = re.compile(
+    r"<a\b[^>]*?\bhref\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))[^>]*>(.*?)</a\s*>", re.I | re.S)
+
+
+def _html_links(msg):
+    """Real <a href> destinations from EVERY text/html part (even when a text/plain part is preferred for
+    the body), as [{'href', 'text'}]. _html_to_text() drops tag attributes, so without this the destination
+    of an 'Unsubscribe' / 'Click here' link is never seen. Never raises."""
+    out, seen = [], set()
+    try:
+        parts = list(msg.walk()) if msg.is_multipart() else [msg]
+    except Exception:
+        return out
+    for part in parts:
+        try:
+            if part.get_content_type() != "text/html":
+                continue
+            try:
+                content = part.get_content()
+            except Exception:
+                payload = part.get_payload(decode=True) or b""
+                content = payload.decode(part.get_content_charset() or "utf-8", errors="replace")
+            for m in _A_HREF_RE.finditer(content):
+                href = html.unescape((m.group(1) or m.group(2) or m.group(3) or "")).strip()
+                text = re.sub(r"\s+", " ", html.unescape(TAG_RE.sub(" ", m.group(4) or ""))).strip()
+                if href and (href, text) not in seen:
+                    seen.add((href, text))
+                    out.append({"href": href, "text": text[:120]})
+        except Exception:
+            continue
+    return out
+
+
 def _attachments(msg):
     """Filenames + sizes of attached parts, flagging risky extensions.
 
@@ -180,6 +213,7 @@ def parse_eml(data):
         "body_text": body,
         "full_text": "{} {}".format(head("Subject"), body).strip(),
         "attachments": _attachments(msg),
+        "html_links": _html_links(msg),
     }
 
 
