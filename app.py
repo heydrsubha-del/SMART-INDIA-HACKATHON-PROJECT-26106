@@ -9563,20 +9563,51 @@ def _origin_intel_markdown(case, raw_bytes=None, ehash=None):
         return f"Origin intelligence could not be generated ({e})."
 
 
+_ORIGIN_CARD_CSS = """<style>
+html body .stApp.stApp.stApp.stApp.stApp .oi-hero {position:relative; padding:20px 24px 18px 26px; margin:4px 0 18px 0; border-radius:16px;
+    border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a);
+    background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a);
+    box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);}
+html body .stApp.stApp.stApp.stApp.stApp .oi-hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--oi-col,var(--panel-tone));}
+html body .stApp.stApp.stApp.stApp.stApp .oi-top {display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+html body .stApp.stApp.stApp.stApp.stApp .oi-eyebrow {font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; text-transform:uppercase; color:color-mix(in srgb,var(--panel-tone) 80%,#fff);}
+html body .stApp.stApp.stApp.stApp.stApp .oi-ip {margin-top:9px; font:800 28px/1.15 ui-monospace,Consolas,monospace; color:#fff; letter-spacing:-.01em; word-break:break-all;}
+html body .stApp.stApp.stApp.stApp.stApp .oi-pill {font:800 11.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.12em; padding:8px 13px; border-radius:8px; border:1px solid; white-space:nowrap;}
+html body .stApp.stApp.stApp.stApp.stApp .oi-meter {height:6px; border-radius:6px; background:rgba(255,255,255,.07); margin:14px 0 12px 0; overflow:hidden;}
+html body .stApp.stApp.stApp.stApp.stApp .oi-meter > div {height:100%; border-radius:6px; background:linear-gradient(90deg,color-mix(in srgb,var(--oi-col) 60%,#000),var(--oi-col));}
+html body .stApp.stApp.stApp.stApp.stApp .oi-sum {font:400 13.5px/1.55 Inter,'Segoe UI',sans-serif; color:#aab6c8; margin:0;}
+html body .stApp.stApp.stApp.stApp.stApp .oi-note {margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.07); font:400 12px/1.5 Inter,'Segoe UI',sans-serif; color:#8793a5;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-seg_origin_intel {margin:0 0 12px 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-seg_origin_intel label:has(input:checked) :is([data-baseweb="radio"] > :first-child, div:empty, span:empty) {background-color:var(--panel-tone) !important; border-color:var(--panel-tone) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-tone) 25%,transparent) !important;}
+</style>"""
+_ORIGIN_BAND_COL = {"High": "#2fb68e", "Medium": "#d9a35f", "Low": "#e0708c"}
+
+
 def _render_origin_intel(b):
-    """Headline + plain-language summary, then ONE view at a time (the app's
-    st.radio pill pattern -- st.tabs is deliberately not used in this app)."""
+    """Dossier-style header card, then ONE view at a time (the app's st.radio
+    pill pattern -- st.tabs is deliberately not used in this app)."""
     a = b["assessment"]
     title, summary = origin_intel.headline(a)
-    st.markdown(f"##### {title}")
+    st.markdown(_ORIGIN_CARD_CSS, unsafe_allow_html=True)
+    _note = "Locations are where network infrastructure is registered - not where the sender is. An IP address cannot identify a person or an address."
     if not a["selected_ip"] and not a["route"]:
-        st.caption(summary)
-        st.caption(a["location_disclaimer"])
+        st.markdown(
+            '<div class="oi-hero" style="--oi-col:#8b96a5"><div class="oi-eyebrow">Origin assessment</div>'
+            f'<div class="oi-ip" style="font-size:22px">{html.escape(title)}</div>'
+            f'<p class="oi-sum" style="margin-top:8px">{html.escape(summary)}</p>'
+            f'<div class="oi-note">{html.escape(a["location_disclaimer"])}</div></div>', unsafe_allow_html=True)
         return
-    st.caption(summary)
-    st.caption(f"Panel build: {getattr(origin_intel, 'PANEL_VERSION', 'unknown')}")
-    st.caption("Locations below are where the network infrastructure is registered - not where the sender is. "
-               "An IP address cannot identify a person or an address.")
+    _col = _ORIGIN_BAND_COL.get(a["band"], "#8b96a5")
+    _conf = max(0, min(100, int(a["confidence"])))
+    st.markdown(
+        f'<div class="oi-hero" style="--oi-col:{_col}"><div class="oi-top"><div>'
+        '<div class="oi-eyebrow">Most likely origin IP</div>'
+        f'<div class="oi-ip">{html.escape(str(a["selected_ip"]))}</div></div>'
+        f'<span class="oi-pill" style="color:{_col};border-color:{_col}66;background:{_col}1a;">'
+        f'{html.escape(a["band"].upper())} CONFIDENCE &middot; {_conf}/100</span></div>'
+        f'<div class="oi-meter"><div style="width:{_conf}%"></div></div>'
+        f'<p class="oi-sum">{html.escape(summary)}</p>'
+        f'<div class="oi-note">{html.escape(_note)}</div></div>', unsafe_allow_html=True)
 
     with st.container(key="seg_origin_intel"):
         view = st.radio("Origin intelligence view",
@@ -9586,7 +9617,7 @@ def _render_origin_intel(b):
     if view == "Why this IP":
         _render_polished_table(pd.DataFrame([
             {"Effect": e["effect"], "Indicator": e["indicator"], "Detail": e["detail"]} for e in a["evidence"]
-        ]), empty_text="No supporting indicators.", tone="#22d3ee")
+        ]), empty_text="No supporting indicators.", tone=_panel_hex())
         if a["alternatives"]:
             st.caption("Other candidates considered: " + "; ".join(
                 f"{c['ip']} ({c['score']}/100)" for c in a["alternatives"]))
@@ -9603,7 +9634,7 @@ def _render_origin_intel(b):
                 "Time": (h["ts_text"] or "-") + (f"  (+{int(h['delta_s'])}s)" if h["delta_s"] is not None else ""),
                 "Where": " · ".join(x for x in (h["country"], ((h["asn"] + " ") if h["asn"] else "") + (h["network"] or h["as_org"] or "")) if x.strip()) or "-",
                 "Flags": ", ".join(h["flags"]) or "-",
-            } for h in a["route"]]), tone="#22d3ee")
+            } for h in a["route"]]), tone=_panel_hex())
         else:
             st.caption("No Received headers could be parsed.")
         if a["flags"]:
@@ -9627,7 +9658,7 @@ def _render_origin_intel(b):
                 "Infra location": r["Infra location"],
                 "Signals": "none" if r["Reputation signals"].startswith("none") else r["Reputation signals"],
             })
-        _render_polished_table(pd.DataFrame(rows), empty_text="No public IPs to profile.", tone="#22d3ee")
+        _render_polished_table(pd.DataFrame(rows), empty_text="No public IPs to profile.", tone=_panel_hex())
         _asn_miss = [r["IP"] for r in b["infra_rows"] if r["ASN"] == "unavailable"]
         if _asn_miss:
             st.caption(origin_intel.asn_diagnostic(_asn_miss, b.get("geo_sources")))
