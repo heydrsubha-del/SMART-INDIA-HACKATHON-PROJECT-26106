@@ -82,6 +82,37 @@ def _cap_list(values, limit=_MAX_IOC_LIST_ITEMS):
     return values
 
 
+def _risk_of(item):
+    try:
+        return float(item.get("risk", 0.0) or 0.0) if isinstance(item, dict) else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _prioritised_cap(values, limit=_MAX_IOC_LIST_ITEMS):
+    """Prompt-only cap: highest-risk URLs first (stable, so original order breaks ties).
+    Never mutates the source list; the machine analysis always saw every URL."""
+    if not isinstance(values, list) or len(values) <= limit:
+        return values
+    return sorted(values, key=lambda u: -_risk_of(u))[:limit]
+
+
+def _prompt_limits(iocs):
+    """Truthful shown/omitted counts for lists the prompt had to cap."""
+    out = {}
+    for key in ("urls", "suspicious_urls", "domains", "ips"):
+        vals = iocs.get(key, [])
+        if isinstance(vals, list):
+            total = len(vals)
+            shown = min(total, _MAX_IOC_LIST_ITEMS)
+            out[key] = {"total": total, "shown_to_you": shown, "omitted_from_prompt": total - shown}
+    out["note"] = ("Omitted items WERE still analysed by the machine pipeline (url_score covers every extracted URL); "
+                   "they are only absent from this prompt. Do not claim the omitted items are safe or unseen. "
+                   "A URL 'suspicious' flag is a heuristic, not confirmed maliciousness; no threat-feed match is "
+                   "not proof a URL or domain is safe.")
+    return out
+
+
 def _vpn_tor_evidence(origin, network_trust=None):
     """VPN/proxy/Tor evidence for the prompt, kept as its own explicit
     block (rather than buried inside origin_infrastructure) so Qwen can't
@@ -457,14 +488,16 @@ def build_evidence(result, network_trust=None):
                 )
             ),
 
-            "urls": _cap_list(iocs.get(
+            "urls": _prioritised_cap(iocs.get(
                 "urls",
                 []
             )),
 
+            "prompt_limits": _prompt_limits(iocs),
+
             "link_extraction": iocs.get("link_extraction") or {"status": "unknown"},
 
-            "suspicious_urls": _cap_list(iocs.get(
+            "suspicious_urls": _prioritised_cap(iocs.get(
                 "suspicious_urls",
                 []
             )),
@@ -672,6 +705,41 @@ including "VPN / TOR / ANONYMIZATION" even when nothing was detected.
 """.strip()
 
 
+REQUIRED_SECTIONS = (
+    "THREAT VERDICT", "ATTACK TYPE", "CONFIDENCE", "KEY EVIDENCE", "ATTACKER OBJECTIVE", "THREAT ANALYSIS",
+    "IOC & URL ASSESSMENT", "AUTHENTICATION & HEADER ASSESSMENT", "ORIGIN & INFRASTRUCTURE",
+    "VPN / TOR / ANONYMIZATION", "RECOMMENDED ACTION", "ANALYST NOTE", "FORENSIC EVIDENCE",
+)
+
+
+def _missing_sections(answer, sections=REQUIRED_SECTIONS):
+    """Required headings absent from the answer (tolerates #, ** and spacing around '/')."""
+    missing = []
+    for name in sections:
+        pattern = r"(?im)^[\s#*]*" + re.escape(name).replace(r"\ ", r"\s*")
+        if not re.search(pattern + r"\b", answer):
+            missing.append(name)
+    return missing
+
+
+def _new_meta(backend):
+    """Completion metadata. None = unavailable from the backend (never 0)."""
+    return {"backend": backend, "finish_reason": None, "prompt_tokens": None, "completion_tokens": None,
+            "output_limit": None, "context_limit": None}
+
+
+def _completion_diagnostics(meta, answer):
+    """Facts only. output_truncated is confirmed only when the backend reports a length stop."""
+    reason = (meta.get("finish_reason") or "").lower() or None
+    d = dict(meta)
+    d["output_truncated"] = True if reason == "length" else (False if reason else None)
+    pt, cl = meta.get("prompt_tokens"), meta.get("context_limit")
+    d["prompt_may_exceed_context"] = (pt >= cl) if (pt is not None and cl) else None
+    d["missing_sections"] = _missing_sections(answer)
+    d["complete"] = not d["missing_sections"] and d["output_truncated"] is not True
+    return d
+
+
 def _looks_like_dumped_evidence(answer, required_heading):
     """True if the model just echoed the evidence JSON back instead of
     writing the requested report.
@@ -689,7 +757,7 @@ def _looks_like_dumped_evidence(answer, required_heading):
     return any(marker in answer for marker in telltale_fields)
 
 
-def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_callback=None):
+def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_callback=None, meta=None):
     """Resolve local-vs-cloud backend, run one bounded streaming request,
     and normalize errors -- shared by the single-email and batch paths.
 
@@ -711,11 +779,18 @@ def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_ca
         raise RuntimeError(str(exc))
 
     target_tokens = max(1, int((payload.get("options") or {}).get("num_predict", 700)))
+    if meta is None:
+        meta = {}
+    meta.update(_new_meta(backend))
+    opts = payload.get("options") or {}
 
     if backend == "cloud":
-        answer = _stream_groq(payload, api_key, timeout, target_tokens, progress_callback)
+        meta["output_limit"] = _groq_payload(payload).get("max_tokens")
+        answer = _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, meta=meta)
     else:
-        answer = _stream_ollama(payload, timeout, target_tokens, progress_callback)
+        meta["output_limit"] = opts.get("num_predict")
+        meta["context_limit"] = opts.get("num_ctx")
+        answer = _stream_ollama(payload, timeout, target_tokens, progress_callback, meta=meta)
 
     answer = answer.strip()
     if not answer:
@@ -728,7 +803,7 @@ def _request(payload, timeout=OLLAMA_TIMEOUT, required_heading=None, progress_ca
     return answer
 
 
-def _stream_ollama(payload, timeout, target_tokens, progress_callback):
+def _stream_ollama(payload, timeout, target_tokens, progress_callback, meta=None):
     """Original local Ollama NDJSON streaming path -- unmoved."""
     stream_payload = dict(payload)
     stream_payload["stream"] = True
@@ -754,6 +829,10 @@ def _stream_ollama(payload, timeout, target_tokens, progress_callback):
                     pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
                     progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
             if chunk.get("done"):
+                if meta is not None:
+                    meta["finish_reason"] = chunk.get("done_reason")
+                    meta["prompt_tokens"] = chunk.get("prompt_eval_count")
+                    meta["completion_tokens"] = chunk.get("eval_count")
                 break
     return answer
 
@@ -795,7 +874,7 @@ def _friendly_wait(seconds, progress_callback, base_pct):
         time.sleep(1)
 
 
-def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, max_retries=4):
+def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, max_retries=4, meta=None):
     """Cloud fallback: Groq's OpenAI-style SSE stream (`data: {...}`
     lines, terminated by `data: [DONE]`) -- a different wire format from
     Ollama's raw NDJSON, but the same progress-percentage math applies.
@@ -847,6 +926,11 @@ def _stream_groq(payload, api_key, timeout, target_tokens, progress_callback, ma
                         pct = 20 + min(75, int(75 * tokens_seen / target_tokens))
                         progress_callback(pct, f"Qwen is writing the report... ({tokens_seen} tokens)")
                 if choices[0].get("finish_reason"):
+                    if meta is not None:
+                        usage = chunk.get("usage") or (chunk.get("x_groq") or {}).get("usage") or {}
+                        meta["finish_reason"] = choices[0].get("finish_reason")
+                        meta["prompt_tokens"] = usage.get("prompt_tokens")
+                        meta["completion_tokens"] = usage.get("completion_tokens")
                     break
         return answer
     return ""
@@ -915,11 +999,17 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
         payload = _base_payload(build_prompt(result, network_trust=network_trust))
         if progress_callback:
             progress_callback(20, "Qwen request sent...")
-        answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback)
+        meta = {}
+        answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback, meta=meta)
+        diagnostics = _completion_diagnostics(meta, answer)
         answer = _calibration_note(answer, result)
+        if not diagnostics["complete"]:
+            why = ("generation stopped at the output-token limit" if diagnostics["output_truncated"]
+                   else "required sections are missing: " + ", ".join(diagnostics["missing_sections"]))
+            answer += f"\n\n> Note: this AI report may be incomplete ({why}). Rely on the machine findings for any missing part."
         if progress_callback:
             progress_callback(100, "Qwen analysis complete")
-        return {"ok": True, "model": OLLAMA_MODEL, "analysis": answer}
+        return {"ok": True, "model": OLLAMA_MODEL, "analysis": answer, "diagnostics": diagnostics}
     except requests.exceptions.ConnectionError:
         return {"ok": False, "error": "Ollama is not running. Start Ollama and try again."}
     except requests.exceptions.Timeout:
