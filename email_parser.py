@@ -137,6 +137,21 @@ def parse_eml(data):
         hops.append({"raw": hop, "ips": ips})
     origin_ip = next((h["ips"][0] for h in hops if h["ips"]), "")
 
+    # Per-header authentication records, in file order (topmost first), plus the
+    # position of every Received header. header_analysis needs these to decide
+    # whether an authentication claim sits inside the receiving server's own block.
+    auth_headers, received_positions = [], []
+    try:
+        for i, (k, v) in enumerate(msg.items()):
+            lk = k.lower()
+            if lk == "received":
+                received_positions.append(i)
+            elif lk in ("authentication-results", "received-spf",
+                        "arc-authentication-results"):
+                auth_headers.append({"name": k, "value": str(v).strip(), "index": i})
+    except Exception:
+        pass
+
     body = _extract_body(msg) or ""
 
     return {
@@ -156,6 +171,8 @@ def parse_eml(data):
                           head("Received-SPF"),
                           head("ARC-Authentication-Results")])
         ),
+        "auth_headers": auth_headers,
+        "received_positions": received_positions,
         "x_mailer": head("X-Mailer") or head("User-Agent"),
         "received_chain": received_oldest_first,
         "hops": hops,

@@ -235,7 +235,7 @@ def hunt(indicators, cases, conns, current_name=None, current_hash=None, self_lo
 def counts(rows):
     """The three history buckets, derived from the rows themselves (never separately)."""
     rows = rows or []
-    emails = {r["Where"].split(" (")[0] for r in rows if r["Source"] == "Earlier email"}
+    emails = {r["Where"].rsplit(" (", 1)[0] for r in rows if r["Source"] == "Earlier email"}
     return {"emails": len(emails), "email_rows": sum(1 for r in rows if r["Source"] == "Earlier email"),
             "intel": sum(1 for r in rows if r["Source"] == "Threat memory"),
             "log": sum(1 for r in rows if r["Source"] == "Scored-email log")}
