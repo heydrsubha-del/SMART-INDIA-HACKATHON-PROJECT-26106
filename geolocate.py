@@ -1,4 +1,5 @@
 import json
+import os
 import requests 
 import config as C
 import tor_check
@@ -54,6 +55,65 @@ def _annotate_tor_exit(record):
     record["tor_exit_sources"] = sources
     return record
 
+# ---------------------------------------------------------------------------
+# Optional local MaxMind GeoLite2 databases (data/GeoLite2-City.mmdb and
+# data/GeoLite2-ASN.mmdb). Used only AFTER the live lookup and the bundled
+# cache, so existing results never change -- it just turns many former
+# "Unknown" results (rate-limited / offline lookups) into real ones.
+# Needs the `maxminddb` package; absent files or package => silently skipped.
+# ---------------------------------------------------------------------------
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+_geolite_readers = {}
+
+def _geolite_reader(filename):
+    r = _geolite_readers.get(filename)
+    if r is not None:
+        return r
+    path = os.path.join(_DATA_DIR, filename)
+    if not os.path.exists(path):
+        return None
+    try:
+        import maxminddb
+        _geolite_readers[filename] = maxminddb.open_database(path)
+    except Exception:
+        return None
+    return _geolite_readers[filename]
+
+def _geolite_lookup(ip):
+    city_db, asn_db = _geolite_reader("GeoLite2-City.mmdb"), _geolite_reader("GeoLite2-ASN.mmdb")
+    if city_db is None and asn_db is None:
+        return None
+    try:
+        c = (city_db.get(ip) if city_db else None) or {}
+    except Exception:
+        c = {}
+    try:
+        a = (asn_db.get(ip) if asn_db else None) or {}
+    except Exception:
+        a = {}
+    if not c and not a:
+        return None
+    def name(d):
+        return ((d or {}).get("names") or {}).get("en", "")
+    loc, subs = c.get("location") or {}, c.get("subdivisions") or []
+    country = name(c.get("country")) or name(c.get("registered_country")) or "Unknown"
+    code = (c.get("country") or c.get("registered_country") or {}).get("iso_code", "")
+    num, org = a.get("autonomous_system_number"), a.get("autonomous_system_organization") or ""
+    return {
+        "ip": ip,
+        "city": name(c.get("city")),
+        "region": name(subs[0]) if subs else "",
+        "country": country,
+        "country_code": code,
+        "lat": loc.get("latitude"),
+        "lon": loc.get("longitude"),
+        "asn": f"AS{num} {org}".strip() if num else "",
+        "isp": org,
+        "infra": next((k for h, k in _ANON_HINTS if h in org.lower()), "unknown"),
+        "note": "Resolved from the local GeoLite2 database (city-level accuracy is approximate).",
+        "source": "GeoLite2",
+    }
+
 @lru_cache(maxsize=4096)
 def geolocate(ip):
 
@@ -95,6 +155,11 @@ def geolocate(ip):
         record.setdefault("infra", "unknown")
         record["source"] = "local cache"
         return record
+
+    # 3. LOCAL GEOLITE2 DATABASES (optional)
+    local = _geolite_lookup(ip)
+    if local:
+        return local
 
     return _unknown(ip)
 
