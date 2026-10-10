@@ -89,7 +89,7 @@ class Meta(unittest.TestCase):
 
     def test_diagnostics_hold_no_prompt_or_body(self):
         d = O._completion_diagnostics(O._new_meta("cloud"), self_full())
-        self.assertEqual(set(d), {"backend", "finish_reason", "prompt_tokens", "completion_tokens", "output_limit",
+        self.assertEqual(set(d), {"backend", "model", "finish_reason", "prompt_tokens", "completion_tokens", "output_limit",
                                   "context_limit", "output_truncated", "prompt_may_exceed_context",
                                   "missing_sections", "complete"})
 
@@ -126,7 +126,7 @@ class StreamCapture(unittest.TestCase):
 
     def test_groq_without_usage_stays_none(self):
         lines = [b'data: ' + json.dumps({"choices": [{"delta": {}, "finish_reason": "stop"}]}).encode()]
-        meta = {}
+        meta = O._new_meta("cloud")
         with mock.patch.object(O.requests, "post", return_value=_Resp(lines)):
             O._stream_groq({"options": {}}, "k", 5, 10, None, meta=meta)
         self.assertIsNone(meta["prompt_tokens"]); self.assertIsNone(meta["completion_tokens"])
@@ -148,6 +148,51 @@ class EndToEnd(unittest.TestCase):
     def test_complete_report_has_no_incomplete_note(self):
         r = self._run(Sections.FULL, "stop")
         self.assertTrue(r["diagnostics"]["complete"]); self.assertNotIn("may be incomplete", r["analysis"])
+
+
+class BackendIdentity(unittest.TestCase):
+    def _run(self, backend, lines):
+        with mock.patch.object(O, "resolve_backend", return_value=(backend, "k" if backend == "cloud" else None)), \
+             mock.patch.object(O, "_ollama_available", return_value=backend == "local"), \
+             mock.patch.object(O.requests, "post", return_value=_Resp(lines)):
+            return O.analyze_with_ollama(T.result_for(T.raw_mail()))
+
+    def test_local_reports_ollama_and_qwen_model(self):
+        lines = [json.dumps({"message": {"content": Sections.FULL}, "done": False}).encode(),
+                 json.dumps({"done": True, "done_reason": "stop", "eval_count": 700, "prompt_eval_count": 3000}).encode()]
+        r = self._run("local", lines)
+        self.assertEqual((r["backend"], r["model"]), ("local", O.OLLAMA_MODEL))
+        self.assertEqual(r["diagnostics"]["prompt_tokens"], 3000)
+        self.assertIn("Ollama (local)", O.generation_summary(r)); self.assertIn("complete", O.generation_summary(r))
+
+    def test_cloud_reports_groq_model_not_qwen(self):
+        lines = [b"data: " + json.dumps({"choices": [{"delta": {"content": Sections.FULL}}]}).encode(),
+                 b"data: " + json.dumps({"choices": [{"delta": {}, "finish_reason": "stop"}]}).encode(),
+                 b"data: " + json.dumps({"choices": [], "x_groq": {"usage": {"prompt_tokens": 1500, "completion_tokens": 640}}}).encode(),
+                 b"data: [DONE]"]
+        r = self._run("cloud", lines)
+        self.assertEqual((r["backend"], r["model"]), ("cloud", O.GROQ_MODEL))
+        self.assertNotEqual(r["model"], O.OLLAMA_MODEL)
+        self.assertEqual((r["diagnostics"]["prompt_tokens"], r["diagnostics"]["completion_tokens"]), (1500, 640))
+        self.assertIn("Groq (cloud)", O.generation_summary(r))
+
+    def test_groq_usage_in_separate_final_chunk_after_finish(self):
+        lines = [b"data: " + json.dumps({"choices": [{"delta": {"content": "x"}, "finish_reason": "length"}]}).encode(),
+                 b"data: " + json.dumps({"choices": [], "usage": {"prompt_tokens": 11, "completion_tokens": 22}}).encode(),
+                 b"data: [DONE]"]
+        meta = {}
+        with mock.patch.object(O.requests, "post", return_value=_Resp(lines)):
+            O._stream_groq({"options": {}}, "k", 5, 10, None, meta=meta)
+        self.assertEqual((meta["finish_reason"], meta["prompt_tokens"], meta["completion_tokens"]), ("length", 11, 22))
+
+    def test_summary_marks_unavailable_not_zero_and_has_no_content(self):
+        r = {"diagnostics": O._completion_diagnostics(dict(O._new_meta("cloud"), model="m"), "THREAT VERDICT: SECRETBODY")}
+        t = O.generation_summary(r)
+        self.assertIn("prompt tokens: unavailable", t); self.assertNotIn("tokens: 0", t)
+        self.assertNotIn("SECRETBODY", t); self.assertIn("possibly incomplete", t)
+
+    def test_summary_empty_without_diagnostics(self):
+        self.assertEqual(O.generation_summary({"ok": True}), "")
 
 
 if __name__ == "__main__":
