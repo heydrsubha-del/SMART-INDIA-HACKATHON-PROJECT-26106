@@ -81,25 +81,23 @@ class T(unittest.TestCase):
         self.assertEqual(len(rows), 1); self.assertEqual(rows[0]["Email"], "other")
 
     def test_infra_no_invented_data(self):
-        r = oi.infrastructure_profile(["45.33.32.156"], GEO, asn_lookup=None)[0]
+        r = oi.infrastructure_profile(["45.33.32.156"], GEO)[0]
         self.assertEqual(r["ASN"], "unavailable"); self.assertEqual(r["Hosting provider"], "Yes")
-        r2 = oi.infrastructure_profile(["8.8.4.4"], {}, None)[0]
+        r2 = oi.infrastructure_profile(["8.8.4.4"], {})[0]
         self.assertEqual(r2["ISP / network"], "unavailable")
 
-    def test_asn_lookup_graceful_without_db(self):
-        self.assertIsNone(oi.make_asn_lookup("/nonexistent/x.mmdb"))
-        self.assertIsNone(oi.make_asn_lookup("/nonexistent/y.mmdb"))
+    def test_asn_from_existing_geo_record(self):
+        geo = {"hops": [{"ip": "45.33.32.156", "asn": "AS32934 Facebook, Inc.", "isp": "Facebook, Inc."}]}
+        r = oi.infrastructure_profile(["45.33.32.156"], geo)[0]
+        self.assertEqual((r["ASN"], r["AS organization"]), ("AS32934", "Facebook, Inc."))
+        a = oi.assess_origin({"received_chain": CLEAN}, geo)
+        self.assertEqual((a["route"][0]["asn"], a["route"][0]["as_org"]), ("AS32934", "Facebook, Inc."))
 
-    def test_asn_lookup_with_fake_reader(self):
-        class R:
-            def get(self, ip): return {"autonomous_system_number": 64500, "autonomous_system_organization": "ExampleNet"}
-        oi._ASN_READER.update(reader=R(), path="/fake.mmdb", failed=False)
-        look = oi.make_asn_lookup("/fake.mmdb")
-        rows = oi.infrastructure_profile(["45.33.32.156"], {}, look)
-        self.assertEqual((rows[0]["ASN"], rows[0]["AS organization"]), ("AS64500", "ExampleNet"))
-        a = oi.assess_origin({"received_chain": CLEAN}, GEO, asn_lookup=look)
-        self.assertEqual(a["route"][0]["asn"], 64500)
-        oi._ASN_READER.update(reader=None, path=None, failed=False)
+    def test_split_asn_edge_cases(self):
+        self.assertEqual(oi._split_asn("AS15169"), ("AS15169", None))
+        self.assertEqual(oi._split_asn(""), (None, None))
+        self.assertEqual(oi._split_asn(None), (None, None))
+        self.assertEqual(oi._split_asn("garbage"), (None, None))
 
     def test_corroboration_headers_only_and_large_body(self):
         raw = b"X-Originating-IP: [45.33.32.156]\r\n\r\n" + b"A" * 5_000_000
