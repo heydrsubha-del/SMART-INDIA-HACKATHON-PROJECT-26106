@@ -392,6 +392,32 @@ def _calibration_note(answer, result):
     return answer
 
 
+def _intel_count(intelligence, key, tm, tm_index):
+    """Machine count for the prompt. Never invents a zero: result["intelligence"] is not filled by the
+    app pipeline, so a missing key used to be shown to the AI as 0 and contradicted Retro-Hunt."""
+    if isinstance(intelligence, dict) and intelligence.get(key) is not None:
+        return intelligence[key]
+    if tm is not None:   # Retro-Hunt counts: (earlier local sightings, external feed matches)
+        return tm[tm_index]
+    return "not evaluated"
+
+
+_TERM = r"(?:local[- ]memory(?: matches)?|local sightings?|earlier (?:local )?sightings?|prior (?:local )?sightings?)"
+_ZERO_SIGHTINGS_RE = re.compile(
+    r"(?i)(?:\b(?:no|zero|0)\s+" + _TERM + r"\b"                                     # "no earlier local sightings"
+    r"|\b" + _TERM + r"\s*(?::|=|\bis\b|\bwas\b|\bof\b)\s*(?:0|zero|none)\b)")      # "local memory matches: 0"
+
+
+def _threat_memory_note(answer, result):
+    """If the AI text reports no earlier local sightings while Retro-Hunt found some, append the machine counts."""
+    tm = _threat_memory_counts(result)
+    if tm is None or tm[0] <= 0 or not _ZERO_SIGHTINGS_RE.search(answer):
+        return answer
+    return (answer + f"\n\n> Note: the machine Retro-Hunt recorded {tm[0]} earlier local sighting(s) and {tm[1]} "
+            "external-feed match(es). Earlier local sightings only mean this app saw the indicator before; they are "
+            "not confirmed malicious matches. Where the AI text above reports zero local sightings, the machine count applies.")
+
+
 def _threat_memory_block(result):
     tm = _threat_memory_counts(result)
     if tm is None:
@@ -550,15 +576,9 @@ def build_evidence(result, network_trust=None, compact=False):
                 ) or 0.0
             ),
 
-            "urlhaus_matches": intelligence.get(
-                "urlhaus_matches",
-                0
-            ),
+            "urlhaus_matches": _intel_count(intelligence, "urlhaus_matches", _threat_memory_counts(result), 1),
 
-            "local_memory_matches": intelligence.get(
-                "local_memory_matches",
-                0
-            ),
+            "local_memory_matches": _intel_count(intelligence, "local_memory_matches", _threat_memory_counts(result), 0),
 
             "threat_memory": _threat_memory_block(result),
 
@@ -1038,6 +1058,7 @@ def analyze_with_ollama(result, timeout=OLLAMA_TIMEOUT, progress_callback=None, 
             answer = _request(payload, timeout=timeout, required_heading="THREAT VERDICT", progress_callback=progress_callback, meta=meta)
         diagnostics = _completion_diagnostics(meta, answer)
         answer = _calibration_note(answer, result)
+        answer = _threat_memory_note(answer, result)
         if not diagnostics["complete"]:
             why = ("generation stopped at the output-token limit" if diagnostics["output_truncated"]
                    else "required sections are missing: " + ", ".join(diagnostics["missing_sections"]))
