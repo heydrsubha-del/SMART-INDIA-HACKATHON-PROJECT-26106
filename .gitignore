@@ -18,3 +18,9 @@ venv/
 desktop.ini
 .streamlit/secrets.toml
 client_secret*.json
+
+supabase/.temp
+supabase/.env
+
+supabase/.temp
+supabase/.env
