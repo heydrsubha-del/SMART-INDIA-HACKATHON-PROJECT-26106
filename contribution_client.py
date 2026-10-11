@@ -61,11 +61,16 @@ def prepare(candidates):
 
 
 def _fail(code, **kw):
+    """Failure result. `token` (when given) is a still-valid anonymous session the caller should REUSE, so a
+    transient failure after sign-in does not make the next attempt create another anonymous user."""
     return dict({"ok": False, "accepted": 0, "duplicates": 0, "rejected": 0, "error": code, "token": None}, **kw)
 
 
 def _sign_in(base, key, timeout):
-    resp = requests.post(base + "/auth/v1/signup", headers={"apikey": key, "Content-Type": "application/json"}, json={}, timeout=timeout)
+    resp = requests.post(base + "/auth/v1/signup", headers={"apikey": key, "Content-Type": "application/json"}, json={},
+                         timeout=timeout, allow_redirects=False)       # never follow a redirect: it could leave the project host
+    if 300 <= resp.status_code < 400:
+        return None
     resp.raise_for_status()
     token = resp.json().get("access_token")
     return token if isinstance(token, str) and token else None
@@ -73,6 +78,7 @@ def _sign_in(base, key, timeout):
 
 def _post_rpc(base, key, token, payload, timeout):
     return requests.post(base + "/rest/v1/rpc/submit_indicators", timeout=timeout, json={"p_items": payload},
+                         allow_redirects=False,                         # the Bearer token must only ever go to the configured host
                          headers={"apikey": key, "Authorization": "Bearer " + token, "Content-Type": "application/json"})
 
 
@@ -97,6 +103,7 @@ def submit(items, verdict, consent, token=None, timeout=TIMEOUT):
     base = _sic._base_url(url) if url else None
     if not base or not key or _sic._key_problem(key):
         return _fail("not_configured")
+    token = token if isinstance(token, str) and token else None      # anything else: treat as "no session"
     now = time.monotonic()
     if token:
         last = _last_submit.get(token)
@@ -117,16 +124,19 @@ def submit(items, verdict, consent, token=None, timeout=TIMEOUT):
                 token = None                                       # expired session: sign in once more
                 continue
             break
+        if 300 <= resp.status_code < 400:
+            return _fail("unavailable", token=token)             # redirects are never followed
         if resp.status_code >= 400:
             try:
                 msg = str(resp.json().get("message", ""))
             except Exception:
                 msg = ""
-            return _fail(msg if msg in _KNOWN_ERRORS else "server_error")
+            keep = None if resp.status_code in (401, 403) else token     # an auth-refused session is not reusable
+            return _fail(msg if msg in _KNOWN_ERRORS else "server_error", token=keep)
         data = resp.json()
         counts = [data.get(k) for k in ("accepted", "duplicates", "rejected")]
         if not isinstance(data, dict) or any(type(c) is not int or c < 0 for c in counts):
-            return _fail("unavailable")
+            return _fail("unavailable", token=token)
         return {"ok": True, "accepted": counts[0], "duplicates": counts[1], "rejected": counts[2], "error": "", "token": token}
     except Exception:
-        return _fail("unavailable")             # never echo URLs, keys or exception text
+        return _fail("unavailable", token=token)    # never echo URLs, keys or exception text; keep any session already made

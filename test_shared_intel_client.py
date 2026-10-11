@@ -73,6 +73,11 @@ class Fetch(Base):
         self.assertEqual(set(kw["headers"]), {"apikey", "Authorization", "Accept"})
         self.assertNotIn("reviewed_by", kw["params"]["select"])
 
+    def test_publishable_key_sent_in_apikey_header_only(self):
+        with mock.patch.dict(os.environ, {C.KEY_ENV: "sb_publishable_abc"}), mock.patch.object(C.requests, "get", return_value=Resp([])) as get:
+            C.fetch_verified()
+        self.assertEqual(set(get.call_args[1]["headers"]), {"apikey", "Accept"})
+
     def test_good_rows_returned_as_community_source(self):
         page = [row("evil.example.net"), row("http://evil.example.net/login", "url", "suspicious", 0.4), row("8.8.4.4", "ip")]
         with mock.patch.object(C.requests, "get", return_value=Resp(page)):
@@ -108,6 +113,11 @@ class Fetch(Base):
                                    return_value=None if isinstance(effect, Exception) else effect):
                 r = C.fetch_verified()
             self.assertFalse(r["ok"]); self.assertEqual(r["rows"], []); self.assertNotIn(key, r["error"])
+
+    def test_redirects_are_never_followed(self):
+        with mock.patch.object(C.requests, "get", return_value=Resp([])) as get:
+            C.fetch_verified()
+        self.assertIs(get.call_args[1]["allow_redirects"], False)
 
     def test_non_list_response_rejected(self):
         with mock.patch.object(C.requests, "get", return_value=Resp({"message": "nope"})):

@@ -64,11 +64,13 @@ def fetch_verified(max_rows=_MAX_ROWS, timeout=15, session=None):
         return _fail(problem)
 
     http = session or requests
-    headers = {"apikey": key, "Authorization": "Bearer " + key, "Accept": "application/json"}
+    headers = {"apikey": key, "Accept": "application/json"}
+    if not key.startswith("sb_"):                 # new-style publishable keys are not JWTs: apikey header only
+        headers["Authorization"] = "Bearer " + key
     rows, rejected, offset = [], 0, 0
     try:
         while offset < max_rows:
-            resp = http.get(base + "/rest/v1/shared_indicators", headers=headers, timeout=timeout,
+            resp = http.get(base + "/rest/v1/shared_indicators", headers=headers, timeout=timeout, allow_redirects=False,
                             params={"select": _COLUMNS, "status": "eq.verified", "order": "updated_at.asc",
                                     "limit": str(_PAGE), "offset": str(offset)})
             resp.raise_for_status()
