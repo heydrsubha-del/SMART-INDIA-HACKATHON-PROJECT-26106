@@ -21,6 +21,7 @@ import config as C
 import geolocate
 import header_analysis
 import ioc_extract
+import community_intel
 import risk
 
 from classifier import load_or_train, predict
@@ -151,10 +152,13 @@ def analyze_email(raw, name="uploaded", pipe=None):
         bec_score=headers["bec"]["score"],
     )
 
+    # Community intelligence (feature-flagged, OFF by default): contextual only, looked up AFTER scoring, never affects it.
+    community = community_intel.lookup(parsed, iocs, geo)
+
     # ------------------------------------------------------------------
     # Unified result object
     # ------------------------------------------------------------------
-    return {
+    result = {
         "name": name,
         "parsed": parsed,
         "ml": {
@@ -172,6 +176,9 @@ def analyze_email(raw, name="uploaded", pipe=None):
         "color": verdict["color"],
         "verdict": verdict,
     }
+    if community is not None:               # key exists only when the feature is enabled
+        result["community_intel"] = community
+    return result
 
 
 def list_samples():

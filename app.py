@@ -13884,6 +13884,21 @@ if active_panel == "Indicators":
                 st.markdown(f"**{label}:**")
                 st.write(", ".join(f"`{v}`" for v in values))
 
+        _ci = result.get("community_intel") if isinstance(result, dict) else None
+        if _ci:
+            st.divider()
+            _sec("Community Intelligence", "Reviewer-verified community reports. Contextual only: not a confirmed malicious match, no score impact.", "sky")
+            if _ci.get("status") != "ok":
+                st.caption("Community intelligence is unavailable right now. The scan itself is not affected.")
+            elif not _ci.get("matches"):
+                st.caption(f"No community reports for the {_ci.get('checked', 0)} indicator(s) checked. That does not mean they are safe.")
+            else:
+                _render_polished_table(pd.DataFrame([{
+                    "Indicator": m["indicator"], "Type": m["type"], "Match": m["match"],
+                    "Community verdict": m["verdict"], "Confidence": f"{m['confidence']:.2f}",
+                    "Found in": ", ".join(m["found_in"]),
+                } for m in _ci["matches"]]))
+
         if parsed.get("attachments"):
             st.divider()
             _sec("Attachments", tone="gold")
