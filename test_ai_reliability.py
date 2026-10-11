@@ -307,5 +307,20 @@ class RetroHuntDiscrepancy(unittest.TestCase):
         self.assertIn('\\"local_memory_matches\\": 11', json.dumps(post.call_args.kwargs["json"]["messages"]))
 
 
+class RetroSourceClassesInAI(unittest.TestCase):
+    def _res(self, **rh):
+        res = T.result_for(T.raw_mail()); res["retro_hunt"] = dict({"intel": 0, "intel_feed": 0}, **rh); return res
+
+    def test_community_and_unknown_are_not_local_sightings_or_feed_matches(self):
+        tm = O.build_evidence(self._res(intel=9, intel_local=4, intel_feed=1, intel_community=3, intel_unknown=1))["machine_analysis"]["threat_memory"]
+        self.assertEqual((tm["earlier_local_sightings"], tm["external_feed_matches"]), (4, 1))
+        self.assertEqual((tm["community_reported_unverified"], tm["unrecognised_source_records"]), (3, 1))
+        self.assertIn("NOT confirmed", tm["note"])
+
+    def test_old_count_shape_still_works(self):
+        tm = O.build_evidence(self._res(intel=11, intel_feed=0))["machine_analysis"]["threat_memory"]
+        self.assertEqual((tm["earlier_local_sightings"], tm["external_feed_matches"]), (11, 0))
+
+
 if __name__ == "__main__":
     unittest.main()

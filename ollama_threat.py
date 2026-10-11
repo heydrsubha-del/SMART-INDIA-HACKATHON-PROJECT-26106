@@ -262,6 +262,8 @@ def _threat_memory_counts(result):
     if not isinstance(rh, dict):
         return None
     intel, feed = int(rh.get("intel", 0) or 0), int(rh.get("intel_feed", 0) or 0)
+    if rh.get("intel_local") is not None:      # source-classified counts: community / unknown rows are not local sightings
+        return int(rh.get("intel_local") or 0), feed
     return max(intel - feed, 0), feed
 
 
@@ -427,9 +429,11 @@ def _threat_memory_block(result):
     return {"status": "evaluated",
             "earlier_local_sightings": prior,
             "external_feed_matches": feed,
+            "community_reported_unverified": int((result.get("retro_hunt") or {}).get("intel_community", 0) or 0),
+            "unrecognised_source_records": int((result.get("retro_hunt") or {}).get("intel_unknown", 0) or 0),
             "note": "earlier_local_sightings means this app recorded the same indicator before (routine for a sender "
                     "you receive mail from); it is NOT evidence of malice. Only external_feed_matches are confirmed "
-                    "malicious-intelligence matches. Report both numbers accurately; never say there are 'no local-memory "
+                    "malicious-intelligence matches; community_reported_unverified and unrecognised_source_records are NOT confirmed. Report both numbers accurately; never say there are 'no local-memory "
                     "matches' when earlier_local_sightings > 0."}
 
 
