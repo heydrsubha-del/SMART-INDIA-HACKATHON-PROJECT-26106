@@ -97,6 +97,17 @@ def _prioritised_cap(values, limit=_MAX_IOC_LIST_ITEMS):
     return sorted(values, key=lambda u: -_risk_of(u))[:limit]
 
 
+def _community_block(result):
+    """Only present when the community-intel feature produced data. Contextual; never a confirmed match."""
+    ci = result.get("community_intel") if isinstance(result, dict) else None
+    if not isinstance(ci, dict):
+        return "not enabled"
+    return {"status": ci.get("status"), "indicators_checked": ci.get("checked"),
+            "community_reports": [{k: m.get(k) for k in ("indicator", "type", "match", "verdict", "confidence")}
+                                  for m in (ci.get("matches") or [])[:10]],
+            "note": ci.get("note") or "Community reports are contextual only: not confirmed malicious, no score impact."}
+
+
 def _prompt_limits(iocs, limit=_MAX_IOC_LIST_ITEMS):
     """Truthful shown/omitted counts for lists the prompt had to cap."""
     out = {}
@@ -528,6 +539,8 @@ def build_evidence(result, network_trust=None, compact=False):
             ), lim),
 
             "prompt_limits": _prompt_limits(iocs, lim),
+
+            "community_intelligence": _community_block(result),
 
             "compact_mode": ("Reduced evidence (body cut to 1500 chars, shorter lists) because the first request was too large "
                              "for the cloud API. Treat missing detail as not supplied, not as absent.") if compact else False,
