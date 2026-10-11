@@ -22,5 +22,3 @@ client_secret*.json
 supabase/.temp
 supabase/.env
 
-supabase/.temp
-supabase/.env
