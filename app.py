@@ -43,6 +43,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
     )
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
+import contribution_client
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama, generation_summary
 from nomic_embed import embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
@@ -13898,6 +13899,26 @@ if active_panel == "Indicators":
                     "Community verdict": m["verdict"], "Confidence": f"{m['confidence']:.2f}",
                     "Found in": ", ".join(m["found_in"]),
                 } for m in _ci["matches"]]))
+
+        if contribution_client.enabled():
+            with st.expander("Contribute indicators to community intelligence (opt-in)"):
+                _prep = contribution_client.prepare(contribution_client.candidates_from_result(result))
+                st.caption("Shares only sanitized web addresses/domains flagged by heuristics: no email text, addresses, attachments, reports or URL parameters. "
+                           "Submissions are reviewed before anyone sees them, and they never change your score.")
+                if not _prep["items"]:
+                    st.caption("This email has no shareable indicators.")
+                else:
+                    _render_polished_table(pd.DataFrame([{"Type": i["indicator_type"], "Indicator": i["value_norm"]} for i in _prep["items"]]))
+                    _ck = str(result.get("_evidence_hash", "x"))[:12]
+                    _verdict = st.selectbox("Your assessment", contribution_client.VERDICTS, key=f"contrib_v_{_ck}")
+                    _agree = st.checkbox("I agree to share exactly the indicators listed above for review.", value=False, key=f"contrib_c_{_ck}")
+                    if st.button("Submit for review", key=f"contrib_b_{_ck}", disabled=not _agree):
+                        _cr = contribution_client.submit(_prep["items"], _verdict, _agree, token=st.session_state.get("_contrib_token"))
+                        st.session_state["_contrib_token"] = _cr.get("token") or st.session_state.get("_contrib_token")
+                        if _cr["ok"]:
+                            st.success(f"Submitted {_cr['accepted']} indicator(s) for review ({_cr['duplicates']} already sent, {_cr['rejected']} rejected).")
+                        else:
+                            st.warning("Could not submit right now (" + _cr["error"] + "). Your scan is unaffected.")
 
         if parsed.get("attachments"):
             st.divider()
