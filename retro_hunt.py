@@ -23,6 +23,32 @@ from email.utils import parseaddr
 MAX_INDICATORS = 40
 MAX_ROWS = 80
 
+# Threat-memory source classes. Only a recognised external feed is a confirmed-intelligence match.
+# Community-contributed indicators are unverified reports, and an unrecognised source is never assumed to be a feed.
+LOCAL_SOURCES = frozenset({"local_analysis"})
+EXTERNAL_FEED_SOURCES = frozenset({"urlhaus"})
+COMMUNITY_PREFIXES = ("community",)
+
+
+def classify_source(source):
+    """'local' | 'external_feed' | 'community' | 'unknown' for a threat_intel.source value."""
+    s = str(source or "").strip().lower()
+    if s in LOCAL_SOURCES:
+        return "local"
+    if s in EXTERNAL_FEED_SOURCES:
+        return "external_feed"
+    if s == "community" or any(s.startswith(p + sep) for p in COMMUNITY_PREFIXES for sep in (":", "_", "-", " ")):
+        return "community"
+    return "unknown"
+
+
+def _row_class(row):
+    """Source class of a Threat-memory row: the stored class, else parsed from its 'Where' text."""
+    if row.get("Class"):
+        return row["Class"]
+    where = str(row.get("Where", "")).split(" (reputation")[0]
+    return classify_source(where.rsplit(" via ", 1)[1] if " via " in where else "")
+
 
 def _norm(v):
     return str(v or "").strip().lower().rstrip(".")
@@ -218,7 +244,7 @@ def _mem_row(ind, typ, match, rep, cat, fs, ls, obs, src, selfset=frozenset()):
         obs = max(int(obs or 0) - 1, 0)
         if obs == 0:
             return None
-    return {"Source": "Threat memory", "Indicator": ind, "Type": typ, "Match": match,
+    return {"Source": "Threat memory", "Indicator": ind, "Type": typ, "Match": match, "Class": classify_source(src),
             "Where": f"{cat or 'unknown'} via {src or '?'} (reputation {float(rep or 0):.2f})",
             "First seen": fs or "-", "Last seen": ls or "-", "Times": int(obs or 0), "Verdict": "-", "Score": "-"}
 
@@ -233,12 +259,19 @@ def hunt(indicators, cases, conns, current_name=None, current_hash=None, self_lo
 
 
 def counts(rows):
-    """The three history buckets, derived from the rows themselves (never separately)."""
+    """History buckets, derived from the rows themselves (never separately).
+
+    intel = every threat-memory row = intel_local + intel_feed + intel_community + intel_unknown.
+    intel_feed is ONLY recognised external feeds (e.g. URLhaus); community and unrecognised sources are never feed matches."""
     rows = rows or []
     emails = {r["Where"].rsplit(" (", 1)[0] for r in rows if r["Source"] == "Earlier email"}
+    mem = [_row_class(r) for r in rows if r["Source"] == "Threat memory"]
     return {"emails": len(emails), "email_rows": sum(1 for r in rows if r["Source"] == "Earlier email"),
-            "intel": sum(1 for r in rows if r["Source"] == "Threat memory"),
-            "intel_feed": sum(1 for r in rows if r["Source"] == "Threat memory" and not r["Where"].split(" (reputation")[0].endswith("via local_analysis")),
+            "intel": len(mem),
+            "intel_local": mem.count("local"),
+            "intel_feed": mem.count("external_feed"),
+            "intel_community": mem.count("community"),
+            "intel_unknown": mem.count("unknown"),
             "log": sum(1 for r in rows if r["Source"] == "Scored-email log")}
 
 
@@ -246,7 +279,9 @@ def summary(rows, n_indicators):
     c = counts(rows)
     base = (f"Hunted {n_indicators} indicator(s). Earlier emails this session: {c['emails']} email(s) "
             f"({c['email_rows']} matching artifact(s)). Threat-memory indicator records: {c['intel']} "
-            f"({c['intel_feed']} from external feeds, {c['intel'] - c['intel_feed']} earlier local sightings only). "
+            f"({c['intel_feed']} from known external feeds, {c['intel_local']} earlier local sightings only, "
+            f"{c['intel_community']} community-reported and not confirmed malicious, "
+            f"{c['intel_unknown']} from unrecognised sources). "
             f"Scored-email log entries: {c['log']}.")
     if not rows:
         return base + " No earlier sighting was found; that only means this app has not recorded these indicators before."
