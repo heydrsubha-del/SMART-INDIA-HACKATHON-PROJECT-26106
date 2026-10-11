@@ -240,5 +240,72 @@ class Groq413(unittest.TestCase):
         self.assertIn("413", r["error"]); self.assertNotIn("Ollama", r["error"])
 
 
+class RetroHuntDiscrepancy(unittest.TestCase):
+    """Machine: 11 earlier local sightings, 0 feed matches. Mocked Groq answer claims zero."""
+    BAD = Sections.FULL + "\nFORENSIC EVIDENCE: Local memory matches: 0; URLhaus matches: 0. There are no earlier local sightings."
+
+    def _groq(self, res, answer):
+        sent = []
+        def post(url, **kw):
+            sent.append(json.dumps(kw["json"]["messages"]))
+            return _Resp([b"data: " + json.dumps({"choices": [{"delta": {"content": answer}, "finish_reason": "stop"}]}).encode(),
+                          b"data: [DONE]"])
+        with mock.patch.object(O, "resolve_backend", return_value=("cloud", "k")), \
+             mock.patch.object(O, "_ollama_available", return_value=False), \
+             mock.patch.object(O.requests, "post", side_effect=post):
+            return O.analyze_with_ollama(res), sent[0]
+
+    def _res(self, retro=True):
+        res = T.result_for(T.raw_mail())
+        res["intelligence"] = {}          # as the real pipeline: the key is never populated
+        if retro:
+            res["retro_hunt"] = {"emails": 0, "email_rows": 0, "intel": 11, "intel_feed": 0, "log": 0}
+        return res
+
+    def test_prompt_carries_machine_counts_not_a_fabricated_zero(self):
+        ma = O.build_evidence(self._res())["machine_analysis"]
+        self.assertEqual(ma["local_memory_matches"], 11)
+        self.assertEqual(ma["threat_memory"]["earlier_local_sightings"], 11)
+        self.assertEqual(ma["threat_memory"]["external_feed_matches"], 0)
+
+    def test_groq_prompt_sent_contains_11_and_local_vs_feed_distinction(self):
+        r, prompt = self._groq(self._res(), Sections.FULL)
+        self.assertIn('\\"local_memory_matches\\": 11', prompt)
+        self.assertIn("NOT evidence of malice", prompt)
+        self.assertEqual(r["backend"], "cloud")
+
+    def test_groq_zero_claim_is_corrected_with_machine_counts(self):
+        r, _ = self._groq(self._res(), self.BAD)
+        self.assertIn("recorded 11 earlier local sighting(s) and 0 external-feed", r["analysis"])
+        self.assertIn("not confirmed malicious", r["analysis"])
+
+    def test_consistent_answer_gets_no_note(self):
+        good = Sections.FULL + "\nThe app recorded 11 earlier local sightings and 0 external feed matches."
+        r, _ = self._groq(self._res(), good)
+        self.assertNotIn("Retro-Hunt recorded", r["analysis"])
+
+    def test_without_retro_result_counts_are_not_evaluated_not_zero(self):
+        ma = O.build_evidence(self._res(retro=False))["machine_analysis"]
+        self.assertEqual(ma["local_memory_matches"], "not evaluated")
+        self.assertEqual(ma["urlhaus_matches"], "not evaluated")
+        r, _ = self._groq(self._res(retro=False), self.BAD)
+        self.assertNotIn("Retro-Hunt recorded", r["analysis"])
+
+    def test_explicit_pipeline_values_still_win(self):
+        res = self._res(); res["intelligence"] = {"urlhaus_matches": 2, "local_memory_matches": 5}
+        ma = O.build_evidence(res)["machine_analysis"]
+        self.assertEqual((ma["urlhaus_matches"], ma["local_memory_matches"]), (2, 5))
+
+    def test_local_qwen_path_same_counts(self):
+        lines = [json.dumps({"message": {"content": Sections.FULL}, "done": False}).encode(),
+                 json.dumps({"done": True, "done_reason": "stop"}).encode()]
+        with mock.patch.object(O, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(O, "_ollama_available", return_value=True), \
+             mock.patch.object(O.requests, "post", return_value=_Resp(lines)) as post:
+            r = O.analyze_with_ollama(self._res())
+        self.assertEqual(r["backend"], "local")
+        self.assertIn('\\"local_memory_matches\\": 11', json.dumps(post.call_args.kwargs["json"]["messages"]))
+
+
 if __name__ == "__main__":
     unittest.main()
