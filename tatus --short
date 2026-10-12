@@ -1,0 +1,351 @@
+[35manalyzer.py[m[36m:[m[32m229[m[36m:[m    [1;31mprint([m
+[35manalyzer.py[m[36m:[m[32m241[m[36m:[m    [1;31mprint([m"-" * 100)
+[35manalyzer.py[m[36m:[m[32m246[m[36m:[m            [1;31mprint([m
+[35manalyzer.py[m[36m:[m[32m256[m[36m:[m        [1;31mprint([m
+[35mapp.py[m[36m:[m[32m56[m[36m:[m        get_cached_[1;31maccess_token[m,
+[35mapp.py[m[36m:[m[32m107[m[36m:[m        st.[1;31msession_state[m[session_key] = tok
+[35mapp.py[m[36m:[m[32m110[m[36m:[m        return st.[1;31msession_state[m.get(session_key)
+[35mapp.py[m[36m:[m[32m111[m[36m:[m    st.[1;31msession_state[m.pop(session_key, None)
+[35mapp.py[m[36m:[m[32m131[m[36m:[m        return st.[1;31msession_state[m.get("_google_email_cache") or None
+[35mapp.py[m[36m:[m[32m143[m[36m:[m        st.[1;31msession_state[m["_google_email_cache"] = email
+[35mapp.py[m[36m:[m[32m152[m[36m:[mdef _fetch_google_email_from_token([1;31maccess_token[m: str):
+[35mapp.py[m[36m:[m[32m161[m[36m:[m            headers={"Authorization": f"Bearer {[1;31maccess_token[m}"},
+[35mapp.py[m[36m:[m[32m181[m[36m:[m        return st.[1;31msession_state[m.get(f"_{provider_key}_email_cache") or None
+[35mapp.py[m[36m:[m[32m191[m[36m:[m        st.[1;31msession_state[m[f"_{provider_key}_email_cache"] = email
+[35mapp.py[m[36m:[m[32m334[m[36m:[m    return st.[1;31msession_state[m.setdefault("_imap_raw_cache", {})
+[35mapp.py[m[36m:[m[32m466[m[36m:[m    cfg = st.[1;31msession_state[m.get("live_mailbox_config")
+[35mapp.py[m[36m:[m[32m467[m[36m:[m    headers = st.[1;31msession_state[m.get("live_mailbox_messages") or []
+[35mapp.py[m[36m:[m[32m635[m[36m:[m    cached = st.[1;31msession_state[m.get("_nomic_ready_cache")
+[35mapp.py[m[36m:[m[32m642[m[36m:[m    st.[1;31msession_state[m["_nomic_ready_cache"] = (now, ok)
+[35mapp.py[m[36m:[m[32m652[m[36m:[m    done = st.[1;31msession_state[m.setdefault("_sem_indexed", {})
+[35mapp.py[m[36m:[m[32m673[m[36m:[m    done = st.[1;31msession_state[m.setdefault("_sem_indexed", {})
+[35mapp.py[m[36m:[m[32m818[m[36m:[m# hears about it, so [1;31msession_state[m["imap_user"] / ["imap_manual_password"]
+[35mapp.py[m[36m:[m[32m999[m[36m:[m_corr_cases = st.[1;31msession_state[m.setdefault("correlation_cases", {})
+[35mapp.py[m[36m:[m[32m1000[m[36m:[mst.[1;31msession_state[m.setdefault("single_ai_reports", {})
+[35mapp.py[m[36m:[m[32m1012[m[36m:[m# st.[1;31msession_state[m["imap_user"] at that point raises a
+[35mapp.py[m[36m:[m[32m1021[m[36m:[m# conflict with -- the very next run picks up st.[1;31msession_state[m["imap_user"]
+[35mapp.py[m[36m:[m[32m1217[m[36m:[m            st.[1;31msession_state[m["_microsoft_oauth_error"] = _oauth_error
+[35mapp.py[m[36m:[m[32m1222[m[36m:[m                st.[1;31msession_state[m["microsoft_oauth_token"] = _ms_token
+[35mapp.py[m[36m:[m[32m1224[m[36m:[m                    st.[1;31msession_state[m["imap_user"] = _ms_email
+[35mapp.py[m[36m:[m[32m1226[m[36m:[m                st.[1;31msession_state[m["imap_provider"] = "Outlook / Microsoft 365"
+[35mapp.py[m[36m:[m[32m1227[m[36m:[m                st.[1;31msession_state[m["show_imap_connection_form"] = True
+[35mapp.py[m[36m:[m[32m1231[m[36m:[m                st.[1;31msession_state[m["_microsoft_oauth_error"] = f"Microsoft sign-in failed while completing sign-in: {_ms_exc}"
+[35mapp.py[m[36m:[m[32m1235[m[36m:[m            st.[1;31msession_state[m["_yandex_oauth_error"] = _oauth_error
+[35mapp.py[m[36m:[m[32m1240[m[36m:[m                st.[1;31msession_state[m["yandex_oauth_token"] = _ya_token
+[35mapp.py[m[36m:[m[32m1242[m[36m:[m                    st.[1;31msession_state[m["imap_user"] = _ya_email
+[35mapp.py[m[36m:[m[32m1244[m[36m:[m                st.[1;31msession_state[m["imap_provider"] = "Yandex"
+[35mapp.py[m[36m:[m[32m1245[m[36m:[m                st.[1;31msession_state[m["show_imap_connection_form"] = True
+[35mapp.py[m[36m:[m[32m1249[m[36m:[m                st.[1;31msession_state[m["_yandex_oauth_error"] = f"Yandex sign-in failed while completing sign-in: {_ya_exc}"
+[35mapp.py[m[36m:[m[32m1252[m[36m:[m        st.[1;31msession_state[m["_google_oauth_error"] = _oauth_error
+[35mapp.py[m[36m:[m[32m1257[m[36m:[m            st.[1;31msession_state[m["google_oauth_token"] = _token
+[35mapp.py[m[36m:[m[32m1265[m[36m:[m                st.[1;31msession_state[m["imap_user"] = _resolved_email
+[35mapp.py[m[36m:[m[32m1271[m[36m:[m            st.[1;31msession_state[m["imap_provider"] = "Gmail"
+[35mapp.py[m[36m:[m[32m1272[m[36m:[m            st.[1;31msession_state[m["show_imap_connection_form"] = True
+[35mapp.py[m[36m:[m[32m1276[m[36m:[m            st.[1;31msession_state[m["_google_oauth_error"] = f"Google sign-in failed while completing sign-in: {_oauth_exc}"
+[35mapp.py[m[36m:[m[32m2693[m[36m:[m       margin so the whole card is one click target while st.[1;31msession_state[m
+[35mapp.py[m[36m:[m[32m7645[m[36m:[mif st.[1;31msession_state[m.get("nav_force_mode") in _MODE_OPTIONS:
+[35mapp.py[m[36m:[m[32m7646[m[36m:[m    st.[1;31msession_state[m["input_mode_radio"] = st.[1;31msession_state[m.pop("nav_force_mode")
+[35mapp.py[m[36m:[m[32m7654[m[36m:[m_has_evidence_loaded = bool(st.[1;31msession_state[m.get("live_mailbox_messages")) or bool(
+[35mapp.py[m[36m:[m[32m7655[m[36m:[m    st.[1;31msession_state[m.get("stored_evidence_file")
+[35mapp.py[m[36m:[m[32m7698[m[36m:[m_sb_live_n = len(st.[1;31msession_state[m.get("live_mailbox_messages") or [])
+[35mapp.py[m[36m:[m[32m7834[m[36m:[m            panel_target is not None and st.[1;31msession_state[m.get("active_panel") == panel_target
+[35mapp.py[m[36m:[m[32m7841[m[36m:[m                st.[1;31msession_state[m["nav_force_mode"] = force_mode
+[35mapp.py[m[36m:[m[32m7844[m[36m:[m                    st.[1;31msession_state[m[k] = v
+[35mapp.py[m[36m:[m[32m7846[m[36m:[m                st.[1;31msession_state[m["active_panel"] = panel_target
+[35mapp.py[m[36m:[m[32m7851[m[36m:[m    _on_dashboard = st.[1;31msession_state[m.get("active_panel") == "Dashboard"
+[35mapp.py[m[36m:[m[32m7852[m[36m:[m    _mode_now = st.[1;31msession_state[m.get("input_mode_radio", _LIVE_MODE)
+[35mapp.py[m[36m:[m[32m7853[m[36m:[m    _on_origin_route = st.[1;31msession_state[m.get("active_panel") == "Origin & Route"
+[35mapp.py[m[36m:[m[32m7854[m[36m:[m    _origin_focus = st.[1;31msession_state[m.get("origin_route_focus", "map")
+[35mapp.py[m[36m:[m[32m7855[m[36m:[m    _on_threat_history = st.[1;31msession_state[m.get("active_panel") == "Threat History"
+[35mapp.py[m[36m:[m[32m7856[m[36m:[m    _th_focus = st.[1;31msession_state[m.get("threat_history_focus", "history")
+[35mapp.py[m[36m:[m[32m7925[m[36m:[m            for _k in list(st.[1;31msession_state[m.keys()):
+[35mapp.py[m[36m:[m[32m7926[m[36m:[m                del st.[1;31msession_state[m[_k]
+[35mapp.py[m[36m:[m[32m7941[m[36m:[m# is one (st.[1;31msession_state[m["imap_user"], set by the live IMAP connect flow
+[35mapp.py[m[36m:[m[32m7952[m[36m:[m    # and it's never bound to any widget -- unlike [1;31msession_state[m["imap_user"],
+[35mapp.py[m[36m:[m[32m7961[m[36m:[m    (st.[1;31msession_state[m.get("live_mailbox_config") or {}).get("user")
+[35mapp.py[m[36m:[m[32m7962[m[36m:[m    or st.[1;31msession_state[m.get("imap_user")
+[35mapp.py[m[36m:[m[32m8424[m[36m:[m# Bind the radio directly to the "active_panel" [1;31msession_state[m key instead of
+[35mapp.py[m[36m:[m[32m8426[m[36m:[m# [1;31msession_state[m and then writing [1;31msession_state[m back from the widget's return
+[35mapp.py[m[36m:[m[32m8432[m[36m:[m# The sidebar's _nav_button() still works: it sets st.[1;31msession_state[m["active_panel"]
+[35mapp.py[m[36m:[m[32m8435[m[36m:[mif "_pending_active_panel" in st.[1;31msession_state[m:
+[35mapp.py[m[36m:[m[32m8438[m[36m:[m    st.[1;31msession_state[m["active_panel"] = st.[1;31msession_state[m.pop("_pending_active_panel")
+[35mapp.py[m[36m:[m[32m8439[m[36m:[melif st.[1;31msession_state[m.get("active_panel") not in NAV_OPTIONS:
+[35mapp.py[m[36m:[m[32m8440[m[36m:[m    st.[1;31msession_state[m["active_panel"] = NAV_OPTIONS[0]
+[35mapp.py[m[36m:[m[32m9407[m[36m:[mdef _analyze_bytes_cached(raw_bytes, name, analysis_[1;31mnonce[m, code_version):
+[35mapp.py[m[36m:[m[32m9410[m[36m:[mdef analyze_bytes(raw_bytes, name, analysis_[1;31mnonce[m=0):
+[35mapp.py[m[36m:[m[32m9411[m[36m:[m    return _analyze_bytes_cached(raw_bytes, name, analysis_[1;31mnonce[m, _analysis_code_version())
+[35mapp.py[m[36m:[m[32m9418[m[36m:[m        [1;31mst.error[m(f"The **{label}** panel failed. Everything else still works.")
+[35mapp.py[m[36m:[m[32m9575[m[36m:[m    cache = st.[1;31msession_state[m.setdefault("_origin_intel_cache", {})
+[35mapp.py[m[36m:[m[32m9624[m[36m:[m    return st.[1;31msession_state[m.setdefault("_domain_intel_runs", {})
+[35mapp.py[m[36m:[m[32m9630[m[36m:[m        rc = st.[1;31msession_state[m.get("_retro_counts", {}).get(_domain_run_key(res))
+[35mapp.py[m[36m:[m[32m9695[m[36m:[m        st.[1;31msession_state[m.setdefault("_retro_counts", {})[_domain_run_key(case)] = retro_hunt.counts(hunt_rows)
+[35mapp.py[m[36m:[m[32m9703[m[36m:[m                                            st.[1;31msession_state[m.get("_domain_intel_cache")),
+[35mapp.py[m[36m:[m[32m9744[m[36m:[m        cache = st.[1;31msession_state[m.setdefault("_domain_intel_cache", {})
+[35mapp.py[m[36m:[m[32m10352[m[36m:[m    cfg = st.[1;31msession_state[m.get("live_mailbox_config")
+[35mapp.py[m[36m:[m[32m10357[m[36m:[m    headers = st.[1;31msession_state[m.get("live_mailbox_messages") or []
+[35mapp.py[m[36m:[m[32m10489[m[36m:[m    st.[1;31msession_state[m["pipeline_batch_result"] = {
+[35mapp.py[m[36m:[m[32m10497[m[36m:[m    st.[1;31msession_state[m["pipeline_batch_items"] = batch_items
+[35mapp.py[m[36m:[m[32m10498[m[36m:[m    st.[1;31msession_state[m["forensic_report_source"] = "pipeline"
+[35mapp.py[m[36m:[m[32m10499[m[36m:[m    # NOTE: don't write st.[1;31msession_state[m["active_panel"] here — by this point
+[35mapp.py[m[36m:[m[32m10502[m[36m:[m    # widget's [1;31msession_state[m value after that (StreamlitAPIException). Stage
+[35mapp.py[m[36m:[m[32m10505[m[36m:[m    st.[1;31msession_state[m["_pending_active_panel"] = "Forensic Report"
+[35mapp.py[m[36m:[m[32m10506[m[36m:[m    st.[1;31msession_state[m["_scroll_to_joint_report"] = True
+[35mapp.py[m[36m:[m[32m10513[m[36m:[m    already captured in st.[1;31msession_state[m. Streamlit forgets a widget's
+[35mapp.py[m[36m:[m[32m10820[m[36m:[m        # ANYWHERE in [1;31msession_state[m" first, regardless of which acquisition
+[35mapp.py[m[36m:[m[32m10832[m[36m:[m        _copilot_mode = st.[1;31msession_state[m.get("input_mode_radio", "Live IMAP Mailbox Interceptor")
+[35mapp.py[m[36m:[m[32m10837[m[36m:[m            if not st.[1;31msession_state[m.get("live_mailbox_config"):
+[35mapp.py[m[36m:[m[32m10923[m[36m:[m        _copilot_history = st.[1;31msession_state[m.get("copilot_chat_history", [])
+[35mapp.py[m[36m:[m[32m10947[m[36m:[m                        st.[1;31msession_state[m.setdefault("copilot_chat_history", []).append({"role": "user", "content": _qsample})
+[35mapp.py[m[36m:[m[32m10948[m[36m:[m                        st.[1;31msession_state[m["copilot_chat_history"].append({
+[35mapp.py[m[36m:[m[32m10965[m[36m:[m                st.[1;31msession_state[m.setdefault("copilot_chat_history", []).append({"role": "user", "content": _typed_cmd.strip()})
+[35mapp.py[m[36m:[m[32m10966[m[36m:[m                st.[1;31msession_state[m["copilot_chat_history"].append({
+[35mapp.py[m[36m:[m[32m10974[m[36m:[m    [1;31mst.write[m("")
+[35mapp.py[m[36m:[m[32m10978[m[36m:[m    input_mode = st.[1;31msession_state[m.get("input_mode_radio", _LIVE_OPT)
+[35mapp.py[m[36m:[m[32m11012[m[36m:[m            st.[1;31msession_state[m["input_mode_radio"] = _LIVE_OPT
+[35mapp.py[m[36m:[m[32m11023[m[36m:[m            st.[1;31msession_state[m["input_mode_radio"] = _UPLOAD_OPT
+[35mapp.py[m[36m:[m[32m11025[m[36m:[m    [1;31mst.write[m("")
+[35mapp.py[m[36m:[m[32m11028[m[36m:[m        _stored_evidence = st.[1;31msession_state[m.get("stored_evidence_file")
+[35mapp.py[m[36m:[m[32m11029[m[36m:[m        st.[1;31msession_state[m.setdefault("show_evidence_upload_form", _stored_evidence is None)
+[35mapp.py[m[36m:[m[32m11030[m[36m:[m        _show_upload_form = st.[1;31msession_state[m["show_evidence_upload_form"]
+[35mapp.py[m[36m:[m[32m11036[m[36m:[m            # session. The file's bytes already live in [1;31msession_state[m (see
+[35mapp.py[m[36m:[m[32m11047[m[36m:[m                st.[1;31msession_state[m["show_evidence_upload_form"] = True
+[35mapp.py[m[36m:[m[32m11048[m[36m:[m                st.[1;31msession_state[m["stored_evidence_file"] = None
+[35mapp.py[m[36m:[m[32m11049[m[36m:[m                st.[1;31msession_state[m["bulk_scan_file_key"] = None
+[35mapp.py[m[36m:[m[32m11050[m[36m:[m                st.[1;31msession_state[m["bulk_scan_results"] = None
+[35mapp.py[m[36m:[m[32m11051[m[36m:[m                st.[1;31msession_state[m["bulk_scan_cases"] = None
+[35mapp.py[m[36m:[m[32m11052[m[36m:[m                st.[1;31msession_state[m["bulk_scan_cases_hash"] = None
+[35mapp.py[m[36m:[m[32m11053[m[36m:[m                st.[1;31msession_state[m["unified_email_table"] = None
+[35mapp.py[m[36m:[m[32m11054[m[36m:[m                st.[1;31msession_state[m.pop("forensic_report_source", None)
+[35mapp.py[m[36m:[m[32m11082[m[36m:[m                st.[1;31msession_state[m["stored_evidence_file"] = {"name": _raw_uploaded.name, "bytes": _raw_uploaded.getvalue()}
+[35mapp.py[m[36m:[m[32m11083[m[36m:[m                st.[1;31msession_state[m["show_evidence_upload_form"] = False
+[35mapp.py[m[36m:[m[32m11165[m[36m:[m        mailbox_loaded = bool(st.[1;31msession_state[m.get("live_mailbox_messages"))
+[35mapp.py[m[36m:[m[32m11166[m[36m:[m        if "show_imap_connection_form" not in st.[1;31msession_state[m:
+[35mapp.py[m[36m:[m[32m11167[m[36m:[m            st.[1;31msession_state[m["show_imap_connection_form"] = not mailbox_loaded
+[35mapp.py[m[36m:[m[32m11168[m[36m:[m        show_connection_form = st.[1;31msession_state[m["show_imap_connection_form"]
+[35mapp.py[m[36m:[m[32m11171[m[36m:[m            _cfg_summary = st.[1;31msession_state[m.get("live_mailbox_config", {}) or {}
+[35mapp.py[m[36m:[m[32m11173[m[36m:[m            _mbx_n = len(st.[1;31msession_state[m.get("live_mailbox_messages", []))
+[35mapp.py[m[36m:[m[32m11205[m[36m:[m                            [1;31mst.error[m(_quick_err)
+[35mapp.py[m[36m:[m[32m11212[m[36m:[m                        st.[1;31msession_state[m["show_imap_connection_form"] = True
+[35mapp.py[m[36m:[m[32m11213[m[36m:[m                        st.[1;31msession_state[m["_imap_auto_connected"] = False
+[35mapp.py[m[36m:[m[32m11214[m[36m:[m                        st.[1;31msession_state[m["manual_login_submitted"] = False
+[35mapp.py[m[36m:[m[32m11220[m[36m:[m                            "live_selected_raw", "live_rescan_[1;31mnonce[m", "forensic_report_source",
+[35mapp.py[m[36m:[m[32m11223[m[36m:[m                            st.[1;31msession_state[m.pop(_k, None)
+[35mapp.py[m[36m:[m[32m11224[m[36m:[m                        st.[1;31msession_state[m["show_imap_connection_form"] = True
+[35mapp.py[m[36m:[m[32m11225[m[36m:[m                        st.[1;31msession_state[m["_imap_auto_connected"] = False
+[35mapp.py[m[36m:[m[32m11226[m[36m:[m                        st.[1;31msession_state[m["manual_login_submitted"] = False
+[35mapp.py[m[36m:[m[32m11236[m[36m:[m                        _was_user = st.[1;31msession_state[m.get("imap_user", "")
+[35mapp.py[m[36m:[m[32m11268[m[36m:[m                            st.[1;31msession_state[m.pop(_k, None)
+[35mapp.py[m[36m:[m[32m11276[m[36m:[m            browse_count = st.[1;31msession_state[m.get("imap_browse_count", 10)
+[35mapp.py[m[36m:[m[32m11297[m[36m:[m                        st.[1;31msession_state[m["live_mailbox_messages"] = _reloaded_messages
+[35mapp.py[m[36m:[m[32m11298[m[36m:[m                        st.[1;31msession_state[m["live_mailbox_config"] = {
+[35mapp.py[m[36m:[m[32m11302[m[36m:[m                        st.[1;31msession_state[m["imap_browse_count"] = _new_browse_count
+[35mapp.py[m[36m:[m[32m11303[m[36m:[m                        st.[1;31msession_state[m["live_selected_uid"] = None
+[35mapp.py[m[36m:[m[32m11304[m[36m:[m                        st.[1;31msession_state[m["live_selected_raw"] = None
+[35mapp.py[m[36m:[m[32m11305[m[36m:[m                        st.[1;31msession_state[m["live_rescan_[1;31mnonce[m"] = 0
+[35mapp.py[m[36m:[m[32m11306[m[36m:[m                        _start_prefetch(st.[1;31msession_state[m["live_mailbox_config"], [_m.get("uid") for _m in (st.[1;31msession_state[m.get("live_mailbox_messages") or [])])
+[35mapp.py[m[36m:[m[32m11310[m[36m:[m                        [1;31mst.error[m(f"Couldn't reload the inbox: {_e}")
+[35mapp.py[m[36m:[m[32m11334[m[36m:[m                if not st.[1;31msession_state[m.get("imap_user"):
+[35mapp.py[m[36m:[m[32m11336[m[36m:[m                        _auto_tok = _fresh_token("google_oauth_token", get_cached_[1;31maccess_token[m, True)
+[35mapp.py[m[36m:[m[32m11337[m[36m:[m                        if _auto_tok and not st.[1;31msession_state[m.get("_google_email_autofill_tried"):
+[35mapp.py[m[36m:[m[32m11338[m[36m:[m                            st.[1;31msession_state[m["_google_email_autofill_tried"] = True
+[35mapp.py[m[36m:[m[32m11341[m[36m:[m                                st.[1;31msession_state[m["imap_user"] = _auto_email
+[35mapp.py[m[36m:[m[32m11343[m[36m:[m                    if not st.[1;31msession_state[m.get("imap_user") and MICROSOFT_OAUTH_READY and microsoft_oauth.oauth_available():
+[35mapp.py[m[36m:[m[32m11344[m[36m:[m                        _auto_tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11345[m[36m:[m                        if _auto_tok and not st.[1;31msession_state[m.get("_microsoft_email_autofill_tried"):
+[35mapp.py[m[36m:[m[32m11346[m[36m:[m                            st.[1;31msession_state[m["_microsoft_email_autofill_tried"] = True
+[35mapp.py[m[36m:[m[32m11349[m[36m:[m                                st.[1;31msession_state[m["imap_user"] = _auto_email
+[35mapp.py[m[36m:[m[32m11351[m[36m:[m                    if not st.[1;31msession_state[m.get("imap_user") and YANDEX_OAUTH_READY and yandex_oauth.oauth_available():
+[35mapp.py[m[36m:[m[32m11352[m[36m:[m                        _auto_tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11353[m[36m:[m                        if _auto_tok and not st.[1;31msession_state[m.get("_yandex_email_autofill_tried"):
+[35mapp.py[m[36m:[m[32m11354[m[36m:[m                            st.[1;31msession_state[m["_yandex_email_autofill_tried"] = True
+[35mapp.py[m[36m:[m[32m11357[m[36m:[m                                st.[1;31msession_state[m["imap_user"] = _auto_email
+[35mapp.py[m[36m:[m[32m11384[m[36m:[m                        [1;31mst.error[m(
+[35mapp.py[m[36m:[m[32m11388[m[36m:[m                        st.[1;31msession_state[m["manual_login_submitted"] = True
+[35mapp.py[m[36m:[m[32m11443[m[36m:[m                            _cached_tok = _fresh_token("google_oauth_token", get_cached_[1;31maccess_token[m, True)
+[35mapp.py[m[36m:[m[32m11444[m[36m:[m                            _pending_err = st.[1;31msession_state[m.pop("_google_oauth_error", None)
+[35mapp.py[m[36m:[m[32m11451[m[36m:[m                                    st.[1;31msession_state[m.pop("google_oauth_token", None)
+[35mapp.py[m[36m:[m[32m11452[m[36m:[m                                    st.[1;31msession_state[m.pop("imap_user", None)
+[35mapp.py[m[36m:[m[32m11453[m[36m:[m                                    st.[1;31msession_state[m.pop("_google_email_autofill_tried", None)
+[35mapp.py[m[36m:[m[32m11454[m[36m:[m                                    st.[1;31msession_state[m.pop("_google_email_cache", None)
+[35mapp.py[m[36m:[m[32m11495[m[36m:[m                            _cached_tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11496[m[36m:[m                            _pending_err = st.[1;31msession_state[m.pop("_microsoft_oauth_error", None)
+[35mapp.py[m[36m:[m[32m11506[m[36m:[m                                    st.[1;31msession_state[m.pop("microsoft_oauth_token", None)
+[35mapp.py[m[36m:[m[32m11507[m[36m:[m                                    st.[1;31msession_state[m.pop("imap_user", None)
+[35mapp.py[m[36m:[m[32m11508[m[36m:[m                                    st.[1;31msession_state[m.pop("_microsoft_email_autofill_tried", None)
+[35mapp.py[m[36m:[m[32m11509[m[36m:[m                                    st.[1;31msession_state[m.pop("_microsoft_email_cache", None)
+[35mapp.py[m[36m:[m[32m11551[m[36m:[m                            _cached_tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11552[m[36m:[m                            _pending_err = st.[1;31msession_state[m.pop("_yandex_oauth_error", None)
+[35mapp.py[m[36m:[m[32m11559[m[36m:[m                                    st.[1;31msession_state[m.pop("yandex_oauth_token", None)
+[35mapp.py[m[36m:[m[32m11560[m[36m:[m                                    st.[1;31msession_state[m.pop("_yandex_email_autofill_tried", None)
+[35mapp.py[m[36m:[m[32m11561[m[36m:[m                                    st.[1;31msession_state[m.pop("imap_user", None)
+[35mapp.py[m[36m:[m[32m11562[m[36m:[m                                    st.[1;31msession_state[m.pop("_yandex_email_cache", None)
+[35mapp.py[m[36m:[m[32m11595[m[36m:[m                st.[1;31msession_state[m.setdefault("show_custom_imap_form", False)
+[35mapp.py[m[36m:[m[32m11597[m[36m:[m                    st.[1;31msession_state[m["show_custom_imap_form"] = True
+[35mapp.py[m[36m:[m[32m11604[m[36m:[m                        st.[1;31msession_state[m["show_custom_imap_form"] = not st.[1;31msession_state[m["show_custom_imap_form"]
+[35mapp.py[m[36m:[m[32m11606[m[36m:[m                if st.[1;31msession_state[m["show_custom_imap_form"]:
+[35mapp.py[m[36m:[m[32m11620[m[36m:[m                    imap_host = st.[1;31msession_state[m.get(f"imap_host_{provider}", provider_defaults["host"])
+[35mapp.py[m[36m:[m[32m11621[m[36m:[m                    imap_port = st.[1;31msession_state[m.get(f"imap_port_{provider}", provider_defaults["port"])
+[35mapp.py[m[36m:[m[32m11635[m[36m:[m                _tok = _fresh_token("google_oauth_token", get_cached_[1;31maccess_token[m, True)
+[35mapp.py[m[36m:[m[32m11637[m[36m:[m                    st.[1;31msession_state[m["google_oauth_token"] = _tok
+[35mapp.py[m[36m:[m[32m11641[m[36m:[m                _tok = _fresh_token("microsoft_oauth_token", microsoft_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11643[m[36m:[m                    st.[1;31msession_state[m["microsoft_oauth_token"] = _tok
+[35mapp.py[m[36m:[m[32m11647[m[36m:[m                _tok = _fresh_token("yandex_oauth_token", yandex_oauth.get_cached_[1;31maccess_token[m)
+[35mapp.py[m[36m:[m[32m11649[m[36m:[m                    st.[1;31msession_state[m["yandex_oauth_token"] = _tok
+[35mapp.py[m[36m:[m[32m11658[m[36m:[m                st.[1;31msession_state[m.get("manual_login_submitted", False) or _is_oauth_signed_in
+[35mapp.py[m[36m:[m[32m11679[m[36m:[m                if not st.[1;31msession_state[m.get("_imap_auto_connected", False) and not mailbox_loaded:
+[35mapp.py[m[36m:[m[32m11681[m[36m:[m                st.[1;31msession_state[m["_imap_auto_connected"] = True
+[35mapp.py[m[36m:[m[32m11684[m[36m:[m                browse_count = st.[1;31msession_state[m.get("imap_browse_count", 10)
+[35mapp.py[m[36m:[m[32m11689[m[36m:[m                    [1;31mst.error[m("Enter the mailbox address, server and authentication credential first.")
+[35mapp.py[m[36m:[m[32m11691[m[36m:[m                    [1;31mst.error[m("Enter a custom folder name, or pick one of the listed folders.")
+[35mapp.py[m[36m:[m[32m11700[m[36m:[m                        st.[1;31msession_state[m["live_mailbox_messages"] = mailbox_messages
+[35mapp.py[m[36m:[m[32m11701[m[36m:[m                        st.[1;31msession_state[m["live_mailbox_config"] = {
+[35mapp.py[m[36m:[m[32m11705[m[36m:[m                        st.[1;31msession_state[m["live_selected_uid"] = None
+[35mapp.py[m[36m:[m[32m11706[m[36m:[m                        st.[1;31msession_state[m["live_selected_raw"] = None
+[35mapp.py[m[36m:[m[32m11707[m[36m:[m                        st.[1;31msession_state[m["live_rescan_[1;31mnonce[m"] = 0
+[35mapp.py[m[36m:[m[32m11708[m[36m:[m                        _start_prefetch(st.[1;31msession_state[m["live_mailbox_config"], [_m.get("uid") for _m in (st.[1;31msession_state[m.get("live_mailbox_messages") or [])])
+[35mapp.py[m[36m:[m[32m11710[m[36m:[m                            st.[1;31msession_state[m["show_imap_connection_form"] = False
+[35mapp.py[m[36m:[m[32m11716[m[36m:[m                        [1;31mst.error[m(f"Mailbox connection failed: {exc}")
+[35mapp.py[m[36m:[m[32m11719[m[36m:[m        mailbox_messages = st.[1;31msession_state[m.get("live_mailbox_messages", [])
+[35mapp.py[m[36m:[m[32m11746[m[36m:[m            _sel_uid = st.[1;31msession_state[m.get("imap_sel_uid")
+[35mapp.py[m[36m:[m[32m11749[m[36m:[m                st.[1;31msession_state[m["imap_sel_uid"] = None
+[35mapp.py[m[36m:[m[32m11754[m[36m:[m                    _s = st.[1;31msession_state[m.get(_TBL_KEY)
+[35mapp.py[m[36m:[m[32m11768[m[36m:[m                st.[1;31msession_state[m["imap_sel_uid"] = _u
+[35mapp.py[m[36m:[m[32m11862[m[36m:[m                and st.[1;31msession_state[m.get("live_selected_uid") == selected_uid
+[35mapp.py[m[36m:[m[32m11863[m[36m:[m                and isinstance(st.[1;31msession_state[m.get("live_selected_raw"), (bytes, bytearray))
+[35mapp.py[m[36m:[m[32m11864[m[36m:[m                and bool(st.[1;31msession_state[m.get("live_selected_raw"))
+[35mapp.py[m[36m:[m[32m11870[m[36m:[m                if st.[1;31msession_state[m.get("_imap_fetch_failed_uid") == selected_uid:
+[35mapp.py[m[36m:[m[32m11871[m[36m:[m                    [1;31mst.error[m(f"Could not retrieve the selected message: {st.[1;31msession_state[m.get('_imap_fetch_err', 'unknown error')}")
+[35mapp.py[m[36m:[m[32m11873[m[36m:[m                        st.[1;31msession_state[m["_imap_fetch_failed_uid"] = None
+[35mapp.py[m[36m:[m[32m11876[m[36m:[m                    cfg = st.[1;31msession_state[m.get("live_mailbox_config", {})
+[35mapp.py[m[36m:[m[32m11879[m[36m:[m                        [1;31mst.error[m("Reconnect to the mailbox before selecting a message.")
+[35mapp.py[m[36m:[m[32m11893[m[36m:[m                        st.[1;31msession_state[m["live_selected_uid"] = selected_uid
+[35mapp.py[m[36m:[m[32m11894[m[36m:[m                        st.[1;31msession_state[m["live_selected_raw"] = selected_raw
+[35mapp.py[m[36m:[m[32m11895[m[36m:[m                        st.[1;31msession_state[m["_imap_fetch_failed_uid"] = None
+[35mapp.py[m[36m:[m[32m11898[m[36m:[m                        st.[1;31msession_state[m["live_selected_raw"] = None
+[35mapp.py[m[36m:[m[32m11899[m[36m:[m                        st.[1;31msession_state[m["_imap_fetch_failed_uid"] = selected_uid
+[35mapp.py[m[36m:[m[32m11900[m[36m:[m                        st.[1;31msession_state[m["_imap_fetch_err"] = str(exc)
+[35mapp.py[m[36m:[m[32m11906[m[36m:[m                _raw_now = bytes(st.[1;31msession_state[m["live_selected_raw"])
+[35mapp.py[m[36m:[m[32m11933[m[36m:[m                st.[1;31msession_state[m.get("forensic_report_source") == "pipeline"
+[35mapp.py[m[36m:[m[32m11934[m[36m:[m                and bool(st.[1;31msession_state[m.get("pipeline_batch_items"))
+[35mapp.py[m[36m:[m[32m11935[m[36m:[m                and (st.[1;31msession_state[m.get("pipeline_batch_result") or {}).get("source") == "Live IMAP"
+[35mapp.py[m[36m:[m[32m11939[m[36m:[m                _fallback_item = st.[1;31msession_state[m["pipeline_batch_items"][0]
+[35mapp.py[m[36m:[m[32m11948[m[36m:[m            if selected_uid is not None and st.[1;31msession_state[m.get("live_selected_uid") == selected_uid:
+[35mapp.py[m[36m:[m[32m11949[m[36m:[m                candidate_raw = st.[1;31msession_state[m.get("live_selected_raw")
+[35mapp.py[m[36m:[m[32m11976[m[36m:[m            if st.[1;31msession_state[m.get("bulk_scan_file_key") != csv_scan_key:
+[35mapp.py[m[36m:[m[32m11977[m[36m:[m                st.[1;31msession_state[m["bulk_scan_file_key"] = csv_scan_key
+[35mapp.py[m[36m:[m[32m11978[m[36m:[m                st.[1;31msession_state[m["bulk_scan_results"] = None
+[35mapp.py[m[36m:[m[32m11979[m[36m:[m                st.[1;31msession_state[m["bulk_scan_cases"] = None
+[35mapp.py[m[36m:[m[32m11980[m[36m:[m                st.[1;31msession_state[m["bulk_scan_cases_hash"] = None
+[35mapp.py[m[36m:[m[32m11981[m[36m:[m                st.[1;31msession_state[m["unified_email_table"] = None
+[35mapp.py[m[36m:[m[32m11982[m[36m:[m                st.[1;31msession_state[m.pop("forensic_report_source", None)
+[35mapp.py[m[36m:[m[32m11985[m[36m:[m                [1;31mst.error[m("No email messages could be extracted from this CSV.")
+[35mapp.py[m[36m:[m[32m11988[m[36m:[m            saved_bulk_results = st.[1;31msession_state[m.get("bulk_scan_results")
+[35mapp.py[m[36m:[m[32m12053[m[36m:[m                        st.[1;31msession_state[m["bulk_scan_results"] = bulk_results
+[35mapp.py[m[36m:[m[32m12054[m[36m:[m                        st.[1;31msession_state[m["bulk_scan_cases"] = bulk_case_results
+[35mapp.py[m[36m:[m[32m12055[m[36m:[m                        st.[1;31msession_state[m["bulk_scan_cases_hash"] = csv_scan_key
+[35mapp.py[m[36m:[m[32m12070[m[36m:[m                saved_bulk_results = st.[1;31msession_state[m.get("bulk_scan_results")
+[35mapp.py[m[36m:[m[32m12098[m[36m:[m                            st.[1;31msession_state[m["bulk_scan_results"] = None
+[35mapp.py[m[36m:[m[32m12099[m[36m:[m                            st.[1;31msession_state[m["bulk_scan_cases"] = None
+[35mapp.py[m[36m:[m[32m12100[m[36m:[m                            st.[1;31msession_state[m["bulk_scan_cases_hash"] = None
+[35mapp.py[m[36m:[m[32m12101[m[36m:[m                            st.[1;31msession_state[m["unified_email_table"] = None
+[35mapp.py[m[36m:[m[32m12102[m[36m:[m                            st.[1;31msession_state[m.pop("forensic_report_source", None)
+[35mapp.py[m[36m:[m[32m12125[m[36m:[m                    st.[1;31msession_state[m["unified_email_table"] = filtered_df
+[35mapp.py[m[36m:[m[32m12161[m[36m:[m                    dd_res = st.[1;31msession_state[m["bulk_scan_cases"][selected_row]
+[35mapp.py[m[36m:[m[32m12242[m[36m:[m            if st.[1;31msession_state[m.get("single_upload_key") != _single_upload_key:
+[35mapp.py[m[36m:[m[32m12243[m[36m:[m                st.[1;31msession_state[m["single_upload_key"] = _single_upload_key
+[35mapp.py[m[36m:[m[32m12244[m[36m:[m                st.[1;31msession_state[m.pop("forensic_report_source", None)
+[35mapp.py[m[36m:[m[32m12250[m[36m:[m    st.[1;31msession_state[m["_evidence_cache"] = {
+[35mapp.py[m[36m:[m[32m12258[m[36m:[m    _ev_cache = st.[1;31msession_state[m.get("_evidence_cache") or {}
+[35mapp.py[m[36m:[m[32m12291[m[36m:[m        and st.[1;31msession_state[m.get("forensic_report_source") == "pipeline"
+[35mapp.py[m[36m:[m[32m12292[m[36m:[m        and st.[1;31msession_state[m.get("pipeline_batch_items")
+[35mapp.py[m[36m:[m[32m12294[m[36m:[m        _pipeline_fallback_item = st.[1;31msession_state[m["pipeline_batch_items"][0]
+[35mapp.py[m[36m:[m[32m12296[m[36m:[m        _fallback_source = (st.[1;31msession_state[m.get("pipeline_batch_result") or {}).get("source", "Batch")
+[35mapp.py[m[36m:[m[32m12312[m[36m:[m    [1;31mst.error[m("No valid raw email evidence was received. Please reconnect to Live IMAP and select a valid message.")
+[35mapp.py[m[36m:[m[32m12317[m[36m:[manalysis_[1;31mnonce[m = int(st.[1;31msession_state[m.get("live_rescan_[1;31mnonce[m", 0)) if "Live IMAP" in case_name else 0
+[35mapp.py[m[36m:[m[32m12318[m[36m:[mresult = analyze_bytes(raw, case_name, analysis_[1;31mnonce[m)
+[35mapp.py[m[36m:[m[32m12343[m[36m:[m    and st.[1;31msession_state[m.get("bulk_scan_results") is not None
+[35mapp.py[m[36m:[m[32m12362[m[36m:[m    and st.[1;31msession_state[m.get("bulk_scan_results") is None
+[35mapp.py[m[36m:[m[32m12366[m[36m:[m    if st.[1;31msession_state[m.get("memory_logged_for") != evidence_memory_key:
+[35mapp.py[m[36m:[m[32m12369[m[36m:[m        st.[1;31msession_state[m["memory_logged_for"] = evidence_memory_key
+[35mapp.py[m[36m:[m[32m12370[m[36m:[m        st.[1;31msession_state[m["memory_history"] = check_history(current_ip)
+[35mapp.py[m[36m:[m[32m12372[m[36m:[m    past_attacks, highest_past_score = st.[1;31msession_state[m.get("memory_history", (0, 0))
+[35mapp.py[m[36m:[m[32m12375[m[36m:[m        [1;31mst.error[m(f" **REPEAT OFFENDER DETECTED!** This IP ({current_ip}) is in our threat database. They have attacked your network {past_attacks - 1} times previously with a max threat score of {highest_past_score:.0f}/100. This is a persistent campaign.")
+[35mapp.py[m[36m:[m[32m12419[m[36m:[m        # st.[1;31msession_state[m remembers the choice across reruns.
+[35mapp.py[m[36m:[m[32m12437[m[36m:[m            st.[1;31msession_state[m.setdefault("right_panel_open", True)
+[35mapp.py[m[36m:[m[32m12438[m[36m:[m            panel_open = st.[1;31msession_state[m["right_panel_open"]
+[35mapp.py[m[36m:[m[32m12451[m[36m:[m                        st.[1;31msession_state[m["right_panel_open"] = True
+[35mapp.py[m[36m:[m[32m12477[m[36m:[m                            st.[1;31msession_state[m["right_panel_open"] = False
+[35mapp.py[m[36m:[m[32m12727[m[36m:[m    if st.[1;31msession_state[m.get("feedback_email") != current_feedback_key:
+[35mapp.py[m[36m:[m[32m12728[m[36m:[m        st.[1;31msession_state[m["feedback_email"] = current_feedback_key
+[35mapp.py[m[36m:[m[32m12729[m[36m:[m        st.[1;31msession_state[m["feedback_action"] = None
+[35mapp.py[m[36m:[m[32m12887[m[36m:[m                st.[1;31msession_state[m["qwen_batch_result"] = {
+[35mapp.py[m[36m:[m[32m12892[m[36m:[m                st.[1;31msession_state[m["qwen_batch_items"] = batch_items
+[35mapp.py[m[36m:[m[32m12894[m[36m:[m            saved_batch = st.[1;31msession_state[m.get("qwen_batch_result")
+[35mapp.py[m[36m:[m[32m12901[m[36m:[m                    cleaned_summary = _annotate_email_labels(cleaned_summary, st.[1;31msession_state[m.get("qwen_batch_items") or [])
+[35mapp.py[m[36m:[m[32m12927[m[36m:[m                    _batch_items_for_dl = st.[1;31msession_state[m.get("qwen_batch_items") or []
+[35mapp.py[m[36m:[m[32m13001[m[36m:[m                    [1;31mst.error[m(f"AI Batch Analysis Error: {b_res.get('error', 'Unknown Error')}")
+[35mapp.py[m[36m:[m[32m13010[m[36m:[m            single_reports = st.[1;31msession_state[m.setdefault("single_ai_reports", {})
+[35mapp.py[m[36m:[m[32m13030[m[36m:[m                st.[1;31msession_state[m["single_ai_reports"] = single_reports
+[35mapp.py[m[36m:[m[32m13065[m[36m:[m                    [1;31mst.error[m(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
+[35mapp.py[m[36m:[m[32m13286[m[36m:[m            # Row two: the [1;31manon[mymising-infrastructure signals, in the same
+[35mapp.py[m[36m:[m[32m13292[m[36m:[m                    if _nt.get("is_[1;31manon[mymizing"):
+[35mapp.py[m[36m:[m[32m13319[m[36m:[m            [1;31mst.error[m(
+[35mapp.py[m[36m:[m[32m13322[m[36m:[m                "through [1;31manon[mymizing infrastructure for the first time is itself the red flag."
+[35mapp.py[m[36m:[m[32m13403[m[36m:[m                    "Pins are numbered by hop (hop 1 = earliest external sender). Red = origin or [1;31manon[mymising "
+[35mapp.py[m[36m:[m[32m13475[m[36m:[m                    _do_live_fetch = FETCH_VPN_RANGES_AVAILABLE and not st.[1;31msession_state[m.get("vpn_skip_live_fetch")
+[35mapp.py[m[36m:[m[32m13496[m[36m:[m                                    [1;31mst.error[m("For safety, the ranges file must be inside the data/ folder.")
+[35mapp.py[m[36m:[m[32m13513[m[36m:[m                        [1;31mst.error[m(f"Couldn't read `{_vpn_csv_path}`: {e}")
+[35mapp.py[m[36m:[m[32m13515[m[36m:[m                        [1;31mst.error[m(f"Couldn't parse `{_vpn_csv_path}` as a ranges CSV: {e}")
+[35mapp.py[m[36m:[m[32m13548[m[36m:[m                    "(public, auto-updated, no [1;31msignup[m) -- refetched automatically on every scan "
+[35mapp.py[m[36m:[m[32m13575[m[36m:[m                    if not st.[1;31msession_state[m.get("tor_skip_live_fetch"):
+[35mapp.py[m[36m:[m[32m13630[m[36m:[m        # Routing chain / [1;31manon[mymised caution follow whichever email the map
+[35mapp.py[m[36m:[m[32m13647[m[36m:[m        if _table_geo.get("[1;31manon[mymised"):
+[35mapp.py[m[36m:[m[32m13648[m[36m:[m            st.warning("**Attribution caution** - the earliest hop is [1;31manon[mymising infrastructure. The location identifies the relay, not the operator. Naming the sender would need relay logs, which Tor deliberately does not keep.")
+[35mapp.py[m[36m:[m[32m13650[m[36m:[m        # Confirmed-exit-list check is independent of the "[1;31manon[mymised" flag
+[35mapp.py[m[36m:[m[32m13654[m[36m:[m        if origin.get("tor_exit_confirmed") and not _table_geo.get("[1;31manon[mymised"):
+[35mapp.py[m[36m:[m[32m13738[m[36m:[m                "- **VPN Masking** answers one question only: is *this* message routed through [1;31manon[mymizing "
+[35mapp.py[m[36m:[m[32m13741[m[36m:[m                "never de-[1;31manon[mymize a VPN/Tor/proxy operator — that needs the provider's private logs — so "
+[35mapp.py[m[36m:[m[32m13743[m[36m:[m                "breaks that pattern, whether or not [1;31manon[mymizing infrastructure is involved. A sender who "
+[35mapp.py[m[36m:[m[32m13755[m[36m:[m            "one -- same kind of hosting, same region, same [1;31manon[mymizing pattern -- even when "
+[35mapp.py[m[36m:[m[32m13795[m[36m:[m            st.[1;31msession_state[m["nomic_last_hash"] = current_evidence_hash
+[35mapp.py[m[36m:[m[32m13798[m[36m:[m        _indexed_now = current_evidence_hash in st.[1;31msession_state[m.get("_sem_indexed", {})
+[35mapp.py[m[36m:[m[32m13799[m[36m:[m        if st.[1;31msession_state[m.get("nomic_last_hash") == current_evidence_hash or _indexed_now:
+[35mapp.py[m[36m:[m[32m13886[m[36m:[m                [1;31mst.write[m(", ".join(f"`{v}`" for v in values))
+[35mapp.py[m[36m:[m[32m13913[m[36m:[m                    _auth = contribution_client.auth_state(st.[1;31msession_state[m)
+[35mapp.py[m[36m:[m[32m13918[m[36m:[m                                _cu, _cs = get_authorization_url(email_hint=st.[1;31msession_state[m.get("imap_user", "") or "")
+[35mapp.py[m[36m:[m[32m13925[m[36m:[m                        _cr = contribution_client.submit(_prep["items"], _verdict, _agree, store=st.[1;31msession_state[m)
+[35mapp.py[m[36m:[m[32m13963[m[36m:[m        saved_bulk_cases = st.[1;31msession_state[m.get("bulk_scan_cases")
+[35mapp.py[m[36m:[m[32m13964[m[36m:[m        saved_bulk_hash = st.[1;31msession_state[m.get("bulk_scan_cases_hash")
+[35mapp.py[m[36m:[m[32m14045[m[36m:[m        if st.[1;31msession_state[m.get("corr_graph_scope") != graph_scope:
+[35mapp.py[m[36m:[m[32m14046[m[36m:[m            st.[1;31msession_state[m["corr_graph_scope"] = graph_scope
+[35mapp.py[m[36m:[m[32m14047[m[36m:[m            st.[1;31msession_state[m.pop("corr_graph_highlight", None)
+[35mapp.py[m[36m:[m[32m14048[m[36m:[m            st.[1;31msession_state[m["corr_graph_key_[1;31mnonce[m"] = st.[1;31msession_state[m.get("corr_graph_key_[1;31mnonce[m", 0) + 1
+[35mapp.py[m[36m:[m[32m14055[m[36m:[m        highlight_node = st.[1;31msession_state[m.get("corr_graph_highlight")
+[35mapp.py[m[36m:[m[32m14076[m[36m:[m        widget_key = "corr_graph_widget_{}".format(st.[1;31msession_state[m.get("corr_graph_key_[1;31mnonce[m", 0))
+[35mapp.py[m[36m:[m[32m14096[m[36m:[m                    st.[1;31msession_state[m["corr_graph_highlight"] = clicked
+[35mapp.py[m[36m:[m[32m14110[m[36m:[m                    st.[1;31msession_state[m.pop("corr_graph_highlight", None)
+[35mapp.py[m[36m:[m[32m14111[m[36m:[m                    st.[1;31msession_state[m["corr_graph_key_[1;31mnonce[m"] = st.[1;31msession_state[m.get("corr_graph_key_[1;31mnonce[m", 0) + 1
+[35mapp.py[m[36m:[m[32m14164[m[36m:[m            unified_table = st.[1;31msession_state[m.get("unified_email_table")
+[35mapp.py[m[36m:[m[32m14206[m[36m:[m        if st.[1;31msession_state[m.get("threat_history_focus", "history") == "logs":
+[35mapp.py[m[36m:[m[32m14339[m[36m:[m            st.[1;31msession_state[m.get("forensic_report_source") == "pipeline"
+[35mapp.py[m[36m:[m[32m14340[m[36m:[m            and bool(st.[1;31msession_state[m.get("pipeline_batch_items"))
+[35mapp.py[m[36m:[m[32m14344[m[36m:[m            pipeline_result = st.[1;31msession_state[m.get("pipeline_batch_result") or {}
+[35mapp.py[m[36m:[m[32m14345[m[36m:[m            report_items = list(st.[1;31msession_state[m.get("pipeline_batch_items") or [])
+[35mapp.py[m[36m:[m[32m14347[m[36m:[m            saved_batch = st.[1;31msession_state[m.get("qwen_batch_result") or {}
+[35mapp.py[m[36m:[m[32m14348[m[36m:[m            saved_items = st.[1;31msession_state[m.get("qwen_batch_items") or []
+[35mapp.py[m[36m:[m[32m14391[m[36m:[m            if st.[1;31msession_state[m.pop("_scroll_to_joint_report", False):
+[35mapp.py[m[36m:[m[32m14432[m[36m:[m                [1;31mst.error[m(f"AI batch analysis error: {_ai_res.get('error', 'Unknown error')}")
+[35mapp.py[m[36m:[m[32m14624[m[36m:[m                "VPN Masking": f"Detected — {sel_nt.get('infra_display', sel_g.get('origin', {}).get('infra_label', 'Unknown'))}" if sel_nt.get("is_[1;31manon[mymizing") else "Not detected",
+[35mapp.py[m[36m:[m[32m14746[m[36m:[m| **VPN Masking** | {f"Detected — {sel_nt.get('infra_display', sel_g.get('origin', {}).get('infra_label', 'Unknown'))}" if sel_nt.get('is_[1;31manon[mymizing') else "Not detected"} |
+[35mapp.py[m[36m:[m[32m14784[m[36m:[m        single_reports = st.[1;31msession_state[m.setdefault("single_ai_reports", {})
+[35mapp.py[m[36m:[m[32m14801[m[36m:[m                st.[1;31msession_state[m["single_ai_reports"] = single_reports
+[35mapp.py[m[36m:[m[32m14824[m[36m:[m                [1;31mst.error[m(f"AI Analysis Error: {saved_ai_for_email.get('error', 'Unknown Error')}")
+[35mclassifier.py[m[36m:[m[32m659[m[36m:[m    [1;31mprint([m"split: {}".format(metrics["split"]))
+[35mclassifier.py[m[36m:[m[32m660[m[36m:[m    [1;31mprint([m"train: {} rows / {} templates".format(
+[35mclassifier.py[m[36m:[m[32m662[m[36m:[m    [1;31mprint([m"test : {} rows / {} templates (wording never seen in training)".format(
+[35mclassifier.py[m[36m:[m[32m664[m[36m:[m    [1;31mprint([m"\nheld-out accuracy: {:.1%}\n".format(metrics["accuracy"]))
+[35mclassifier.py[m[36m:[m[32m665[m[36m:[m    [1;31mprint([mmetrics["report"])
+[35mclassifier.py[m[36m:[m[32m666[m[36m:[m    [1;31mprint([m"confusion [rows=actual legit,phish | cols=pred legit,phish]:")
+[35mclassifier.py[m[36m:[m[32m668[m[36m:[m        [1;31mprint([m"   ", row)
+[35mclassifier.py[m[36m:[m[32m682[m[36m:[m    [1;31mprint([m)
+[35mclassifier.py[m[36m:[m[32m685[m[36m:[m        [1;31mprint([m"{:38} {:5.1%} phishing -> {}".format(name, prob, label))

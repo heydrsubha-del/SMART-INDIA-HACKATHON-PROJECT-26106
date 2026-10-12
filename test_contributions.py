@@ -37,22 +37,42 @@ GOOD = [{"indicator_type": "domain", "value_norm": "evil.example.net"}, {"indica
 OK_BODY = {"accepted": 2, "duplicates": 0, "rejected": 0}
 
 
+def user_jwt(tag="a", anonymous=False):
+    b = lambda d: base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip("=")
+    return "%s.%s.sig" % (b({"alg": "HS256"}), b({"sub": "synthetic-user", "is_anonymous": anonymous, "tag": tag}))
+
+
+SESS_TOK = user_jwt("a")
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         patcher = mock.patch.dict(os.environ, {SC.URL_ENV: "https://proj.supabase.co", SC.KEY_ENV: jwt("anon")})
         patcher.start(); self.addCleanup(patcher.stop)
         os.environ.pop(CC.FLAG_ENV, None)
-        CC._last_submit.clear()
 
     def on(self):
         os.environ[CC.FLAG_ENV] = "1"
 
-    def post(self, rpc_resp=None, signup=None):
+    def store(self, token=None):
+        """A fresh session-state stand-in already holding a (synthetic, non-anonymous) Supabase session."""
+        return {CC.SESSION_KEY: {"access_token": token or SESS_TOK, "refresh_token": "synthetic-refresh"}}
+
+    def id_store(self):
+        """A fresh store holding only a synthetic, unexpired Google ID token + raw nonce."""
+        import hashlib, time
+        idt = "%s.%s.sig" % tuple(base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip("=") for d in (
+            {"alg": "none"}, {"nonce": hashlib.sha256(b"raw-nonce").hexdigest(), "exp": int(time.time()) + 600}))
+        return {CC.ID_TOKEN_KEY: idt, CC.ID_NONCE_KEY: "raw-nonce"}
+
+    def post(self, rpc_resp=None, token_resp=None):
         calls = []
         def fake(url, **kw):
             calls.append((url, kw))
             if url.endswith("/auth/v1/signup"):
-                return signup or Resp({"access_token": "user-session-token"})
+                raise AssertionError("anonymous signup must never be requested")
+            if url.endswith("/auth/v1/token"):
+                return token_resp or Resp({"access_token": SESS_TOK, "refresh_token": "synthetic-refresh"})
             return rpc_resp or Resp(OK_BODY)
         return mock.patch.object(CC.requests, "post", side_effect=fake), calls
 
@@ -103,7 +123,7 @@ class Sanitization(Base):
                         {"indicator_type": "ip", "value_norm": "192.168.1.1"}, "junk", None]
         p, calls = self.post()
         with p:
-            r = CC.submit(dirty, "malicious", True)
+            r = CC.submit(dirty, "malicious", True, store=self.store())
         self.assertTrue(r["ok"])
         sent = calls[-1][1]["json"]["p_items"]
         self.assertEqual([i["value_norm"] for i in sent], ["evil.example.net", "http://evil.example.net/login"])
@@ -131,74 +151,85 @@ class Transport(Base):
     def setUp(self):
         super().setUp(); self.on()
 
-    def test_anonymous_signin_then_rpc_with_user_token(self):
-        p, calls = self.post()
+    def test_google_id_token_exchange_then_rpc_with_user_token(self):
+        p, calls = self.post(); st = self.id_store()
         with p:
-            r = CC.submit(GOOD, "suspicious", True)
-        self.assertEqual((r["ok"], r["accepted"], r["token"]), (True, 2, "user-session-token"))
-        signup, rpc = calls
-        self.assertTrue(signup[0].endswith("/auth/v1/signup")); self.assertEqual(signup[1]["json"], {})
+            r = CC.submit(GOOD, "suspicious", True, store=st)
+        self.assertEqual((r["ok"], r["accepted"]), (True, 2)); self.assertNotIn("token", r)
+        auth, rpc = calls
+        self.assertTrue(auth[0].endswith("/auth/v1/token")); self.assertEqual(auth[1]["params"], {"grant_type": "id_token"})
+        self.assertEqual(auth[1]["json"]["provider"], "google"); self.assertEqual(auth[1]["json"]["nonce"], "raw-nonce")
         self.assertTrue(rpc[0].endswith("/rest/v1/rpc/submit_indicators"))
-        self.assertEqual(rpc[1]["headers"]["Authorization"], "Bearer user-session-token")
+        self.assertEqual(rpc[1]["headers"]["Authorization"], "Bearer " + SESS_TOK)
+        self.assertIn(CC.SESSION_KEY, st); self.assertNotIn(CC.ID_TOKEN_KEY, st)
 
-    def test_existing_token_reused(self):
+    def test_no_session_and_no_id_token_means_auth_required_without_requests(self):
         p, calls = self.post()
         with p:
-            CC.submit(GOOD, "suspicious", True, token="cached")
-        self.assertEqual(len(calls), 1); self.assertEqual(calls[0][1]["headers"]["Authorization"], "Bearer cached")
+            self.assertEqual(CC.submit(GOOD, "suspicious", True, store={})["error"], "auth_required")
+            self.assertEqual(CC.submit(GOOD, "suspicious", True)["error"], "auth_required")
+        self.assertEqual(calls, [])
 
-    def test_expired_token_retried_once(self):
-        seq = [Resp({}, 401), Resp(OK_BODY)]
+    def test_existing_session_reused(self):
+        p, calls = self.post()
+        with p:
+            CC.submit(GOOD, "suspicious", True, store=self.store())
+        self.assertEqual(len(calls), 1); self.assertEqual(calls[0][1]["headers"]["Authorization"], "Bearer " + SESS_TOK)
+
+    def test_expired_session_refreshed_and_retried_once(self):
+        seq, new = [Resp({}, 401), Resp(OK_BODY)], user_jwt("new")
         def fake(url, **kw):
-            return Resp({"access_token": "new"}) if url.endswith("/signup") else seq.pop(0)
+            if url.endswith("/auth/v1/token"):
+                assert kw["params"] == {"grant_type": "refresh_token"}
+                return Resp({"access_token": new, "refresh_token": "r2"})
+            return seq.pop(0)
+        st = self.store()
         with mock.patch.object(CC.requests, "post", side_effect=fake):
-            self.assertTrue(CC.submit(GOOD, "suspicious", True, token="old")["ok"])
+            self.assertTrue(CC.submit(GOOD, "suspicious", True, store=st)["ok"])
+        self.assertEqual(st[CC.SESSION_KEY]["access_token"], new)
 
     def test_secret_keys_and_insecure_urls_refused_without_requests(self):
         for env in ({SC.KEY_ENV: jwt("service_role")}, {SC.KEY_ENV: "sb_secret_x"}, {SC.URL_ENV: "http://example.org"}, {SC.URL_ENV: ""}):
-            CC._last_submit.clear()
             with mock.patch.dict(os.environ, env):
                 p, calls = self.post()
                 with p:
-                    self.assertEqual(CC.submit(GOOD, "suspicious", True)["error"], "not_configured")
+                    self.assertEqual(CC.submit(GOOD, "suspicious", True, store=self.store())["error"], "not_configured")
                 self.assertEqual(calls, [])
 
     def test_local_rate_limit(self):
-        p, calls = self.post()
+        p, calls = self.post(); st = self.store()
         with p:
-            self.assertTrue(CC.submit(GOOD, "suspicious", True, token="s1")["ok"])
-            self.assertEqual(CC.submit(GOOD, "suspicious", True, token="s1")["error"], "rate_limited_locally")
-            self.assertTrue(CC.submit(GOOD, "suspicious", True, token="s2")["ok"])        # another session is not throttled by s1
+            self.assertTrue(CC.submit(GOOD, "suspicious", True, store=st)["ok"])
+            self.assertEqual(CC.submit(GOOD, "suspicious", True, store=st)["error"], "rate_limited_locally")
+            self.assertTrue(CC.submit(GOOD, "suspicious", True, store=self.store(user_jwt("b")))["ok"])      # another session is not throttled
 
     def test_server_side_limits_map_to_codes(self):
-        for msg in ("rate_limited", "blocked", "too_many_items"):
-            CC._last_submit.clear()
+        for msg in ("rate_limited", "blocked", "too_many_items", "queue_full"):
             p, _ = self.post(rpc_resp=Resp({"code": "P0001", "message": msg}, 400))
             with p:
-                self.assertEqual(CC.submit(GOOD, "suspicious", True, token="t")["error"], msg)
+                self.assertEqual(CC.submit(GOOD, "suspicious", True, store=self.store())["error"], msg)
 
     def test_unknown_server_error_text_not_echoed(self):
         p, _ = self.post(rpc_resp=Resp({"message": "secret internal detail"}, 500))
         with p:
-            self.assertEqual(CC.submit(GOOD, "suspicious", True, token="t")["error"], "server_error")
+            r = CC.submit(GOOD, "suspicious", True, store=self.store())
+        self.assertEqual(r["error"], "server_error"); self.assertNotIn("secret", repr(r))
 
     def test_timeouts_and_garbage_fail_soft(self):
         key = os.environ[SC.KEY_ENV]
         for effect in (requests.Timeout("slow " + key), ConnectionError("x")):
-            CC._last_submit.clear()
             with mock.patch.object(CC.requests, "post", side_effect=effect):
-                r = CC.submit(GOOD, "suspicious", True)
+                r = CC.submit(GOOD, "suspicious", True, store=self.store())
             self.assertEqual((r["ok"], r["error"]), (False, "unavailable")); self.assertNotIn(key, repr(r))
         for bad in (Resp("text"), Resp({"accepted": "2", "duplicates": 0, "rejected": 0}), Resp({"accepted": -1, "duplicates": 0, "rejected": 0}), Resp([])):
-            CC._last_submit.clear()
             p, _ = self.post(rpc_resp=bad)
             with p:
-                self.assertEqual(CC.submit(GOOD, "suspicious", True, token="t")["error"], "unavailable")
+                self.assertEqual(CC.submit(GOOD, "suspicious", True, store=self.store())["error"], "unavailable")
 
     def test_signin_failure_fails_soft(self):
-        p, _ = self.post(signup=Resp({}, 500))
+        p, _ = self.post(token_resp=Resp({}, 500))
         with p:
-            self.assertEqual(CC.submit(GOOD, "suspicious", True)["error"], "unavailable")
+            self.assertEqual(CC.submit(GOOD, "suspicious", True, store=self.id_store())["error"], "unavailable")
 
 
 class ReviewTool(Base):
