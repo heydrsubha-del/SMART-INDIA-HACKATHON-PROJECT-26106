@@ -1249,7 +1249,11 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
                 st.session_state["_yandex_oauth_error"] = f"Yandex sign-in failed while completing sign-in: {_ya_exc}"
     elif GOOGLE_OAUTH_READY and _oauth_error:
         st.query_params.clear()
-        st.session_state["_google_oauth_error"] = _oauth_error
+        print("google_oauth_provider_error:", "".join(c for c in str(_oauth_error)[:40] if c.isalnum() or c == "_"), flush=True)
+        # Never show provider-supplied error text (it comes from the URL and is attacker-controllable); show a fixed message.
+        st.session_state["_google_oauth_error"] = (
+            "the Google sign-in was cancelled." if _oauth_error == "access_denied" else "something went wrong. Please try again."
+        )
     elif GOOGLE_OAUTH_READY and _oauth_code:
         try:
             _token, _email_hint = exchange_code_for_token(_oauth_code, state=_oauth_state)
@@ -1271,9 +1275,10 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
             st.session_state["imap_provider"] = "Gmail"
             st.session_state["show_imap_connection_form"] = True
             st.rerun()
-        except Exception as _oauth_exc:
+        except Exception as _oauth_exc:   # text is never shown or stored; only the class name goes to the server console
+            print("google_oauth_exchange_failed:", type(_oauth_exc).__name__, flush=True)
             st.query_params.clear()
-            st.session_state["_google_oauth_error"] = f"Google sign-in failed while completing sign-in: {_oauth_exc}"
+            st.session_state["_google_oauth_error"] = "something went wrong. Please try again."
 
 # --------------------------------------------------------------------------
 # PROFESSIONAL SOC / FORENSICS UI
@@ -13910,15 +13915,32 @@ if active_panel == "Indicators":
                 else:
                     _render_polished_table(pd.DataFrame([{"Type": i["indicator_type"], "Indicator": i["value_norm"]} for i in _prep["items"]]))
                     _ck = str(result.get("_evidence_hash", "x"))[:12]
+                    _auth = contribution_client.auth_state(st.session_state)
+                    if _auth is None:
+                        st.info("Contributing needs a fresh Google sign-in (Gmail access alone is not enough). Gmail access and your scan are unaffected.")
+                        if GOOGLE_OAUTH_READY and oauth_available():
+                            try:
+                                _cu, _cs = get_authorization_url(email_hint=st.session_state.get("imap_user", "") or "")
+                                st.link_button("Sign in with Google to contribute", _cu, key=f"contrib_signin_{_ck}")
+                            except Exception:
+                                st.caption("Couldn't start Google sign-in right now.")
                     _verdict = st.selectbox("Your assessment", contribution_client.VERDICTS, key=f"contrib_v_{_ck}")
                     _agree = st.checkbox("I agree to share exactly the indicators listed above for review.", value=False, key=f"contrib_c_{_ck}")
-                    if st.button("Submit for review", key=f"contrib_b_{_ck}", disabled=not _agree):
-                        _cr = contribution_client.submit(_prep["items"], _verdict, _agree, token=st.session_state.get("_contrib_token"))
-                        st.session_state["_contrib_token"] = _cr.get("token") or st.session_state.get("_contrib_token")
+                    if st.button("Submit for review", key=f"contrib_b_{_ck}", disabled=not _agree or _auth is None):
+                        _cr = contribution_client.submit(_prep["items"], _verdict, _agree, store=st.session_state)
                         if _cr["ok"]:
                             st.success(f"Submitted {_cr['accepted']} indicator(s) for review ({_cr['duplicates']} already sent, {_cr['rejected']} rejected).")
                         else:
-                            st.warning("Could not submit right now (" + _cr["error"] + "). Your scan is unaffected.")
+                            _contrib_msgs = {
+                                "auth_required": "Please sign in with Google again to contribute.",
+                                "session_expired": "Your contribution session expired. Please sign in with Google again.",
+                                "rate_limited": "You've reached the submission limit for now. Please try again later.",
+                                "rate_limited_locally": "Please wait a little before submitting again.",
+                                "queue_full": "The review queue is full right now. Please try again later.",
+                                "unavailable": "The community service is unavailable right now. Please try again later.",
+                                "consent_required": "Please tick the consent box to submit.",
+                            }
+                            st.warning(_contrib_msgs.get(_cr["error"], "Could not submit right now.") + " Your scan is unaffected.")
 
         if parsed.get("attachments"):
             st.divider()

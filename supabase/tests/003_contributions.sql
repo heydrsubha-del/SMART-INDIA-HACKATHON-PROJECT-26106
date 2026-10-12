@@ -1,12 +1,14 @@
 -- pgTAP: Phase 3 contributions. Run in the test project only. Everything rolls back at the end.
 begin;
-select plan(29);
+select plan(34);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'user-a@example.test'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'user-b@example.test'),
   ('00000000-0000-0000-0000-00000000000c', 'authenticated', 'authenticated', 'reviewer@example.test'),
-  ('00000000-0000-0000-0000-00000000000d', 'authenticated', 'authenticated', 'user-d@example.test');
+  ('00000000-0000-0000-0000-00000000000d', 'authenticated', 'authenticated', 'user-d@example.test'),
+  ('00000000-0000-0000-0000-00000000000e', 'authenticated', 'authenticated', null),   -- E: Supabase anonymous sign-in (is_anonymous claim set per test below)
+  ('00000000-0000-0000-0000-00000000000f', 'authenticated', 'authenticated', 'user-f@example.test');
 -- B already has one pending submission for an allowlisted provider (used by the allowlist test)
 insert into public.indicator_submissions (contributor_id, indicator_type, value_norm, claimed_verdict)
   values ('00000000-0000-0000-0000-00000000000b', 'domain', 'login.google.com', 'malicious');
@@ -18,10 +20,10 @@ insert into public.indicator_submissions (contributor_id, indicator_type, value_
 set local role anon;
 select throws_ok($$select public.submit_indicators('[]'::jsonb)$$, '42501', null, 'anon without a session cannot submit');
 
--- user A (Supabase anonymous sign-in)
+-- user A (non-anonymous session, e.g. Google sign-in; is_anonymous = false)
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select is((select public.submit_indicators($$[{"indicator_type":"domain","value_norm":"evil.example.net","claimed_verdict":"malicious","status":"verified","contributor_id":"00000000-0000-0000-0000-00000000000b"},{"indicator_type":"url","value_norm":"http://evil.example.net/login","claimed_verdict":"suspicious"},{"indicator_type":"url","value_norm":"http://evil.example.net/x?t=1","claimed_verdict":"suspicious"},{"indicator_type":"domain","value_norm":"someone@example.com","claimed_verdict":"malicious"},{"indicator_type":"ip","value_norm":"10.0.0.5","claimed_verdict":"malicious"},{"indicator_type":"url","value_norm":"http://evil.example.net/aB3xK9pQ2mZ7vL1nR8tY4wC6","claimed_verdict":"malicious"}]$$::jsonb)),
   '{"accepted":2,"duplicates":0,"rejected":4}'::jsonb, 'valid items accepted; email, query string, private IP and token path rejected');
 reset role;
@@ -29,7 +31,7 @@ select is((select count(*)::int from public.indicator_submissions where contribu
 select is((select count(*)::int from public.indicator_submissions where contributor_id = '00000000-0000-0000-0000-00000000000b' and value_norm = 'evil.example.net'), 0, 'client-supplied contributor_id and status are ignored');
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select is((select public.submit_indicators('[{"indicator_type":"domain","value_norm":"evil.example.net","claimed_verdict":"malicious"}]'::jsonb)), '{"accepted":0,"duplicates":1,"rejected":0}'::jsonb, 'duplicate submission is not stored twice');
 select throws_ok($$insert into public.indicator_submissions (contributor_id, indicator_type, value_norm, claimed_verdict) values ('00000000-0000-0000-0000-00000000000a', 'domain', 'direct.example.org', 'malicious')$$, '42501', null, 'direct insert is denied');
 select throws_ok($$update public.indicator_submissions set status = 'approved'$$, '42501', null, 'contributors cannot change status');
@@ -38,26 +40,26 @@ select is((select count(*)::int from public.indicator_submissions), 2, 'A reads 
 -- user B
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select is((select count(*)::int from public.indicator_submissions), 1, 'B reads only own submissions');
 select throws_ok($$select public.submit_indicators((select jsonb_agg(jsonb_build_object('indicator_type','domain','value_norm','d'||g||'.example.org','claimed_verdict','suspicious')) from generate_series(1,21) g))$$, 'P0001', 'too_many_items', 'more than 20 items per request is refused');
 reset role;
 insert into public.contribution_log (contributor_id, items) values ('00000000-0000-0000-0000-00000000000b', 50);
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select throws_ok($$select public.submit_indicators('[{"indicator_type":"domain","value_norm":"fresh.example.org","claimed_verdict":"suspicious"}]'::jsonb)$$, 'P0001', 'rate_limited', 'hourly limit is enforced');
 
 -- user D (repeatedly rejected)
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select throws_ok($$select public.submit_indicators('[{"indicator_type":"domain","value_norm":"fresh.example.org","claimed_verdict":"suspicious"}]'::jsonb)$$, 'P0001', 'blocked', 'contributors with many rejections are blocked');
 
 -- unauthorized review attempts
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
 select throws_ok($$select * from public.review_queue(10)$$, '42501', null, 'non-admin cannot read the review queue');
 select throws_ok($$select public.review_submission(gen_random_uuid(), 'approve', null)$$, '42501', null, 'non-admin cannot approve');
 reset role;
@@ -73,7 +75,7 @@ select throws_ok($$select * from public.review_queue(10)$$, '42501', null, 'admi
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2","app_metadata":{"role":"admin"}}', true);
-select is((select count(*)::int from public.review_queue(50)), 3, 'reviewer sees the 3 pending submissions');
+select is((select count(*)::int from public.review_queue(50) where value_norm in ('evil.example.net', 'http://evil.example.net/login', 'login.google.com')), 3, 'reviewer sees the 3 pending submissions made in this test (other pending rows are ignored)');
 select ok(not exists (select 1 from jsonb_object_keys(to_jsonb((select q from public.review_queue(1) q limit 1))) k where k = 'contributor_id'), 'queue never exposes contributor identity');
 select is((select public.review_submission((select id from public.review_queue(50) where value_norm = 'evil.example.net' limit 1), 'approve', 'looks right') ->> 'status'), 'approved', 'reviewer can approve');
 
@@ -101,6 +103,30 @@ select throws_ok($$select public.review_submission((select id from public.review
 
 select is((select public.submit_indicators('[{"indicator_type":"domain","value_norm":"own.example.org","claimed_verdict":"suspicious"}]'::jsonb) ->> 'accepted'), '1', 'a reviewer can also contribute');
 select throws_ok($$select public.review_submission((select id from public.review_queue(50) where value_norm = 'own.example.org' limit 1), 'approve', null)$$, 'P0001', 'self_review', 'a reviewer cannot approve their own submission');
+
+-- ---- anonymous sessions are refused (follow-up migration 20261014000001) ----
+-- E is a Supabase anonymous sign-in: role authenticated, is_anonymous = true. Refused exactly like a missing session, before any write.
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000e","role":"authenticated","aal":"aal1","is_anonymous":true}', true);
+select throws_ok($$select public.submit_indicators('[{"indicator_type":"domain","value_norm":"anon-attempt.example.org","claimed_verdict":"malicious"}]'::jsonb)$$, '42501', 'auth_required', 'anonymous sign-in session cannot submit');
+reset role;
+select is((select count(*)::int from public.indicator_submissions where contributor_id = '00000000-0000-0000-0000-00000000000e') + (select count(*)::int from public.contribution_log where contributor_id = '00000000-0000-0000-0000-00000000000e'), 0, 'a refused anonymous attempt leaves no submission or log row');
+
+-- carried-forward hardening: a token-like host label (32 hex chars) is rejected by the database itself
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
+select is((select public.submit_indicators('[{"indicator_type":"domain","value_norm":"0123456789abcdef0123456789abcdef.example.org","claimed_verdict":"malicious"}]'::jsonb)), '{"accepted":0,"duplicates":0,"rejected":1}'::jsonb, 'token-like host label is rejected (valid_host_labels)');
+
+-- carried-forward hardening: per-user pending cap (100). F already has 100 pending; one more request is refused and rolled back.
+reset role;
+insert into public.indicator_submissions (contributor_id, indicator_type, value_norm, claimed_verdict)
+  select '00000000-0000-0000-0000-00000000000f', 'domain', 'queued' || g || '.example.org', 'suspicious' from generate_series(1, 100) g;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000f","role":"authenticated","aal":"aal1","is_anonymous":false}', true);
+select throws_ok($$select public.submit_indicators('[{"indicator_type":"domain","value_norm":"one-more.example.org","claimed_verdict":"suspicious"}]'::jsonb)$$, 'P0001', 'queue_full', 'per-user pending cap is enforced');
+reset role;
+select is((select count(*)::int from public.contribution_log where contributor_id = '00000000-0000-0000-0000-00000000000f'), 0, 'a queue_full refusal rolls back (no contribution_log row)');
 
 select * from finish();
 rollback;

@@ -372,9 +372,11 @@ def run():
         res = scan(dx, True, {SIC.URL_ENV: "http://127.0.0.1:9"})
         sub = None
         if CC is not None:
-            CC._last_submit.clear()
+            import base64, json as _json
+            _b = lambda d: base64.urlsafe_b64encode(_json.dumps(d).encode()).decode().rstrip("=")
+            _store = {"_contrib_session": {"access_token": "%s.%s.sig" % (_b({"alg": "HS256"}), _b({"sub": "synthetic", "is_anonymous": False})), "refresh_token": "synthetic"}}
             with mock.patch.dict(os.environ, {CC.FLAG_ENV: "1"}):
-                sub = CC.submit([{"indicator_type": "domain", "value_norm": dx}], "suspicious", True, token="t", timeout=2)
+                sub = CC.submit([{"indicator_type": "domain", "value_norm": dx}], "suspicious", True, store=_store, timeout=2)
         CI.reset_cache()
     if sub is None:
         skip("contribution fails softly when the database is down", "contribution_client.py not importable")

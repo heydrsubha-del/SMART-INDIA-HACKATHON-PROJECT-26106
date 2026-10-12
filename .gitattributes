@@ -6,3 +6,11 @@
 
 # Everything else: normalise to LF in the repo, native in the working copy.
 * text=auto
+/MANIFEST.sha256 text eol=lf
+/e2e_phase4.py text eol=lf
+/shared_intel_client.py text eol=lf
+/test_e2e_guard.py text eol=lf
+/test_shared_intel_client.py text eol=lf
+/test_e2e_run_simulation.py text eol=lf
+/contribution_client.py text eol=lf
+/test_contribution_client.py text eol=lf

@@ -61,6 +61,14 @@ MULTIUSER = os.environ.get("SIH26106_MULTIUSER", "").strip().lower() in (
     "1", "true", "yes", "on"
 )
 SESSION_TOKEN_KEY = "_google_creds_json"
+# Contribution-only credentials (see get_authorization_url / _remember_id_token). They live in the visitor's
+# Streamlit session state ONLY: never written to disk, never part of the saved Gmail credential JSON.
+# Keep these two names identical to contribution_client.ID_TOKEN_KEY / ID_NONCE_KEY.
+ID_TOKEN_KEY = "_google_id_token"
+ID_NONCE_KEY = "_google_id_nonce"
+# Google access token, kept ONLY when the ID token carries an at_hash claim: Supabase then requires the matching access token
+# (see contribution_client). Session state only; popped with the ID token. Must equal contribution_client.ID_ACCESS_KEY.
+ID_ACCESS_KEY = "_google_id_access_token"
 
 # On a host where you can't upload a client_secret.json file (e.g. Streamlit
 # Community Cloud), put the whole JSON in this environment variable / secret.
@@ -147,12 +155,26 @@ def _session_state():
     return st.session_state
 
 
+def _credentials_json(creds) -> str:
+    """creds.to_json() with any ID token removed. The ID token is only used for the optional contribution
+    sign-in and must never be saved with the Gmail credentials (all other fields, incl. refresh_token, stay)."""
+    raw = creds.to_json()
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return raw
+    if isinstance(data, dict) and "id_token" in data:
+        data.pop("id_token", None)
+        return json.dumps(data)
+    return raw
+
+
 def _save_credentials(creds) -> None:
     if MULTIUSER:
-        _session_state()[SESSION_TOKEN_KEY] = creds.to_json()
+        _session_state()[SESSION_TOKEN_KEY] = _credentials_json(creds)
         return
     path = _token_path()
-    path.write_text(creds.to_json(), encoding="utf-8")
+    path.write_text(_credentials_json(creds), encoding="utf-8")
     try:
         os.chmod(path, 0o600)
     except OSError:
@@ -221,7 +243,71 @@ def _code_challenge_for(code_verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
 
-def _pack_state(code_verifier: str, email_hint: str = "") -> str:
+def _generate_nonce() -> str:
+    """Unpredictable RAW nonce (43 url-safe chars, never contains '.'). Only its SHA-256 hex digest is sent to
+    Google; the raw value is what Supabase's ID-token grant needs."""
+    return secrets.token_urlsafe(32)
+
+
+def _nonce_hash(raw_nonce: str) -> str:
+    return hashlib.sha256(raw_nonce.encode("ascii")).hexdigest()
+
+
+def _unpack_nonce(state: str) -> str | None:
+    """Recover the raw nonce packed by _pack_state, or None if `state` is not one of ours."""
+    try:
+        padded = state + "=" * (-len(state) % 4)
+        nonce = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8").split(".", 2)[0]
+        return nonce or None
+    except Exception:
+        return None
+
+
+def _jwt_claims(token) -> dict | None:
+    """UNVERIFIED decode of a JWT payload (consistency checks only; Supabase verifies the token)."""
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return None
+        data = json.loads(base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4)))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def clear_google_id_token() -> None:
+    try:
+        st_state = _session_state()
+        st_state.pop(ID_TOKEN_KEY, None)
+        st_state.pop(ID_NONCE_KEY, None)
+        st_state.pop(ID_ACCESS_KEY, None)
+    except Exception:
+        pass
+
+
+def _remember_id_token(id_token, raw_nonce, access_token=None) -> None:
+    """Keep the ID token (+ raw nonce) in session state ONLY if it belongs to this OAuth transaction: its
+    `nonce` claim must equal SHA-256(raw nonce) that we sent to Google. Never raises; never touches Gmail tokens."""
+    try:
+        clear_google_id_token()
+        if not (isinstance(id_token, str) and id_token and isinstance(raw_nonce, str) and raw_nonce):
+            return
+        claims = _jwt_claims(id_token)
+        if not claims or not secrets.compare_digest(str(claims.get("nonce", "")), _nonce_hash(raw_nonce)):
+            return
+        needs_access = claims.get("at_hash") is not None     # Supabase docs: an ID token with at_hash must be accompanied by its access_token
+        if needs_access and not (isinstance(access_token, str) and access_token):
+            return                                           # fail closed: contributing needs a fresh sign-in; Gmail is unaffected
+        st_state = _session_state()
+        st_state[ID_TOKEN_KEY] = id_token
+        st_state[ID_NONCE_KEY] = raw_nonce
+        if needs_access:
+            st_state[ID_ACCESS_KEY] = access_token
+    except Exception:
+        pass
+
+
+def _pack_state(code_verifier: str, email_hint: str = "", nonce: str | None = None) -> str:
     """Combine a fresh CSRF nonce, the PKCE code_verifier, and (optionally)
     whatever email address the user had already typed into `state`.
 
@@ -236,7 +322,7 @@ def _pack_state(code_verifier: str, email_hint: str = "") -> str:
     typed email, with nothing to persist server-side. `email_hint` is
     appended last and un-split, so an address containing "." is safe.
     """
-    nonce = secrets.token_urlsafe(16)
+    nonce = nonce or _generate_nonce()
     payload = f"{nonce}.{code_verifier}.{email_hint}".encode("utf-8")
     return base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
 
@@ -296,8 +382,10 @@ def get_authorization_url(email_hint: str = "") -> tuple[str, str]:
     exchange_code_for_token() -- see _pack_state.
     """
     code_verifier = _generate_code_verifier()
-    flow = _build_flow(state=_pack_state(code_verifier, email_hint), code_verifier=code_verifier)
+    raw_nonce = _generate_nonce()
+    flow = _build_flow(state=_pack_state(code_verifier, email_hint, raw_nonce), code_verifier=code_verifier)
     auth_url, state = flow.authorization_url(
+        nonce=_nonce_hash(raw_nonce),         # Google embeds this in the ID token; Supabase gets the raw value
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
@@ -327,10 +415,16 @@ def exchange_code_for_token(code: str, state: str | None = None) -> tuple[str, s
     if not creds or not creds.token:
         raise RuntimeError("Google OAuth completed but no access token was returned.")
     _save_credentials(creds)
+    _remember_id_token(getattr(creds, "id_token", None), _unpack_nonce(state) if state else None, creds.token)
     return creds.token, email_hint
 
 
 def clear_saved_token() -> None:
+    clear_google_id_token()
+    try:
+        _session_state().pop("_contrib_session", None)      # contribution_client.SESSION_KEY: sign-out ends it too
+    except Exception:
+        pass
     if MULTIUSER:
         try:
             _session_state().pop(SESSION_TOKEN_KEY, None)
