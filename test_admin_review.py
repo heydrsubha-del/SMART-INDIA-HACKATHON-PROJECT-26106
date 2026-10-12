@@ -1,0 +1,238 @@
+"""Offline tests for the reviewer-only Admin Review module. Synthetic tokens, mocked HTTP, no network/accounts/secrets."""
+import io, os, unittest, uuid
+from contextlib import redirect_stderr
+from unittest import mock
+from urllib.parse import quote
+
+import admin_review as ar
+import contribution_client as cc
+from test_contribution_auth import Resp, jwt, sess
+
+BASE, KEY = "https://proj.supabase.co", "sb_publishable_synthetic"
+FID, SID = str(uuid.uuid4()), str(uuid.uuid4())
+SVG = "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>"
+AAL1, AAL2 = jwt(sub="u", aal="aal1"), jwt(sub="u", aal="aal2")
+SECRET_BITS = ("JBSWY3DPEHPK3PXP", AAL1, AAL2, "sb_publishable_synthetic")
+
+
+def aal2_session(): return {"access_token": AAL2, "refresh_token": "rt-2"}
+
+
+class Net:
+    """Routes mocked requests.request by method+path; records calls."""
+    def __init__(self, **routes):
+        self.calls, self.routes = [], routes
+    def __call__(self, method, url, **kw):
+        self.calls.append((method, url, kw))
+        r = self.routes[url.replace(BASE, "")]
+        if isinstance(r, Exception): raise r
+        return r.pop(0) if isinstance(r, list) else r
+    def paths(self): return [u.replace(BASE, "") for _, u, _ in self.calls]
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        p = mock.patch.dict(os.environ, {"SIH26106_SUPABASE_URL": BASE, "SIH26106_SUPABASE_ANON_KEY": KEY}, clear=False)
+        p.start(); self.addCleanup(p.stop)
+        os.environ.pop("SIH26106_ADMIN_REVIEW", None)
+
+    def run_with(self, net, fn, *a):
+        buf = io.StringIO()
+        with mock.patch("admin_review.requests.request", net), redirect_stderr(buf):
+            out = fn(*a)
+        for s in SECRET_BITS:
+            self.assertNotIn(s, buf.getvalue())
+        return out, buf.getvalue()
+
+
+class Config(Base):
+    def test_disabled_by_default_and_flag_values(self):
+        self.assertFalse(ar.enabled())
+        for v, want in (("1", True), ("true", True), ("0", False), ("", False), ("no", False)):
+            with mock.patch.dict(os.environ, {ar.FLAG_ENV: v}): self.assertEqual(ar.enabled(), want)
+
+    def test_service_role_and_secret_keys_refused(self):
+        pl = __import__("base64").urlsafe_b64encode(b'{"role":"service_role"}').rstrip(b"=").decode()
+        for bad in ("sb_secret_abc", "h." + pl + ".s"):
+            with mock.patch.dict(os.environ, {"SIH26106_SUPABASE_ANON_KEY": bad}):
+                self.assertEqual(ar._setup()[1], "unsafe_credentials")
+        with mock.patch.dict(os.environ, {"SIH26106_SUPABASE_URL": "http://evil.example.com"}):
+            self.assertEqual(ar._setup()[1], "not_configured")
+        self.assertEqual(ar._setup()[0], (BASE, KEY))
+
+
+class Authorization(Base):
+    def test_review_token_requires_aal2_non_anonymous(self):
+        self.assertIsNone(ar.review_token({}))
+        self.assertIsNone(ar.review_token({ar.REVIEW_KEY: {"access_token": AAL1}}))
+        self.assertIsNone(ar.review_token({ar.REVIEW_KEY: {"access_token": jwt(aal="aal2", is_anonymous=True)}}))
+        self.assertEqual(ar.review_token({ar.REVIEW_KEY: aal2_session()}), AAL2)
+
+    def test_base_token_needs_google_session(self):
+        self.assertEqual(ar.base_token({}, BASE, KEY), (None, "auth_required"))
+        st = {cc.SESSION_KEY: sess()}
+        tok, err = ar.base_token(st, BASE, KEY)
+        self.assertEqual((tok, err), (st[cc.SESSION_KEY]["access_token"], ""))
+
+    def test_non_admin_forbidden_on_queue_and_decide_never_ok(self):
+        net = Net(**{"/rest/v1/rpc/review_queue": Resp(403, {"message": "forbidden"}), "/rest/v1/rpc/review_submission": Resp(403, {"message": "forbidden"})})
+        (rows, err), _ = self.run_with(net, ar.queue, BASE, KEY, AAL1)
+        self.assertEqual((rows, err), (None, "forbidden"))
+        err, _ = self.run_with(net, ar.decide, BASE, KEY, AAL1, SID, "approve")
+        self.assertEqual(err, "forbidden")
+        for _, _, kw in net.calls:
+            self.assertEqual(kw["headers"]["Authorization"], "Bearer " + AAL1)
+            self.assertEqual(kw["allow_redirects"], False)
+
+    def test_ui_cannot_grant_admin_no_role_or_metadata_endpoint(self):
+        src = open(ar.__file__, encoding="utf-8").read()
+        for bad in ("app_metadata", "admin/users", "PUT", "PATCH", "service_role"):
+            self.assertNotIn("/" + bad if bad.startswith("admin") else bad, src.replace("app_metadata.role = 'admin'", "").replace("service-role", ""))
+
+
+class Enrollment(Base):
+    def good(self):
+        return Resp(200, {"id": FID, "type": "totp", "totp": {"qr_code": "data:image/svg+xml;utf-8," + quote(SVG), "secret": "JBSWY3DPEHPK3PXP", "uri": "otpauth://x"}})
+
+    def test_enroll_ok_returns_plain_svg(self):
+        (r, err), out = self.run_with(Net(**{"/auth/v1/factors": self.good()}), ar.enroll, BASE, KEY, AAL1)
+        self.assertEqual(err, ""); self.assertEqual(r["factor_id"], FID); self.assertEqual(r["svg"], SVG)
+        self.assertEqual(out, "")
+
+    def test_enroll_errors(self):
+        for resp, want in ((Resp(422, {"msg": "factor limit"}), "enroll_failed"), (Resp(401), "forbidden"), (Resp(500), "unavailable"),
+                           (Resp(429), "rate_limited"), (Resp(302), "unavailable"), (Resp(200, {"id": "x"}), "enroll_failed"),
+                           (Resp(200, {"id": FID, "totp": {"qr_code": "data:image/svg+xml,<svg onload=alert(1)>", "secret": "S"}}), "enroll_failed"),
+                           (Resp(200, {"id": FID, "totp": {"qr_code": "https://evil/x.png", "secret": "S"}}), "enroll_failed"),
+                           (Resp(200, {"id": "not-a-uuid", "totp": {"qr_code": "data:image/svg+xml," + quote(SVG), "secret": "S"}}), "enroll_failed")):
+            (r, err), _ = self.run_with(Net(**{"/auth/v1/factors": resp}), ar.enroll, BASE, KEY, AAL1)
+            self.assertIsNone(r); self.assertEqual(err, want, resp.status_code)
+        import requests
+        (r, err), out = self.run_with(Net(**{"/auth/v1/factors": requests.exceptions.ConnectTimeout("t https://proj.supabase.co Bearer " + AAL1)}), ar.enroll, BASE, KEY, AAL1)
+        self.assertEqual(err, "unavailable"); self.assertIn("stage=admin_enroll", out); self.assertIn("exc=ConnectTimeout", out)
+
+    def test_verified_factors_filters_totp_verified_only(self):
+        fs = [{"id": FID, "factor_type": "totp", "status": "verified"}, {"id": "u", "factor_type": "totp", "status": "unverified"}, {"id": "p", "factor_type": "phone", "status": "verified"}]
+        (ids, err), _ = self.run_with(Net(**{"/auth/v1/user": Resp(200, {"factors": fs})}), ar.verified_factors, BASE, KEY, AAL1)
+        self.assertEqual((ids, err), ([FID], ""))
+        (ids, err), _ = self.run_with(Net(**{"/auth/v1/user": Resp(401)}), ar.verified_factors, BASE, KEY, AAL1)
+        self.assertEqual((ids, err), (None, "forbidden"))
+
+
+class Mfa(Base):
+    CH, VF = "/auth/v1/factors/%s/challenge" % FID, "/auth/v1/factors/%s/verify" % FID
+
+    def go(self, net, code="123456", fid=FID):
+        st = {}
+        err, out = self.run_with(net, ar.verify, st, BASE, KEY, AAL1, fid, code)
+        return err, st, out
+
+    def test_success_stores_aal2_session_and_sends_challenge_id_and_code(self):
+        net = Net(**{self.CH: Resp(200, {"id": "chal-1"}), self.VF: Resp(200, {"access_token": AAL2, "refresh_token": "rt-2"})})
+        err, st, out = self.go(net)
+        self.assertEqual(err, ""); self.assertEqual(st[ar.REVIEW_KEY]["access_token"], AAL2)
+        self.assertEqual(net.calls[1][2]["json"], {"challenge_id": "chal-1", "code": "123456"}); self.assertEqual(out, "")
+
+    def test_invalid_code_format_makes_no_request(self):
+        for c in ("", "12345", "1234567", "abcdef", None, "12 456"):
+            net = Net(); err, st, _ = self.go(net, code=c)
+            self.assertEqual(err, "invalid_code"); self.assertEqual(net.calls, []); self.assertEqual(st, {})
+        net = Net(); err, _, _ = self.go(net, fid="../../x"); self.assertEqual(err, "mfa_invalid"); self.assertEqual(net.calls, [])
+
+    def test_wrong_code_and_failures_do_not_create_review_session(self):
+        for chal, vf, want in ((Resp(200, {"id": "c"}), Resp(400, {"msg": "Invalid TOTP code entered"}), "mfa_invalid"),
+                               (Resp(200, {"id": "c"}), Resp(422, {"error_code": "mfa_verification_failed"}), "mfa_invalid"),
+                               (Resp(200, {"id": "c"}), Resp(500), "unavailable"), (Resp(200, {"id": "c"}), Resp(429), "rate_limited"),
+                               (Resp(401), None, "forbidden"), (Resp(500), None, "unavailable"), (Resp(200, {}), None, "unavailable"),
+                               (Resp(200, {"id": "c"}), Resp(200, {"access_token": "x", "refresh_token": "y"}), "unavailable"),
+                               (Resp(200, {"id": "c"}), Resp(200, {"access_token": AAL1, "refresh_token": "rt"}), "mfa_not_elevated")):
+            routes = {self.CH: chal}
+            if vf is not None: routes[self.VF] = vf
+            err, st, _ = self.go(Net(**routes))
+            self.assertEqual(err, want); self.assertNotIn(ar.REVIEW_KEY, st)
+
+
+class Decisions(Base):
+    RPC = "/rest/v1/rpc/review_submission"
+
+    def test_decide_sends_only_explicit_fields(self):
+        for d, status in (("approve", "approved"), ("reject", "rejected")):
+            net = Net(**{self.RPC: Resp(200, {"status": status})})
+            err, out = self.run_with(net, ar.decide, BASE, KEY, AAL2, SID.upper(), d, "  looks fine ")
+            self.assertEqual(err, ""); self.assertEqual(len(net.calls), 1)
+            self.assertEqual(net.calls[0][2]["json"], {"p_id": SID, "p_decision": d, "p_note": "looks fine"})
+            self.assertEqual(net.calls[0][2]["headers"]["Authorization"], "Bearer " + AAL2)
+
+    def test_local_validation_makes_no_request(self):
+        net = Net()
+        for args, want in (((SID, "maybe"), "invalid_decision"), ((SID, "approve", "x" * 201), "note_too_long"), (("not-a-uuid", "reject"), "not_found")):
+            err, _ = self.run_with(net, ar.decide, BASE, KEY, AAL2, *args); self.assertEqual(err, want)
+        self.assertEqual(net.calls, [])
+
+    def test_database_errors_are_mapped_and_unknown_ones_hidden(self):
+        for resp, want in ((Resp(400, {"message": "self_review"}), "self_review"), (Resp(400, {"message": "already_reviewed"}), "already_reviewed"),
+                           (Resp(400, {"message": "allowlisted"}), "allowlisted"), (Resp(400, {"message": "invalid_indicator"}), "invalid_indicator"),
+                           (Resp(400, {"message": "relation public.secret_table does not exist"}), "server_error"),
+                           (Resp(403, {"message": "forbidden"}), "forbidden"), (Resp(401), "forbidden"), (Resp(503), "unavailable"), (Resp(302), "unavailable")):
+            err, out = self.run_with(Net(**{self.RPC: resp}), ar.decide, BASE, KEY, AAL2, SID, "approve")
+            self.assertEqual(err, want)   # unknown DB text is only in the scrubbed stderr diagnostic, never returned to the UI
+
+    def test_queue_ok_and_malformed(self):
+        rows = [{"id": SID, "indicator_type": "domain", "value_norm": "x.test", "claimed_verdict": "suspicious", "distinct_contributors": 1, "created_at": "t"}, "junk"]
+        (r, err), _ = self.run_with(Net(**{"/rest/v1/rpc/review_queue": Resp(200, rows)}), ar.queue, BASE, KEY, AAL2)
+        self.assertEqual((r, err), ([rows[0]], ""))
+        (r, err), _ = self.run_with(Net(**{"/rest/v1/rpc/review_queue": Resp(200, {"x": 1})}), ar.queue, BASE, KEY, AAL2)
+        self.assertEqual((r, err), (None, "unavailable"))
+
+
+class RenderGuards(Base):
+    """Drive render() with a tiny fake `st`: nothing is decided unless a decision button returns True."""
+    class St:
+        def __init__(self, store, buttons=(), checks=()):
+            self.session_state, self.buttons, self.checks, self.out = store, set(buttons), set(checks), []
+        def __getattr__(self, name):
+            def f(*a, **k):
+                self.out.append(name)
+                if name == "button": return k.get("key") in self.buttons and not k.get("disabled")
+                if name == "checkbox": return k.get("key") in self.checks
+                if name == "columns": return (self, self)
+                if name == "text_input": return k.get("value", "")
+                if name == "container": return self
+                if name == "rerun": raise RuntimeError("rerun")
+                return None
+            return f
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def store(self, rows):
+        return {ar.REVIEW_KEY: aal2_session(), ar.QUEUE_KEY: rows}
+
+    ROW = {"id": SID, "indicator_type": "domain", "value_norm": "x.test", "claimed_verdict": "suspicious", "distinct_contributors": 1, "created_at": "t"}
+
+    def test_buttons_disabled_without_confirmation_and_no_auto_decision(self):
+        net = Net()
+        st = self.St(self.store([self.ROW]), buttons={"rv_a_%s_0" % SID, "rv_r_%s_0" % SID})
+        with mock.patch("admin_review.requests.request", net):
+            ar.render(st)
+        self.assertEqual(net.calls, [])                     # rendering alone never decides; unconfirmed clicks are disabled
+
+    def test_confirmed_click_decides_once_then_requires_fresh_confirmation(self):
+        net = Net(**{Decisions.RPC: Resp(200, {"status": "rejected"})})
+        store = self.store([self.ROW])
+        st = self.St(store, buttons={"rv_r_%s_0" % SID}, checks={"rv_c_%s_0" % SID})
+        with mock.patch("admin_review.requests.request", net):
+            with self.assertRaises(RuntimeError): ar.render(st)
+        self.assertEqual(len(net.calls), 1); self.assertEqual(net.calls[0][2]["json"]["p_decision"], "reject")
+        self.assertEqual(store[ar.ATTEMPT_KEY], 1); self.assertNotIn(ar.QUEUE_KEY, store)
+
+    def test_not_configured_and_no_session_never_call_db(self):
+        net = Net()
+        with mock.patch.dict(os.environ, {"SIH26106_SUPABASE_ANON_KEY": "sb_secret_x"}), mock.patch("admin_review.requests.request", net):
+            ar.render(self.St({}))
+        with mock.patch("admin_review.requests.request", net):
+            ar.render(self.St({}))
+        self.assertEqual(net.calls, [])
+
+
+if __name__ == "__main__":
+    unittest.main()

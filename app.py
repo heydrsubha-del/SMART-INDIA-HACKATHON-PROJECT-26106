@@ -44,6 +44,7 @@ pio.templates["sih26106_dark"] = go.layout.Template(
 )
 pio.templates.default = "plotly_dark+sih26106_dark"
 import contribution_client
+import admin_review
 from ollama_threat import analyze_with_ollama, analyze_batch_with_ollama, generation_summary
 from nomic_embed import embeddings_usable, embeddings_backend, describe_origin, embed_text, save_origin_embedding, find_similar_origins
 from email.utils import parsedate_to_datetime
@@ -7799,6 +7800,9 @@ components.html(
     </script>""",
     height=0,
 )
+if admin_review.enabled():
+    with st.sidebar.expander("Admin review (reviewers only)"):
+        admin_review.render(st, signin=(lambda: get_authorization_url(email_hint="")[0]) if GOOGLE_OAUTH_READY and oauth_available() else None)
 with st.sidebar:
     _sb_q = (st.text_input("Search", key="sb_search", placeholder="Search", label_visibility="collapsed") or "").strip().lower()
 
