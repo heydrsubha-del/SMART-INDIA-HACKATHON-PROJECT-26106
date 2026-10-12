@@ -18,7 +18,7 @@ from indicator_sanitizer import sanitize_indicator
 FLAG_ENV = "SIH26106_CONTRIBUTIONS"
 MAX_ITEMS, MIN_INTERVAL, TIMEOUT = 20, 30.0, 8
 VERDICTS = ("suspicious", "malicious")
-_KNOWN_ERRORS = {"rate_limited", "blocked", "too_many_items", "invalid_payload", "auth_required"}
+_KNOWN_ERRORS = {"rate_limited", "blocked", "too_many_items", "invalid_payload", "auth_required", "queue_full"}
 _last_submit = {}          # session token -> last submit time (courtesy throttle; the database enforces the real limits)
 
 
