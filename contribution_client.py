@@ -14,6 +14,8 @@
 import base64
 import json
 import os
+import re
+import sys
 import time
 from collections.abc import MutableMapping
 from urllib.parse import urlsplit
@@ -31,6 +33,41 @@ ID_TOKEN_KEY, ID_NONCE_KEY, ID_ACCESS_KEY = "_google_id_token", "_google_id_nonc
 _ID_KEYS = (ID_TOKEN_KEY, ID_NONCE_KEY, ID_ACCESS_KEY)
 SESSION_KEY, LAST_KEY = "_contrib_session", "_contrib_last_submit"
 _KNOWN_ERRORS = {"rate_limited", "blocked", "too_many_items", "invalid_payload", "auth_required", "queue_full"}
+
+
+_SCRUB = [re.compile(p, re.I) for p in (r"eyJ[\w-]+\.[\w-]+\.[\w-]*", r"sb_(?:publishable|secret)_\w+", r"bearer\s+\S+",
+                                         r"https?://\S+", r"[\w.+-]+@[\w-]+\.[\w.-]+", r"[A-Za-z0-9_\-]{24,}")]
+
+
+def _scrub(text, limit=120):
+    s = str(text)
+    for rx in _SCRUB:
+        s = rx.sub("[redacted]", s)
+    return " ".join(s.split())[:limit]
+
+
+def _diag(stage, resp=None, exc=None, note=None):
+    """One stderr line for Streamlit Cloud logs: failing stage, HTTP status, exception class, scrubbed message.
+    Never tokens, keys, URLs, e-mail addresses, headers or request/response bodies beyond a scrubbed error code/message."""
+    try:
+        parts = ["stage=" + stage]
+        if resp is not None:
+            parts.append("status=%s" % getattr(resp, "status_code", "?"))
+            try:
+                body = resp.json()
+            except Exception:
+                body = None
+            if isinstance(body, dict):
+                for k in ("error_code", "error", "msg", "message"):
+                    if isinstance(body.get(k), str):
+                        parts.append("%s=%s" % (k, _scrub(body[k])))
+        if exc is not None:
+            parts += ["exc=" + type(exc).__name__, "msg=" + _scrub(exc)]
+        if note:
+            parts.append("note=" + _scrub(note))
+        print("contribution_diag", " ".join(parts), file=sys.stderr, flush=True)
+    except Exception:
+        pass
 
 
 def enabled():
@@ -146,6 +183,8 @@ def _post_rpc(base, key, token, payload, timeout):
 def _auth_http_error(resp, refreshing):
     """Safe code for a non-2xx/3xx response from /auth/v1/token, or None when it succeeded."""
     sc = resp.status_code
+    if sc >= 300:
+        _diag("auth_refresh" if refreshing else "auth_exchange", resp)
     if 300 <= sc < 400 or sc >= 500:
         return "unavailable"
     if sc == 429:
@@ -160,9 +199,11 @@ def _read_session(resp):
     try:
         data = resp.json()
         sess = {"access_token": data.get("access_token"), "refresh_token": data.get("refresh_token")}
-    except Exception:
+    except Exception as exc:
+        _diag("session_validation", resp, exc=exc, note="token response is not JSON")
         return None, "unavailable"
     if not all(isinstance(v, str) and v for v in sess.values()) or _jwt_claims(sess["access_token"]) is None:
+        _diag("session_validation", resp, note="session missing a token or access token unparseable")
         return None, "unavailable"
     if _is_anonymous(sess["access_token"]):
         return None, "auth_required"
@@ -246,35 +287,47 @@ def submit(items, verdict, consent, store=None, timeout=TIMEOUT):
     last = store.get(LAST_KEY)
     if isinstance(last, (int, float)) and 0 <= now - last < MIN_INTERVAL:      # courtesy throttle; the database enforces the real limits
         return _fail("rate_limited_locally")
+    stage = "session_validation"
     try:
         sess, fresh = store.get(SESSION_KEY), False
         if not _valid_session(sess):
             _pop(store, SESSION_KEY)
+            stage = "auth_exchange"
             sess, err = _sign_in_google(store, base, key, timeout)
             if err:
                 return _fail(err)
             fresh = True
         store[LAST_KEY] = now
+        stage = "rpc_request"
         resp = _post_rpc(base, key, sess["access_token"], payload, timeout)
         if resp.status_code in (401, 403):
             if fresh:                                              # a brand-new session was refused: do not loop
+                _diag("rpc_request", resp, note="fresh session refused")
                 _pop(store, SESSION_KEY)
                 return _fail(_rpc_error(resp, "auth_required"))
+            stage = "auth_refresh"
             sess, err = _refresh(store, base, key, sess, timeout)    # at most ONE refresh + ONE retry
             if err:
                 return _fail(err)
+            stage = "rpc_request"
             resp = _post_rpc(base, key, sess["access_token"], payload, timeout)
             if resp.status_code in (401, 403):
+                _diag("rpc_request", resp, note="refreshed session refused")
                 _pop(store, SESSION_KEY)
                 return _fail(_rpc_error(resp, "session_expired"))
         if 300 <= resp.status_code < 400:
+            _diag("rpc_request", resp, note="redirect not followed")
             return _fail("unavailable")                           # redirects are never followed
         if resp.status_code >= 400:
+            _diag("rpc_request", resp)
             return _fail(_rpc_error(resp, "server_error"))
+        stage = "response_validation"
         data = resp.json()
         counts = [data.get(k) for k in ("accepted", "duplicates", "rejected")] if isinstance(data, dict) else [None]
         if any(type(c) is not int or c < 0 for c in counts):
+            _diag("response_validation", resp, note="unexpected accepted/duplicates/rejected shape")
             return _fail("unavailable")
         return {"ok": True, "accepted": counts[0], "duplicates": counts[1], "rejected": counts[2], "error": ""}
-    except Exception:
+    except Exception as exc:
+        _diag(stage, exc=exc)
         return _fail("unavailable")    # never echo URLs, keys, tokens or exception text
