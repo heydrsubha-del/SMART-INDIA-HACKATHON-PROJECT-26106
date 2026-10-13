@@ -22,7 +22,7 @@ FLAG_ENV = "SIH26106_ADMIN_REVIEW"
 REVIEW_KEY, QUEUE_KEY, ENROLL_KEY, ATTEMPT_KEY = "_review_session", "_review_queue", "_review_enroll", "_review_attempt"
 TIMEOUT, NOTE_MAX = 15, 200
 _CODE = re.compile(r"\d{6}")
-_DB_ERRORS = {"forbidden", "invalid_decision", "note_too_long", "not_found", "already_reviewed", "self_review", "invalid_indicator", "allowlisted"}
+_DB_ERRORS = {"forbidden", "invalid_decision", "note_too_long", "not_found", "already_reviewed", "self_review", "reason_required", "invalid_indicator", "allowlisted"}
 _MSG = {
     "not_configured": "Admin review is not configured.", "unsafe_credentials": "A service-role or secret key was supplied; only the public anon key is allowed.",
     "auth_required": "Sign in with Google first.", "unavailable": "The service is unavailable right now. Please try again.",
@@ -30,7 +30,8 @@ _MSG = {
     "invalid_code": "Enter the 6-digit code from your authenticator app.", "mfa_invalid": "That code was not accepted. Try the next code.",
     "mfa_not_elevated": "MFA verification did not raise the session to the required level.", "enroll_failed": "Could not start authenticator setup.",
     "rejected": "The request was rejected.", "server_error": "The server could not complete the request.",
-    "self_review": "You cannot review your own submission.", "already_reviewed": "Already reviewed.", "not_found": "Submission not found.",
+    "self_review": "You cannot review your own submission.",
+    "reason_required": "Self-review requires a reason in the note (10-200 characters). It will be audited and labelled self-reviewed.", "already_reviewed": "Already reviewed.", "not_found": "Submission not found.",
     "allowlisted": "Blocked: this indicator is on the allowlist.", "invalid_indicator": "Blocked: invalid indicator.",
     "note_too_long": "Note is too long (200 characters max).", "invalid_decision": "Invalid decision.",
     "not_admin": "Access denied: administrator privileges required",

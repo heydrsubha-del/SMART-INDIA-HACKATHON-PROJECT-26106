@@ -246,7 +246,7 @@ class Decisions(Base):
 
     def test_database_errors_are_mapped_and_unknown_ones_hidden(self):
         for resp, want in ((Resp(400, {"message": "self_review"}), "self_review"), (Resp(400, {"message": "already_reviewed"}), "already_reviewed"),
-                           (Resp(400, {"message": "allowlisted"}), "allowlisted"), (Resp(400, {"message": "invalid_indicator"}), "invalid_indicator"),
+                           (Resp(400, {"message": "reason_required"}), "reason_required"), (Resp(400, {"message": "allowlisted"}), "allowlisted"), (Resp(400, {"message": "invalid_indicator"}), "invalid_indicator"),
                            (Resp(400, {"message": "relation public.secret_table does not exist"}), "server_error"),
                            (Resp(403, {"message": "forbidden"}), "forbidden"), (Resp(401), "forbidden"), (Resp(503), "unavailable"), (Resp(302), "unavailable")):
             err, out = self.run_with(Net(**{self.RPC: resp}), ar.decide, BASE, KEY, AAL2, SID, "approve")
@@ -385,6 +385,40 @@ class AdminGate(Base):
         with mock.patch("admin_review.requests.request", net):
             with self.assertRaises(RuntimeError): ar.render(st)       # st.rerun() after storing enrollment
         self.assertEqual(net.paths()[0], self.USER); self.assertEqual(net.paths()[-1], "/auth/v1/factors")   # role check first, enroll last
+
+
+class SelfReviewMigration(unittest.TestCase):
+    """Static guards on the additive migration (the behavioural pgTAP suite is supabase/tests/004_self_review.sql)."""
+    SQL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "supabase", "migrations", "20261015000001_owner_self_review.sql"), encoding="utf-8").read()
+    BASE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "supabase", "migrations", "20261013000001_contributions.sql"), encoding="utf-8", newline="").read().replace("\r\n", "\n")
+
+    def test_reason_message_is_user_visible_and_signature_unchanged(self):
+        self.assertIn("reason_required", ar._MSG)
+        self.assertIn("review_submission(p_id uuid, p_decision text, p_note text default null)", self.SQL)
+
+    def test_owner_identity_is_server_side_only(self):
+        for bad in ("user_metadata", "email", "p_self", "p_is_owner", "jwt() ->> 'email'"):
+            self.assertNotIn(bad, self.SQL.split("create or replace function public.review_submission")[0].replace("-- ", ""))
+        self.assertIn("revoke all on private.platform_owners from public, anon, authenticated", self.SQL)
+        self.assertIn("force row level security", self.SQL)
+        self.assertIn("private.is_admin() and exists", self.SQL)                     # owner must also be admin + aal2
+
+    def test_every_original_review_check_is_still_in_the_new_function(self):
+        new = self.SQL.split("create or replace function public.review_submission")[1]
+        for k in ("private.is_admin()", "invalid_decision", "note_too_long", "not_found", "already_reviewed", "self_review",
+                  "private.valid_indicator", "indicator_allowlist", "allowlisted", "invalid_indicator", "for update"):
+            self.assertIn(k, new)
+        self.assertIn("grant execute on function public.review_submission(uuid, text, text)\n  to authenticated", self.BASE.replace("public.submit_indicators(jsonb), public.review_queue(int), ", ""))
+
+    def test_self_review_is_audited_labelled_and_never_independent(self):
+        for k in ("'self_approve'", "'self_reject'", "self_review", "reason", "decision", "'self_reviewed'", "review_kind"):
+            self.assertIn(k, self.SQL)
+        self.assertIn("audit_log_self_reason_chk", self.SQL)
+        self.assertIn("contributor_id <> v_uid", self.SQL)                           # own submission excluded from independent count
+        self.assertNotIn("service_role", self.SQL)
+
+    def test_no_applied_migration_is_modified_and_nothing_is_executed(self):
+        self.assertNotIn("drop table", self.SQL.lower()); self.assertNotIn("drop function", self.SQL.lower())
 
 
 if __name__ == "__main__":
