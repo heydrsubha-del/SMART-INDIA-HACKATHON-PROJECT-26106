@@ -121,7 +121,8 @@ def _svg(qr):
             return None
         s = unquote(s.split(",", 1)[1]).strip()
     s = re.sub(r"^<\?xml[^>]*\?>\s*", "", s)
-    return None if not s.startswith("<svg") or re.search(r"<script|\bon\w+\s*=|javascript:", s, re.I) else s
+    s = re.sub(r"^<!DOCTYPE[^>\[]*>\s*", "", s, flags=re.I)            # plain DOCTYPE only; an internal subset / entity is refused below
+    return None if not s.startswith("<svg") or re.search(r"<script|<!ENTITY|\bon\w+\s*=|javascript:", s, re.I) else s
 
 
 def enroll(base, key, token):
@@ -132,12 +133,16 @@ def enroll(base, key, token):
         return None, "enroll_failed" if err == "rejected" else err
     try:
         d = resp.json()
-        fid, secret, svg = d["id"], d["totp"]["secret"], _svg(d["totp"]["qr_code"])
+        fid, t = d["id"], d["totp"]
         uuid.UUID(fid)
-        if not svg or not isinstance(secret, str) or not secret:
-            raise ValueError("bad enrollment response")
+        secret, qr = t["secret"], t["qr_code"]
+        svg = _svg(qr)
+        why = "qr_code unusable (starts %r)" % _cc._scrub(qr[:24], 24) if not svg else "secret missing" if not isinstance(secret, str) or not secret else None
     except Exception as exc:
-        _cc._diag("admin_enroll", resp, exc=exc)
+        _cc._diag("admin_enroll", resp, exc=exc, note="unexpected enrollment fields")
+        return None, "enroll_failed"
+    if why:
+        _cc._diag("admin_enroll", resp, note=why)
         return None, "enroll_failed"
     return {"factor_id": fid, "svg": svg, "secret": secret}, ""
 

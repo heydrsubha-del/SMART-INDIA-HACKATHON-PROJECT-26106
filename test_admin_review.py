@@ -100,10 +100,14 @@ class Enrollment(Base):
         self.assertEqual(out, "")
 
     def test_enroll_accepts_raw_svg_as_returned_by_the_rest_api(self):
-        for raw in (SVG, '<?xml version="1.0" encoding="UTF-8"?>\n' + SVG):
+        dt = '<?xml version="1.0" standalone="no"?>\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n' + SVG
+        for raw in (SVG, '<?xml version="1.0" encoding="UTF-8"?>\n' + SVG, dt):
             resp = Resp(200, {"id": FID, "type": "totp", "totp": {"qr_code": raw, "secret": "JBSWY3DPEHPK3PXP", "uri": "otpauth://x"}})
             (r, err), out = self.run_with(Net(**{"/auth/v1/factors": resp}), ar.enroll, BASE, KEY, AAL1)
             self.assertEqual(err, ""); self.assertEqual(r["svg"], SVG); self.assertEqual(out, "")
+        ent = Resp(200, {"id": FID, "totp": {"qr_code": '<!DOCTYPE svg [<!ENTITY x "y">]>' + SVG, "secret": "S"}})
+        (r, err), out = self.run_with(Net(**{"/auth/v1/factors": ent}), ar.enroll, BASE, KEY, AAL1)
+        self.assertEqual((r, err), (None, "enroll_failed")); self.assertIn("qr_code unusable", out)
         bad = Resp(200, {"id": FID, "totp": {"qr_code": "<svg><script>alert(1)</script></svg>", "secret": "S"}})
         (r, err), _ = self.run_with(Net(**{"/auth/v1/factors": bad}), ar.enroll, BASE, KEY, AAL1)
         self.assertEqual((r, err), (None, "enroll_failed"))
