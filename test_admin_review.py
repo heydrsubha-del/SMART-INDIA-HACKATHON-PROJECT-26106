@@ -1,5 +1,5 @@
 """Offline tests for the reviewer-only Admin Review module. Synthetic tokens, mocked HTTP, no network/accounts/secrets."""
-import io, os, unittest, uuid
+import io, os, re, unittest, uuid
 from contextlib import redirect_stderr
 from unittest import mock
 from urllib.parse import quote
@@ -91,6 +91,7 @@ class Authorization(Base):
 
     def test_ui_cannot_grant_admin_no_role_or_metadata_endpoint(self):
         src = open(ar.__file__, encoding="utf-8").read()
+        src = re.sub(r"def admin_role_check\(.*?\n\n\ndef ", "def ", src, count=1, flags=re.S)   # the one read-only role check (GET /auth/v1/user)
         for bad in ("app_metadata", "admin/users", "PUT", "PATCH", "service_role"):
             self.assertNotIn("/" + bad if bad.startswith("admin") else bad, src.replace("app_metadata.role = 'admin'", "").replace("service-role", ""))
 
@@ -306,6 +307,84 @@ class RenderGuards(Base):
         with mock.patch("admin_review.requests.request", net):
             ar.render(self.St({}))
         self.assertEqual(net.calls, [])
+
+
+class AdminGate(Base):
+    """Enrollment/verification UI is reachable only for a server-verified app_metadata.role == 'admin'."""
+    DENIED = "Access denied: administrator privileges required"
+    USER = "/auth/v1/user"
+    ADMIN = {"app_metadata": {"role": "admin"}, "factors": []}
+
+    class Spy(RenderGuards.St):
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k); self.msgs = []
+        def __getattr__(self, name):
+            f = super().__getattr__(name)
+            def g(*a, **k):
+                self.msgs.append((name, a)); return f(*a, **k)
+            return g
+        def shown(self, text): return any(a and a[0] == text for _, a in self.msgs)
+        def has(self, name, label=None): return any(n == name and (label is None or (a and a[0] == label)) for n, a in self.msgs)
+
+    def go(self, body, status=200, buttons=()):
+        net, st = Net(**{self.USER: Resp(status, body)}), self.Spy({cc.SESSION_KEY: sess()}, buttons=buttons)
+        with mock.patch("admin_review.requests.request", net):
+            ar.render(st)
+        return st, net
+
+    def assertDenied(self, st, net):
+        self.assertTrue(st.shown(self.DENIED))
+        self.assertFalse(st.has("button", "Set up authenticator app") or st.has("text_input") or st.has("button", "Verify") or st.has("image"))
+        self.assertEqual(net.paths(), [self.USER])          # no factors list/enroll/challenge call was made
+
+    def test_non_admin_denied(self):
+        self.assertDenied(*self.go({"app_metadata": {"provider": "google"}, "factors": []}))
+
+    def test_email_and_user_metadata_never_authorize(self):
+        self.assertDenied(*self.go({"email": "admin@example.com", "user_metadata": {"role": "admin"}, "role": "admin", "app_metadata": {}}))
+
+    def test_role_must_be_exactly_admin(self):
+        for r in ("Admin", "administrator", "", None, ["admin"]):
+            self.assertDenied(*self.go({"app_metadata": {"role": r}}))
+
+    def test_anonymous_denied_even_with_admin_role(self):
+        self.assertDenied(*self.go({"is_anonymous": True, "app_metadata": {"role": "admin"}}))
+
+    def test_rejected_token_denied(self):
+        self.assertDenied(*self.go({"message": "invalid JWT"}, status=401))
+
+    def test_malformed_response_denied(self):
+        self.assertDenied(*self.go(["admin"]))
+
+    def test_outage_fails_closed(self):
+        st, net = self.go({}, status=500)
+        self.assertFalse(st.has("button") or st.has("text_input"))
+        self.assertEqual(net.paths(), [self.USER])
+
+    def test_no_google_session_never_reaches_role_or_enrollment(self):
+        net, st = Net(), self.Spy({})
+        with mock.patch("admin_review.requests.request", net):
+            ar.render(st)
+        self.assertEqual(net.calls, [])
+        self.assertFalse(st.has("button", "Set up authenticator app"))
+
+    def test_admin_sees_enrollment(self):
+        st, net = self.go(self.ADMIN)
+        self.assertTrue(st.has("button", "Set up authenticator app"))
+        self.assertFalse(st.shown(self.DENIED))
+        self.assertEqual(net.calls[0][0], "GET")
+
+    def test_admin_with_verified_factor_sees_verify(self):
+        f = {"id": FID, "factor_type": "totp", "status": "verified"}
+        st, _ = self.go({"app_metadata": {"role": "admin"}, "factors": [f]})
+        self.assertTrue(st.has("button", "Verify"))
+
+    def test_enroll_only_called_after_role_check(self):
+        net = Net(**{self.USER: Resp(200, self.ADMIN), "/auth/v1/factors": Enrollment.good(None)})
+        st = self.Spy({cc.SESSION_KEY: sess()}, buttons={"admin_enroll_btn"})
+        with mock.patch("admin_review.requests.request", net):
+            with self.assertRaises(RuntimeError): ar.render(st)       # st.rerun() after storing enrollment
+        self.assertEqual(net.paths()[0], self.USER); self.assertEqual(net.paths()[-1], "/auth/v1/factors")   # role check first, enroll last
 
 
 if __name__ == "__main__":
