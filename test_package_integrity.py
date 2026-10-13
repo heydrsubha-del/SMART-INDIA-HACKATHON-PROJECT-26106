@@ -5,7 +5,7 @@ import sql_model as M
 
 D = M.audit_dir(); HERE = os.path.dirname(os.path.abspath(__file__))
 rd = lambda p: open(os.path.join(HERE, p), encoding="utf-8").read()
-MIG, RB = rd("20261012_harden_submit_indicators.sql"), rd("20261012_harden_submit_indicators_ROLLBACK.sql")
+MIG, RB = rd("supabase/proposals/20261012_harden_submit_indicators.sql"), rd("supabase/proposals/20261012_harden_submit_indicators_ROLLBACK.sql")
 
 def export_defs():
     out = {}
