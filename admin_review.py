@@ -111,10 +111,16 @@ def verified_factors(base, key, token):
 
 
 def _svg(qr):
-    """Plain SVG markup from Supabase's data URI, or None if anything looks off (no scripts / handlers)."""
-    if not isinstance(qr, str) or not qr.startswith("data:image/svg+xml") or "," not in qr:
+    """Plain SVG markup from Supabase's QR field (raw SVG over REST; a data URI in client libraries), or None if anything
+    looks off (no scripts / handlers)."""
+    if not isinstance(qr, str):
         return None
-    s = unquote(qr.split(",", 1)[1]).strip()
+    s = qr.strip()
+    if s.startswith("data:image/svg+xml"):
+        if "," not in s:
+            return None
+        s = unquote(s.split(",", 1)[1]).strip()
+    s = re.sub(r"^<\?xml[^>]*\?>\s*", "", s)
     return None if not s.startswith("<svg") or re.search(r"<script|\bon\w+\s*=|javascript:", s, re.I) else s
 
 

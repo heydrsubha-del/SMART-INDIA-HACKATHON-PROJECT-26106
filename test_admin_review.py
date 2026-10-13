@@ -99,6 +99,15 @@ class Enrollment(Base):
         self.assertEqual(err, ""); self.assertEqual(r["factor_id"], FID); self.assertEqual(r["svg"], SVG)
         self.assertEqual(out, "")
 
+    def test_enroll_accepts_raw_svg_as_returned_by_the_rest_api(self):
+        for raw in (SVG, '<?xml version="1.0" encoding="UTF-8"?>\n' + SVG):
+            resp = Resp(200, {"id": FID, "type": "totp", "totp": {"qr_code": raw, "secret": "JBSWY3DPEHPK3PXP", "uri": "otpauth://x"}})
+            (r, err), out = self.run_with(Net(**{"/auth/v1/factors": resp}), ar.enroll, BASE, KEY, AAL1)
+            self.assertEqual(err, ""); self.assertEqual(r["svg"], SVG); self.assertEqual(out, "")
+        bad = Resp(200, {"id": FID, "totp": {"qr_code": "<svg><script>alert(1)</script></svg>", "secret": "S"}})
+        (r, err), _ = self.run_with(Net(**{"/auth/v1/factors": bad}), ar.enroll, BASE, KEY, AAL1)
+        self.assertEqual((r, err), (None, "enroll_failed"))
+
     def test_enroll_errors(self):
         for resp, want in ((Resp(422, {"msg": "factor limit"}), "enroll_failed"), (Resp(401), "forbidden"), (Resp(500), "unavailable"),
                            (Resp(429), "rate_limited"), (Resp(302), "unavailable"), (Resp(200, {"id": "x"}), "enroll_failed"),
