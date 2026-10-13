@@ -33,6 +33,7 @@ _MSG = {
     "self_review": "You cannot review your own submission.", "already_reviewed": "Already reviewed.", "not_found": "Submission not found.",
     "allowlisted": "Blocked: this indicator is on the allowlist.", "invalid_indicator": "Blocked: invalid indicator.",
     "note_too_long": "Note is too long (200 characters max).", "invalid_decision": "Invalid decision.",
+    "not_admin": "Access denied: administrator privileges required",
 }
 
 
@@ -98,6 +99,23 @@ def review_token(store):
     if claims is None or claims.get("aal") != "aal2" or _cc._is_anonymous(tok):
         return None
     return tok
+
+
+def admin_role_check(base, key, token):
+    """(True, '') only if Supabase Auth (GET /auth/v1/user, server-verified) reports a non-anonymous user whose trusted
+    app_metadata.role == 'admin'. Anything else is ('not_admin') or a transport error code. UI gate only; the DB re-checks."""
+    resp, err = _call("admin_role", "GET", base, key, "/auth/v1/user", token)
+    if err == "forbidden":
+        return False, "not_admin"
+    if err:
+        return False, err
+    try:
+        d = resp.json()
+        ok = isinstance(d, dict) and not d.get("is_anonymous") and isinstance(d.get("app_metadata"), dict) and d["app_metadata"].get("role") == "admin"
+    except Exception as exc:
+        _cc._diag("admin_role", resp, exc=exc)
+        return False, "unavailable"
+    return (True, "") if ok else (False, "not_admin")
 
 
 def verified_factors(base, key, token):
@@ -299,6 +317,11 @@ def render(st, signin=None):
                     st.link_button("Sign in with Google", signin(), key="admin_signin")
                 except Exception:
                     st.caption("Couldn't start Google sign-in right now.")
+            return
+        ok, err = admin_role_check(base, key, bt)
+        if not ok:
+            (st.error if err == "not_admin" else st.warning)(_MSG.get(err, _MSG["server_error"]))
+            store.pop(ENROLL_KEY, None)
             return
         enr = store.get(ENROLL_KEY)
         if enr is None:
