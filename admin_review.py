@@ -5,10 +5,12 @@ app_metadata.role = 'admin' AND aal = 'aal2'. This module never grants roles, ne
 tokens only in st.session_state, never logs tokens/secrets (stderr diagnostics are scrubbed), and never decides anything on
 its own: every approve/reject is an explicit per-row button behind a per-attempt confirmation. Audit logging stays in the DB.
 """
+import base64
 import os
 import re
 import time
 import uuid
+import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 
 import requests
@@ -110,19 +112,83 @@ def verified_factors(base, key, token):
         return None, "unavailable"
 
 
-def _svg(qr):
-    """Plain SVG markup from Supabase's QR field (raw SVG over REST; a data URI in client libraries), or None if anything
-    looks off (no scripts / handlers)."""
+_SVG_NS = "http://www.w3.org/2000/svg"
+_SVG_TAGS = frozenset(("svg", "g", "rect", "path", "circle", "polygon", "polyline", "line"))
+_SVG_ATTRS = frozenset(("width", "height", "viewBox", "preserveAspectRatio", "version", "x", "y", "cx", "cy", "r", "x1", "y1", "x2", "y2",
+                        "d", "points", "transform", "style", "class", "id", "fill", "fill-rule", "fill-opacity", "stroke", "stroke-width",
+                        "stroke-opacity", "stroke-linecap", "stroke-linejoin", "opacity", "shape-rendering"))
+_SVG_VALUE = re.compile(r"[A-Za-z0-9\s.,#%():;+\-_]*")             # no quotes, <, >, &, /, = : nothing that can break out of an attribute
+_SVG_BAD_VALUE = re.compile(r"url\s*\(|javascript|data:|expression|@import", re.I)
+_SVG_PROLOG = re.compile(r"\s*(?:<\?xml\s[^>]*?\?>|<!--(?:(?!--).)*-->|<!DOCTYPE[^>\[]*>)", re.S | re.I)   # xml decl, comment, plain DOCTYPE only
+_SVG_MAX_CHARS, _SVG_MAX_NODES, _SVG_MAX_DEPTH = 400_000, 20_000, 10
+
+
+def _svg_local(tag):
+    ns, _, name = tag[1:].partition("}") if tag.startswith("{") else ("", "", tag)
+    if ns not in ("", _SVG_NS) or name not in _SVG_TAGS:
+        raise ValueError("tag " + _cc._scrub(name or tag, 30))
+    return name
+
+
+def _svg_emit(el, out, depth, count):
+    name = _svg_local(el.tag)
+    count[0] += 1
+    if depth > _SVG_MAX_DEPTH or count[0] > _SVG_MAX_NODES:
+        raise ValueError("too large or deep")
+    if (el.text or "").strip() or (el.tail or "").strip():
+        raise ValueError("text content")
+    attrs = []
+    for k, v in el.attrib.items():
+        if k not in _SVG_ATTRS:
+            raise ValueError("attribute " + _cc._scrub(k, 30))
+        if not _SVG_VALUE.fullmatch(v) or _SVG_BAD_VALUE.search(v):
+            raise ValueError("value of " + k)
+        attrs.append(' %s="%s"' % (k, v))
+    head = "<" + name + (' xmlns="%s"' % _SVG_NS if depth == 0 else "") + "".join(attrs)
+    if len(el) == 0:
+        out.append(head + "/>")
+        return
+    out.append(head + ">")
+    for ch in el:
+        _svg_emit(ch, out, depth + 1, count)
+    out.append("</" + name + ">")
+
+
+def _svg_parse(qr):
+    """(clean_svg, None) or (None, reason). Supabase returns the QR as raw SVG over REST (xml declaration, a generator comment,
+    then <svg>) or as a data URI in client libraries. The markup is PARSED as XML and re-emitted from an allow-list of drawing
+    elements/attributes, so scripts, event handlers, links, styles with url(), DOCTYPE internal subsets/entities, CDATA and
+    processing instructions can never pass through. Reasons name tags/attributes only, never payload content."""
     if not isinstance(qr, str):
-        return None
+        return None, "qr_code rejected: not a string"
     s = qr.strip()
-    if s.startswith("data:image/svg+xml"):
-        if "," not in s:
-            return None
-        s = unquote(s.split(",", 1)[1]).strip()
-    s = re.sub(r"^<\?xml[^>]*\?>\s*", "", s)
-    s = re.sub(r"^<!DOCTYPE[^>\[]*>\s*", "", s, flags=re.I)            # plain DOCTYPE only; an internal subset / entity is refused below
-    return None if not s.startswith("<svg") or re.search(r"<script|<!ENTITY|\bon\w+\s*=|javascript:", s, re.I) else s
+    try:
+        if s.startswith("data:image/svg+xml"):
+            head, _, body = s.partition(",")
+            s = (base64.b64decode(body, validate=True).decode("utf-8") if head.endswith(";base64") else unquote(body)).strip()
+        if len(s) > _SVG_MAX_CHARS:
+            return None, "qr_code rejected: too large"
+        for _ in range(8):
+            m = _SVG_PROLOG.match(s)
+            if not m:
+                break
+            s = s[m.end():]
+        s = s.lstrip()
+        if not s.startswith("<svg") or "<!" in s or "<?" in s:
+            return None, "qr_code rejected: unexpected markup before or inside <svg>"
+        root, out = ET.fromstring(s), []
+        if _svg_local(root.tag) != "svg":
+            return None, "qr_code rejected: root is not svg"
+        _svg_emit(root, out, 0, [0])
+        return "".join(out), None
+    except ValueError as exc:
+        return None, "qr_code rejected: " + _cc._scrub(exc, 60)
+    except Exception:
+        return None, "qr_code rejected: not well-formed"
+
+
+def _svg(qr):
+    return _svg_parse(qr)[0]
 
 
 def enroll(base, key, token):
@@ -136,8 +202,8 @@ def enroll(base, key, token):
         fid, t = d["id"], d["totp"]
         uuid.UUID(fid)
         secret, qr = t["secret"], t["qr_code"]
-        svg = _svg(qr)
-        why = "qr_code unusable (starts %r)" % _cc._scrub(qr[:24], 24) if not svg else "secret missing" if not isinstance(secret, str) or not secret else None
+        svg, why = _svg_parse(qr)
+        why = why or ("secret missing" if not isinstance(secret, str) or not secret else None)
     except Exception as exc:
         _cc._diag("admin_enroll", resp, exc=exc, note="unexpected enrollment fields")
         return None, "enroll_failed"
