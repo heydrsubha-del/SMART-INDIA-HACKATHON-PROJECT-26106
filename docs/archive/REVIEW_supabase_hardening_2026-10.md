@@ -1,3 +1,14 @@
+# ARCHIVED — Historical Supabase Hardening Review
+
+> Historical audit notes only. This document contains outdated deployment
+> status and file references. Do not use it as current production guidance.
+> Current migrations are in `supabase/migrations/`, proposals in
+> `supabase/proposals/`, tests in `supabase/tests/`, and operational scripts
+> in `supabase/scripts/`. Always verify the current database state before
+> executing SQL. The original review is preserved below for historical reference.
+
+---
+
 # Algorithmistic hardening proposal - review pack (rev 3)
 STATUS: nothing applied, nothing executed on PostgreSQL or Supabase. Target if approved: algorithmistic-test (qozfyuiloitutpfthuwn) only.
 Repo: no repo files were edited. Your pasted `git status` (3 modified, 5 untracked) is unverified from here; re-run it. Only `contribution_client.queue_full.diff` (1 line, CRLF kept) touches a repo file and it changes that file's hash (MANIFEST decision below).
