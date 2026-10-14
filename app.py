@@ -4823,9 +4823,12 @@ st.markdown(
         .stApp .st-key-topnav [role="radiogroup"] {scroll-behavior:auto !important;}
     }
     /* hidden 1px helper iframes must not leave a gap */
-    .stApp [data-testid="stElementContainer"]:has(iframe[height="1"]), .stApp .stElementContainer:has(iframe[height="1"]) {
-        display:none !important;
+    .stApp [data-testid="stElementContainer"]:has(iframe[height="1"]), .stApp .stElementContainer:has(iframe[height="1"]),
+    .stApp [data-testid="stElementContainer"]:has(iframe[style*="height: 1px"]), .stApp .stElementContainer:has(iframe[style*="height:1px"]),
+    .stApp [data-testid="stElementContainer"]:has(iframe[style*="height: 1px"]), .stApp [data-testid="stSidebar"] .stElementContainer:has(> iframe[width="1"]) {
+        display:none !important; height:0 !important; min-height:0 !important; margin:0 !important; padding:0 !important; border:0 !important; overflow:hidden !important;
     }
+    .stApp iframe[height="1"], .stApp iframe[width="1"], .stApp iframe[style*="height: 1px"] {border:0 !important; outline:0 !important; background:transparent !important; width:0 !important; height:0 !important;}
 
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
 
