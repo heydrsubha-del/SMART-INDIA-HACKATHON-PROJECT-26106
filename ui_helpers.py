@@ -58,8 +58,7 @@ SECTIONS = (("ai-overview", "Overview"), ("ai-assessment", "AI Assessment"),
 
 def nav_html():
     links = "".join(f'<a href="#{i}">{t}</a>' for i, t in SECTIONS)
-    return ('<nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:6px 14px;'
-            f'margin:2px 0 8px 0;font-size:13px;">{links}</nav>')
+    return f'<nav class="ai-nav" aria-label="Page sections">{links}</nav>'
 
 
 import html as _html
