@@ -765,7 +765,7 @@ class RetroEvidence(Base):
         self.assertIn("### Supporting records:", md)
         self.assertIn("Not available", md)
         row = [l for l in md.splitlines() if l.startswith("| 2 |") and "x<script>" in l][0]
-        self.assertEqual(row.count("|") - row.count("\\|"), 17)                  # pipes in data are escaped; table stays aligned
+        self.assertEqual(row.count("|") - row.count("\\|"), 18)                  # pipes in data are escaped; table stays aligned
         self.assertIn("### Recommendation and limitations", md)
         self.assertNotRegex(md.split("### Recommendation and limitations")[1].lower(), r"all clear|is safe\b")
 
@@ -797,6 +797,103 @@ class RetroHonesty(Base):
         inv = self.run_inv(conns_factory=lambda: [bad], limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
         self.assertEqual(inv["status"], "partial")
         self.assertEqual([e["status"] for e in inv["evidence"] if e["tool"] == "retro_hunt_indicator"], ["error"])
+
+
+class RetroFollowUp(Base):
+    def hc(self, conn, indicator, result=None):
+        if result is not None:
+            self.result = result; self.snap = copy.deepcopy(result)
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [conn]).for_call(time.monotonic() + 5)
+        return ia.t_retro_hunt(ctx, indicator)
+
+    # 1 -- NULL reputation
+    def test_mem_row_keeps_null_reputation_distinct_from_zero(self):
+        import retro_hunt as R
+        null = R._mem_row("a.example", "domain", "exact", None, "phishing", "x", "y", 2, "urlhaus")
+        zero = R._mem_row("a.example", "domain", "exact", 0.0, "phishing", "x", "y", 2, "urlhaus")
+        self.assertIn("(reputation n/a)", null["Where"])
+        self.assertIn("(reputation 0.00)", zero["Where"])
+        self.assertIn("(reputation n/a)", R._mem_row("a.example", "domain", "exact", "junk", "c", "x", "y", 2, "s")["Where"])
+
+    def test_null_reputation_reported_unavailable_and_never_elevates_alone(self):
+        rows = [(D, "domain", None, "phishing", "a", "b", 2, "community"),             # community + category, NULL rep -> historical
+                ("a." + D, "domain", None, "malware", "a", "b", 2, "urlhaus"),         # feed + category, NULL rep -> suspicious, never confirmed
+                ("b." + D, "domain", 0.0, "phishing", "a", "b", 2, "community")]       # a real 0.00 stays 0.00
+        _, sig, _, _, recs = RetroEvidence.hunt(self, rows)
+        by = {r["stored indicator"]: r for r in recs}
+        self.assertEqual((by[D]["reputation"], by[D]["tier"]), ("Not available", "historical"))
+        self.assertEqual((by["a." + D]["reputation"], by["a." + D]["tier"]), ("Not available", "suspicious"))
+        self.assertIn("stored reputation not available", by["a." + D]["reason"])
+        self.assertEqual((by["b." + D]["reputation"], by["b." + D]["tier"]), ("0.00", "historical"))
+        self.assertFalse([r for r in recs if r["tier"] == "confirmed"])
+
+    # 2 -- required data sources per lookup type
+    def _conn(self, ti=True, att=True, ti_cols=None, att_cols=None):
+        c = sqlite3.connect(":memory:", check_same_thread=False)
+        if ti:
+            c.execute("CREATE TABLE threat_intel (%s)" % (ti_cols or "id INTEGER PRIMARY KEY, indicator TEXT, indicator_type TEXT, reputation REAL, category TEXT, first_seen TEXT, last_seen TEXT, observations INTEGER, source TEXT"))
+        if att:
+            c.execute("CREATE TABLE attackers (%s)" % (att_cols or "date TEXT, ip TEXT, country TEXT, score REAL, verdict TEXT"))
+        return c
+
+    def test_missing_attackers_only_degrades_ip_lookups(self):
+        f, sig, miss, degraded, recs = self.hc(self._conn(att=False), D)             # domain lookup does not need attackers
+        self.assertFalse(degraded); self.assertFalse([m for m in miss if "scored-email log" in m])
+        f, sig, miss, degraded, recs = self.hc(self._conn(att=False), "185.220.101.5")
+        self.assertTrue(degraded)
+        self.assertTrue([m for m in miss if "scored-email log" in m])
+        self.assertIn("(see gaps)", f[0])                                              # not a flat "no earlier sighting"
+
+    def test_ip_lookup_still_returns_threat_intel_hits_when_attackers_missing(self):
+        c = self._conn(att=False)
+        c.execute("INSERT INTO threat_intel (indicator,indicator_type,reputation,category,first_seen,last_seen,observations,source) VALUES ('185.220.101.5','ip',.9,'tor_exit','a','b',3,'tor_list')")
+        f, sig, miss, degraded, recs = self.hc(c, "185.220.101.5")
+        self.assertTrue(degraded and recs and recs[0]["stored indicator"] == "185.220.101.5")
+        self.assertTrue([m for m in miss if "scored-email log" in m])
+
+    def test_missing_required_columns(self):
+        with self.assertRaisesRegex(RuntimeError, "could not be read"):
+            self.hc(self._conn(ti_cols="indicator TEXT, indicator_type TEXT"), D)       # no reputation/category/... columns
+        f, sig, miss, degraded, recs = self.hc(self._conn(att_cols="date TEXT, ip TEXT"), "185.220.101.5")   # attackers lacks score/verdict
+        self.assertTrue(degraded and [m for m in miss if "scored-email log" in m])
+        f, sig, miss, degraded, recs = self.hc(self._conn(att_cols="date TEXT, ip TEXT"), D)                  # irrelevant to a domain lookup
+        self.assertFalse(degraded)
+
+    def test_probe_statements_are_literal(self):
+        self.assertTrue(all("%" not in q and "{" not in q for q in ia._PROBES.values()))
+
+    # 3 -- similar-domain detection
+    def test_similar_domains(self):
+        self.assertTrue(ia._similar("facebook.com", "facebookmail.com"))
+        self.assertTrue(ia._similar("mail.facebook.com", "facebookmail.com"))
+        self.assertFalse(ia._similar("secure.example.com", "secure.evil.com"))           # shared subdomain label only
+        self.assertFalse(ia._similar("a.example.com", "b.example.com"))                  # same registrable domain
+        self.assertFalse(ia._similar("example.com", "example.com"))
+        self.assertFalse(ia._similar("abc.com", "abcd.com"))                              # too short to call similar
+        res = make_result(); res["iocs"]["domains"] = [{"domain": "secure.example.com"}, {"domain": "secure.evil.com"}]
+        out = self.hc(self._conn(), "secure.example.com", result=res)
+        self.assertNotIn("DISTINCT", " ".join(out[0]))
+
+    # URL-/subdomain-level evidence never confirms the domain
+    def test_url_and_subdomain_level_feed_hits_do_not_confirm_the_domain(self):
+        ins = "INSERT INTO threat_intel (indicator,indicator_type,reputation,category,first_seen,last_seen,observations,source) VALUES (?,?,?,?,?,?,?,?)"
+
+        def mk(with_exact):                                   # the tool closes the connection it is given
+            c = self._conn()
+            c.execute(ins, ("https://%s/evil.exe" % D, "url", .95, "malware_download", "a", "b", 2, "urlhaus"))
+            c.execute(ins, ("cdn." + D, "domain", .95, "malware_download", "a", "b", 2, "urlhaus"))
+            if with_exact:
+                c.execute(ins, (D, "domain", .95, "malware_download", "a", "b", 2, "urlhaus"))
+            return c
+        f, sig, miss, degraded, recs = self.hc(mk(False), D)
+        by = {r["type"]: r for r in recs}
+        self.assertEqual((by["url"]["tier"], by["url"]["scope"]), ("suspicious", "URL on hunted host"))
+        self.assertIn("URL-level evidence only", by["url"]["reason"]); self.assertIn("not the whole domain", by["url"]["reason"])
+        self.assertEqual((by["domain"]["tier"], by["domain"]["scope"]), ("suspicious", "Subdomain of hunted domain"))
+        self.assertIn("Subdomain-level evidence only", by["domain"]["reason"])
+        self.assertFalse([r for r in recs if r["tier"] == "confirmed"])
+        recs = self.hc(mk(True), D)[4]                          # the hunted domain itself is listed -> confirmed, exact scope only
+        self.assertEqual([r["scope"] for r in recs if r["tier"] == "confirmed"], ["Domain (exact)"])
 
 
 class Compatibility(Base):

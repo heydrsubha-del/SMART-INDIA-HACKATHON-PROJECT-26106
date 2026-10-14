@@ -327,7 +327,7 @@ def t_threat_memory(ctx, indicator):
         return ["No record of '%s' in local threat memory (exact indicator only)" % clean(indicator, 80)] + ([note] if note else []), [], []
     obs = int(row[7] or 0)
     facts = ["Local threat memory: reputation=%s, category=%s, observations=%d (this scan counts as one), first=%s, last=%s, source=%s" % (
-        clean(row[3], 10), clean(row[4], 30), obs, clean(row[5], 25), clean(row[6], 25), clean(row[8], 40))]
+        clean(row[3] if row[3] is not None else "Not available", 14), clean(row[4], 30), obs, clean(row[5], 25), clean(row[6], 25), clean(row[8], 40))]
     signals = []
     try:
         if float(row[3]) >= 0.7:
@@ -342,7 +342,7 @@ MAX_RECORDS = 40                 # records kept per evidence item (retro_hunt it
 _NEUTRAL_CATS = {"", "observed", "unknown", "-", "none"}
 _REP_RE = re.compile(r"\(reputation ([0-9.]+)\)")
 _HIGH_RE = re.compile(r"\b(high|critical)\b", re.I)
-_REC_KEYS = ("#", "tier", "reason", "source", "type", "stored indicator", "hunted", "match", "category", "reputation",
+_REC_KEYS = ("#", "tier", "reason", "source", "type", "scope", "stored indicator", "hunted", "match", "category", "reputation",
              "source class", "recorded source", "verdict", "score", "first seen", "last seen", "times", "details")
 
 
@@ -361,6 +361,18 @@ def _parse_memory_where(where):
     return cat, src, (float(m.group(1)) if m else None)
 
 
+def hit_scope(row):
+    """What the stored record is actually about, relative to the hunted indicator."""
+    t, m = row.get("Type"), row.get("Match")
+    if t == "url":
+        return "URL on hunted host"
+    if t == "ip":
+        return "IP (exact)" if m in ("exact", None) else "Not available"
+    if t == "domain":
+        return {"exact": "Domain (exact)", "subdomain": "Subdomain of hunted domain"}.get(m, "Not available")
+    return "Not available"
+
+
 def classify_hit(row):
     """-> (tier, reason). Tiers: 'historical' (seen before only) < 'suspicious' < 'confirmed'.
 
@@ -377,11 +389,16 @@ def classify_hit(row):
         cls = retro_hunt._row_class(row)
         nonneutral = (cat or "").lower() not in _NEUTRAL_CATS
         high = rep is not None and rep >= HIT_REP_ELEVATED
-        if cls == "external_feed" and nonneutral and high:
+        scope = hit_scope(row)
+        exact = scope in ("Domain (exact)", "IP (exact)")
+        if cls == "external_feed" and nonneutral and high and exact:
             return "confirmed", "recognised external feed lists it as '%s' (stored reputation %.2f)" % (clean(cat, 40), rep)
         if cls == "external_feed" and nonneutral:
-            return "suspicious", "recognised external feed lists it as '%s' (stored reputation %s)" % (clean(cat, 40), "%.2f" % rep if rep is not None else "not available")
-        if nonneutral and high:
+            # Evidence about a URL or a subdomain never confirms the hunted domain itself (cap at suspicious).
+            lead = {"URL on hunted host": "URL-level evidence only (this specific stored URL, not the whole domain): ",
+                    "Subdomain of hunted domain": "Subdomain-level evidence only (a stored subdomain, not the hunted domain itself): "}.get(scope, "")
+            return "suspicious", "%srecognised external feed lists it as '%s' (stored reputation %s)" % (lead, clean(cat, 40), "%.2f" % rep if rep is not None else "not available")
+        if nonneutral and high:                 # needs BOTH a stored category and a stored reputation; NULL reputation never qualifies
             return "suspicious", "stored as '%s' with reputation %.2f from a %s source (not independently confirmed)" % (clean(cat, 40), rep, cls.replace("_", " "))
         return "historical", "seen before; the stored category/reputation do not indicate malicious activity"
     if src == "Earlier email":
@@ -404,6 +421,7 @@ def _record(n, row, hunted):
     if row.get("Type") == "url" and basis != "Not available":
         basis = "URL host: " + basis
     vals = {"#": str(n), "tier": tier, "reason": reason, "source": _na(row.get("Source")), "type": _na(row.get("Type")),
+            "scope": hit_scope(row) if mem else "Not available",
             "stored indicator": _na(row.get("Indicator")), "hunted": _na(hunted), "match": basis,
             "category": _na(None if (cat or "").strip().lower() in ("", "unknown") else cat, unknown=True) if mem else "Not available",
             "reputation": ("%.2f" % rep) if rep is not None else "Not available",
@@ -420,9 +438,32 @@ def retro_hunt_class(row):
     return retro_hunt._row_class(row)
 
 
+_PROBES = {   # literal statements (no string-built SQL): the exact columns retro_hunt reads
+    "threat_intel": "SELECT indicator, indicator_type, reputation, category, first_seen, last_seen, observations, source FROM threat_intel LIMIT 1",
+    "attackers": "SELECT date, ip, score, verdict FROM attackers LIMIT 1",
+}
+
+
+def _probe(conn, table):
+    try:
+        conn.execute(_PROBES[table]).fetchall()
+        return True
+    except Exception:
+        return False
+
+
 def _similar(a, b):
-    x, y = a.split(".")[0], b.split(".")[0]
-    return a != b and len(min(x, y, key=len)) >= 4 and (x.startswith(y) or y.startswith(x))
+    """Genuinely similar but DISTINCT registrable domains (e.g. facebook.com / facebookmail.com).
+
+    Uses domain_intel.registrable() (a heuristic: no public-suffix list, only a short multi-part-suffix table), so
+    same-registrable pairs (a.example.com / b.example.com) are never similar, and unrelated registrable domains that
+    merely share a subdomain label (secure.example.com / secure.evil.com) are not either."""
+    import domain_intel
+    ra, rb = domain_intel.registrable(a), domain_intel.registrable(b)
+    if ra == rb:
+        return False
+    x, y = ra.split(".")[0], rb.split(".")[0]
+    return len(min(x, y, key=len)) >= 4 and (x.startswith(y) or y.startswith(x))
 
 
 def _distinct_note(ctx, indicator):
@@ -437,16 +478,16 @@ def t_retro_hunt(ctx, indicator):
     import retro_hunt
     kind = _kind(ctx, indicator)
     inds = retro_hunt.build_indicators([indicator] if kind == "domain" else (), [indicator] if kind == "ip" else ())
-    conns, unreadable = [], 0
+    conns, ti_bad, att_bad = [], 0, 0
     try:
         if ctx.conns_factory:
             _require_session()
             conns = list(ctx.conns_factory() or [])
-            for c in conns:                    # retro_hunt skips a broken connection silently; detect it so it is not read as "no sightings"
-                try:
-                    c.execute("SELECT 1 FROM threat_intel LIMIT 1")
-                except Exception:
-                    unreadable += 1
+            for c in conns:                    # retro_hunt skips a failed query silently; probe what THIS lookup needs
+                if not _probe(c, "threat_intel"):
+                    ti_bad += 1
+                if kind == "ip" and not _probe(c, "attackers"):     # only IP lookups read the scored-email log
+                    att_bad += 1
             deadline = ctx.tool_deadline       # this invocation's own, immutable deadline
             for c in conns:                    # bound DB work by it (best effort; sqlite aborts the statement)
                 try:
@@ -467,16 +508,21 @@ def t_retro_hunt(ctx, indicator):
                 pass
     if not ctx.cases and not conns:
         return [], [], ["No earlier cases or threat-memory connection were available for Retro-Hunt."]
-    if not ctx.cases and unreadable >= len(conns):
-        raise RuntimeError("threat-memory database could not be read; Retro-Hunt did not run")
+    if not ctx.cases and ti_bad >= len(conns):
+        raise RuntimeError("threat-memory table could not be read (missing table or required columns); Retro-Hunt did not run")
+    src_missing = []
+    if ti_bad:
+        src_missing.append("%d threat-memory connection(s) could not be read (missing threat_intel table or columns) and were not searched." % ti_bad)
+    if att_bad:
+        src_missing.append("%d connection(s) have no usable scored-email log (attackers table or columns); IP history in that log was not searched." % att_bad)
+    degraded = bool(ti_bad or att_bad)
     ind = clean(indicator, 80)
     note = _distinct_note(ctx, indicator)
     if not rows:
-        return (["Retro-Hunt for '%s': no earlier sighting found (exact or subdomain match only); this scan's own records were excluded." % ind]
+        return (["Retro-Hunt for '%s': no earlier sighting found in the sources that could be read%s (exact or subdomain match only); "
+                 "this scan's own records were excluded." % (ind, " (see gaps)" if degraded else "")]
                 + ([note] if note else []), [],
-                ["No earlier sighting only means this app has not recorded '%s' before." % ind]
-                + (["%d threat-memory connection(s) could not be read and were not searched." % unreadable] if unreadable else []),
-                bool(unreadable), [])
+                ["No earlier sighting only means this app has not recorded '%s' before." % ind] + src_missing, degraded, [])
     recs = [_record(i + 1, row, indicator) for i, row in enumerate(rows[:MAX_RECORDS])]
     tiers = {t: sum(1 for x in recs if x["tier"] == t) for t in ("confirmed", "suspicious", "historical")}
     exact = sum(1 for row in rows if row.get("Match") == "exact")
@@ -490,13 +536,12 @@ def t_retro_hunt(ctx, indicator):
     signals = ["Record #%s [%s]: %s - '%s'" % (x["#"], x["tier"], x["reason"], clean(x["stored indicator"], 80))
                for x in recs if x["tier"] != "historical"][:8]
     missing = []
-    if unreadable:
-        missing.append("%d threat-memory connection(s) could not be read and were not searched." % unreadable)
+    missing += src_missing
     if len(rows) >= retro_hunt.MAX_ROWS:
         missing.append("Retro-Hunt result list is capped at %d rows; further matches may exist." % retro_hunt.MAX_ROWS)
     if len(rows) > len(recs):
         missing.append("%d matched record(s) are not listed (display cap %d)." % (len(rows) - len(recs), MAX_RECORDS))
-    return facts, signals, missing, bool(unreadable), recs
+    return facts, signals, missing, degraded, recs
 
 
 def _bounded_fetch(ctx):
@@ -972,7 +1017,7 @@ def _all_records(inv):
 
 def _records_section(inv):
     out = []
-    cols = ("#", "tier", "stored indicator", "hunted", "match", "category", "reputation", "source class", "recorded source",
+    cols = ("#", "tier", "scope", "stored indicator", "hunted", "match", "category", "reputation", "source class", "recorded source",
             "verdict", "score", "first seen", "last seen", "times", "reason", "details")
     for e in inv.get("evidence", []):
         recs = e.get("records") or []
