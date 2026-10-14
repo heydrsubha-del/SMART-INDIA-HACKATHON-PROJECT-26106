@@ -214,7 +214,8 @@ class Attribution(Base):
         inv = self.run_inv(limits=ia.Limits(max_tool_calls=1))
         inv["evidence"][0]["status"] = "error"
         _, f, d = ia.validate_narrative({"findings": [{"statement": "ok", "evidence_ids": ["E1"], "kind": "verified"}]}, inv["evidence"], self.result)
-        self.assertEqual((f, d), ([], 1))
+        self.assertEqual((len(f), d), (1, 0))                       # kept, but never as "verified"
+        self.assertEqual((f[0]["kind"], f[0]["supported"], f[0]["origin"]), ("uncertain", False, "ai"))
 
     def test_every_finding_cites_existing_evidence(self):
         inv = self.run_inv()
@@ -278,6 +279,136 @@ class Safety(Base):
         ctx = ia.Ctx(self.result, conns_factory=lambda: [c])
         facts, signals, missing = ia.t_retro_hunt(ctx, "paypa1-secure.com")
         self.assertTrue(signals and "seen before" in signals[0])
+
+
+class FixSession(Base):
+    """Issue 1: per-visitor DB context in multi-user mode; bounded network."""
+
+    def _fake_streamlit(self, sid_holder):
+        import sys
+        import threading
+        import types
+        sr = types.ModuleType("streamlit.runtime.scriptrunner")
+        sr.get_script_run_ctx = lambda suppress_warning=False: getattr(threading.current_thread(), "_sid", None)
+
+        def add(thread, ctx):
+            thread._sid = ctx
+        sr.add_script_run_ctx = add
+        mods = {"streamlit": types.ModuleType("streamlit"), "streamlit.runtime": types.ModuleType("streamlit.runtime"),
+                "streamlit.runtime.scriptrunner": sr}
+        p = mock.patch.dict(sys.modules, mods); p.start(); self.addCleanup(p.stop)
+        import threading as t
+        main = t.current_thread()
+        main._sid = sid_holder
+        self.addCleanup(lambda: setattr(main, "_sid", None))
+        return lambda: getattr(t.current_thread(), "_sid", None)
+
+    def test_worker_thread_uses_callers_session(self):
+        seen = []
+        sid = self._fake_streamlit("visitor-A")
+        mem = lambda ind, kind=None: (seen.append(sid()), None)[1]
+        with mock.patch("tracker.MULTIUSER", True), mock.patch("tracker._session_id", side_effect=lambda: sid()), \
+                mock.patch("tracker.lookup_indicator", mem), mock.patch("tor_check.tor_exit_sources", lambda ip: (seen.append(sid()), [])[1]):
+            inv = self.run_inv(limits=ia.Limits(max_tool_calls=9, max_indicators=1))
+        self.assertTrue(seen and set(seen) == {"visitor-A"})
+        self.assertFalse([e for e in inv["evidence"] if e["status"] == "error"])
+        seen.clear()
+        import threading
+        threading.current_thread()._sid = "visitor-B"                # next visitor -> own context, no leakage
+        with mock.patch("tracker.MULTIUSER", True), mock.patch("tracker._session_id", side_effect=lambda: sid()), \
+                mock.patch("tracker.lookup_indicator", mem):
+            self.run_inv(limits=ia.Limits(max_tool_calls=9, max_indicators=1))
+        self.assertEqual(set(seen), {"visitor-B"})
+
+    def test_no_session_in_multiuser_is_error_not_false_negative(self):
+        with mock.patch("tracker.MULTIUSER", True), mock.patch("tracker._session_id", return_value=None):
+            inv = self.run_inv(limits=ia.Limits(max_tool_calls=9, max_indicators=1))
+        bad = [e for e in inv["evidence"] if e["tool"] in ("lookup_threat_memory", "retro_hunt_indicator") and e["status"] == "error"]
+        self.assertEqual(len(bad), 1 if False else len(bad)); self.assertTrue(bad)
+        self.assertFalse([f for e in bad for f in e["facts"]])
+        origin = [e for e in inv["evidence"] if e["tool"] == "review_origin"][0]
+        self.assertFalse([f for f in origin["facts"] if "not on the locally cached Tor" in f])
+        self.assertEqual(inv["status"], "partial")
+
+    def test_network_lookups_bounded(self):
+        asked = []
+        rec = {"dns": {"records": {"A": [{"value": "1.2.3.4"}]}, "errors": []}, "rdap": {"state": "ok", "data": {}}}
+        with mock.patch("domain_intel.lookup_domain", lambda d, **k: (asked.append(d), rec)[1]):
+            self.run_inv(allow_network=True, limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=6, max_network_lookups=1))
+        self.assertEqual(len(asked), 1)
+        ctx = ia.Ctx(self.result, allow_network=True, max_net=1); ctx.net_calls = 1
+        with self.assertRaises(ia._Skip):
+            ia.t_dns_rdap(ctx, "paypa1-secure.com")
+        self.assertEqual(ia.Limits(max_network_lookups=99).max_network_lookups, 6)
+
+
+class FixStatus(Base):
+    """Issue 2: never 'complete' after a failed/skipped check."""
+
+    def test_error_makes_partial_even_when_menu_exhausted(self):
+        with mock.patch("tracker.lookup_indicator", side_effect=RuntimeError("x")):
+            inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertEqual(inv["stop_reason"], "evidence_sufficient")
+        self.assertEqual(inv["status"], "partial")
+        self.assertIn("failed or were skipped", inv["mode_note"])
+
+    def test_clean_run_is_complete(self):
+        inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertEqual((inv["stop_reason"], inv["status"]), ("evidence_sufficient", "complete"))
+
+    def test_planner_finish_with_failed_tool_is_partial(self):
+        def llm(s, u, t):
+            done = len(json.loads(u)["untrusted_evidence"]) >= 5
+            return json.dumps({"action": "finish", "reason": "ok"} if done else {"action": "run", "index": 0, "reason": "x"})
+        with mock.patch("tor_check.tor_exit_sources", side_effect=RuntimeError("down")):
+            inv = self.run_inv(use_ai=True, llm=llm)
+        self.assertEqual((inv["stop_reason"], inv["status"]), ("planner_finished", "partial"))
+
+    def test_skipped_tool_is_partial(self):
+        skip = (lambda ctx: (_ for _ in ()).throw(ia._Skip("nope")),) + ia.TOOLS["review_urls"][1:]
+        with mock.patch.dict(ia.TOOLS, {"review_urls": skip}):
+            inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertEqual(inv["status"], "partial")
+        self.assertEqual([e["status"] for e in inv["evidence"] if e["tool"] == "review_urls"], ["skipped"])
+
+
+class FixAttribution(Base):
+    """Issue 3: claims checked against their own cited evidence; tool findings authoritative."""
+
+    def _ev(self):
+        return self.run_inv(limits=ia.Limits(max_tool_calls=5))["evidence"]
+
+    def test_claim_must_match_its_cited_evidence_not_any_evidence(self):
+        ev = self._ev()
+        self.assertIn("185.220.101.5", ia._evidence_text(ev))
+        # origin IP exists in E5 but is cited against E2 (authentication) -> discarded
+        _, f, d = ia.validate_narrative({"findings": [{"statement": "Origin IP 185.220.101.5 country Unknown", "evidence_ids": ["E2"], "kind": "verified"}]}, ev, self.result)
+        self.assertEqual((f, d), ([], 1))
+        _, f, d = ia.validate_narrative({"findings": [{"statement": "Origin IP 185.220.101.5 country Unknown", "evidence_ids": ["E5"], "kind": "verified"}]}, ev, self.result)
+        self.assertEqual(d, 0); self.assertTrue(f[0]["supported"])
+
+    def test_invented_numbers_discarded(self):
+        ev = self._ev()
+        _, f, d = ia.validate_narrative({"findings": [{"statement": "Found 47 attachment(s)", "evidence_ids": ["E3"], "kind": "suspicious"}]}, ev, self.result)
+        self.assertEqual((f, d), ([], 1))
+
+    def test_unsupported_wording_is_labelled_unverified(self):
+        ev = self._ev()
+        _, f, d = ia.validate_narrative({"findings": [{"statement": "The sender is definitely a nation-state actor", "evidence_ids": ["E2"], "kind": "verified"}]}, ev, self.result)
+        self.assertEqual((f[0]["supported"], f[0]["kind"], f[0]["origin"]), (False, "uncertain", "ai"))
+        md = ia.render_report({"status": "complete", "narrative": "x", "narrative_findings": f, "steps": [], "evidence": [], "findings": [], "limits": {}}, include_base=False)
+        self.assertIn("unverified AI claim", md)
+
+    def test_ai_never_alters_deterministic_findings(self):
+        def llm(s, u, t):
+            if "allowed_actions" in u:
+                return json.dumps({"action": "run", "index": 0, "reason": "go"})
+            return json.dumps({"summary": "All clear", "findings": [{"statement": "SPF passed", "evidence_ids": ["E2"], "kind": "verified"}]})
+        inv = self.run_inv(use_ai=True, llm=llm, limits=ia.Limits(max_tool_calls=3))
+        base = self.run_inv(limits=ia.Limits(max_tool_calls=3))
+        self.assertEqual(inv["findings"], base["findings"])
+        self.assertTrue(all(f["origin"] == "tool" for f in inv["findings"]))
+        self.assertTrue(all(not f["supported"] or "passed" not in f["statement"] for f in inv.get("narrative_findings", [])))
 
 
 class Compatibility(Base):
