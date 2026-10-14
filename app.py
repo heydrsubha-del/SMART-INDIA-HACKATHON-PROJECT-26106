@@ -13045,7 +13045,18 @@ if active_panel == "AI Threat Analysis":
             # ---------------- SINGLE-EMAIL MODE ----------------
             single_reports = st.session_state.setdefault("single_ai_reports", {})
             _score = max(0.0, min(100.0, float(result.get("score", 0) or 0)))
-            with st.container(border=True, key="ai_single_flow"):
+            st.markdown(
+                """<style>
+.stApp .st-key-ai_step_assess, .stApp .st-key-ai_step_agent {padding:22px 26px 24px 26px !important; margin:0 0 20px 0 !important; border-radius:18px !important;
+  border:1px solid #1f2a3a !important; background:linear-gradient(180deg,#0f1622,#0b111a) !important; box-shadow:0 16px 36px -28px rgba(0,0,0,.9);}
+.stApp .st-key-ai_step_assess > [data-testid="stVerticalBlock"], .stApp .st-key-ai_step_agent > [data-testid="stVerticalBlock"] {gap:1.1rem !important;}
+.stApp .st-key-ai_step_assess .num-head, .stApp .st-key-ai_step_agent .num-head {margin:0 0 4px 0 !important;}
+.stApp .st-key-ai_step_assess [data-testid="stHorizontalBlock"] {align-items:center !important; gap:18px !important;}
+.stApp .st-key-ai_step_assess [data-testid="stCaptionContainer"] {color:#8fa3b8 !important; font-size:12.5px !important;}
+.stApp .st-key-ai_step_agent [data-testid="stExpander"] {margin:2px 0 !important;}
+.stApp .st-key-ai_step_agent [data-testid="stCaptionContainer"] {color:#8fa3b8 !important; font-size:12.5px !important; line-height:1.5 !important;}
+</style>""", unsafe_allow_html=True)
+            with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _num_head(1, "AI Assessment", "#a78bfa", "Local Qwen model \u00b7 nothing is sent to external services")
                 _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
@@ -13095,6 +13106,7 @@ if active_panel == "AI Threat Analysis":
                 else:
                     st.info("No assessment yet. Press **Run AI assessment** to generate one for this message.")
 
+            with st.container(border=True, key="ai_step_agent"):
                 # ---- Step 2: Agentic investigation ----
                 _num_head(2, "Agentic Investigation", "#38bdf8", "Optional \u00b7 bounded, read-only lookups you choose before starting")
 
