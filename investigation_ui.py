@@ -16,7 +16,6 @@ def _t(v):
 def render_investigation_panel(result, raw, cases, conns_factory, key, download_fn=None):
     store = st.session_state.setdefault("agent_investigations", {})
     key = str(key)
-    st.markdown("#### Agentic Investigation")
     st.caption("Read-only. Uses this app's existing analysis tools, a strict tool allowlist and hard limits. "
                "It never changes the scanner's score, sends mail or submits intelligence.")
     c1, c2 = st.columns(2)

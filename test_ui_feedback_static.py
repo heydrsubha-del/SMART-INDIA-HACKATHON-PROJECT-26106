@@ -72,9 +72,17 @@ class Navigation(unittest.TestCase):
             self.assertIn(f'href="#{i}"', html)
             self.assertEqual(uh.section_anchor(i), f'<div id="{i}"></div>')
 
-    def test_downloads_anchor_emitted_on_every_report_state(self):
-        # ready, error and not-run branches must each emit the target (no dead link)
-        self.assertGreaterEqual(_read("app.py").count('_uh.section_anchor("ai-downloads")'), 3)
+    def test_pill_validates_colour(self):
+        self.assertIn("#ff0000", uh.verdict_pill_html("high", "#ff0000"))
+        bad = uh.verdict_pill_html("<b>x</b>", "red;}<script>")
+        self.assertNotIn("<script>", bad); self.assertNotIn("<b>", bad)
+        self.assertIn("#22d3ee", bad)
+
+    def test_downloads_section_is_unconditional(self):
+        a = _read("app.py")
+        self.assertEqual(a.count('_uh.section_anchor("ai-downloads")'), 1)
+        i = a.index('_uh.section_anchor("ai-downloads")')
+        self.assertIn("No report is ready yet", a[i:i + 1800])
 
 
 class Styling(unittest.TestCase):
