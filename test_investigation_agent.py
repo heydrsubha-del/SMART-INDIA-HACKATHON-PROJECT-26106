@@ -358,8 +358,10 @@ class FixStatus(Base):
         self.assertIn("failed or were skipped", inv["mode_note"])
 
     def test_clean_run_is_complete(self):
-        inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        inv = self.run_inv(conns_factory=lambda: [_db([])], limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
         self.assertEqual((inv["stop_reason"], inv["status"]), ("evidence_sufficient", "complete"))
+        bare = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))     # Retro-Hunt had no source at all
+        self.assertEqual((bare["stop_reason"], bare["status"]), ("evidence_sufficient", "partial"))
 
     def test_planner_finish_with_failed_tool_is_partial(self):
         def llm(s, u, t):
@@ -420,7 +422,7 @@ class FixAttribution(Base):
 
 class FixSummary(Base):
     def test_summary_built_from_findings_and_never_claims_safety(self):
-        inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        inv = self.run_inv(conns_factory=lambda: [_db([])], limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
         self.assertTrue(inv["narrative"].startswith("Investigation complete"))
         self.assertNotRegex(inv["narrative"].lower(), r"all clear|is safe|benign|legitimate")
         with mock.patch("tracker.lookup_indicator", side_effect=RuntimeError("x")):
@@ -866,6 +868,12 @@ class RetroFollowUp(Base):
     def test_similar_domains(self):
         self.assertTrue(ia._similar("facebook.com", "facebookmail.com"))
         self.assertTrue(ia._similar("mail.facebook.com", "facebookmail.com"))
+        self.assertTrue(ia._similar("paypal.com", "paypa1.com"))                          # one-character typo
+        self.assertTrue(ia._similar("pay-pal.com", "paypal.com"))                         # hyphen only
+        self.assertTrue(ia._similar("secure-paypal.com", "paypal.com"))                   # deceptive prefix word
+        self.assertFalse(ia._similar("securemail.com", "securemailchimp.com"))            # bare shared prefix is not enough
+        self.assertFalse(ia._similar("mailchimp.com", "mailchimpsecurity2.com"))
+        self.assertFalse(ia._similar("google.com", "googleplex.com"))
         self.assertFalse(ia._similar("secure.example.com", "secure.evil.com"))           # shared subdomain label only
         self.assertFalse(ia._similar("a.example.com", "b.example.com"))                  # same registrable domain
         self.assertFalse(ia._similar("example.com", "example.com"))
@@ -887,13 +895,56 @@ class RetroFollowUp(Base):
             return c
         f, sig, miss, degraded, recs = self.hc(mk(False), D)
         by = {r["type"]: r for r in recs}
-        self.assertEqual((by["url"]["tier"], by["url"]["scope"]), ("suspicious", "URL on hunted host"))
+        self.assertEqual((by["url"]["tier"], by["url"]["scope"]), ("suspicious", "URL on hunted host (exact)"))
         self.assertIn("URL-level evidence only", by["url"]["reason"]); self.assertIn("not the whole domain", by["url"]["reason"])
         self.assertEqual((by["domain"]["tier"], by["domain"]["scope"]), ("suspicious", "Subdomain of hunted domain"))
         self.assertIn("Subdomain-level evidence only", by["domain"]["reason"])
         self.assertFalse([r for r in recs if r["tier"] == "confirmed"])
         recs = self.hc(mk(True), D)[4]                          # the hunted domain itself is listed -> confirmed, exact scope only
         self.assertEqual([r["scope"] for r in recs if r["tier"] == "confirmed"], ["Domain (exact)"])
+
+
+class RetroScope(Base):
+    def hc(self, rows, indicator=D):
+        c = _db(rows)
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [c]).for_call(time.monotonic() + 5)
+        return ia.t_retro_hunt(ctx, indicator)
+
+    def test_url_scope_distinguishes_exact_host_from_subdomain_host(self):
+        rows = [("https://%s/a.exe" % D, "url", .95, "malware_download", "a", "b", 2, "urlhaus"),
+                ("https://cdn.%s/b.exe" % D, "url", .95, "malware_download", "a", "b", 2, "urlhaus")]
+        recs = self.hc(rows)[4]
+        by = {r["stored indicator"]: r for r in recs}
+        ex, sub = by["https://%s/a.exe" % D], by["https://cdn.%s/b.exe" % D]
+        self.assertEqual((ex["scope"], sub["scope"]), ("URL on hunted host (exact)", "URL on subdomain of hunted host"))
+        self.assertEqual((ex["tier"], sub["tier"]), ("suspicious", "suspicious"))      # never confirmed for the whole domain
+        self.assertIn("on the hunted host", ex["reason"]); self.assertIn("on a subdomain of the hunted host", sub["reason"])
+        self.assertTrue(all("not the whole domain" in r["reason"] for r in recs))
+
+    def test_no_cases_and_no_connections_is_degraded_not_ok(self):
+        for factory in (None, lambda: [], lambda: None):                   # missing factory / returns no connections
+            ctx = ia.Ctx(self.result, conns_factory=factory).for_call(time.monotonic() + 5)
+            out = ia.t_retro_hunt(ctx, D)
+            self.assertEqual(len(out), 5)
+            facts, signals, missing, degraded, recs = out
+            self.assertEqual((facts, signals, recs, degraded), ([], [], [], True))
+            self.assertIn("neither earlier cases nor threat memory were searched", missing[0])
+            self.assertFalse(ia._coerce(out)[3] is False)                  # _coerce keeps degraded=True
+        for factory in (None, lambda: []):
+            inv = self.run_inv(conns_factory=factory, limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+            ev = [e for e in inv["evidence"] if e["tool"] == "retro_hunt_indicator"][0]
+            self.assertEqual((ev["status"], inv["status"]), ("partial", "partial"))
+            self.assertEqual((ev["facts"], ev["signals"], ev["records"]), ([], [], []))     # nothing implied as found or cleared
+
+    def test_cases_without_connection_factory_discloses_threat_memory_not_checked(self):
+        ctx = ia.Ctx(self.result, cases=[{"name": "old.eml", "parsed": {}, "iocs": {}, "geo": {}}]).for_call(time.monotonic() + 5)
+        f, sig, miss, degraded, recs = ia.t_retro_hunt(ctx, D)
+        self.assertTrue(degraded)
+        self.assertTrue([m for m in miss if "Threat memory was NOT checked" in m])
+        self.assertIn("(see gaps)", f[0]); self.assertNotRegex(f[0], r"no earlier sighting found\.?$")
+        inv = self.run_inv(cases=ctx.cases, limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        ev = [e for e in inv["evidence"] if e["tool"] == "retro_hunt_indicator"][0]
+        self.assertEqual(ev["status"], "partial"); self.assertEqual(inv["status"], "partial")
 
 
 class Compatibility(Base):
