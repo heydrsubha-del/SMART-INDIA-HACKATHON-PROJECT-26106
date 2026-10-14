@@ -8662,6 +8662,11 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-sing
 .stApp .st-key-geo_tor_box:not(#_x):not(#_x)::before {
     top:14px !important; bottom:14px !important; border-radius:0 3px 3px 0 !important;
 }
+/* helper-only st.html blocks (scripts/styles, no visible content) still take a layout row plus the
+   flex gap; collapse them so they leave no blank bands between sections */
+.stApp .stElementContainer:has([data-testid="stHtml"]):not(:has([data-testid="stHtml"] :not(script):not(style))) {
+    display:none !important;
+}
 </style>""",
     unsafe_allow_html=True,
 )
