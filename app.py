@@ -21,7 +21,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
-import streamlit.components.v1 as components
 from readme_view import render_readme
 from safe_http import open_https as _open_https
 
@@ -826,10 +825,10 @@ st.set_page_config(
 # and for anything that changed WITHOUT a matching keystroke, reset React's
 # internal value tracker and re-dispatch a real "input" event so React (and
 # therefore Streamlit) picks up the autofilled value immediately -- no
-# extra click or retyping required. Runs in an invisible 0-height component,
+# extra click or retyping required. Runs in a hidden 1px iframe,
 # app-wide, since any text/password field could be autofilled, not just the
 # sign-in form.
-components.html(
+st.iframe(
     """
     <script>
     (function() {
@@ -992,8 +991,8 @@ components.html(
     })();
     </script>
     """,
-    height=0,
-    width=0,
+    height=1,
+    width=1,
 )
 
 # Correlation case store and AI dossier store
@@ -1203,7 +1202,7 @@ if GOOGLE_OAUTH_READY or MICROSOFT_OAUTH_READY or YANDEX_OAUTH_READY:
     if (_oauth_code or _oauth_error) and not (
         st.query_params.get("sih_relayed") or st.query_params.get("sih_local")
     ):
-        components.html(_OAUTH_RELAY_GATE_HTML, height=420)
+        st.iframe(_OAUTH_RELAY_GATE_HTML, height=420)
         st.stop()
     # The redirect URI is shared across every provider (it's the same
     # running app), so the same ?code=/?state= callback can belong to
@@ -3147,7 +3146,6 @@ st.markdown(
         .topbar-account-chip {flex:1 1 0; min-width:0; max-width:none; padding:7px 11px;}
         .topbar-account-email {flex:1 1 auto; min-width:0; max-width:none;}
         .topbar-status-pill {flex:0 0 auto; padding:7px 11px;}
-        .topbar-status-online .tb-hide-sm {display:none;}   /* 'System operational' -> 'operational' */
     }
     @media (prefers-reduced-motion:reduce) {.topbar-status-dot {animation:none !important;}}
 
@@ -4824,9 +4822,9 @@ st.markdown(
         .stApp .st-key-topnav .stRadio [role="radiogroup"] label, .stApp .st-key-topnav .stRadio [role="radiogroup"] label::after {transition:none !important; animation:none !important;}
         .stApp .st-key-topnav [role="radiogroup"] {scroll-behavior:auto !important;}
     }
-    /* the zero-height helper iframe must not leave a gap */
-    .stApp [data-testid="stElementContainer"]:has(iframe[height="0"]), .stApp .stElementContainer:has(iframe[height="0"]) {
-        position:absolute !important; height:0 !important; margin:0 !important; overflow:hidden !important; visibility:hidden !important;
+    /* hidden 1px helper iframes must not leave a gap */
+    .stApp [data-testid="stElementContainer"]:has(iframe[height="1"]), .stApp .stElementContainer:has(iframe[height="1"]) {
+        display:none !important;
     }
 
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
@@ -7772,7 +7770,7 @@ st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True
 
 # Live sidebar search: Streamlit only commits a text_input on Enter/blur, so
 # watch the box and fire the same Enter commit shortly after typing pauses.
-components.html(
+st.iframe(
     """<script>
     (function () {
       function bind(inp) {
@@ -7798,7 +7796,8 @@ components.html(
       tick(); setInterval(tick, 400);
     })();
     </script>""",
-    height=0,
+    height=1,
+    width=1,
 )
 if admin_review.enabled():
     with st.sidebar.expander("Admin review (reviewers only)"):
@@ -8383,7 +8382,7 @@ st.markdown(
         <div class="topbar-logo"><img src="{_ALGORITHMISTIC_LOGO_SRC}" alt="Algorithmistic logo"/></div>
         <div>
           <div class="topbar-kicker"><span class="tb-brand">ALGORITHMISTIC</span><span class="tb-sep"></span><span>Forensic Intelligence Platform</span></div>
-          <div class="topbar-title">AI-Powered Email Threat Detection &amp; Forensic Intelligence</div>
+          <div class="topbar-title">Email Threat Detection &amp; Forensic Intelligence</div>
         </div>
       </div>
       <div class="topbar-status-wrap">
@@ -8392,10 +8391,10 @@ st.markdown(
         </div>
         <div class="topbar-status-pill">
           <span class="topbar-status-dot"></span>
-          <span class="topbar-status-online"><span class="tb-hide-sm">System </span>operational</span>
+          <span class="topbar-status-online">Workspace ready</span>
         </div>
       </div>
-      <div class="topbar-subtitle"><span class="tb-tag">Evidence acquisition</span><span class="tb-tag">Header authentication</span><span class="tb-tag">IOC intelligence</span><span class="tb-tag">Origin tracing</span><span class="tb-tag">Campaign correlation</span><span class="tb-tag">Local AI assessment</span></div>
+      <div class="topbar-subtitle"><span class="tb-tag">Evidence intake</span><span class="tb-tag">Email authentication</span><span class="tb-tag">Indicator intelligence</span><span class="tb-tag">Origin tracing</span><span class="tb-tag">Campaign correlation</span><span class="tb-tag">AI-assisted review</span></div>
     </div>""",
     unsafe_allow_html=True,
 )
@@ -8478,7 +8477,7 @@ for _ni, _nopt in enumerate(NAV_OPTIONS, start=1):
     _nav_rules.append(_nsel + "{--c:" + _ncol + ";}")
     _nav_rules.append(_nsel + ' p::before{-webkit-mask-image:url("' + _nuri + '");mask-image:url("' + _nuri + '");}')
 st.markdown("<style>" + "".join(_nav_rules) + "</style>", unsafe_allow_html=True)
-components.html(
+st.iframe(
     """<script>
     (function () {
       var last = null, target = 0, raf = null, dragging = false;
@@ -8555,7 +8554,8 @@ components.html(
       tick(); setInterval(tick, 400);
     })();
     </script>""",
-    height=0,
+    height=1,
+    width=1,
 )
 with st.container(key="topnav"):
     active_panel = st.radio(
@@ -9072,7 +9072,7 @@ html, body, .stApp, [data-testid="stMain"], section.main, [data-testid="stAppVie
 </style>
 """
 st.markdown(_NAV_SMOOTH_CSS, unsafe_allow_html=True)
-components.html(
+st.iframe(
     r"""
     <script>
     (function () {
@@ -9121,9 +9121,10 @@ components.html(
     })();
     </script>
     """,
-    height=0,
+    height=1,
+    width=1,
 )
-components.html(
+st.iframe(
     r"""
     <script>
     (function() {
@@ -9153,7 +9154,8 @@ components.html(
     })();
     </script>
     """,
-    height=0,
+    height=1,
+    width=1,
 )
 
 _PREMIUM_DL_TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -9225,9 +9227,9 @@ def _premium_download(label, markdown, file_name, key=None, disabled=False, help
         .replace("__PILL__", "Locked" if disabled else "Download")
         .replace("__LABEL__", html.escape(clean_label))
         .replace("__ALT__", "" if disabled else '<button class="alt" id="alt" type="button">or Word document (.doc)</button>')
-        .replace("__DATA__", json.dumps(data))
+        .replace("__DATA__", json.dumps(data).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"))
     )
-    components.html(page, height=178)
+    st.iframe(page, height=178)
 
 
 def _clean_ai_display(text):
@@ -11118,7 +11120,7 @@ if active_panel == "Dashboard":
         # this script runs), plus the persistent animation listener for
         # anything filled after that (covers new autofills later, e.g. after
         # "Change mailbox / Reconnect").
-        components.html(
+        st.iframe(
             """
             <script>
             (function () {
@@ -11168,7 +11170,8 @@ if active_panel == "Dashboard":
             })();
             </script>
             """,
-            height=0,
+            height=1,
+            width=1,
         )
 
         mailbox_loaded = bool(st.session_state.get("live_mailbox_messages"))
@@ -14425,7 +14428,7 @@ if active_panel == "Forensic Report":
                 # per-email dossier section further down) right after a
                 # fresh Full Report run. Streamlit components render in an
                 # iframe, so we reach the parent document to scroll it.
-                components.html(
+                st.iframe(
                     """
                     <script>
                     setTimeout(function() {
@@ -14434,7 +14437,8 @@ if active_panel == "Forensic Report":
                     }, 250);
                     </script>
                     """,
-                    height=0,
+                    height=1,
+                    width=1,
                 )
             _n_joint = pipeline_result.get('count', len(report_items))
             _banner(
