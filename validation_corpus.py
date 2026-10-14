@@ -57,10 +57,20 @@ R = [
  ("hash","d41d8cd98f00b204e9800998ecf8427e",1,1,1,"PARITY","existing valid"),
  ("hash","D41D8CD98F00B204E9800998ECF8427E",0,0,0,"PARITY","upper-case hash"),
 ]
+def _sql_literal(value):
+    if not isinstance(value, str):
+        raise TypeError("SQL text values must be strings")
+    return "'" + value.replace("'", "''") + "'"
+
+
 def render_sql():
-    esc = lambda s: s.replace("'", "''")
     b = lambda x: "true" if x else "false"
-    rows = ",\n".join("  ('%s','%s',%s,%s,'%s')" % (k, esc(v), b(n), b(w), c) for k, v, _, n, w, c, _x in R)
+    rows = ",\n".join(
+        "  (%s,%s,%s,%s,%s)" % (  # nosec B608: fixed corpus; text is quoted and output is not executed here.
+            _sql_literal(k), _sql_literal(v), b(n), b(w), _sql_literal(c)
+        )
+        for k, v, _, n, w, c, _x in R
+    )
     return ("-- READ-ONLY validation checks: pure function calls, no writes, no temp objects. NOT RUN. Only for algorithmistic-test, after approval.\n"
             "-- 'baseline' = expected result of the CURRENT exported functions; 'expected' = expected after the proposed migration.\n"
             "-- Before applying: rows where actual <> baseline mean my reading of the exports is wrong. After applying: every row must show pass = true.\n"

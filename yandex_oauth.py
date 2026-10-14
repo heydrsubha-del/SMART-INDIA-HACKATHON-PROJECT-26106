@@ -37,6 +37,7 @@ import time
 import urllib.request
 import urllib.parse
 import urllib.error
+from safe_http import open_https
 
 _CLIENT_SECRET_PATH = "client_secret_yandex.json"
 _TOKEN_CACHE_PATH = ".yandex_oauth_token_cache.json"
@@ -138,7 +139,7 @@ def _post_form(url, fields):
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with open_https(req, allowed_hosts={"oauth.yandex.com"}, timeout=15) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         # Surface Yandex's actual JSON error body (e.g.
@@ -158,7 +159,7 @@ def fetch_email(access_token):
             _USERINFO_ENDPOINT,
             headers={"Authorization": f"OAuth {access_token}"},
         )
-        with urllib.request.urlopen(req, timeout=8) as resp:
+        with open_https(req, allowed_hosts={"login.yandex.ru"}, timeout=8) as resp:
             profile = json.loads(resp.read().decode("utf-8"))
         return profile.get("default_email") or profile.get("login") or None
     except Exception:

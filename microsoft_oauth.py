@@ -28,6 +28,7 @@ import time
 import urllib.request
 import urllib.parse
 import urllib.error
+from safe_http import open_https
 
 _CLIENT_SECRET_PATH = "client_secret_microsoft.json"
 _TOKEN_CACHE_PATH = ".microsoft_oauth_token_cache.json"
@@ -126,7 +127,7 @@ def _post_form(url, fields):
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with open_https(req, allowed_hosts={"login.microsoftonline.com"}, timeout=15) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         # Surface Microsoft's real error (invalid_grant, invalid_client, AADSTS...)
@@ -144,7 +145,7 @@ def fetch_email(access_token):
             "https://graph.microsoft.com/v1.0/me",
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        with urllib.request.urlopen(req, timeout=8) as resp:
+        with open_https(req, allowed_hosts={"graph.microsoft.com"}, timeout=8) as resp:
             profile = json.loads(resp.read().decode("utf-8"))
         return profile.get("mail") or profile.get("userPrincipalName") or None
     except Exception:

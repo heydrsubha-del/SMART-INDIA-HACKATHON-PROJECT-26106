@@ -3,7 +3,7 @@
 import unittest
 from indicator_sanitizer import sanitize_indicator
 import sql_model as M
-from validation_corpus import R, render_sql
+from validation_corpus import R, render_sql, _sql_literal
 OK_DIFF = ("INTENTIONAL", "GAP", "DEFERRED", "SQL_WEAKER")
 
 class Corpus(unittest.TestCase):
@@ -29,6 +29,10 @@ class Corpus(unittest.TestCase):
         for bad in ("insert ", "update ", "delete ", "create ", "drop ", "alter ", "grant ", "revoke "):
             self.assertNotIn(bad, s)
         self.assertNotIn("ipv6 url branch", s)
+    def test_sql_text_columns_escape_quotes(self):
+        self.assertEqual("'a''b'", _sql_literal("a'b"))
+        with self.assertRaises(TypeError):
+            _sql_literal(None)
 
 if __name__ == "__main__":
     unittest.main()
