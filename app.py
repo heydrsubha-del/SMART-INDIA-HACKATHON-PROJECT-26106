@@ -8667,6 +8667,11 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-sing
 .stApp .stElementContainer:has([data-testid="stHtml"]):not(:has([data-testid="stHtml"] :not(script):not(style))) {
     display:none !important;
 }
+/* style-only st.markdown blocks (the many CSS injections) also take a row + gap: collapse them */
+.stApp [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] style):not(:has([data-testid="stMarkdownContainer"] :not(style):not(style *))),
+.stApp .stElementContainer:has([data-testid="stMarkdownContainer"] style):not(:has([data-testid="stMarkdownContainer"] :not(style):not(style *))) {
+    display:none !important;
+}
 </style>""",
     unsafe_allow_html=True,
 )
