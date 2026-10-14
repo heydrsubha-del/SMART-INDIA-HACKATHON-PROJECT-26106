@@ -25,15 +25,16 @@ MAX_TEXT = 220
 
 # Hard ceilings: UI/caller values are clamped to these.
 _CEIL = {"max_iterations": 15, "max_tool_calls": 15, "max_seconds": 300.0,
-         "tool_timeout": 60.0, "model_timeout": 120.0, "max_indicators": 6}
+         "tool_timeout": 60.0, "model_timeout": 120.0, "max_indicators": 6, "max_network_lookups": 6}
 
 
 class Limits:
     def __init__(self, max_iterations=10, max_tool_calls=10, max_seconds=90.0,
-                 tool_timeout=20.0, model_timeout=45.0, max_indicators=3):
+                 tool_timeout=20.0, model_timeout=45.0, max_indicators=3, max_network_lookups=3):
         vals = dict(max_iterations=max_iterations, max_tool_calls=max_tool_calls,
                     max_seconds=max_seconds, tool_timeout=tool_timeout,
-                    model_timeout=model_timeout, max_indicators=max_indicators)
+                    model_timeout=model_timeout, max_indicators=max_indicators,
+                    max_network_lookups=max_network_lookups)
         for k, v in vals.items():
             try:
                 v = float(v)
@@ -142,14 +143,23 @@ def candidate_indicators(result):
 #   missing = what could not be determined
 # ---------------------------------------------------------------------------
 class Ctx:
-    def __init__(self, result, cases=None, conns_factory=None, allow_network=False, fetch=None):
+    def __init__(self, result, cases=None, conns_factory=None, allow_network=False, fetch=None, max_net=3):
         self.result = result or {}
         self.cases = list(cases or [])
         self.conns_factory = conns_factory
         self.allow_network = bool(allow_network)
         self.fetch = fetch
+        self.max_net, self.net_calls = int(max_net), 0
         self.cache = {}
         self.candidates = candidate_indicators(self.result)
+
+
+def _require_session():
+    """In multi-user mode a DB tool must run inside the visitor's Streamlit session; otherwise tracker falls back to a
+    throw-away empty DB and 'no record' would be a false negative. Fail instead of reporting it."""
+    import tracker
+    if tracker.MULTIUSER and tracker._session_id() is None:
+        raise RuntimeError("visitor session context unavailable; per-user database not consulted")
 
 
 def t_scan_content(ctx):
@@ -225,11 +235,12 @@ def t_origin(ctx):
     facts = ["Origin IP %s: country=%s, ASN=%s, infra=%s (source: %s)" % (
         clean(ip, 45), clean(o.get("country", "Unknown"), 40), clean(o.get("asn") or "n/a", 40),
         clean(o.get("infra", "unknown"), 30), clean(o.get("source", "?"), 30))]
-    signals, missing = [], []
+    signals, missing, degraded = [], [], False
     if g.get("anonymised"):
         signals.append("Route flagged as anonymised infrastructure by the existing geolocation module")
     try:
         import tor_check
+        _require_session()
         src = tor_check.tor_exit_sources(ip)
         if src:
             signals.append("Origin IP listed as Tor exit by: " + ", ".join(clean(s, 60) for s in src))
@@ -238,9 +249,10 @@ def t_origin(ctx):
             missing.append("Tor list freshness is not verified by this agent.")
     except Exception as exc:
         missing.append("Tor exit-list check unavailable (%s)." % type(exc).__name__)
+        degraded = True
     if str(o.get("country", "Unknown")) == "Unknown":
         missing.append("Geolocation unresolved for the origin IP.")
-    return facts, signals, missing
+    return facts, signals, missing, degraded
 
 
 def _kind(ctx, value):
@@ -252,6 +264,7 @@ def _kind(ctx, value):
 
 def t_threat_memory(ctx, indicator):
     import tracker
+    _require_session()
     row = tracker.lookup_indicator(indicator, _kind(ctx, indicator))
     if not row:
         return ["No record of %s in local threat memory" % clean(indicator, 80)], [], []
@@ -274,6 +287,7 @@ def t_retro_hunt(ctx, indicator):
     conns = []
     try:
         if ctx.conns_factory:
+            _require_session()
             conns = list(ctx.conns_factory() or [])
         r = ctx.result
         rows = retro_hunt.hunt(inds, ctx.cases, conns, r.get("name"), r.get("_evidence_hash"))
@@ -296,6 +310,9 @@ def t_dns_rdap(ctx, indicator):
     import domain_intel
     if not ctx.allow_network:
         raise _Skip("Public DNS/RDAP lookup was not permitted for this run.")
+    if ctx.net_calls >= ctx.max_net:
+        raise _Skip("Public DNS/RDAP lookup budget for this run is exhausted.")
+    ctx.net_calls += 1
     rec = domain_intel.lookup_domain(indicator, cache=ctx.cache, fetch=ctx.fetch)
     dns = rec.get("dns") or {}
     rd = (rec.get("rdap") or {})
@@ -373,8 +390,12 @@ def build_menu(ctx, done, limits):
     menu = [{"tool": t, "args": {}} for t in core if _key(t, {}) not in done]
     if menu:
         return menu
+    net_domains = []
     for kind, v in ctx.candidates[: limits.max_indicators]:
-        for t in ("lookup_threat_memory", "retro_hunt_indicator") + (("lookup_domain_dns_rdap",) if kind == "domain" and ctx.allow_network else ()):
+        net_ok = kind == "domain" and ctx.allow_network and (len(net_domains) < ctx.max_net)
+        if net_ok:
+            net_domains.append(v)
+        for t in ("lookup_threat_memory", "retro_hunt_indicator") + (("lookup_domain_dns_rdap",) if net_ok else ()):
             a = {"indicator": v}
             if _key(t, a) not in done and validate_action(ctx, t, a)[0]:
                 menu.append({"tool": t, "args": a})
@@ -466,33 +487,56 @@ def _evidence_text(evidence):
     return " ".join(" ".join(e["facts"] + e["signals"] + e["missing"]) + " " + json.dumps(e["args"]) for e in evidence).lower()
 
 
+_WORD = re.compile(r"[a-z0-9]{4,}")
+_NUM = re.compile(r"\d+(?:\.\d+)?")
+
+
+def _words(t):
+    return set(_WORD.findall(str(t).lower()))
+
+
 def validate_narrative(obj, evidence, result):
-    """Keep only findings that cite real evidence and mention no unseen indicators. -> (summary, findings, dropped)."""
+    """AI findings are checked against THEIR cited evidence only. -> (summary, findings, dropped).
+
+    discard: unknown/empty citations, indicators or numbers absent from the cited evidence, wrong score.
+    keep but label unverified (kind=uncertain, supported=False): wording not backed by the cited facts/signals.
+    Deterministic tool findings stay authoritative; these are always origin="ai"."""
     ids = {e["id"]: e for e in evidence}
-    etext = _evidence_text(evidence)
+    all_text = _evidence_text(evidence)
     dropped = 0
     score = float(result.get("score") or 0)
 
-    def grounded(text):
-        if any(abs(float(m) - score) > 0.51 for m in re.findall(r"(\d{1,3}(?:\.\d+)?)\s*/\s*100", text)):
-            return False
-        return all(t.lower() in etext for t in _IOC_TOKEN.findall(text))
+    def score_ok(text):
+        return all(abs(float(m) - score) <= 0.51 for m in re.findall(r"(\d{1,3}(?:\.\d+)?)\s*/\s*100", text))
+
+    def grounded(text, etext):
+        nums = _NUM.findall(_IOC_TOKEN.sub(" ", re.sub(r"\d+(?:\.\d+)?\s*/\s*100", " ", text)))
+        ev_nums = set(_NUM.findall(etext))
+        return score_ok(text) and all(t.lower() in etext for t in _IOC_TOKEN.findall(text)) and all(n in ev_nums for n in nums)
 
     findings = []
     for f in (obj.get("findings") if isinstance(obj.get("findings"), list) else [])[:12]:
         try:
             st, cited, kind = f["statement"], f["evidence_ids"], f["kind"]
             ok = (isinstance(st, str) and isinstance(cited, list) and cited and kind in ("verified", "suspicious", "uncertain")
-                  and all(isinstance(c, str) and c in ids for c in cited) and grounded(st)
-                  and (kind != "verified" or all(ids[c]["status"] == "ok" for c in cited)))
+                  and all(isinstance(c, str) and c in ids for c in cited))
+            if ok:
+                cev = [ids[c] for c in cited]
+                ok = grounded(st, _evidence_text(cev))
         except (KeyError, TypeError):
             ok = False
-        if ok:
-            findings.append({"statement": clean(st, 300), "evidence_ids": cited, "kind": kind})
-        else:
+        if not ok:
             dropped += 1
+            continue
+        pool = {"verified": [x for e in cev if e["status"] in ("ok", "partial") for x in e["facts"]],
+                "suspicious": [x for e in cev if e["status"] in ("ok", "partial") for x in e["signals"]],
+                "uncertain": [x for e in cev for x in e["missing"]]}[kind]
+        w = _words(st)
+        supported = bool(w) and len(w & _words(" ".join(pool))) / len(w) >= 0.5
+        findings.append({"statement": clean(st, 300), "evidence_ids": cited, "origin": "ai", "supported": supported,
+                         "kind": kind if supported else "uncertain"})
     summary = obj.get("summary")
-    summary = clean(summary, 700) if isinstance(summary, str) and grounded(summary) else ""
+    summary = clean(summary, 700) if isinstance(summary, str) and grounded(summary, all_text) else ""
     if obj.get("summary") and not summary:
         dropped += 1
     return summary, findings, dropped
@@ -511,20 +555,45 @@ def _narrative(llm, evidence, result, timeout):
 # ---------------------------------------------------------------------------
 # The loop
 # ---------------------------------------------------------------------------
+def _st_ctx():
+    """The calling thread's Streamlit script-run context (None outside Streamlit)."""
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        try:
+            return get_script_run_ctx(suppress_warning=True)
+        except TypeError:
+            return get_script_run_ctx()
+    except Exception:
+        return None
+
+
 def _run_tool(ctx, tool, args, timeout):
     fn = TOOLS[tool][0]
+    sctx = _st_ctx()           # worker thread must act for THIS visitor's session (per-user DB in multi-user mode)
+
+    def call():
+        if sctx is not None:
+            try:
+                import threading
+                from streamlit.runtime.scriptrunner import add_script_run_ctx
+                add_script_run_ctx(threading.current_thread(), sctx)
+            except Exception:
+                pass
+        return fn(ctx, **args)
     ex = _cf.ThreadPoolExecutor(max_workers=1)
     try:
-        fut = ex.submit(fn, ctx, **args)
+        fut = ex.submit(call)
         return fut.result(timeout=max(0.1, timeout))
     finally:
         ex.shutdown(wait=False, cancel_futures=True)
 
 
 def _coerce(out):
-    if not (isinstance(out, tuple) and len(out) == 3 and all(isinstance(x, list) for x in out)):
+    """-> (facts, signals, missing, degraded). Tools may return a 4th bool = a sub-check failed (partial evidence)."""
+    if not (isinstance(out, tuple) and len(out) in (3, 4) and all(isinstance(x, list) for x in out[:3])):
         raise TypeError("tool returned an invalid structure")
-    return tuple([clean(s, 300) for s in lst[:12]] for lst in out)
+    lists = tuple([clean(s, 300) for s in lst[:12]] for lst in out[:3])
+    return lists + (bool(out[3]) if len(out) == 4 else False,)
 
 
 def investigate(result, cases=None, conns_factory=None, allow_network=False, use_ai=True, limits=None,
@@ -532,7 +601,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
     """Run one bounded investigation. Never raises; never mutates `result`."""
     limits = limits or Limits()
     t0 = time.monotonic()
-    ctx = Ctx(result, cases, conns_factory, allow_network, fetch)
+    ctx = Ctx(result, cases, conns_factory, allow_network, fetch, limits.max_network_lookups)
     inv = {"status": "running", "stop_reason": "", "mode": "deterministic", "mode_note": "", "limits": limits.as_dict(),
            "steps": [], "evidence": [], "findings": [], "narrative": "", "rejected_model_outputs": 0,
            "network_allowed": ctx.allow_network, "score_snapshot": {"score": result.get("score"), "level": result.get("level")},
@@ -591,9 +660,9 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
                 step.update(status="rejected", note=why_bad); inv["steps"].append(step); continue
             emit(step["n"], action["tool"])
             s0 = time.monotonic()
-            status, facts, signals, missing = "ok", [], [], []
+            status, facts, signals, missing, degraded = "ok", [], [], [], False
             try:
-                facts, signals, missing = _coerce(_run_tool(ctx, action["tool"], action["args"],
+                facts, signals, missing, degraded = _coerce(_run_tool(ctx, action["tool"], action["args"],
                                                             min(limits.tool_timeout, max(0.1, limits.max_seconds - elapsed()))))
             except _Skip as sk:
                 status, missing = "skipped", [clean(sk, 200)]
@@ -601,6 +670,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
                 status, missing = "error", ["Tool timed out; this check did not complete."]
             except Exception as exc:
                 status, missing = "error", ["Tool failed (%s: %s); this check did not complete." % (type(exc).__name__, clean(exc, 120))]
+            status = "partial" if (status == "ok" and degraded) else status
             ev = {"id": "E%d" % (len(inv["evidence"]) + 1), "tool": action["tool"], "args": action["args"], "status": status,
                   "facts": facts, "signals": signals, "missing": missing, "seconds": round(time.monotonic() - s0, 2)}
             inv["evidence"].append(ev)
@@ -611,7 +681,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
         for e in inv["evidence"]:
             for kind, key in (("verified", "facts"), ("suspicious", "signals"), ("uncertain", "missing")):
                 for s in e[key]:
-                    if e["status"] == "ok" or kind == "uncertain":
+                    if e["status"] in ("ok", "partial") or kind == "uncertain":
                         inv["findings"].append({"statement": s, "evidence_ids": [e["id"]], "kind": kind, "origin": "tool"})
         if inv["mode"] == "ai" and inv["stop_reason"] != "provider_failed" and inv["evidence"] and elapsed() < limits.max_seconds:
             try:
@@ -622,7 +692,10 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
                 inv["rejected_model_outputs"] += 1
             except Exception as exc:
                 inv["mode_note"] = (inv["mode_note"] + " " if inv["mode_note"] else "") + "AI summary unavailable (%s)." % clean(type(exc).__name__, 40)
-        inv["status"] = "complete" if inv["stop_reason"] in ("evidence_sufficient", "planner_finished") else "partial"
+        clean_run = all(e["status"] == "ok" for e in inv["evidence"]) and all(st.get("status") == "ok" for st in inv["steps"])
+        inv["status"] = "complete" if inv["stop_reason"] in ("evidence_sufficient", "planner_finished") and clean_run else "partial"
+        if inv["status"] == "partial" and not clean_run:
+            inv["mode_note"] = (inv["mode_note"] + " " if inv["mode_note"] else "") + "One or more checks failed or were skipped; see the action log."
     except Exception as exc:                        # last resort: never break the scanner
         inv["status"], inv["stop_reason"] = "failed", "internal_error"
         inv["mode_note"] = "Investigation aborted (%s); the scanner results are unchanged." % type(exc).__name__
@@ -664,8 +737,8 @@ def render_report(inv, result=None, raw=None, include_base=True):
         items = [f for f in inv.get("findings", []) if f["kind"] == kind]
         lines += ["- %s  `[%s]`" % (_c(f["statement"]), ",".join(f["evidence_ids"])) for f in items] or ["- None recorded."]
     if inv.get("narrative"):
-        lines += ["", "### AI summary (validated: cites only gathered evidence)", "", _c(inv["narrative"])]
+        lines += ["", "### AI summary (wording is the model's; indicators/numbers checked against evidence; deterministic findings above are authoritative)", "", _c(inv["narrative"])]
         for f in inv.get("narrative_findings", []):
-            lines.append("- *%s*: %s `[%s]`" % (f["kind"], _c(f["statement"]), ",".join(f["evidence_ids"])))
+            lines.append("- *%s%s*: %s `[%s]`" % ("" if f.get("supported", True) else "unverified AI claim, ", f["kind"], _c(f["statement"]), ",".join(f["evidence_ids"])))
     lines += ["", "_Generated by a bounded read-only agent; every finding above is attributed to the tool output that produced it._"]
     return "\n".join(lines)
