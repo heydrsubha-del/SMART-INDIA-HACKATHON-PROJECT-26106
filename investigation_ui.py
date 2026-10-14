@@ -53,7 +53,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key):
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
     if inv.get("narrative"):
-        st.markdown("**AI summary (validated against gathered evidence)**")
+        st.markdown("**Summary (generated from tool findings)**")
         st.markdown(_t(inv["narrative"]))
     st.markdown("**Action log**")
     st.dataframe([{"#": s["n"], "tool": s["tool"], "argument": s["args"].get("indicator", "-"), "chosen by": s["source"],

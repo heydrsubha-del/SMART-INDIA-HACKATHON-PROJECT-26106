@@ -4,6 +4,7 @@ import json
 import os
 import socket
 import sqlite3
+import threading
 import time
 import unittest
 from unittest import mock
@@ -206,9 +207,9 @@ class Attribution(Base):
         bad_kind = {"statement": "Bad", "evidence_ids": ["E1"], "kind": "certain"}
         s, f, d = ia.validate_narrative({"summary": "Score is 99/100", "findings": [ok, bad_id, fab_ip, fab_dom, no_cite, bad_kind]}, ev, self.result)
         self.assertEqual([x["statement"] for x in f], ["SPF is reported as fail"])
-        self.assertEqual((s, d), ("", 6))
+        self.assertEqual((s, d), ("", 6))                           # 5 bad findings + the discarded free-form summary
         s, f, d = ia.validate_narrative({"summary": "Scanner rated %.0f/100; origin %s." % (self.result["score"], "185.220.101.5"), "findings": []}, ev, self.result)
-        self.assertTrue(s)
+        self.assertEqual((s, d), ("", 1))                           # even a fully grounded free-form summary is not accepted
 
     def test_verified_requires_ok_evidence(self):
         inv = self.run_inv(limits=ia.Limits(max_tool_calls=1))
@@ -223,15 +224,17 @@ class Attribution(Base):
         self.assertTrue(inv["findings"])
         self.assertTrue(all(set(f["evidence_ids"]) <= ids for f in inv["findings"]))
 
-    def test_full_ai_path_adds_validated_summary(self):
+    def test_full_ai_path_summary_is_deterministic(self):
         def llm(s, u, t):
             if "allowed_actions" in u:
                 return json.dumps({"action": "run", "index": 0, "reason": "next"})
-            return json.dumps({"summary": "Authentication failed per headers.", "findings": [
+            return json.dumps({"summary": "All clear - this email is safe.", "findings": [
                 {"statement": "SPF reported fail", "evidence_ids": ["E2"], "kind": "verified"}]})
         inv = self.run_inv(use_ai=True, llm=llm, limits=ia.Limits(max_tool_calls=3))
-        self.assertEqual(inv["narrative"], "Authentication failed per headers.")
+        self.assertEqual(inv["narrative"], ia.build_summary(inv))
+        self.assertNotIn("All clear", inv["narrative"] + json.dumps(inv["findings"]))
         self.assertEqual(len(inv["narrative_findings"]), 1)
+        self.assertGreaterEqual(inv["rejected_model_outputs"], 1)
 
 
 class Safety(Base):
@@ -323,9 +326,10 @@ class FixSession(Base):
     def test_no_session_in_multiuser_is_error_not_false_negative(self):
         with mock.patch("tracker.MULTIUSER", True), mock.patch("tracker._session_id", return_value=None):
             inv = self.run_inv(limits=ia.Limits(max_tool_calls=9, max_indicators=1))
-        bad = [e for e in inv["evidence"] if e["tool"] in ("lookup_threat_memory", "retro_hunt_indicator") and e["status"] == "error"]
-        self.assertEqual(len(bad), 1 if False else len(bad)); self.assertTrue(bad)
-        self.assertFalse([f for e in bad for f in e["facts"]])
+        bad = [e for e in inv["evidence"] if e["status"] == "error"]
+        self.assertEqual([e["tool"] for e in bad], ["lookup_threat_memory"])
+        self.assertIn("session context unavailable", bad[0]["missing"][0])
+        self.assertEqual((bad[0]["facts"], bad[0]["signals"]), ([], []))     # no fabricated "no record" fact
         origin = [e for e in inv["evidence"] if e["tool"] == "review_origin"][0]
         self.assertFalse([f for f in origin["facts"] if "not on the locally cached Tor" in f])
         self.assertEqual(inv["status"], "partial")
@@ -408,7 +412,122 @@ class FixAttribution(Base):
         base = self.run_inv(limits=ia.Limits(max_tool_calls=3))
         self.assertEqual(inv["findings"], base["findings"])
         self.assertTrue(all(f["origin"] == "tool" for f in inv["findings"]))
-        self.assertTrue(all(not f["supported"] or "passed" not in f["statement"] for f in inv.get("narrative_findings", [])))
+        nf = inv["narrative_findings"]
+        self.assertEqual([(f["supported"], f["kind"]) for f in nf], [(False, "uncertain")])    # "SPF passed" contradicts E2
+        self.assertNotIn("All clear", inv["narrative"])
+
+
+class FixSummary(Base):
+    def test_summary_built_from_findings_and_never_claims_safety(self):
+        inv = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertTrue(inv["narrative"].startswith("Investigation complete"))
+        self.assertNotRegex(inv["narrative"].lower(), r"all clear|is safe|benign|legitimate")
+        with mock.patch("tracker.lookup_indicator", side_effect=RuntimeError("x")):
+            bad = self.run_inv(limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertIn("absence of findings is not evidence of safety", bad["narrative"])
+        self.assertIn("Investigation partial", bad["narrative"])
+
+    def test_unsupported_all_clear_finding_never_verified(self):
+        ev = self.run_inv(limits=ia.Limits(max_tool_calls=5))["evidence"]
+        _, f, _ = ia.validate_narrative({"findings": [{"statement": "All clear", "evidence_ids": ["E2"], "kind": "verified"}]}, ev, self.result)
+        self.assertEqual([(x["kind"], x["supported"]) for x in f], [("uncertain", False)])
+
+
+class FixWorkers(Base):
+    """Timed-out tool work: bounded, honestly reported (threads are NOT cancelled)."""
+
+    def _hold(self, n):
+        gate, started = threading.Event(), threading.Semaphore(0)
+        self.addCleanup(gate.set)
+
+        def blocker(ctx):
+            started.release(); gate.wait(10); return [], [], []
+        return gate, started, (blocker,) + ia.TOOLS["review_urls"][1:]
+
+    def _wait_free(self):
+        end = time.time() + 5
+        while ia._WORKERS._value < ia.MAX_OUTSTANDING_WORKERS and time.time() < end:
+            time.sleep(0.02)
+        self.assertEqual(ia._WORKERS._value, ia.MAX_OUTSTANDING_WORKERS)
+
+    def test_slot_held_until_worker_really_finishes(self):
+        self._wait_free()
+        gate, started, spec = self._hold(1)
+        with mock.patch.dict(ia.TOOLS, {"review_urls": spec}):
+            with self.assertRaises(ia._cf.TimeoutError):
+                ia._run_tool(ia.Ctx(self.result), "review_urls", {}, 0.2)
+        self.assertTrue(started.acquire(timeout=2))
+        self.assertEqual(ia._WORKERS._value, ia.MAX_OUTSTANDING_WORKERS - 1)    # still running -> slot still taken
+        gate.set(); self._wait_free()                                           # ends on its own -> slot freed
+
+    def test_outstanding_workers_capped_no_new_thread(self):
+        self._wait_free()
+        gate, started, spec = self._hold(ia.MAX_OUTSTANDING_WORKERS)
+        with mock.patch.dict(ia.TOOLS, {"review_urls": spec}):
+            for _ in range(ia.MAX_OUTSTANDING_WORKERS):
+                with self.assertRaises(ia._cf.TimeoutError):
+                    ia._run_tool(ia.Ctx(self.result), "review_urls", {}, 0.1)
+            for _ in range(ia.MAX_OUTSTANDING_WORKERS):
+                self.assertTrue(started.acquire(timeout=2))
+            before = threading.active_count()
+            with self.assertRaisesRegex(RuntimeError, "too many earlier tool calls"):
+                ia._run_tool(ia.Ctx(self.result), "review_urls", {}, 0.1)
+            self.assertEqual(threading.active_count(), before)                  # nothing new was started
+            inv = self.run_inv(limits=ia.Limits(max_tool_calls=3))
+            self.assertEqual({e["status"] for e in inv["evidence"]}, {"error"})  # reported as errors, not hidden
+            self.assertEqual(inv["status"], "partial")
+        gate.set(); self._wait_free()
+
+    def test_timeout_message_does_not_claim_cancellation(self):
+        self._wait_free()
+        gate, started, spec = self._hold(1)
+        with mock.patch.dict(ia.TOOLS, {"review_urls": spec}):
+            inv = self.run_inv(limits=ia.Limits(tool_timeout=1, max_tool_calls=4))
+        ev = [e for e in inv["evidence"] if e["tool"] == "review_urls"][0]
+        self.assertEqual(ev["status"], "error")
+        self.assertIn("cannot be force-cancelled", ev["missing"][0])
+        gate.set(); self._wait_free()
+
+    def test_worker_exception_propagates_and_releases_slot(self):
+        self._wait_free()
+        boom = (lambda ctx: 1 / 0,) + ia.TOOLS["review_urls"][1:]
+        with mock.patch.dict(ia.TOOLS, {"review_urls": boom}), self.assertRaises(ZeroDivisionError):
+            ia._run_tool(ia.Ctx(self.result), "review_urls", {}, 2)
+        self._wait_free()
+
+    def test_network_fetch_stops_after_tool_deadline(self):
+        calls = []
+        ctx = ia.Ctx(self.result, fetch=lambda url, headers=None: calls.append(url) or {"ok": 1})
+        ctx.tool_deadline = time.monotonic() + 30
+        f = ia._bounded_fetch(ctx)
+        self.assertEqual(f("https://x.example/", None), {"ok": 1})
+        ctx.tool_deadline = time.monotonic() - 1
+        import domain_intel
+        with self.assertRaises(domain_intel.LookupFailure):
+            f("https://x.example/", None)
+        self.assertEqual(len(calls), 1)                                          # no request after the deadline
+
+    def test_default_fetch_request_timeout_capped_by_time_left(self):
+        import domain_intel
+        seen = []
+        ctx = ia.Ctx(self.result); ctx.tool_deadline = time.monotonic() + 2
+        with mock.patch("domain_intel.fetch_json", lambda url, headers=None, timeout=None: seen.append(timeout) or {}):
+            ia._bounded_fetch(ctx)("https://x.example/", None)
+        self.assertLessEqual(seen[0], 2.0); self.assertLessEqual(seen[0], domain_intel.TIMEOUT_S)
+
+    def test_retro_db_work_bounded(self):
+        stmts = []
+
+        class C(sqlite3.Connection):
+            def execute(self, sql, *a):
+                stmts.append(sql); return super().execute(sql, *a)
+        c = sqlite3.connect(":memory:", factory=C)
+        c.execute("CREATE TABLE threat_intel (id INTEGER PRIMARY KEY AUTOINCREMENT, indicator TEXT, indicator_type TEXT, reputation REAL, category TEXT, first_seen TEXT, last_seen TEXT, observations INTEGER, source TEXT)")
+        c.execute("CREATE TABLE attackers (date TEXT, ip TEXT, country TEXT, score REAL, verdict TEXT)")
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [c]); ctx.tool_deadline = time.monotonic() + 3
+        ia.t_retro_hunt(ctx, "paypa1-secure.com")
+        pragma = [x for x in stmts if x.startswith("PRAGMA busy_timeout=")]
+        self.assertTrue(pragma and int(pragma[0].split("=")[1]) <= 5000)
 
 
 class Compatibility(Base):
