@@ -365,7 +365,7 @@ def hit_scope(row):
     """What the stored record is actually about, relative to the hunted indicator."""
     t, m = row.get("Type"), row.get("Match")
     if t == "url":
-        return "URL on hunted host"
+        return {"exact": "URL on hunted host (exact)", "subdomain": "URL on subdomain of hunted host"}.get(m, "Not available")
     if t == "ip":
         return "IP (exact)" if m in ("exact", None) else "Not available"
     if t == "domain":
@@ -395,7 +395,8 @@ def classify_hit(row):
             return "confirmed", "recognised external feed lists it as '%s' (stored reputation %.2f)" % (clean(cat, 40), rep)
         if cls == "external_feed" and nonneutral:
             # Evidence about a URL or a subdomain never confirms the hunted domain itself (cap at suspicious).
-            lead = {"URL on hunted host": "URL-level evidence only (this specific stored URL, not the whole domain): ",
+            lead = {"URL on hunted host (exact)": "URL-level evidence only (this specific stored URL on the hunted host, not the whole domain): ",
+                    "URL on subdomain of hunted host": "URL-level evidence only (a stored URL on a subdomain of the hunted host, not the whole domain): ",
                     "Subdomain of hunted domain": "Subdomain-level evidence only (a stored subdomain, not the hunted domain itself): "}.get(scope, "")
             return "suspicious", "%srecognised external feed lists it as '%s' (stored reputation %s)" % (lead, clean(cat, 40), "%.2f" % rep if rep is not None else "not available")
         if nonneutral and high:                 # needs BOTH a stored category and a stored reputation; NULL reputation never qualifies
@@ -452,18 +453,43 @@ def _probe(conn, table):
         return False
 
 
+_DECEPTIVE_WORDS = frozenset((
+    "mail", "email", "secure", "security", "support", "help", "login", "signin", "verify", "account", "accounts", "online",
+    "service", "services", "update", "alert", "alerts", "billing", "pay", "payment", "payments", "portal", "official",
+    "notification", "notifications", "team", "app", "web", "id", "my", "center", "care"))
+
+
+def _edit1(x, y):
+    """True if x and y differ by exactly one substitution, insertion or deletion."""
+    if x == y or abs(len(x) - len(y)) > 1:
+        return False
+    if len(x) == len(y):
+        return sum(c != d for c, d in zip(x, y)) == 1
+    x, y = (x, y) if len(x) < len(y) else (y, x)
+    i = next((i for i in range(len(x)) if x[i] != y[i]), len(x))
+    return x[i:] == y[i + 1:]
+
+
 def _similar(a, b):
     """Genuinely similar but DISTINCT registrable domains (e.g. facebook.com / facebookmail.com).
 
     Uses domain_intel.registrable() (a heuristic: no public-suffix list, only a short multi-part-suffix table), so
-    same-registrable pairs (a.example.com / b.example.com) are never similar, and unrelated registrable domains that
-    merely share a subdomain label (secure.example.com / secure.evil.com) are not either."""
+    same-registrable pairs never match, and domains sharing only a subdomain label (secure.example.com /
+    secure.evil.com) don't either. Registrable labels (>= 5 chars) count as similar only if: equal ignoring hyphens;
+    one-character typo (paypal / paypa1); or one is the other plus/minus a well-known deceptive word
+    (facebook / facebookmail, secure-paypal). A bare shared prefix (securemail / securemailchimp) is NOT enough."""
     import domain_intel
     ra, rb = domain_intel.registrable(a), domain_intel.registrable(b)
     if ra == rb:
         return False
     x, y = ra.split(".")[0], rb.split(".")[0]
-    return len(min(x, y, key=len)) >= 4 and (x.startswith(y) or y.startswith(x))
+    if min(len(x), len(y)) < 5:
+        return False
+    nx, ny = x.replace("-", ""), y.replace("-", "")
+    if nx == ny or _edit1(nx, ny):
+        return True
+    lo, hi = (nx, ny) if len(nx) <= len(ny) else (ny, nx)
+    return (hi.startswith(lo) and hi[len(lo):] in _DECEPTIVE_WORDS) or (hi.endswith(lo) and hi[: len(hi) - len(lo)] in _DECEPTIVE_WORDS)
 
 
 def _distinct_note(ctx, indicator):
@@ -507,15 +533,18 @@ def t_retro_hunt(ctx, indicator):
             except Exception:
                 pass
     if not ctx.cases and not conns:
-        return [], [], ["No earlier cases or threat-memory connection were available for Retro-Hunt."]
+        return ([], [], ["Retro-Hunt could not check any source: no earlier cases and no threat-memory connection were available, "
+                         "so neither earlier cases nor threat memory were searched."], True, [])
     if not ctx.cases and ti_bad >= len(conns):
         raise RuntimeError("threat-memory table could not be read (missing table or required columns); Retro-Hunt did not run")
     src_missing = []
+    if not conns:
+        src_missing.append("Threat memory was NOT checked (no database connection available); only the earlier cases were searched.")
     if ti_bad:
         src_missing.append("%d threat-memory connection(s) could not be read (missing threat_intel table or columns) and were not searched." % ti_bad)
     if att_bad:
         src_missing.append("%d connection(s) have no usable scored-email log (attackers table or columns); IP history in that log was not searched." % att_bad)
-    degraded = bool(ti_bad or att_bad)
+    degraded = bool(ti_bad or att_bad or not conns)
     ind = clean(indicator, 80)
     note = _distinct_note(ctx, indicator)
     if not rows:
