@@ -13059,6 +13059,16 @@ if active_panel == "AI Threat Analysis":
 .stApp .st-key-ai_step_assess .stButton button {min-height:48px !important;}
 .stApp .st-key-ai_step_agent [data-testid="stExpander"] {margin:2px 0 !important;}
 .stApp .st-key-ai_step_agent [data-testid="stCaptionContainer"] {color:#8fa3b8 !important; font-size:12.5px !important; line-height:1.5 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] {border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; margin:4px 0 !important; border-top:1px solid #1f2a3a !important; border-bottom:1px solid #1f2a3a !important; overflow:visible !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:hover {box-shadow:none !important; border-color:#a78bfa55 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary {padding:16px 4px !important; gap:12px !important; font-size:14px !important; letter-spacing:.02em !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"] {width:22px !important; height:22px !important; box-shadow:0 0 0 3px #a78bfa22 !important; background:linear-gradient(145deg,#a78bfa,#5b4bb7) !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary::after {content:"RUN LIMITS" !important; padding:4px 10px !important; letter-spacing:.14em !important; color:#c9b8ff !important; background:#a78bfa14 !important; border:1px solid #a78bfa44 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] details[open] > summary {border-bottom:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] details[open] > summary::after {content:"RUN LIMITS" !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stExpanderDetails"] {padding:4px 4px 20px 4px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stExpanderDetails"] [data-testid="stHorizontalBlock"] {gap:18px !important;}
+html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stNumberInput"] label p {font-size:11.5px !important; letter-spacing:.1em !important; text-transform:uppercase !important; color:#8fa3b8 !important; font-weight:600 !important;}
 </style>""", unsafe_allow_html=True)
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
@@ -13067,7 +13077,6 @@ if active_panel == "AI Threat Analysis":
                 _b1, _b2 = st.columns([2, 3], vertical_alignment="center")
                 run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
                                          use_container_width=True, key="run_qwen_single")
-                _b2.caption("Progress is shown while it runs. The result stays here until you load another email.")
 
                 if run_clicked:
                     ai_progress = st.progress(0, text="Qwen AI analysis: 0%")
@@ -13134,9 +13143,8 @@ if active_panel == "AI Threat Analysis":
 
                 panel(_agentic_investigation, "Agentic Investigation")
 
-            # ---- Downloads (always present) ----
-            _sec("Download AI Threat Report", "Save the assessment as a report \u00b7 the investigation report has its own button above", tone="ai")
             if cleaned_single is not None:
+                _sec("Download AI Threat Report", tone="ai")
                 single_markdown_report = (
                     f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
                     f"**Evidence:** {case_name}\n\n"
@@ -13151,13 +13159,6 @@ if active_panel == "AI Threat Analysis":
                     key="dl_ai_single_md",
                 )
                 st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
-            else:
-                st.markdown(
-                    '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border:1px dashed #2a3a52;'
-                    'border-radius:12px;background:linear-gradient(180deg,#0e1520,#0b111a);color:#8fa3b8;font-size:13.5px;">'
-                    '<span style="width:8px;height:8px;border-radius:50%;background:#a78bfa;box-shadow:0 0 10px #a78bfa;flex:none;"></span>'
-                    'No report yet \u2014 run the AI assessment above to unlock the download.</div>',
-                    unsafe_allow_html=True)
 
     panel(_ai_threat_analysis, "AI Threat Analysis")
 
