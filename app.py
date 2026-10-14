@@ -13056,19 +13056,20 @@ if active_panel == "AI Threat Analysis":
 .stApp .st-key-ai_step_assess [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child {padding-left:6px;}
 .stApp .st-key-ai_step_assess [data-testid="stCaptionContainer"] {color:#8fa3b8 !important; font-size:12.5px !important; text-align:left !important; line-height:1.5 !important;}
 .stApp .st-key-ai_step_assess [data-testid="stAlert"], .stApp .st-key-ai_step_assess [data-testid="stAlertContainer"] {margin-top:2px !important;}
+.stApp .st-key-ai_step_assess .nh-rule, .stApp .st-key-ai_step_agent .nh-rule {display:none !important;}
 .stApp .st-key-ai_step_assess .stButton button {min-height:48px !important;}
 .stApp .st-key-ai_step_agent [data-testid="stExpander"] {margin:2px 0 !important;}
 .stApp .st-key-ai_step_agent [data-testid="stCaptionContainer"] {color:#8fa3b8 !important; font-size:12.5px !important; line-height:1.5 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] {border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; margin:4px 0 !important; border-top:1px solid #1f2a3a !important; border-bottom:1px solid #1f2a3a !important; overflow:visible !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:hover {box-shadow:none !important; border-color:#a78bfa55 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary {padding:16px 4px !important; gap:12px !important; font-size:14px !important; letter-spacing:.02em !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"] {width:22px !important; height:22px !important; box-shadow:0 0 0 3px #a78bfa22 !important; background:linear-gradient(145deg,#a78bfa,#5b4bb7) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] summary::after {content:"RUN LIMITS" !important; padding:4px 10px !important; letter-spacing:.14em !important; color:#c9b8ff !important; background:#a78bfa14 !important; border:1px solid #a78bfa44 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] details[open] > summary {border-bottom:0 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] details[open] > summary::after {content:"RUN LIMITS" !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stExpanderDetails"] {padding:4px 4px 20px 4px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stExpanderDetails"] [data-testid="stHorizontalBlock"] {gap:18px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] [data-testid="stNumberInput"] label p {font-size:11.5px !important; letter-spacing:.1em !important; text-transform:uppercase !important; color:#8fa3b8 !important; font-weight:600 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) {border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; margin:4px 0 !important; border-top:1px solid #1f2a3a !important; border-bottom:1px solid #1f2a3a !important; overflow:visible !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x):hover {box-shadow:none !important; border-color:#a78bfa55 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary {padding:16px 4px !important; gap:12px !important; font-size:14px !important; letter-spacing:.02em !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary [data-testid="stExpanderToggleIcon"] {width:22px !important; height:22px !important; box-shadow:0 0 0 3px #a78bfa22 !important; background:linear-gradient(145deg,#a78bfa,#5b4bb7) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary::after {content:"RUN LIMITS" !important; padding:4px 10px !important; letter-spacing:.14em !important; color:#c9b8ff !important; background:#a78bfa14 !important; border:1px solid #a78bfa44 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details[open] > summary {border-bottom:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details[open] > summary::after {content:"RUN LIMITS" !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stExpanderDetails"] {padding:4px 4px 20px 4px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stExpanderDetails"] [data-testid="stHorizontalBlock"] {gap:18px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] label p {font-size:11.5px !important; letter-spacing:.1em !important; text-transform:uppercase !important; color:#8fa3b8 !important; font-weight:600 !important;}
 </style>""", unsafe_allow_html=True)
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
@@ -13143,21 +13144,25 @@ html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stE
 
                 panel(_agentic_investigation, "Agentic Investigation")
 
-            if cleaned_single is not None:
-                _sec("Download AI Threat Report", tone="ai")
-                single_markdown_report = (
-                    f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
-                    f"**Evidence:** {case_name}\n\n"
-                    f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
-                    f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
-                    f"## AI Assessment\n\n{cleaned_single}"
-                )
-                _premium_download(
-                    label="Download AI Assessment (.md)",
-                    markdown=single_markdown_report,
-                    file_name="ai_threat_assessment.md",
-                    key="dl_ai_single_md",
-                )
+            _sec("Download AI Threat Report", tone="ai")
+            single_markdown_report = (
+                f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
+                f"**Evidence:** {case_name}\n\n"
+                f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
+                f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
+                f"## AI Assessment\n\n{cleaned_single or '_No AI assessment generated yet._'}"
+            )
+            _premium_download(
+                label="Download AI Assessment (.md)",
+                markdown=single_markdown_report,
+                file_name="ai_threat_assessment.md",
+                key="dl_ai_single_md",
+                disabled=cleaned_single is None,
+                help="Run the AI assessment first to unlock this download." if cleaned_single is None else None,
+            )
+            if cleaned_single is None:
+                st.caption("Run the AI assessment above to unlock the download.")
+            else:
                 st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
 
     panel(_ai_threat_analysis, "AI Threat Analysis")
