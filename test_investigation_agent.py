@@ -497,20 +497,18 @@ class FixWorkers(Base):
 
     def test_network_fetch_stops_after_tool_deadline(self):
         calls = []
-        ctx = ia.Ctx(self.result, fetch=lambda url, headers=None: calls.append(url) or {"ok": 1})
-        ctx.tool_deadline = time.monotonic() + 30
-        f = ia._bounded_fetch(ctx)
+        base = ia.Ctx(self.result, fetch=lambda url, headers=None: calls.append(url) or {"ok": 1})
+        f = ia._bounded_fetch(base.for_call(time.monotonic() + 30))
         self.assertEqual(f("https://x.example/", None), {"ok": 1})
-        ctx.tool_deadline = time.monotonic() - 1
         import domain_intel
         with self.assertRaises(domain_intel.LookupFailure):
-            f("https://x.example/", None)
+            ia._bounded_fetch(base.for_call(time.monotonic() - 1))("https://x.example/", None)
         self.assertEqual(len(calls), 1)                                          # no request after the deadline
 
     def test_default_fetch_request_timeout_capped_by_time_left(self):
         import domain_intel
         seen = []
-        ctx = ia.Ctx(self.result); ctx.tool_deadline = time.monotonic() + 2
+        ctx = ia.Ctx(self.result).for_call(time.monotonic() + 2)
         with mock.patch("domain_intel.fetch_json", lambda url, headers=None, timeout=None: seen.append(timeout) or {}):
             ia._bounded_fetch(ctx)("https://x.example/", None)
         self.assertLessEqual(seen[0], 2.0); self.assertLessEqual(seen[0], domain_intel.TIMEOUT_S)
@@ -524,10 +522,100 @@ class FixWorkers(Base):
         c = sqlite3.connect(":memory:", factory=C)
         c.execute("CREATE TABLE threat_intel (id INTEGER PRIMARY KEY AUTOINCREMENT, indicator TEXT, indicator_type TEXT, reputation REAL, category TEXT, first_seen TEXT, last_seen TEXT, observations INTEGER, source TEXT)")
         c.execute("CREATE TABLE attackers (date TEXT, ip TEXT, country TEXT, score REAL, verdict TEXT)")
-        ctx = ia.Ctx(self.result, conns_factory=lambda: [c]); ctx.tool_deadline = time.monotonic() + 3
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [c]).for_call(time.monotonic() + 3)
         ia.t_retro_hunt(ctx, "paypa1-secure.com")
         pragma = [x for x in stmts if x.startswith("PRAGMA busy_timeout=")]
         self.assertTrue(pragma and int(pragma[0].split("=")[1]) <= 5000)
+
+
+class FixDeadlines(Base):
+    """Each invocation owns an immutable deadline; the quota/cache stay shared."""
+
+    def _wait_free(self):
+        end = time.time() + 5
+        while ia._WORKERS._value < ia.MAX_OUTSTANDING_WORKERS and time.time() < end:
+            time.sleep(0.02)
+        self.assertEqual(ia._WORKERS._value, ia.MAX_OUTSTANDING_WORKERS)
+
+    def test_later_invocation_cannot_extend_timed_out_workers_deadline(self):
+        import domain_intel
+        self._wait_free()
+        gate, a_started = threading.Event(), threading.Event()
+        self.addCleanup(gate.set)
+        seen, outcome = {}, {}
+        calls = []
+
+        def tool_a(ctx):
+            seen["a_ctx"], seen["a_deadline"] = ctx, ctx.tool_deadline
+            a_started.set(); gate.wait(10)
+            try:                                            # A resumes AFTER B started with a later deadline
+                ia._bounded_fetch(ctx)("https://x.example/", None); outcome["a"] = "fetched"
+            except domain_intel.LookupFailure:
+                outcome["a"] = "blocked"
+            outcome["a_deadline_after"] = ctx.tool_deadline
+            return [], [], []
+
+        def tool_b(ctx):
+            seen["b_ctx"], seen["b_deadline"] = ctx, ctx.tool_deadline
+            return [], [], []
+        spec = lambda f: (f,) + ia.TOOLS["review_urls"][1:]
+        base = ia.Ctx(self.result, fetch=lambda url, headers=None: calls.append(url) or {})
+        with mock.patch.dict(ia.TOOLS, {"review_urls": spec(tool_a), "review_origin": spec(tool_b)}):
+            with self.assertRaises(ia._cf.TimeoutError):
+                ia._run_tool(base, "review_urls", {}, 0.2)                    # A times out, keeps running
+            self.assertTrue(a_started.wait(2))
+            ia._run_tool(base, "review_origin", {}, 30)                      # B: much later deadline
+            self.assertGreater(seen["b_deadline"], seen["a_deadline"] + 20)
+            self.assertIsNot(seen["a_ctx"], seen["b_ctx"])
+            self.assertEqual(seen["a_ctx"].tool_deadline, seen["a_deadline"])  # unchanged by B
+            self.assertEqual(base.tool_deadline, float("inf"))                 # shared ctx never written
+            gate.set(); self._wait_free()
+        self.assertEqual(outcome["a"], "blocked")                              # A still bound by ITS deadline
+        self.assertEqual(outcome["a_deadline_after"], seen["a_deadline"])
+        self.assertEqual(calls, [])                                            # no request after A's deadline
+
+    def test_deadline_is_read_only(self):
+        ctx = ia.Ctx(self.result)
+        with self.assertRaises(AttributeError):
+            ctx.tool_deadline = 1.0
+
+    def test_lingering_workers_cannot_bypass_global_lookup_quota(self):
+        base = ia.Ctx(self.result, allow_network=True, max_net=2)
+        asked, lock = [], threading.Lock()
+        rec = {"dns": {"records": {"A": [{"value": "1.2.3.4"}]}, "errors": []}, "rdap": {"state": "ok", "data": {}}}
+
+        def fake(d, **k):
+            with lock:
+                asked.append(d)
+            time.sleep(0.05)
+            return rec
+        results = []
+
+        def go(i):
+            c = base.for_call(time.monotonic() + 5 + i)           # distinct per-call deadlines, shared quota
+            try:
+                ia.t_dns_rdap(c, "paypa1-secure.com"); results.append("ok")
+            except ia._Skip:
+                results.append("skip")
+        with mock.patch("domain_intel.lookup_domain", fake):
+            ts = [threading.Thread(target=go, args=(i,)) for i in range(8)]
+            [t.start() for t in ts]; [t.join(5) for t in ts]
+        self.assertEqual((len(asked), results.count("ok"), results.count("skip")), (2, 2, 6))
+        self.assertEqual(base.net_calls, 2)
+
+    def test_cache_shared_between_invocations(self):
+        base = ia.Ctx(self.result)
+        self.assertIs(base.for_call(1).cache, base.cache)
+        self.assertIs(base.for_call(1).net_quota, base.net_quota)
+
+    def test_report_and_ui_wording_say_summary_is_deterministic(self):
+        inv = self.run_inv(use_ai=True, llm=lambda *a: json.dumps({"action": "finish", "reason": "x"}), limits=ia.Limits(max_tool_calls=2))
+        md = ia.render_report(inv, include_base=False)
+        self.assertIn("generated from the deterministic tool findings", md)
+        self.assertIn("summary is deterministic", md)
+        self.assertNotRegex(md, r"AI summary|AI-assisted planner \+ summary")
+        ui = open("investigation_ui.py", encoding="utf-8").read()
+        self.assertNotRegex(ui, r"AI-assisted planning and summary|AI summary")
 
 
 class Compatibility(Base):

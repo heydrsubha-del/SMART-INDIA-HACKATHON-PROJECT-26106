@@ -16,6 +16,7 @@ Guarantees (enforced in code, covered by test_investigation_agent.py):
 """
 
 import concurrent.futures as _cf
+import copy
 import json
 import os
 import re
@@ -143,6 +144,36 @@ def candidate_indicators(result):
 #   signals = suspicious indicators (heuristic, not proof)
 #   missing = what could not be determined
 # ---------------------------------------------------------------------------
+class _Quota:
+    """Process-wide-per-run network lookup budget; take() is atomic so concurrent workers cannot overspend it."""
+
+    def __init__(self, limit):
+        self.limit, self.used, self._lock = int(limit), 0, threading.Lock()
+
+    def take(self):
+        with self._lock:
+            if self.used >= self.limit:
+                return False
+            self.used += 1
+            return True
+
+
+class _SafeCache(dict):
+    """dict whose get/set are serialised, so lingering workers and new ones can share domain_intel's cache."""
+
+    def __init__(self):
+        super().__init__()
+        self._lock = threading.Lock()
+
+    def get(self, k, d=None):
+        with self._lock:
+            return super().get(k, d)
+
+    def __setitem__(self, k, v):
+        with self._lock:
+            super().__setitem__(k, v)
+
+
 class Ctx:
     def __init__(self, result, cases=None, conns_factory=None, allow_network=False, fetch=None, max_net=3):
         self.result = result or {}
@@ -150,10 +181,33 @@ class Ctx:
         self.conns_factory = conns_factory
         self.allow_network = bool(allow_network)
         self.fetch = fetch
-        self.max_net, self.net_calls = int(max_net), 0
-        self.tool_deadline = float("inf")      # monotonic time after which the running tool must stop issuing I/O
-        self.cache = {}
+        self.net_quota = _Quota(max_net)       # shared by every invocation, incl. lingering timed-out workers
+        self._deadline = float("inf")
+        self.cache = _SafeCache()              # shared by every invocation (lock-protected)
         self.candidates = candidate_indicators(self.result)
+
+    @property
+    def tool_deadline(self):
+        """Monotonic deadline of THIS invocation's view; read-only (set only via for_call)."""
+        return self._deadline
+
+    @property
+    def max_net(self):
+        return self.net_quota.limit
+
+    @property
+    def net_calls(self):
+        return self.net_quota.used
+
+    @net_calls.setter
+    def net_calls(self, v):
+        self.net_quota.used = int(v)
+
+    def for_call(self, deadline):
+        """Per-invocation view: shares result/cases/cache/quota by reference, owns an immutable deadline."""
+        c = copy.copy(self)
+        c._deadline = float(deadline)
+        return c
 
 
 def _require_session():
@@ -291,10 +345,11 @@ def t_retro_hunt(ctx, indicator):
         if ctx.conns_factory:
             _require_session()
             conns = list(ctx.conns_factory() or [])
-            for c in conns:                    # bound DB work by the tool's deadline (best effort; sqlite aborts the statement)
+            deadline = ctx.tool_deadline       # this invocation's own, immutable deadline
+            for c in conns:                    # bound DB work by it (best effort; sqlite aborts the statement)
                 try:
-                    c.execute("PRAGMA busy_timeout=%d" % int(max(0.1, min(5.0, ctx.tool_deadline - time.monotonic())) * 1000))
-                    c.set_progress_handler(lambda: 1 if time.monotonic() > ctx.tool_deadline else 0, 10000)
+                    c.execute("PRAGMA busy_timeout=%d" % int(max(0.1, min(5.0, deadline - time.monotonic())) * 1000))
+                    c.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 10000)
                 except Exception:
                     pass
         r = ctx.result
@@ -317,10 +372,10 @@ def t_retro_hunt(ctx, indicator):
 def _bounded_fetch(ctx):
     """Fetcher that stops issuing requests once the tool's deadline passes and caps each request to the time left."""
     import domain_intel
-    base = ctx.fetch
+    base, deadline = ctx.fetch, ctx.tool_deadline    # captured by value: later invocations cannot extend it
 
     def fetch(url, headers=None):
-        left = ctx.tool_deadline - time.monotonic()
+        left = deadline - time.monotonic()
         if left <= 0:
             raise domain_intel.LookupFailure("timeout", "tool time budget exhausted")
         if base is not None:
@@ -333,9 +388,8 @@ def t_dns_rdap(ctx, indicator):
     import domain_intel
     if not ctx.allow_network:
         raise _Skip("Public DNS/RDAP lookup was not permitted for this run.")
-    if ctx.net_calls >= ctx.max_net:
+    if not ctx.net_quota.take():
         raise _Skip("Public DNS/RDAP lookup budget for this run is exhausted.")
-    ctx.net_calls += 1
     rec = domain_intel.lookup_domain(indicator, cache=ctx.cache, fetch=_bounded_fetch(ctx))
     dns = rec.get("dns") or {}
     rd = (rec.get("rdap") or {})
@@ -426,7 +480,7 @@ def build_menu(ctx, done, limits):
 
 
 # ---------------------------------------------------------------------------
-# Model I/O (planner + summary). Provider = existing ollama_threat/cloud_backend path.
+# Model I/O (planner + proposed findings). Provider = existing ollama_threat/cloud_backend path.
 # ---------------------------------------------------------------------------
 SYSTEM = (
     "You are the planning component of a read-only email-forensics investigator. "
@@ -620,6 +674,7 @@ def _run_tool(ctx, tool, args, timeout):
     if not _WORKERS.acquire(blocking=False):
         raise RuntimeError("too many earlier tool calls are still running in the background; not starting another")
     box, done = {}, threading.Event()
+    call_ctx = ctx.for_call(time.monotonic() + max(0.1, timeout))   # own immutable deadline; `ctx` is never written
 
     def call():
         try:
@@ -629,14 +684,13 @@ def _run_tool(ctx, tool, args, timeout):
                     add_script_run_ctx(threading.current_thread(), sctx)
                 except Exception:
                     pass
-            box["v"] = fn(ctx, **args)
+            box["v"] = fn(call_ctx, **args)
         except BaseException as exc:       # reported to the caller; never lost
             box["e"] = exc
         finally:
             _WORKERS.release()
             done.set()
     try:
-        ctx.tool_deadline = time.monotonic() + max(0.1, timeout)
         threading.Thread(target=call, name="agent-tool", daemon=True).start()
     except BaseException:
         _WORKERS.release()
@@ -670,7 +724,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
         if llm is None:
             why = ai_unavailable_reason()
             if why:
-                inv["mode_note"] = "AI planner/summary disabled: " + why
+                inv["mode_note"] = "AI planner/proposed findings disabled: " + why
             else:
                 llm = default_llm
         if llm is not None:
@@ -751,7 +805,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
             except ValueError:
                 inv["rejected_model_outputs"] += 1
             except Exception as exc:
-                inv["mode_note"] = (inv["mode_note"] + " " if inv["mode_note"] else "") + "AI summary unavailable (%s)." % clean(type(exc).__name__, 40)
+                inv["mode_note"] = (inv["mode_note"] + " " if inv["mode_note"] else "") + "AI proposed findings unavailable (%s)." % clean(type(exc).__name__, 40)
         clean_run = all(e["status"] == "ok" for e in inv["evidence"]) and all(st.get("status") == "ok" for st in inv["steps"])
         inv["status"] = "complete" if inv["stop_reason"] in ("evidence_sufficient", "planner_finished") and clean_run else "partial"
         if inv["status"] == "partial" and not clean_run:
@@ -785,7 +839,7 @@ def render_report(inv, result=None, raw=None, include_base=True):
               "scanner's own and were not changed by the agent._", "",
               "| Field | Value |", "| --- | --- |",
               "| Status | **%s** (%s) |" % (_c(inv.get("status")), _c(inv.get("stop_reason") or "-")),
-              "| Mode | %s |" % ("AI-assisted planner + summary" if inv.get("mode") == "ai" else "Deterministic (no AI)"),
+              "| Mode | %s |" % ("AI-assisted planner + proposed findings (summary is deterministic)" if inv.get("mode") == "ai" else "Deterministic (no AI)"),
               "| Scanner score at start | %s / 100 (%s) |" % (_c(sc.get("score")), _c(sc.get("level"))),
               "| Tool calls | %d of %s |" % (len(inv.get("evidence", [])), (inv.get("limits") or {}).get("max_tool_calls")),
               "| Public DNS/RDAP lookups permitted | %s |" % ("yes" if inv.get("network_allowed") else "no"),
