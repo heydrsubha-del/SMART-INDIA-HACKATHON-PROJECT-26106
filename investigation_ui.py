@@ -31,7 +31,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
         calls = a.number_input("Max tool calls", 1, 15, 10, key="agent_calls_" + key)
         iters = b.number_input("Max iterations", 1, 15, 10, key="agent_iters_" + key)
         secs = c.number_input("Max seconds", 10, 300, 90, key="agent_secs_" + key)
-    if st.button("Start investigation", type="primary", key="agent_go_" + key, use_container_width=True):
+    if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
         with st.spinner("Investigating..."):
@@ -58,8 +58,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
         st.markdown(_t(inv["narrative"]))
     st.markdown("**Action log**")
     st.dataframe([{"#": s["n"], "tool": s["tool"], "argument": s["args"].get("indicator", "-"), "chosen by": s["source"],
-                   "result": s.get("status"), "evidence": s.get("evidence_id", "-"), "why": s["reason"]} for s in inv["steps"]],
-                 use_container_width=True, hide_index=True)
+                   "result": s.get("status"), "evidence": s.get("evidence_id", "-"), "why": s["reason"]} for s in inv["steps"]], hide_index=True)
     for kind, title in (("verified", "Verified facts"), ("suspicious", "Suspicious signals"), ("uncertain", "Missing evidence / uncertainty")):
         items = [f for f in inv["findings"] if f["kind"] == kind]
         with st.expander(f"{title} ({len(items)})", expanded=(kind != "verified")):
@@ -74,6 +73,6 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
                     key="agent_dl_" + key, help="Full forensic report with the agentic investigation (HTML, or Word)")
     d1, d2 = st.columns(2)
     d1.download_button("Markdown (.md)", report_md, file_name="agentic_investigation_report.md", mime="text/markdown",
-                       key="agent_dl_md_" + key, use_container_width=True)
+                       key="agent_dl_md_" + key)
     d2.download_button("Evidence log (.json)", json.dumps(inv, indent=2, default=str), file_name="agentic_investigation_evidence.json",
-                       mime="application/json", key="agent_dl_json_" + key, use_container_width=True)
+                       mime="application/json", key="agent_dl_json_" + key)
