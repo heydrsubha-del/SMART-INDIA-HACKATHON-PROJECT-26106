@@ -19,6 +19,7 @@ import concurrent.futures as _cf
 import json
 import os
 import re
+import threading
 import time
 
 MAX_TEXT = 220
@@ -150,6 +151,7 @@ class Ctx:
         self.allow_network = bool(allow_network)
         self.fetch = fetch
         self.max_net, self.net_calls = int(max_net), 0
+        self.tool_deadline = float("inf")      # monotonic time after which the running tool must stop issuing I/O
         self.cache = {}
         self.candidates = candidate_indicators(self.result)
 
@@ -289,6 +291,12 @@ def t_retro_hunt(ctx, indicator):
         if ctx.conns_factory:
             _require_session()
             conns = list(ctx.conns_factory() or [])
+            for c in conns:                    # bound DB work by the tool's deadline (best effort; sqlite aborts the statement)
+                try:
+                    c.execute("PRAGMA busy_timeout=%d" % int(max(0.1, min(5.0, ctx.tool_deadline - time.monotonic())) * 1000))
+                    c.set_progress_handler(lambda: 1 if time.monotonic() > ctx.tool_deadline else 0, 10000)
+                except Exception:
+                    pass
         r = ctx.result
         rows = retro_hunt.hunt(inds, ctx.cases, conns, r.get("name"), r.get("_evidence_hash"))
     finally:
@@ -306,6 +314,21 @@ def t_retro_hunt(ctx, indicator):
     return facts, signals, []
 
 
+def _bounded_fetch(ctx):
+    """Fetcher that stops issuing requests once the tool's deadline passes and caps each request to the time left."""
+    import domain_intel
+    base = ctx.fetch
+
+    def fetch(url, headers=None):
+        left = ctx.tool_deadline - time.monotonic()
+        if left <= 0:
+            raise domain_intel.LookupFailure("timeout", "tool time budget exhausted")
+        if base is not None:
+            return base(url, headers)
+        return domain_intel.fetch_json(url, headers, timeout=min(float(domain_intel.TIMEOUT_S), left))
+    return fetch
+
+
 def t_dns_rdap(ctx, indicator):
     import domain_intel
     if not ctx.allow_network:
@@ -313,7 +336,7 @@ def t_dns_rdap(ctx, indicator):
     if ctx.net_calls >= ctx.max_net:
         raise _Skip("Public DNS/RDAP lookup budget for this run is exhausted.")
     ctx.net_calls += 1
-    rec = domain_intel.lookup_domain(indicator, cache=ctx.cache, fetch=ctx.fetch)
+    rec = domain_intel.lookup_domain(indicator, cache=ctx.cache, fetch=_bounded_fetch(ctx))
     dns = rec.get("dns") or {}
     rd = (rec.get("rdap") or {})
     d = rd.get("data") or {}
@@ -535,17 +558,31 @@ def validate_narrative(obj, evidence, result):
         supported = bool(w) and len(w & _words(" ".join(pool))) / len(w) >= 0.5
         findings.append({"statement": clean(st, 300), "evidence_ids": cited, "origin": "ai", "supported": supported,
                          "kind": kind if supported else "uncertain"})
-    summary = obj.get("summary")
-    summary = clean(summary, 700) if isinstance(summary, str) and grounded(summary, all_text) else ""
-    if obj.get("summary") and not summary:
+    # Free-form model summaries are never accepted (a claim like "all clear" could slip through): any provided
+    # summary is discarded and counted; the report summary is built from deterministic findings (build_summary).
+    if obj.get("summary"):
         dropped += 1
+    summary = ""
     return summary, findings, dropped
+
+
+def build_summary(inv):
+    """Deterministic summary: status + counts from tool findings only. Makes no safety/verdict claim."""
+    ev = inv.get("evidence", [])
+    bad = sum(1 for e in ev if e["status"] != "ok")
+    n = lambda k: sum(1 for f in inv.get("findings", []) if f["kind"] == k and f.get("origin") == "tool")
+    sc = inv.get("score_snapshot") or {}
+    txt = ("Investigation %s (%s): %d check(s) run, %d failed/skipped/degraded; %d verified fact(s), %d suspicious signal(s), "
+           "%d gap(s) in evidence. Scanner verdict (unchanged): %s, %s/100."
+           % (inv.get("status"), inv.get("stop_reason") or "-", len(ev), bad, n("verified"), n("suspicious"), n("uncertain"),
+              clean(sc.get("level"), 20), clean(sc.get("score"), 10)))
+    return txt + (" Evidence is incomplete; absence of findings is not evidence of safety." if bad or n("uncertain") else "")
 
 
 def _narrative(llm, evidence, result, timeout):
     user = json.dumps({
-        "task": "Summarise the investigation. Cite evidence IDs for every finding; mention no indicator or number absent from the evidence; do not state a different risk score.",
-        "reply_format": {"summary": "<=600 chars", "findings": [{"statement": "str", "evidence_ids": ["E1"], "kind": "verified|suspicious|uncertain"}]},
+        "task": "List structured findings only (no free-form summary, no verdict). Cite evidence IDs for every finding; mention no indicator or number absent from the cited evidence; do not state a risk score.",
+        "reply_format": {"findings": [{"statement": "str", "evidence_ids": ["E1"], "kind": "verified|suspicious|uncertain"}]},
         "existing_scanner_score": {"score": round(float(result.get("score") or 0), 1), "level": clean(result.get("level", ""), 20)},
         "untrusted_evidence": _evidence_view(evidence, cap=20),
     }, ensure_ascii=True)
@@ -567,25 +604,48 @@ def _st_ctx():
         return None
 
 
+MAX_OUTSTANDING_WORKERS = 4
+_WORKERS = threading.BoundedSemaphore(MAX_OUTSTANDING_WORKERS)
+
+
 def _run_tool(ctx, tool, args, timeout):
+    """Run one tool on a daemon worker and wait up to `timeout`.
+
+    Python threads cannot be cancelled: after a timeout the worker may keep running until its own I/O limits
+    (per-request network timeouts, the tool deadline, sqlite abort) end it. What IS enforced: at most
+    MAX_OUTSTANDING_WORKERS workers exist process-wide (a slot frees only when the worker really finishes),
+    so timed-out work cannot pile up; further calls fail fast instead of starting another thread."""
     fn = TOOLS[tool][0]
-    sctx = _st_ctx()           # worker thread must act for THIS visitor's session (per-user DB in multi-user mode)
+    sctx = _st_ctx()           # worker must act for THIS visitor's session (per-user DB in multi-user mode)
+    if not _WORKERS.acquire(blocking=False):
+        raise RuntimeError("too many earlier tool calls are still running in the background; not starting another")
+    box, done = {}, threading.Event()
 
     def call():
-        if sctx is not None:
-            try:
-                import threading
-                from streamlit.runtime.scriptrunner import add_script_run_ctx
-                add_script_run_ctx(threading.current_thread(), sctx)
-            except Exception:
-                pass
-        return fn(ctx, **args)
-    ex = _cf.ThreadPoolExecutor(max_workers=1)
+        try:
+            if sctx is not None:
+                try:
+                    from streamlit.runtime.scriptrunner import add_script_run_ctx
+                    add_script_run_ctx(threading.current_thread(), sctx)
+                except Exception:
+                    pass
+            box["v"] = fn(ctx, **args)
+        except BaseException as exc:       # reported to the caller; never lost
+            box["e"] = exc
+        finally:
+            _WORKERS.release()
+            done.set()
     try:
-        fut = ex.submit(call)
-        return fut.result(timeout=max(0.1, timeout))
-    finally:
-        ex.shutdown(wait=False, cancel_futures=True)
+        ctx.tool_deadline = time.monotonic() + max(0.1, timeout)
+        threading.Thread(target=call, name="agent-tool", daemon=True).start()
+    except BaseException:
+        _WORKERS.release()
+        raise
+    if not done.wait(max(0.1, timeout)):
+        raise _cf.TimeoutError()
+    if "e" in box:
+        raise box["e"]
+    return box["v"]
 
 
 def _coerce(out):
@@ -667,7 +727,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
             except _Skip as sk:
                 status, missing = "skipped", [clean(sk, 200)]
             except _cf.TimeoutError:
-                status, missing = "error", ["Tool timed out; this check did not complete."]
+                status, missing = "error", ["Tool timed out; this check did not complete (its background call cannot be force-cancelled and stops on its own I/O limits)."]
             except Exception as exc:
                 status, missing = "error", ["Tool failed (%s: %s); this check did not complete." % (type(exc).__name__, clean(exc, 120))]
             status = "partial" if (status == "ok" and degraded) else status
@@ -686,7 +746,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
         if inv["mode"] == "ai" and inv["stop_reason"] != "provider_failed" and inv["evidence"] and elapsed() < limits.max_seconds:
             try:
                 summ, extra, dropped = _narrative(llm, inv["evidence"], result, min(limits.model_timeout, max(1.0, limits.max_seconds - elapsed())))
-                inv["narrative"], inv["rejected_model_outputs"] = summ, inv["rejected_model_outputs"] + dropped
+                inv["rejected_model_outputs"] += dropped
                 inv["narrative_findings"] = extra
             except ValueError:
                 inv["rejected_model_outputs"] += 1
@@ -700,6 +760,10 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
         inv["status"], inv["stop_reason"] = "failed", "internal_error"
         inv["mode_note"] = "Investigation aborted (%s); the scanner results are unchanged." % type(exc).__name__
     inv["seconds"] = round(elapsed(), 2)
+    try:
+        inv["narrative"] = build_summary(inv)
+    except Exception:
+        inv["narrative"] = ""
     return inv
 
 
@@ -737,7 +801,9 @@ def render_report(inv, result=None, raw=None, include_base=True):
         items = [f for f in inv.get("findings", []) if f["kind"] == kind]
         lines += ["- %s  `[%s]`" % (_c(f["statement"]), ",".join(f["evidence_ids"])) for f in items] or ["- None recorded."]
     if inv.get("narrative"):
-        lines += ["", "### AI summary (wording is the model's; indicators/numbers checked against evidence; deterministic findings above are authoritative)", "", _c(inv["narrative"])]
+        lines += ["", "### Summary (generated from the deterministic tool findings above)", "", _c(inv["narrative"])]
+        if inv.get("narrative_findings"):
+            lines += ["", "### AI-proposed findings (secondary; tool findings above are authoritative)"]
         for f in inv.get("narrative_findings", []):
             lines.append("- *%s%s*: %s `[%s]`" % ("" if f.get("supported", True) else "unverified AI claim, ", f["kind"], _c(f["statement"]), ",".join(f["evidence_ids"])))
     lines += ["", "_Generated by a bounded read-only agent; every finding above is attributed to the tool output that produced it._"]
