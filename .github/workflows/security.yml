@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "23 4 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -38,13 +40,58 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall -q .
 
-      # This one audit test needs private SQL-export CSV files supplied via
-      # AUDIT_DIR; those exports are intentionally not committed to GitHub.
       - name: Run offline Python tests
-        run: python -m pytest -q --ignore=test_package_integrity.py
+        env:
+          AUDIT_DIR: ${{ vars.AUDIT_DIR }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
 
-  security-scan:
-    name: Dependency and source security scan
+          candidates = []
+          configured = os.environ.get("AUDIT_DIR", "").strip()
+          if configured:
+              candidates.append(Path(configured))
+          candidates.extend((Path("security_audit_inputs"), Path("/mnt/user-data/uploads")))
+          audit_dir = next(
+              (p.resolve() for p in candidates
+               if p.is_dir() and len(list(p.glob("*.csv"))) >= 5),
+              None,
+          )
+
+          cmd = [sys.executable, "-m", "pytest", "-q"]
+          if audit_dir is None:
+              private_modules = (
+                  "test_package_integrity.py",
+                  "test_label_regression.py",
+                  "test_validation_parity.py",
+              )
+              cmd.extend("--ignore=" + name for name in private_modules)
+              notice = (
+                  "Private SQL-export CSV corpus unavailable. The public CI run "
+                  "explicitly excludes test_package_integrity.py, test_label_regression.py, "
+                  "and test_validation_parity.py; run them locally with AUDIT_DIR set "
+                  "to the five private export CSVs. These tests are not counted as passed."
+              )
+              print("::notice::" + notice)
+              summary = os.environ.get("GITHUB_STEP_SUMMARY")
+              if summary:
+                  with open(summary, "a", encoding="utf-8") as f:
+                      f.write("### Audit-corpus-dependent tests\n\n")
+                      f.write("Skipped because private SQL exports are not in the public repository: ")
+                      f.write(", ".join(private_modules) + ".\n\n")
+                      f.write("These tests were **not counted as passed**. Run them locally with ")
+                      f.write("`AUDIT_DIR` set to the private export folder.\n")
+          else:
+              os.environ["AUDIT_DIR"] = str(audit_dir)
+              print(f"Using private SQL-export corpus from {audit_dir}; running full pytest suite.")
+          raise SystemExit(subprocess.run(cmd, check=False).returncode)
+          PY
+
+  source-security:
+    name: Source security scan (Bandit)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -56,13 +103,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install security scanners
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install bandit pip-audit
+      - name: Install Bandit
+        run: python -m pip install "bandit==1.9.4"
 
-      # Scan application Python modules, excluding tests and bundled datasets.
-      - name: Run Bandit high-severity scan
+      - name: Run blocking high-severity scan
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -81,6 +125,43 @@ jobs:
           subprocess.run([sys.executable, "-m", "bandit", "-lll", *files], check=True)
           PY
 
-      # Audits requirements and their resolved dependency tree; findings fail the job.
-      - name: Audit Python dependencies
+      - name: Report medium-severity findings for review
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          excluded_dirs = {".git", ".venv", "venv", "tests", "fixtures", "data"}
+          files = [
+              str(path)
+              for path in Path(".").rglob("*.py")
+              if not any(part in excluded_dirs for part in path.parts)
+              and not path.name.startswith("test_")
+          ]
+          # Advisory only: high-severity findings are gated in the previous step.
+          # This report makes medium issues visible without hiding the passing gate.
+          subprocess.run(
+              [sys.executable, "-m", "bandit", "-ll", "--exit-zero", *files],
+              check=False,
+          )
+          PY
+
+  dependency-audit:
+    name: Python dependency vulnerability audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: python -m pip install "pip-audit==2.10.1"
+
+      - name: Audit declared Python dependencies
         run: pip-audit -r requirements.txt

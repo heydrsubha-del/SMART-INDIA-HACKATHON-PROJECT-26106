@@ -10651,7 +10651,7 @@ def _pt_cell(col, v, row_level="", colmax=None, is_first=False):
     if key in ("from", "sender", "from address", "sender address", "from_addr", "email address") and text:
         _n, _a = _pt_parseaddr(text)
         _n = _n or (_a.split("@")[0] if _a else text)
-        _c = _PT_AV[int(hashlib.md5((_a or _n).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_PT_AV)]
+        _c = _PT_AV[int(hashlib.md5((_a or _n).lower().encode("utf-8", "ignore"), usedforsecurity=False).hexdigest(), 16) % len(_PT_AV)]
         _pic = ""
         if _a and os.environ.get("SIH26106_SHOW_SENDER_PICS", "1") != "0":
             _h = hashlib.sha256(_a.strip().lower().encode("utf-8", "ignore")).hexdigest()
@@ -10697,7 +10697,7 @@ def _polished_table_html(df, max_height=None, tone=None):
         rt = _LEVEL_MARKER_COLORS.get(lvl)
         if not rt:
             seed = str(row[cols[0]]) if cols else ""
-            rt = _PT_AV[int(hashlib.md5(seed.encode("utf-8", "ignore")).hexdigest(), 16) % len(_PT_AV)]
+            rt = _PT_AV[int(hashlib.md5(seed.encode("utf-8", "ignore"), usedforsecurity=False).hexdigest(), 16) % len(_PT_AV)]
         cells = "".join(_pt_cell(c, row[c], lvl, colmax, is_first=(i == 0)) for i, c in enumerate(cols))
         body_rows.append(f'<tr style="--rt:{rt};">{cells}</tr>')
     wrap_style = f' style="max-height:{int(max_height)}px;overflow-y:auto;"' if max_height else ""
@@ -11832,7 +11832,7 @@ if active_panel == "Dashboard":
                     _uid_i = _uid_list[_i]
                     _name, _addr = _parseaddr(str(_r["From"]))
                     _name = _name or (_addr.split("@")[0] if _addr else str(_r["From"]))
-                    _col = _AV_COLS[int(hashlib.md5((_addr or _name).lower().encode("utf-8", "ignore")).hexdigest(), 16) % len(_AV_COLS)]
+                    _col = _AV_COLS[int(hashlib.md5((_addr or _name).lower().encode("utf-8", "ignore"), usedforsecurity=False).hexdigest(), 16) % len(_AV_COLS)]
                     _d1, _d2, _rel = _when(_r["Date"])
                     _is_sel = (_i == _sel_idx)
                     # Sender profile picture: Gravatar by hashed address, requested with d=blank so
@@ -12607,7 +12607,7 @@ if active_panel == "Dashboard":
                             pass
                     st_folium(
                         dash_map, width="stretch", height=300, returned_objects=[],
-                        key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore")).hexdigest()[:10],
+                        key="dash_cur_map_" + hashlib.md5(str(case_name).encode("utf-8", "ignore"), usedforsecurity=False).hexdigest()[:10],
                     )
                     _dash_loc = ", ".join(p for p in [_dash_origin.get("city"), _dash_origin.get("country")] if p)
                     st.caption(
