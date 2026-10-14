@@ -4824,11 +4824,11 @@ st.markdown(
     }
     /* hidden 1px helper iframes must not leave a gap */
     .stApp [data-testid="stElementContainer"]:has(iframe[height="1"]), .stApp .stElementContainer:has(iframe[height="1"]),
-    .stApp [data-testid="stElementContainer"]:has(iframe[style*="height: 1px"]), .stApp .stElementContainer:has(iframe[style*="height:1px"]),
-    .stApp [data-testid="stElementContainer"]:has(iframe[style*="height: 1px"]), .stApp [data-testid="stSidebar"] .stElementContainer:has(> iframe[width="1"]) {
-        display:none !important; height:0 !important; min-height:0 !important; margin:0 !important; padding:0 !important; border:0 !important; overflow:hidden !important;
+    .stApp [data-testid="stElementContainer"]:has(iframe[style*="height: 1px"]), .stApp .stElementContainer:has(iframe[style*="height:1px"]) {
+        position:absolute !important; width:1px !important; height:1px !important; margin:0 !important; padding:0 !important;
+        overflow:hidden !important; opacity:0 !important; pointer-events:none !important; border:0 !important; clip-path:inset(50%) !important;
     }
-    .stApp iframe[height="1"], .stApp iframe[width="1"], .stApp iframe[style*="height: 1px"] {border:0 !important; outline:0 !important; background:transparent !important; width:0 !important; height:0 !important;}
+    .stApp iframe[height="1"], .stApp iframe[style*="height: 1px"] {border:0 !important; outline:0 !important; background:transparent !important;}
 
     .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {display:none !important; width:0 !important; height:0 !important;}
 
@@ -8486,21 +8486,29 @@ st.html(
     """<script>
     (function () {
       var last = null, target = 0, raf = null, dragging = false;
+      // Run against the top page. requestAnimationFrame is taken from that page, so easing keeps
+      // running even if this script lives in a hidden helper iframe (hidden iframes pause their own rAF).
+      var P = (window.parent && window.parent !== window) ? window.parent : window;
+      var RAF = P.requestAnimationFrame.bind(P);
+      var id = String(Date.now()) + Math.random();
+      if (P.__navScrollTimer) clearInterval(P.__navScrollTimer);   // only the newest instance stays active
       function ease(box) {
         // critically-damped glide towards `target`: fast start, soft landing
         var d = target - box.scrollLeft;
         if (Math.abs(d) < 0.5) { box.scrollLeft = target; raf = null; return; }
         box.scrollLeft += d * 0.16;
-        raf = requestAnimationFrame(function () { ease(box); });
+        raf = RAF(function () { ease(box); });
       }
       function glide(box, to) {
         var max = box.scrollWidth - box.clientWidth;
         target = Math.max(0, Math.min(max, to));
-        if (!raf) raf = requestAnimationFrame(function () { ease(box); });
+        if (!raf) raf = RAF(function () { ease(box); });
       }
       function bind(box) {
+        function mine() { return box.dataset.navWheel === id; }
         box.style.scrollBehavior = "auto";          // our own easing replaces CSS smooth
         box.addEventListener("wheel", function (e) {
+          if (!mine()) return;
           var max = box.scrollWidth - box.clientWidth;
           if (max <= 0) return;
           var dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -8512,16 +8520,17 @@ st.html(
         }, { passive: false });
         var sx = 0, sl = 0, moved = false;
         box.addEventListener("pointerdown", function (e) {
+          if (!mine()) return;
           if (e.pointerType === "touch" || e.button !== 0) return;
           dragging = true; moved = false; sx = e.clientX; sl = box.scrollLeft;
         });
-        window.parent.addEventListener("pointermove", function (e) {
-          if (!dragging) return;
+        P.addEventListener("pointermove", function (e) {
+          if (!dragging || !mine()) return;
           var dx = e.clientX - sx;
           if (Math.abs(dx) > 4) { moved = true; box.style.cursor = "grabbing"; }
           if (moved) { box.scrollLeft = sl - dx; target = box.scrollLeft; }
         });
-        window.parent.addEventListener("pointerup", function () {
+        P.addEventListener("pointerup", function () {
           dragging = false; box.style.cursor = "";
         });
         // a drag must not count as a tab click
@@ -8539,12 +8548,12 @@ st.html(
       }
       function tick() {
         try {
-          var d = window.parent.document;
+          var d = P.document;
           var box = d.querySelector('.st-key-topnav [role="radiogroup"]');
           if (!box) return;
-          if (!box.dataset.navWheel) {
-            box.dataset.navWheel = "1"; bind(box);
-            box.addEventListener("scroll", function () { metrics(box); }, { passive: true });
+          if (box.dataset.navWheel !== id) {
+            box.dataset.navWheel = id; bind(box);
+            box.addEventListener("scroll", function () { if (box.dataset.navWheel === id) metrics(box); }, { passive: true });
           }
           metrics(box);
           var act = box.querySelector("label:has(input:checked)");
@@ -8556,7 +8565,7 @@ st.html(
           }
         } catch (err) {}
       }
-      tick(); setInterval(tick, 400);
+      tick(); P.__navScrollTimer = setInterval(tick, 400);
     })();
     </script>""",
     unsafe_allow_javascript=True,
