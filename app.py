@@ -11,7 +11,6 @@ import os
 import json
 import base64
 import urllib.request
-import urllib.error
 import time
 import threading
 import html
@@ -24,6 +23,7 @@ import plotly.io as pio
 import streamlit as st
 import streamlit.components.v1 as components
 from readme_view import render_readme
+from safe_http import open_https as _open_https
 
 # Keep all Plotly visuals consistent with the dark SOC interface: extend the
 # built-in dark template with our own palette/typography instead of leaving
@@ -161,7 +161,7 @@ def _fetch_google_email_from_token(access_token: str):
             "https://www.googleapis.com/oauth2/v3/userinfo",
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        with urllib.request.urlopen(req, timeout=6) as resp:
+        with _open_https(req, allowed_hosts={"www.googleapis.com"}, timeout=6) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         return data.get("email") or None
     except Exception:

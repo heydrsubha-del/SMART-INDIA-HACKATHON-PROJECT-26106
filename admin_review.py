@@ -195,7 +195,7 @@ def _svg_parse(qr):
         s = s.lstrip()
         if not s.startswith("<svg") or "<!" in s or "<?" in s:
             return None, "qr_code rejected: unexpected markup before or inside <svg>"
-        root, out = ET.fromstring(s), []
+        root, out = ET.fromstring(s), []  # nosec B314: input is size-limited and rejects all DTD/entity/PI markup before parsing.
         if _svg_local(root.tag) != "svg":
             return None, "qr_code rejected: root is not svg"
         _svg_emit(root, out, 0, [0])

@@ -30,6 +30,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from safe_http import open_https
 
 _BASE = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output"
 
@@ -49,7 +50,7 @@ _PROVIDER = "X4BNet"  # the lists don't break individual ranges out by provider
 
 def _fetch_text(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "fetch_vpn_ranges.py"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with open_https(req, allowed_hosts={"raw.githubusercontent.com"}, timeout=30) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 
