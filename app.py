@@ -12469,8 +12469,6 @@ if not _csv_awaiting_scan:
 elif active_panel == "Dashboard":
     st.caption(f" **{uploaded.name}** loaded — choose a scan option above to begin forensic analysis.")
 
-st.divider()
-
 # NAV_OPTIONS / active_panel are already set — the pill bar now renders once,
 # at the very top of the page, replacing the old 7-button top nav row.
 
