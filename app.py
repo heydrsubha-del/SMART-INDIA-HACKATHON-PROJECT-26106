@@ -12846,13 +12846,13 @@ if active_panel == "Dashboard":
 # --------------------------------------------------------------------------
 if active_panel == "AI Threat Analysis":
     def _ai_threat_analysis():
+        _banner(
+            "Local Qwen node · ready", "AI Threat Analysis",
+            "Evidence-bound local LLM assessment · no external API calls",
+            scope="On-device · no external calls", tone="ai",
+        )
+
         is_csv_mode = uploaded is not None and uploaded.name.lower().endswith(".csv") and data
-        if is_csv_mode:
-            _banner(
-                "Local Qwen node · ready", "AI Threat Analysis",
-                "Evidence-bound local LLM assessment · no external API calls",
-                scope="On-device · no external calls", tone="ai",
-            )
 
         if is_csv_mode:
             # ---------------- BULK / CAMPAIGN MODE ----------------
@@ -13045,51 +13045,6 @@ if active_panel == "AI Threat Analysis":
             # ---------------- SINGLE-EMAIL MODE ----------------
             single_reports = st.session_state.setdefault("single_ai_reports", {})
             _score = max(0.0, min(100.0, float(result.get("score", 0) or 0)))
-            _vcol = result.get("color") if isinstance(result.get("color"), str) and re.fullmatch(r"#[0-9a-fA-F]{3,8}", result.get("color")) else "#22d3ee"
-            _lvl = html.escape(str(result.get("level", "UNKNOWN")).upper())
-            _reasons = [str(x) for x in (result.get("reasons") or [])]
-            _why = "".join("<li>" + html.escape(_r) + "</li>" for _r in _reasons[:3])
-            st.markdown(
-                """<style>
-.ai-hero {position:relative; margin:4px 0 14px 0; padding:20px 24px 18px 24px; border-radius:18px; border:1px solid #2a2f55;
-  background:radial-gradient(70% 140% at 0% 0%, #a78bfa2e, transparent 60%), linear-gradient(180deg,#121a2a,#0b111a);
-  box-shadow:0 18px 40px -26px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);}
-.ai-hero-top {display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap;}
-.ai-hero-eyebrow {font:600 11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.18em; color:#b6a4ff; display:flex; align-items:center; gap:8px;}
-.ai-hero-eyebrow i {width:8px; height:8px; border-radius:50%; background:#a78bfa; box-shadow:0 0 10px #a78bfa;}
-.ai-hero-title {font-size:26px; font-weight:750; color:#f2f6fb; margin:8px 0 2px 0; letter-spacing:-.01em;}
-.ai-hero-sub {font-size:13px; color:#8fa3b8;}
-.ai-hero-case {margin-top:10px; font-size:14px; font-weight:600; color:#e6edf6; overflow-wrap:anywhere;}
-.ai-hero-case small {display:block; font:600 10.5px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; color:#8fa3b8; margin-bottom:4px;}
-.ai-hero-stats {display:flex; gap:12px; flex-wrap:wrap;}
-.ai-stat {min-width:150px; padding:12px 16px; border-radius:14px; border:1px solid #1f2a3a; background:#0c131d;}
-.ai-stat small {display:block; font:600 10.5px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; color:#8fa3b8; margin-bottom:8px;}
-.ai-stat b {font-size:26px; font-weight:750; color:#f2f6fb; line-height:1;}
-.ai-stat b em {font-style:normal; font-size:13px; color:#8fa3b8; font-weight:500;}
-.ai-pill {display:inline-block; padding:5px 14px; border-radius:999px; font-weight:700; font-size:14px; letter-spacing:.06em;}
-.ai-bar {height:5px; border-radius:999px; background:#1b2635; overflow:hidden; margin-top:9px;}
-.ai-bar > span {display:block; height:100%; border-radius:999px;}
-.ai-hero-why {margin:14px 0 0 0; padding-top:12px; border-top:1px solid #1f2a3a;}
-.ai-hero-why small {display:block; font:600 10.5px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; color:#8fa3b8; margin-bottom:6px;}
-.ai-hero-why ul {margin:0; padding-left:1.1rem; color:#cfe0f3; font-size:13.5px; line-height:1.6;}
-</style>"""
-                '<div class="ai-hero"><div class="ai-hero-top"><div>'
-                '<div class="ai-hero-eyebrow"><i></i>LOCAL QWEN NODE \u00b7 READY \u00b7 ON-DEVICE</div>'
-                '<div class="ai-hero-title">AI Threat Analysis</div>'
-                '<div class="ai-hero-sub">Evidence-bound local LLM assessment \u00b7 no external API calls</div>'
-                f'<div class="ai-hero-case"><small>EVIDENCE</small>{html.escape(str(case_name))}</div></div>'
-                '<div class="ai-hero-stats">'
-                f'<div class="ai-stat"><small>VERDICT</small><span class="ai-pill" style="color:{_vcol};background:{_vcol}1f;border:1px solid {_vcol}66;">{_lvl}</span></div>'
-                f'<div class="ai-stat"><small>RISK SCORE</small><b>{_score:.0f}<em> / 100</em></b>'
-                f'<div class="ai-bar" role="img" aria-label="Risk score {_score:.0f} out of 100"><span style="width:{_score:.0f}%;background:{_vcol};"></span></div></div>'
-                '</div></div>'
-                + (f'<div class="ai-hero-why"><small>WHY THIS VERDICT</small><ul>{_why}</ul></div>' if _why else '')
-                + '</div>',
-                unsafe_allow_html=True)
-            if len(_reasons) > 3:
-                with st.expander(f"All {len(_reasons)} scoring reasons"):
-                    st.markdown("\n".join("- " + html.escape(_r) for _r in _reasons[3:]))
-
             with st.container(border=True, key="ai_single_flow"):
                 # ---- Step 1: AI assessment ----
                 _num_head(1, "AI Assessment", "#a78bfa", "Local Qwen model \u00b7 nothing is sent to external services")
