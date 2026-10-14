@@ -58,16 +58,25 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     st.markdown("**Action log**")
     st.dataframe([{"#": s["n"], "tool": s["tool"], "argument": s["args"].get("indicator", "-"), "chosen by": s["source"],
                    "result": s.get("status"), "evidence": s.get("evidence_id", "-"), "why": s["reason"]} for s in inv["steps"]], hide_index=True)
-    for kind, title in (("verified", "Verified facts"), ("suspicious", "Suspicious signals"), ("uncertain", "Missing evidence / uncertainty")):
+    _desc = {"verified": "Facts confirmed by a tool result.", "suspicious": "Signals that raise risk; review before acting.",
+             "uncertain": "What could not be checked; treat the verdict with caution."}
+    for kind, title in (("suspicious", "Suspicious signals"), ("uncertain", "Missing evidence / uncertainty")):
         items = [f for f in inv["findings"] if f["kind"] == kind]
-        with st.expander(f"{title} ({len(items)})", expanded=(kind != "verified")):
+        st.markdown(f"**{title} ({len(items)})** - {_desc[kind]}")
+        for f in items:
+            st.markdown(f"- {_t(f['statement'])} `[{','.join(f['evidence_ids'])}]`")
+        if not items:
+            st.caption("None recorded.")
+    for kind, title in (("verified", "Verified facts"),):
+        items = [f for f in inv["findings"] if f["kind"] == kind]
+        with st.expander(f"{title} ({len(items)}) - {_desc[kind]}", expanded=False):
             for f in items:
                 st.markdown(f"- {_t(f['statement'])} `[{','.join(f['evidence_ids'])}]`")
             if not items:
                 st.caption("None recorded.")
     for e in inv["evidence"]:
         if e.get("records"):
-            with st.expander(f"Supporting records: {e['id']} · {e['args'].get('indicator', '-')} ({len(e['records'])} shown)", expanded=False):
+            with st.expander(f"Supporting records: {e['id']} · {e['args'].get('indicator', '-')} ({len(e['records'])} shown) - raw stored rows", expanded=False):
                 st.caption("Stored values as found. 'historical' = seen before only; 'suspicious'/'confirmed' require stored evidence in the record.")
                 st.dataframe(e["records"], hide_index=True)
     report_md = ia.render_report(inv, result, raw)
