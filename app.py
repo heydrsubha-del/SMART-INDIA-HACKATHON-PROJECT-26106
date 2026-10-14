@@ -12884,6 +12884,7 @@ if active_panel == "AI Threat Analysis":
 
         if is_csv_mode:
             # ---------------- BULK / CAMPAIGN MODE ----------------
+            _sec("Campaign scan", "Pick how many recent emails to assess together as one campaign.", tone="ai")
             st.caption(
                 "Qwen scans the newest selected emails (max 20) from this CSV and produces ONE full "
                 "campaign summary across all of them. Emails are sorted by their Date header; if a "
@@ -13070,21 +13071,51 @@ if active_panel == "AI Threat Analysis":
                     st.error(f"AI Batch Analysis Error: {b_res.get('error', 'Unknown Error')}")
         else:
             # ---------------- SINGLE-EMAIL MODE ----------------
-            st.caption(
-                "Qwen runs a full evidence-bound assessment of the single message currently loaded "
-                "(uploaded .eml/.txt file or the selected Live IMAP message)."
-            )
-            st.markdown(_uh.nav_html(), unsafe_allow_html=True)
-            st.markdown(_uh.section_anchor("ai-overview"), unsafe_allow_html=True)
-            _sec("Overview", "Verdict, score and the reasons behind it, from the existing scan.", tone="ai")
-            st.markdown(f"**Evidence:** `{case_name}`  ·  **Verdict:** `{str(result.get('level','UNKNOWN')).upper()}`  ·  **Score:** `{float(result.get('score',0)):.1f}/100`")
-            _ov_reasons = [str(x) for x in (result.get("reasons") or [])][:5]
-            for _r in _ov_reasons:
-                st.markdown("- " + html.escape(_r))
-            st.markdown(_uh.section_anchor("ai-assessment"), unsafe_allow_html=True)
-
             single_reports = st.session_state.setdefault("single_ai_reports", {})
-            run_clicked = st.button("Run AI Scan (Single Email)", type="primary", use_container_width=True, key="run_qwen_single")
+            _score = max(0.0, min(100.0, float(result.get("score", 0) or 0)))
+            st.markdown(_uh.nav_html(), unsafe_allow_html=True)
+
+            # ---- Overview: the case at a glance (verdict, score, why) ----
+            st.markdown(_uh.section_anchor("ai-overview"), unsafe_allow_html=True)
+            with st.container(border=True, key="ai_case_card"):
+                _h1, _h2, _h3 = st.columns([3, 2, 2], vertical_alignment="center")
+                _h1.markdown(
+                    '<div style="font-size:11px;letter-spacing:.08em;color:#8fa3b8;margin-bottom:4px;">EVIDENCE</div>'
+                    f'<div style="font-weight:600;overflow-wrap:anywhere;">{html.escape(str(case_name))}</div>',
+                    unsafe_allow_html=True)
+                _h2.markdown(_uh.verdict_pill_html(result.get("level"), result.get("color")), unsafe_allow_html=True)
+                _h3.metric("Risk score", f"{_score:.0f} / 100")
+                st.progress(_score / 100.0)
+                _reasons = [str(x) for x in (result.get("reasons") or [])]
+                if _reasons:
+                    st.markdown("**Why this verdict**")
+                    for _r in _reasons[:3]:
+                        st.markdown("- " + html.escape(_r))
+                    if len(_reasons) > 3:
+                        with st.expander(f"All {len(_reasons)} scoring reasons - full list from the scanner"):
+                            for _r in _reasons[3:]:
+                                st.markdown("- " + html.escape(_r))
+
+            # ---- How the page works ----
+            _g1, _g2, _g3 = st.columns(3)
+            for _col, _t, _d in (
+                (_g1, "1 · AI assessment", "Local AI model reads this scan's evidence and writes a plain-language assessment."),
+                (_g2, "2 · Agentic investigation", "Optional extra checks using the app's own read-only tools. Never changes the score."),
+                (_g3, "3 · Downloads", "Save the assessment as a report once it is ready."),
+            ):
+                with _col:
+                    with st.container(border=True):
+                        st.markdown(f"**{_t}**")
+                        st.caption(_d)
+
+            # ---- Step 1: AI assessment ----
+            st.markdown(_uh.section_anchor("ai-assessment"), unsafe_allow_html=True)
+            _sec("1 · AI assessment", "Runs the local Qwen model on this message. Nothing is sent to external services.", tone="ai")
+            _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
+            _b1, _b2 = st.columns([2, 3], vertical_alignment="center")
+            run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
+                                     use_container_width=True, key="run_qwen_single")
+            _b2.caption("Progress is shown while it runs. The result stays here until you load another email.")
 
             if run_clicked:
                 ai_progress = st.progress(0, text="Qwen AI analysis: 0%")
@@ -13106,50 +13137,30 @@ if active_panel == "AI Threat Analysis":
                 st.session_state["single_ai_reports"] = single_reports
 
             saved_single = single_reports.get(current_evidence_hash)
-            if saved_single:
-                if saved_single.get("ok"):
-                    cleaned_single = _clean_ai_display(saved_single.get("analysis", ""))
-                    st.markdown(
-                        f"""<div class="ai-report-frame">
-                            <div class="ai-report-bar">
-                                <span>AI // SINGLE-EMAIL THREAT ASSESSMENT</span>
-                                <span class="ai-report-chip">{case_name[:40]}</span>
-                            </div>
-                            <div class="ai-report-body">{_ai_markdown_to_html(cleaned_single)}</div>
-                        </div>""",
-                        unsafe_allow_html=True,
-                    )
-                    if generation_summary(saved_single):
-                        st.caption(generation_summary(saved_single))
+            cleaned_single = None
+            if saved_single and saved_single.get("ok"):
+                cleaned_single = _clean_ai_display(saved_single.get("analysis", ""))
+                st.markdown(
+                    f"""<div class="ai-report-frame">
+                        <div class="ai-report-bar">
+                            <span>AI // SINGLE-EMAIL THREAT ASSESSMENT</span>
+                            <span class="ai-report-chip">{html.escape(str(case_name)[:40])}</span>
+                        </div>
+                        <div class="ai-report-body">{_ai_markdown_to_html(cleaned_single)}</div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+                if generation_summary(saved_single):
+                    st.caption(generation_summary(saved_single))
+            elif saved_single:
+                st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
+                st.caption("Check that the local model service is running, then use Run AI assessment again.")
+            else:
+                st.info("No assessment yet. Press **Run AI assessment** to generate one for this message.")
 
-                    st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
-                    _sec("Download AI Threat Report", "Markdown export of this AI assessment.", tone="ai")
-                    single_markdown_report = (
-                        f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
-                        f"**Evidence:** {case_name}\n\n"
-                        f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
-                        f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
-                        f"## AI Assessment\n\n{cleaned_single}"
-                    )
-                    _premium_download(
-                        label="Download AI Assessment (.md)",
-                        markdown=single_markdown_report,
-                        file_name="ai_threat_assessment.md",
-                        key="dl_ai_single_md",
-                    )
-                    st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
-                else:
-                    st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
-                    st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
-                    st.caption("Downloads: no report is available because the AI scan failed.")
-            elif not run_clicked:
-                st.info("Click **Run AI Scan** to send this message's forensic evidence to the local Qwen model.")
-                st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
-                st.caption("Downloads: no report is ready yet. Run the AI scan first.")
-
-            st.divider()
-
+            # ---- Step 2: Agentic investigation ----
             st.markdown(_uh.section_anchor("ai-agentic"), unsafe_allow_html=True)
+            _sec("2 · Agentic investigation", "Optional. Bounded, read-only lookups; you choose what it may use before starting.", tone="ai")
 
             def _agentic_investigation():
                 # Import lives INSIDE the error boundary: an import or render failure shows its own error and
@@ -13170,6 +13181,27 @@ if active_panel == "AI Threat Analysis":
                     current_evidence_hash, download_fn=_premium_download)
 
             panel(_agentic_investigation, "Agentic Investigation")
+
+            # ---- Step 3: Downloads (always present, so the nav link is never dead) ----
+            st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
+            _sec("3 · Downloads", "Reports you can save. The investigation report has its own button in step 2.", tone="ai")
+            if cleaned_single is not None:
+                single_markdown_report = (
+                    f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
+                    f"**Evidence:** {case_name}\n\n"
+                    f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
+                    f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
+                    f"## AI Assessment\n\n{cleaned_single}"
+                )
+                _premium_download(
+                    label="Download AI Assessment (.md)",
+                    markdown=single_markdown_report,
+                    file_name="ai_threat_assessment.md",
+                    key="dl_ai_single_md",
+                )
+                st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
+            else:
+                st.info("No report is ready yet. Run the AI assessment in step 1 to enable this download.")
 
     panel(_ai_threat_analysis, "AI Threat Analysis")
 

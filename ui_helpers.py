@@ -60,3 +60,16 @@ def nav_html():
     links = "".join(f'<a href="#{i}">{t}</a>' for i, t in SECTIONS)
     return ('<nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:6px 14px;'
             f'margin:2px 0 8px 0;font-size:13px;">{links}</nav>')
+
+
+import html as _html
+import re as _re
+
+
+def verdict_pill_html(level, color):
+    """Coloured verdict badge; colour is validated so it cannot inject CSS/HTML."""
+    col = color if isinstance(color, str) and _re.fullmatch(r"#[0-9a-fA-F]{3,8}", color) else "#22d3ee"
+    txt = _html.escape(str(level or "UNKNOWN").upper())
+    return ('<div style="font-size:11px;letter-spacing:.08em;color:#8fa3b8;margin-bottom:4px;">VERDICT</div>'
+            f'<span style="display:inline-block;padding:4px 14px;border-radius:999px;font-weight:700;font-size:15px;'
+            f'color:{col};background:{col}22;border:1px solid {col}77;">{txt}</span>')
