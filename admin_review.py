@@ -357,12 +357,15 @@ def render(st, signin=None):
                     store.pop(ENROLL_KEY, None)
                     st.rerun()
         return
-    if st.button("End review session", key="admin_end"):
+    st.success("Review session active (admin role + MFA verified).")
+    _e, _f = st.columns(2)
+    if _e.button("End review session", key="admin_end", help="Signs out of the elevated review session only."):
         _clear(store)
         st.rerun()
     rows = store.get(QUEUE_KEY)
-    if rows is None or st.button("Refresh queue", key="admin_refresh"):
-        rows, err = queue(base, key, tok)
+    if rows is None or _f.button("Refresh queue", key="admin_refresh", help="Reload pending submissions."):
+        with st.spinner("Loading review queue..."):
+            rows, err = queue(base, key, tok)
         if err:
             if err == "forbidden":
                 _clear(store)
@@ -372,7 +375,10 @@ def render(st, signin=None):
     flash = store.pop("_review_flash", None)
     if flash:
         st.success(flash)
-    st.write("%d pending" % len(rows))
+    st.markdown("**Review queue** - %d pending" % len(rows))
+    st.caption("Approve accepts the contributed indicator as claimed. Reject declines it. Each decision is final and is recorded by the database audit log.")
+    if not rows:
+        st.info("No submissions are waiting for review.")
     n = store.get(ATTEMPT_KEY, 0)
     for r in rows:
         rid = str(r.get("id", ""))
@@ -380,9 +386,9 @@ def render(st, signin=None):
             st.code(str(r.get("value_norm", ""))[:300])        # st.code: contributor-supplied text is never rendered as markup
             st.caption("%s | claimed %s | %s contributor(s) | %s" % (r.get("indicator_type"), r.get("claimed_verdict"), r.get("distinct_contributors"), r.get("created_at")))
             note = st.text_input("Note (optional, max %d)" % NOTE_MAX, max_chars=NOTE_MAX, key="rv_n_%s_%d" % (rid, n))
-            ok = st.checkbox("I confirm this decision", key="rv_c_%s_%d" % (rid, n))
+            ok = st.checkbox("I confirm this decision (required to enable Approve / Reject)", key="rv_c_%s_%d" % (rid, n))
             a, b = st.columns(2)
-            pick = "approve" if a.button("Approve", key="rv_a_%s_%d" % (rid, n), disabled=not ok) else "reject" if b.button("Reject", key="rv_r_%s_%d" % (rid, n), disabled=not ok) else None
+            pick = "approve" if a.button("Approve", key="rv_a_%s_%d" % (rid, n), disabled=not ok, type="primary", use_container_width=True, help="Accept this indicator as claimed.") else "reject" if b.button("Reject", key="rv_r_%s_%d" % (rid, n), disabled=not ok, type="secondary", use_container_width=True, help="Decline this indicator.") else None
             if pick:
                 err = decide(base, key, tok, rid, pick, note)
                 store[ATTEMPT_KEY] = n + 1                     # fresh confirmation required for every attempt
@@ -390,7 +396,7 @@ def render(st, signin=None):
                 if err == "forbidden":
                     _clear(store)
                 if err:
-                    st.warning(_MSG.get(err, _MSG["server_error"]))
+                    st.error(_MSG.get(err, _MSG["server_error"]))
                 else:
                     store["_review_flash"] = "Recorded: %s." % ("approved" if pick == "approve" else "rejected")
                     st.rerun()

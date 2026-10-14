@@ -12696,113 +12696,78 @@ if active_panel == "Dashboard":
     # --------------------------------------------------------------------------
     st.divider()
     st.markdown("""<style>
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero {position:relative; padding:18px 22px 20px 24px !important; margin:4px 0 16px 0 !important; gap:0 !important; border-radius:16px !important;
- border:1px solid color-mix(in srgb,var(--panel-tone) 38%,#1f2a3a) !important;
- background:radial-gradient(80% 140% at 0% 0%, color-mix(in srgb,var(--panel-tone) 13%,transparent), transparent 62%), linear-gradient(180deg,#111925,#0c121a) !important;
- box-shadow:0 14px 34px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05) !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero, html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_learn_card {height:230px !important; min-height:230px !important; max-height:230px !important; box-sizing:border-box !important; margin-top:4px !important; margin-bottom:16px !important; overflow:hidden !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero::before {content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:0 3px 3px 0; background:var(--panel-tone);}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {margin-top:0 !important;}
-.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat,
-.stApp.stApp.stApp.stApp.stApp .st-key-false_positive{width:fit-content !important;}
-.stApp.stApp.stApp.stApp.stApp .st-key-confirm_threat button,
-.stApp.stApp.stApp.stApp.stApp .st-key-false_positive button{
- width:100% !important;min-width:0 !important;height:44px !important;min-height:44px !important;max-height:44px !important;
- box-sizing:border-box !important;margin:0 !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero, html body .stApp.stApp.stApp.stApp.stApp .st-key-ai_learn_card {height:auto !important; max-height:none !important; min-height:230px !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) {width:100% !important; max-width:100% !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) :is(.stButton, [data-testid="stButton"]) {width:100% !important; display:block !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {display:grid !important; grid-template-columns:1fr 1fr !important; gap:12px !important; align-items:stretch !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > * {width:auto !important; min-width:0 !important; flex:none !important;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button {justify-content:center !important; padding-left:44px !important; padding-right:30px !important; white-space:nowrap;}
-html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero .feedback-terminal {margin:16px 0 0 0 !important; padding:11px 16px !important; border-radius:11px !important; font-size:13.5px !important; line-height:1.5 !important; box-sizing:border-box; width:100%;}
-@media (max-width:1180px){
- html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero > div > [data-testid="stHorizontalBlock"], html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important; gap:14px !important;}
- html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;}
- html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:none !important; min-width:0 !important;}
-}
-@media (max-width:1100px){
- html body .stApp.stApp.stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) {flex-wrap:wrap !important; gap:16px !important;}
- html body .stApp.stApp.stApp.stApp.stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;}
-}
-@media (max-width:640px){
- html body .stApp.stApp.stApp.stApp.stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {grid-template-columns:1fr !important;}
-}
+.stApp .st-key-feedback_hero, .stApp .st-key-ai_learn_card {height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important; padding:14px 16px !important; margin:0 0 10px 0 !important; border-radius:14px !important; border:1px solid #1f2a3a !important; background:linear-gradient(180deg,#111925,#0c121a) !important;}
+.stApp .st-key-feedback_hero::before, .stApp .st-key-feedback_hero::after, .stApp .st-key-ai_learn_card::before, .stApp .st-key-ai_learn_card::after {content:none !important; display:none !important;}
+.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) {width:100% !important; max-width:100% !important;}
+.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button {width:100% !important; min-width:0 !important; height:auto !important; min-height:44px !important; padding:8px 14px !important; white-space:normal !important; justify-content:center !important;}
+.stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button:focus-visible {outline:2px solid #2fd8ff !important; outline-offset:2px !important;}
+@media (max-width:900px){ .stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) {flex-wrap:wrap !important;} .stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;} }
+@media (max-width:640px){ .stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important;} .stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;} }
 </style>""", unsafe_allow_html=True)
     feedback_hash = hashlib.sha256(raw).hexdigest()
     review_count = get_feedback_history_count(feedback_hash)
-
-    if review_count > 0:
-        st.caption(f" Previously reviewed {review_count} time{'s' if review_count != 1 else ''}.")
 
     current_feedback_key = feedback_hash
     if st.session_state.get("feedback_email") != current_feedback_key:
         st.session_state["feedback_email"] = current_feedback_key
         st.session_state["feedback_action"] = None
 
-    _colA, _colB = st.columns([1.7, 1], gap="medium")
+    def _submit_feedback(label, saved_msg, kind):
+        """Store one analyst verdict; report only what the backend confirms."""
+        try:
+            with st.spinner("Saving feedback..."):
+                add_feedback(feedback_hash, label, parsed.get("full_text", ""))
+                tr = maybe_retrain_from_feedback()
+        except Exception:
+            return "Feedback could not be saved. Please try again.", "error"
+        status = tr.get("status")
+        if status == "trained":
+            get_model.clear()
+            analyze_bytes.clear()
+            get_sample_results.clear()
+            return f"{saved_msg} Adaptive model validated and accepted.", kind
+        if status == "rejected":
+            return (f"{saved_msg} Adaptive candidate was not promoted: validation regressed from "
+                    f"{tr.get('baseline_accuracy', 0):.1%} to {tr.get('candidate_accuracy', 0):.1%}; existing model kept."), "warning"
+        return f"{saved_msg} The model has not been changed by this action.", kind
+
+    _colA, _colB = st.columns([3, 2], gap="medium")
+    feedback_message = feedback_type = None
     with _colA:
         with st.container(key="feedback_hero"):
-            _fh_l, _fh_r = st.columns([5, 4], gap="medium", vertical_alignment="center")
-            with _fh_l:
-                st.markdown("""<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">ANALYST FEEDBACK</div>
-    <div class="dh2-title">Analyst Feedback</div>
-    <div class="dh2-sub" style="white-space:normal;">Validate the detection to improve future model decisions.</div></div></div>""", unsafe_allow_html=True)
-            with _fh_r:
-                fb1, fb2 = st.columns(2, gap="small")
-            feedback_message = None
-            feedback_type = None
-
+            st.markdown("**Analyst Feedback**")
+            st.caption("Mark whether this detection is correct. Feedback is stored as a verified sample.")
+            if review_count > 0:
+                st.info(f"Already reviewed {review_count} time{'s' if review_count != 1 else ''}. Submitting again adds another sample.")
+            fb1, fb2 = st.columns(2, gap="small")
             with fb1:
-                if st.button("Confirm Threat", key="confirm_threat", type="primary"):
-                    add_feedback(feedback_hash, "phish", parsed.get("full_text", ""))
-                    training_result = maybe_retrain_from_feedback()
-                    if training_result["status"] == "trained":
-                        get_model.clear()
-                        analyze_bytes.clear()
-                        get_sample_results.clear()
-                        feedback_message = "Threat confirmed. Adaptive model validated and accepted."
-                    elif training_result["status"] == "rejected":
-                        feedback_message = f"Threat confirmed and saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-                    else:
-                        feedback_message = "Threat confirmed and stored for future learning."
-                    feedback_type = "success"
-
+                if st.button("Confirm Threat", key="confirm_threat", type="primary", help="This email is malicious or phishing."):
+                    feedback_message, feedback_type = _submit_feedback("phish", "Threat confirmed and saved.", "success")
             with fb2:
-                if st.button("False Positive", key="false_positive", type="secondary"):
-                    add_feedback(feedback_hash, "legit", parsed.get("full_text", ""))
-                    training_result = maybe_retrain_from_feedback()
-                    if training_result["status"] == "trained":
-                        get_model.clear()
-                        analyze_bytes.clear()
-                        get_sample_results.clear()
-                        feedback_message = "False positive saved. Adaptive model validated and accepted."
-                    elif training_result["status"] == "rejected":
-                        feedback_message = f"False positive saved. Adaptive candidate was not promoted because validation regressed from {training_result.get('baseline_accuracy', 0):.1%} to {training_result.get('candidate_accuracy', 0):.1%}; existing model was kept."
-                    else:
-                        feedback_message = "False-positive feedback stored for future learning."
-                    feedback_type = "info"
-
+                if st.button("False Positive", key="false_positive", type="primary", help="This email is legitimate."):
+                    feedback_message, feedback_type = _submit_feedback("legit", "False positive saved.", "success")
             if feedback_message:
-                show_feedback_typing(feedback_message, feedback_type)
+                {"success": st.success, "warning": st.warning, "error": st.error}.get(feedback_type, st.info)(feedback_message)
 
-    feedback_count = get_feedback_count()
-    adaptive_status = get_adaptive_status()
+    try:
+        feedback_count = get_feedback_count()
+        adaptive_status = get_adaptive_status()
+    except Exception:
+        feedback_count, adaptive_status = None, {}
     is_adaptive = adaptive_status.get("status") == "trained"
 
-    if is_adaptive:
-        model_detail = f"Learned from {adaptive_status.get('feedback_samples', 0)} verified analyst samples."
-    else:
-        model_detail = f"{feedback_count} / 20 verified samples collected."
-
     with _colB:
-        with st.container(border=True, key="ai_learn_card"):
-            _sec("AI Learning Status", "Analyst-verified feedback is used for controlled model adaptation.", tone="ai")
-            if is_adaptive:
-                st.success("ADAPTIVE MODEL")
+        with st.container(key="ai_learn_card"):
+            st.markdown("**AI Learning Status**")
+            if feedback_count is None:
+                st.warning("Learning status is unavailable right now.")
+            elif is_adaptive:
+                st.success("Adaptive model active")
+                st.caption(f"Last trained on {adaptive_status.get('feedback_samples', 0)} verified samples. {feedback_count} collected in total.")
             else:
-                st.info("BASE MODEL")
-            st.caption(model_detail)
+                st.info("Base model active")
+                # 20 = minimum verified samples (classifier.train_with_feedback / maybe_retrain_from_feedback).
+                st.caption(f"{feedback_count} verified samples collected. Adaptation needs at least 20, with both threat and legitimate labels.")
 
     if headers["bec"]["is_bec"] and headers["auth_fail_score"] == 0:
         st.warning("**This message passes SPF, DKIM and DMARC and is still fraud.** It was sent from a genuine mailbox impersonating an executive, so authentication proves the account is real - not that the request is honest. Payload-based filters see nothing to block.")
@@ -13017,7 +12982,18 @@ if active_panel == "AI Threat Analysis":
                 "Qwen runs a full evidence-bound assessment of the single message currently loaded "
                 "(uploaded .eml/.txt file or the selected Live IMAP message)."
             )
+            st.markdown(
+                '<nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 0;font-size:13px;">'
+                '<a href="#ai-overview">Overview</a><a href="#ai-assessment">AI Assessment</a>'
+                '<a href="#ai-agentic">Agentic Investigation</a><a href="#ai-downloads">Downloads</a></nav>',
+                unsafe_allow_html=True)
+            st.markdown('<div id="ai-overview"></div>', unsafe_allow_html=True)
+            _sec("Overview", "Verdict, score and the reasons behind it, from the existing scan.", tone="ai")
             st.markdown(f"**Evidence:** `{case_name}`  ·  **Verdict:** `{str(result.get('level','UNKNOWN')).upper()}`  ·  **Score:** `{float(result.get('score',0)):.1f}/100`")
+            _ov_reasons = [str(x) for x in (result.get("reasons") or [])][:5]
+            for _r in _ov_reasons:
+                st.markdown("- " + html.escape(_r))
+            st.markdown('<div id="ai-assessment"></div>', unsafe_allow_html=True)
 
             single_reports = st.session_state.setdefault("single_ai_reports", {})
             run_clicked = st.button("Run AI Scan (Single Email)", type="primary", use_container_width=True, key="run_qwen_single")
@@ -13058,7 +13034,8 @@ if active_panel == "AI Threat Analysis":
                     if generation_summary(saved_single):
                         st.caption(generation_summary(saved_single))
 
-                    _sec("Download AI Threat Report", tone="ai")
+                    st.markdown('<div id="ai-downloads"></div>', unsafe_allow_html=True)
+                    _sec("Download AI Threat Report", "Markdown export of this AI assessment.", tone="ai")
                     single_markdown_report = (
                         f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
                         f"**Evidence:** {case_name}\n\n"
@@ -13079,6 +13056,8 @@ if active_panel == "AI Threat Analysis":
                 st.info("Click **Run AI Scan** to send this message's forensic evidence to the local Qwen model.")
 
             st.divider()
+
+            st.markdown('<div id="ai-agentic"></div>', unsafe_allow_html=True)
 
             def _agentic_investigation():
                 # Import lives INSIDE the error boundary: an import or render failure shows its own error and
