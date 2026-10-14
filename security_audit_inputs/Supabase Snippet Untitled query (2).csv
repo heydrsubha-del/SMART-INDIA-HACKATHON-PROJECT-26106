@@ -1,0 +1,351 @@
+section,object_name,details
+COLUMN,public.audit_log.action,type=text; nullable=NO; default=<none>
+COLUMN,public.audit_log.actor,type=uuid; nullable=YES; default=<none>
+COLUMN,public.audit_log.at,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.audit_log.id,type=bigint; nullable=NO; default=<none>
+COLUMN,public.audit_log.target,type=uuid; nullable=YES; default=<none>
+COLUMN,public.contribution_log.accepted,type=integer; nullable=NO; default=0
+COLUMN,public.contribution_log.at,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.contribution_log.contributor_id,type=uuid; nullable=NO; default=<none>
+COLUMN,public.contribution_log.id,type=bigint; nullable=NO; default=<none>
+COLUMN,public.contribution_log.items,type=integer; nullable=NO; default=<none>
+COLUMN,public.indicator_allowlist.indicator_type,type=text; nullable=NO; default=<none>
+COLUMN,public.indicator_allowlist.reason,type=text; nullable=YES; default=<none>
+COLUMN,public.indicator_allowlist.value_norm,type=text; nullable=NO; default=<none>
+COLUMN,public.indicator_submissions.claimed_verdict,type=text; nullable=NO; default=<none>
+COLUMN,public.indicator_submissions.contributor_id,type=uuid; nullable=NO; default=<none>
+COLUMN,public.indicator_submissions.created_at,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.indicator_submissions.id,type=uuid; nullable=NO; default=gen_random_uuid()
+COLUMN,public.indicator_submissions.indicator_type,type=text; nullable=NO; default=<none>
+COLUMN,public.indicator_submissions.promoted_id,type=uuid; nullable=YES; default=<none>
+COLUMN,public.indicator_submissions.review_note,type=text; nullable=YES; default=<none>
+COLUMN,public.indicator_submissions.reviewed_at,type=timestamp with time zone; nullable=YES; default=<none>
+COLUMN,public.indicator_submissions.reviewed_by,type=uuid; nullable=YES; default=<none>
+COLUMN,public.indicator_submissions.status,type=text; nullable=NO; default='pending'::text
+COLUMN,public.indicator_submissions.value_norm,type=text; nullable=NO; default=<none>
+COLUMN,public.scans.created_at,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.scans.evidence_hash,type=text; nullable=NO; default=<none>
+COLUMN,public.scans.expires_at,type=timestamp with time zone; nullable=NO; default=(now() + '90 days'::interval)
+COLUMN,public.scans.id,type=uuid; nullable=NO; default=gen_random_uuid()
+COLUMN,public.scans.summary,type=jsonb; nullable=NO; default='{}'::jsonb
+COLUMN,public.scans.user_id,type=uuid; nullable=NO; default=auth.uid()
+COLUMN,public.shared_indicators.confidence,type=numeric; nullable=NO; default=0.50
+COLUMN,public.shared_indicators.contributor_count,type=integer; nullable=NO; default=0
+COLUMN,public.shared_indicators.first_seen,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.shared_indicators.id,type=uuid; nullable=NO; default=gen_random_uuid()
+COLUMN,public.shared_indicators.indicator_type,type=text; nullable=NO; default=<none>
+COLUMN,public.shared_indicators.last_seen,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.shared_indicators.reviewed_at,type=timestamp with time zone; nullable=YES; default=<none>
+COLUMN,public.shared_indicators.reviewed_by,type=uuid; nullable=YES; default=<none>
+COLUMN,public.shared_indicators.source,type=text; nullable=NO; default='community'::text
+COLUMN,public.shared_indicators.status,type=text; nullable=NO; default='pending'::text
+COLUMN,public.shared_indicators.updated_at,type=timestamp with time zone; nullable=NO; default=now()
+COLUMN,public.shared_indicators.value_norm,type=text; nullable=NO; default=<none>
+COLUMN,public.shared_indicators.verdict,type=text; nullable=NO; default=<none>
+CONSTRAINT,public.audit_log.audit_log_pkey,PRIMARY KEY (id)
+CONSTRAINT,public.contribution_log.contribution_log_items_check,CHECK ((items >= 0))
+CONSTRAINT,public.contribution_log.contribution_log_pkey,PRIMARY KEY (id)
+CONSTRAINT,public.indicator_allowlist.indicator_allowlist_indicator_type_check,"CHECK ((indicator_type = ANY (ARRAY['domain'::text, 'ip'::text])))"
+CONSTRAINT,public.indicator_allowlist.indicator_allowlist_pkey,"PRIMARY KEY (indicator_type, value_norm)"
+CONSTRAINT,public.indicator_submissions.indicator_submissions_check,CHECK (((status = 'pending'::text) OR (reviewed_at IS NOT NULL)))
+CONSTRAINT,public.indicator_submissions.indicator_submissions_claimed_verdict_check,"CHECK ((claimed_verdict = ANY (ARRAY['malicious'::text, 'suspicious'::text])))"
+CONSTRAINT,public.indicator_submissions.indicator_submissions_contributor_id_fkey,FOREIGN KEY (contributor_id) REFERENCES auth.users(id) ON DELETE CASCADE
+CONSTRAINT,public.indicator_submissions.indicator_submissions_contributor_id_indicator_type_value_n_key,"UNIQUE (contributor_id, indicator_type, value_norm)"
+CONSTRAINT,public.indicator_submissions.indicator_submissions_indicator_type_check,"CHECK ((indicator_type = ANY (ARRAY['url'::text, 'domain'::text, 'ip'::text, 'hash'::text])))"
+CONSTRAINT,public.indicator_submissions.indicator_submissions_pkey,PRIMARY KEY (id)
+CONSTRAINT,public.indicator_submissions.indicator_submissions_promoted_id_fkey,FOREIGN KEY (promoted_id) REFERENCES shared_indicators(id) ON DELETE SET NULL
+CONSTRAINT,public.indicator_submissions.indicator_submissions_review_note_check,CHECK ((char_length(review_note) <= 200))
+CONSTRAINT,public.indicator_submissions.indicator_submissions_reviewed_by_fkey,FOREIGN KEY (reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL
+CONSTRAINT,public.indicator_submissions.indicator_submissions_status_check,"CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))"
+CONSTRAINT,public.indicator_submissions.indicator_submissions_value_norm_check,CHECK ((((char_length(value_norm) >= 3) AND (char_length(value_norm) <= 512)) AND (value_norm !~ '[@?#%[:space:]]'::text)))
+CONSTRAINT,public.scans.scans_evidence_hash_check,CHECK ((evidence_hash ~ '^[0-9a-f]{64}$'::text))
+CONSTRAINT,public.scans.scans_pkey,PRIMARY KEY (id)
+CONSTRAINT,public.scans.scans_summary_check,"CHECK (((jsonb_typeof(summary) = 'object'::text) AND (pg_column_size(summary) <= 8192) AND (NOT (summary ?| ARRAY['body'::text, 'subject'::text, 'text'::text, 'full_text'::text, 'from'::text, 'to'::text, 'raw'::text, 'email'::text, 'report'::text]))))"
+CONSTRAINT,public.scans.scans_user_id_evidence_hash_key,"UNIQUE (user_id, evidence_hash)"
+CONSTRAINT,public.scans.scans_user_id_fkey,FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+CONSTRAINT,public.shared_indicators.shared_indicators_check,CHECK (((status <> 'verified'::text) OR (reviewed_at IS NOT NULL)))
+CONSTRAINT,public.shared_indicators.shared_indicators_confidence_check,CHECK (((confidence >= (0)::numeric) AND (confidence <= (1)::numeric)))
+CONSTRAINT,public.shared_indicators.shared_indicators_contributor_count_check,CHECK ((contributor_count >= 0))
+CONSTRAINT,public.shared_indicators.shared_indicators_indicator_type_check,"CHECK ((indicator_type = ANY (ARRAY['url'::text, 'domain'::text, 'ip'::text, 'hash'::text])))"
+CONSTRAINT,public.shared_indicators.shared_indicators_indicator_type_value_norm_key,"UNIQUE (indicator_type, value_norm)"
+CONSTRAINT,public.shared_indicators.shared_indicators_pkey,PRIMARY KEY (id)
+CONSTRAINT,public.shared_indicators.shared_indicators_reviewed_by_fkey,FOREIGN KEY (reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL
+CONSTRAINT,public.shared_indicators.shared_indicators_source_check,"CHECK ((source = ANY (ARRAY['community'::text, 'analyst'::text])))"
+CONSTRAINT,public.shared_indicators.shared_indicators_status_check,"CHECK ((status = ANY (ARRAY['pending'::text, 'verified'::text, 'withdrawn'::text])))"
+CONSTRAINT,public.shared_indicators.shared_indicators_value_norm_check,CHECK ((((char_length(value_norm) >= 3) AND (char_length(value_norm) <= 512)) AND (value_norm !~ '[@?#[:space:]]'::text)))
+CONSTRAINT,public.shared_indicators.shared_indicators_verdict_check,"CHECK ((verdict = ANY (ARRAY['malicious'::text, 'suspicious'::text])))"
+FUNCTION,private.is_admin,"arguments=; security_definer=f; ACL={postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}
+CREATE OR REPLACE FUNCTION private.is_admin()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+  select coalesce((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin', false)
+     and coalesce(auth.jwt() ->> 'aal', '') = 'aal2';
+$function$
+"
+FUNCTION,private.is_public_ip,"arguments=p_ip text; security_definer=f; ACL={postgres=X/postgres}
+CREATE OR REPLACE FUNCTION private.is_public_ip(p_ip text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+declare v inet;
+begin
+  begin v := p_ip::inet; exception when others then return false; end;
+  if masklen(v) <> (case family(v) when 4 then 32 else 128 end) then return false; end if;
+  return not (v <<= any (array['0.0.0.0/8', '10.0.0.0/8', '100.64.0.0/10', '127.0.0.0/8', '169.254.0.0/16',
+    '172.16.0.0/12', '192.0.0.0/24', '192.0.2.0/24', '192.168.0.0/16', '198.18.0.0/15', '198.51.100.0/24',
+    '203.0.113.0/24', '224.0.0.0/3', '::/128', '::1/128', '::ffff:0:0/96', '64:ff9b::/96', '2001:db8::/32',
+    'fc00::/7', 'fe80::/10', 'ff00::/8']::inet[]));
+end $function$
+"
+FUNCTION,private.looks_like_token,"arguments=p_seg text; security_definer=f; ACL={postgres=X/postgres}
+CREATE OR REPLACE FUNCTION private.looks_like_token(p_seg text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+declare wordlike boolean; letters int; digits int;
+begin
+  if p_seg is null or p_seg = '' then return false; end if;
+  if char_length(p_seg) > 64 or p_seg ~ '[@=%]' then return true; end if;
+  if p_seg ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+     or p_seg ~ '^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$' then return true; end if;
+  if p_seg ~* '^[0-9a-f]{16,}$' or (p_seg ~ '^[0-9]+$' and char_length(p_seg) >= 8) then return true; end if;
+  select coalesce(bool_and((t.p ~ '^[A-Za-z]+$' and char_length(t.p) <= 14) or (t.p ~ '^[0-9]+$' and char_length(t.p) <= 4)), true)
+    into wordlike from unnest(regexp_split_to_array(p_seg, '[-_.]')) as t(p) where t.p <> '';
+  if wordlike then return false; end if;
+  letters := char_length(regexp_replace(p_seg, '[^A-Za-z]', '', 'g'));
+  digits  := char_length(regexp_replace(p_seg, '[^0-9]', '', 'g'));
+  return (char_length(p_seg) >= 12 and digits >= 3 and letters >= 3) or char_length(p_seg) >= 16;
+end $function$
+"
+FUNCTION,private.valid_domain,"arguments=p_d text; security_definer=f; ACL={postgres=X/postgres}
+CREATE OR REPLACE FUNCTION private.valid_domain(p_d text)
+ RETURNS boolean
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+  select p_d ~ '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24}|xn--[a-z0-9-]{1,59})$'
+     and char_length(p_d) <= 253
+     and p_d !~ '\.(local|localhost|internal|lan|home|corp|intranet|invalid|test|arpa|onion)$';
+$function$
+"
+FUNCTION,public.review_queue,"arguments=p_limit integer; security_definer=t; ACL={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+CREATE OR REPLACE FUNCTION public.review_queue(p_limit integer DEFAULT 50)
+ RETURNS TABLE(id uuid, indicator_type text, value_norm text, claimed_verdict text, created_at timestamp with time zone, distinct_contributors bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if not private.is_admin() then raise exception 'forbidden' using errcode = '42501'; end if;
+  return query
+    select s.id, s.indicator_type, s.value_norm, s.claimed_verdict, s.created_at,
+           (select count(distinct x.contributor_id) from public.indicator_submissions x
+              where x.indicator_type = s.indicator_type and x.value_norm = s.value_norm)
+      from public.indicator_submissions s
+     where s.status = 'pending'
+     order by s.created_at
+     limit least(greatest(coalesce(p_limit, 50), 1), 200);              -- contributor identity is never returned
+end $function$
+"
+FUNCTION,public.review_submission,"arguments=p_id uuid, p_decision text, p_note text; security_definer=t; ACL={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+CREATE OR REPLACE FUNCTION public.review_submission(p_id uuid, p_decision text, p_note text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_uid uuid := auth.uid(); v_sub public.indicator_submissions%rowtype;
+  v_host text; v_shared uuid; v_n int;
+begin
+  if v_uid is null or not private.is_admin() then raise exception 'forbidden' using errcode = '42501'; end if;
+  if coalesce(p_decision, '') not in ('approve', 'reject') then raise exception 'invalid_decision' using errcode = 'P0001'; end if;
+  if p_note is not null and char_length(p_note) > 200 then raise exception 'note_too_long' using errcode = 'P0001'; end if;
+
+  select * into v_sub from public.indicator_submissions where id = p_id for update;
+  if not found then raise exception 'not_found' using errcode = 'P0001'; end if;
+  if v_sub.status <> 'pending' then raise exception 'already_reviewed' using errcode = 'P0001'; end if;
+  if v_sub.contributor_id = v_uid then raise exception 'self_review' using errcode = 'P0001'; end if;   -- reviewers cannot approve their own submissions
+
+  if p_decision = 'reject' then
+    update public.indicator_submissions
+       set status = 'rejected', reviewed_by = v_uid, reviewed_at = now(), review_note = p_note where id = p_id;
+    insert into public.audit_log (actor, action, target) values (v_uid, 'reject', p_id);
+    return jsonb_build_object('status', 'rejected');
+  end if;
+
+  if not private.valid_indicator(v_sub.indicator_type, v_sub.value_norm) then raise exception 'invalid_indicator' using errcode = 'P0001'; end if;
+  v_host := case v_sub.indicator_type when 'domain' then v_sub.value_norm
+                                      when 'url' then substring(v_sub.value_norm from '^https?://([^/]+)') end;
+  if exists (select 1 from public.indicator_allowlist a
+              where (a.indicator_type = 'domain' and v_host is not null and (v_host = a.value_norm or v_host like '%.' || a.value_norm))
+                 or (a.indicator_type = 'ip' and v_sub.indicator_type = 'ip' and v_sub.value_norm = a.value_norm)) then
+    raise exception 'allowlisted' using errcode = 'P0001';
+  end if;
+
+  select count(distinct contributor_id) into v_n from public.indicator_submissions
+    where indicator_type = v_sub.indicator_type and value_norm = v_sub.value_norm;
+  insert into public.shared_indicators (indicator_type, value_norm, verdict, confidence, status, contributor_count, source, reviewed_by, reviewed_at)
+    values (v_sub.indicator_type, v_sub.value_norm, v_sub.claimed_verdict, 0.50, 'verified', v_n, 'community', v_uid, now())
+    on conflict (indicator_type, value_norm) do update
+      set status = 'verified', contributor_count = excluded.contributor_count,
+          reviewed_by = excluded.reviewed_by, reviewed_at = excluded.reviewed_at, last_seen = now()
+    returning id into v_shared;
+  update public.indicator_submissions
+     set status = 'approved', reviewed_by = v_uid, reviewed_at = now(), review_note = p_note, promoted_id = v_shared where id = p_id;
+  insert into public.audit_log (actor, action, target) values (v_uid, 'approve', p_id);
+  return jsonb_build_object('status', 'approved', 'shared_id', v_shared);
+end $function$
+"
+FUNCTION,public.submit_indicators,"arguments=p_items jsonb; security_definer=t; ACL={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+CREATE OR REPLACE FUNCTION public.submit_indicators(p_items jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_uid uuid := auth.uid();
+  v_item jsonb; v_type text; v_value text; v_verdict text; v_log bigint;
+  v_n int; v_accepted int := 0; v_dups int := 0; v_rejected int := 0;
+  c_per_request constant int := 20;  c_per_hour constant int := 50;  c_per_day constant int := 200;
+  c_global_hour constant int := 2000; c_reject_block constant int := 10;
+begin
+  if v_uid is null then raise exception 'auth_required' using errcode = '42501'; end if;
+  perform pg_advisory_xact_lock(hashtext(v_uid::text));            -- serialise one contributor's calls
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) < 1 then
+    raise exception 'invalid_payload' using errcode = 'P0001';
+  end if;
+  v_n := jsonb_array_length(p_items);
+  if v_n > c_per_request then raise exception 'too_many_items' using errcode = 'P0001'; end if;
+  if (select count(*) from public.indicator_submissions
+        where contributor_id = v_uid and status = 'rejected' and reviewed_at > now() - interval '30 days') >= c_reject_block then
+    raise exception 'blocked' using errcode = 'P0001';
+  end if;
+  if coalesce((select sum(items) from public.contribution_log where contributor_id = v_uid and at > now() - interval '1 hour'), 0) + v_n > c_per_hour
+     or coalesce((select sum(items) from public.contribution_log where contributor_id = v_uid and at > now() - interval '1 day'), 0) + v_n > c_per_day
+     or coalesce((select sum(items) from public.contribution_log where at > now() - interval '1 hour'), 0) + v_n > c_global_hour then
+    raise exception 'rate_limited' using errcode = 'P0001';
+  end if;
+  insert into public.contribution_log (contributor_id, items) values (v_uid, v_n) returning id into v_log;
+
+  for v_item in select * from jsonb_array_elements(p_items) loop
+    -- Only these three fields are ever read. Any client-supplied status, identity or verification claim is ignored.
+    if jsonb_typeof(v_item) <> 'object' then v_rejected := v_rejected + 1; continue; end if;
+    v_type := v_item ->> 'indicator_type'; v_value := v_item ->> 'value_norm'; v_verdict := v_item ->> 'claimed_verdict';
+    if coalesce(v_type, '') not in ('url', 'domain', 'ip', 'hash') or coalesce(v_verdict, '') not in ('malicious', 'suspicious')
+       or not private.valid_indicator(v_type, v_value) then
+      v_rejected := v_rejected + 1; continue;
+    end if;
+    insert into public.indicator_submissions (contributor_id, indicator_type, value_norm, claimed_verdict)
+      values (v_uid, v_type, v_value, v_verdict)
+      on conflict (contributor_id, indicator_type, value_norm) do nothing;
+    if found then v_accepted := v_accepted + 1; else v_dups := v_dups + 1; end if;
+  end loop;
+
+  update public.contribution_log set accepted = v_accepted where id = v_log;
+  return jsonb_build_object('accepted', v_accepted, 'duplicates', v_dups, 'rejected', v_rejected);
+end $function$
+"
+RLS POLICY,public.indicator_submissions.submissions_owner_read,command=SELECT; roles=authenticated; using=(contributor_id = auth.uid()); with_check=<none>
+RLS POLICY,public.scans.scans_owner_delete,command=DELETE; roles=authenticated; using=((user_id = auth.uid()) AND (NOT private.is_anonymous())); with_check=<none>
+RLS POLICY,public.scans.scans_owner_insert,command=INSERT; roles=authenticated; using=<none>; with_check=((user_id = auth.uid()) AND (NOT private.is_anonymous()))
+RLS POLICY,public.scans.scans_owner_select,command=SELECT; roles=authenticated; using=((user_id = auth.uid()) AND (NOT private.is_anonymous())); with_check=<none>
+RLS POLICY,public.scans.scans_owner_update,command=UPDATE; roles=authenticated; using=((user_id = auth.uid()) AND (NOT private.is_anonymous())); with_check=((user_id = auth.uid()) AND (NOT private.is_anonymous()))
+RLS POLICY,public.shared_indicators.shared_indicators_admin_read,command=SELECT; roles=authenticated; using=private.is_admin(); with_check=<none>
+RLS POLICY,public.shared_indicators.shared_indicators_read_verified,"command=SELECT; roles=anon,authenticated; using=(status = 'verified'::text); with_check=<none>"
+TABLE GRANT,public.audit_log.postgres,privilege=INSERT
+TABLE GRANT,public.audit_log.postgres,privilege=TRIGGER
+TABLE GRANT,public.audit_log.postgres,privilege=REFERENCES
+TABLE GRANT,public.audit_log.postgres,privilege=TRUNCATE
+TABLE GRANT,public.audit_log.postgres,privilege=DELETE
+TABLE GRANT,public.audit_log.postgres,privilege=UPDATE
+TABLE GRANT,public.audit_log.postgres,privilege=SELECT
+TABLE GRANT,public.audit_log.service_role,privilege=TRIGGER
+TABLE GRANT,public.audit_log.service_role,privilege=REFERENCES
+TABLE GRANT,public.audit_log.service_role,privilege=TRUNCATE
+TABLE GRANT,public.audit_log.service_role,privilege=DELETE
+TABLE GRANT,public.audit_log.service_role,privilege=UPDATE
+TABLE GRANT,public.audit_log.service_role,privilege=SELECT
+TABLE GRANT,public.audit_log.service_role,privilege=INSERT
+TABLE GRANT,public.contribution_log.postgres,privilege=REFERENCES
+TABLE GRANT,public.contribution_log.postgres,privilege=INSERT
+TABLE GRANT,public.contribution_log.postgres,privilege=SELECT
+TABLE GRANT,public.contribution_log.postgres,privilege=UPDATE
+TABLE GRANT,public.contribution_log.postgres,privilege=DELETE
+TABLE GRANT,public.contribution_log.postgres,privilege=TRUNCATE
+TABLE GRANT,public.contribution_log.postgres,privilege=TRIGGER
+TABLE GRANT,public.contribution_log.service_role,privilege=SELECT
+TABLE GRANT,public.contribution_log.service_role,privilege=INSERT
+TABLE GRANT,public.contribution_log.service_role,privilege=TRIGGER
+TABLE GRANT,public.contribution_log.service_role,privilege=REFERENCES
+TABLE GRANT,public.contribution_log.service_role,privilege=TRUNCATE
+TABLE GRANT,public.contribution_log.service_role,privilege=DELETE
+TABLE GRANT,public.contribution_log.service_role,privilege=UPDATE
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=REFERENCES
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=TRIGGER
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=INSERT
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=SELECT
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=UPDATE
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=DELETE
+TABLE GRANT,public.indicator_allowlist.postgres,privilege=TRUNCATE
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=SELECT
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=INSERT
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=TRIGGER
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=REFERENCES
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=TRUNCATE
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=DELETE
+TABLE GRANT,public.indicator_allowlist.service_role,privilege=UPDATE
+TABLE GRANT,public.indicator_submissions.postgres,privilege=UPDATE
+TABLE GRANT,public.indicator_submissions.postgres,privilege=INSERT
+TABLE GRANT,public.indicator_submissions.postgres,privilege=TRIGGER
+TABLE GRANT,public.indicator_submissions.postgres,privilege=REFERENCES
+TABLE GRANT,public.indicator_submissions.postgres,privilege=TRUNCATE
+TABLE GRANT,public.indicator_submissions.postgres,privilege=DELETE
+TABLE GRANT,public.indicator_submissions.postgres,privilege=SELECT
+TABLE GRANT,public.indicator_submissions.service_role,privilege=TRUNCATE
+TABLE GRANT,public.indicator_submissions.service_role,privilege=TRIGGER
+TABLE GRANT,public.indicator_submissions.service_role,privilege=INSERT
+TABLE GRANT,public.indicator_submissions.service_role,privilege=SELECT
+TABLE GRANT,public.indicator_submissions.service_role,privilege=UPDATE
+TABLE GRANT,public.indicator_submissions.service_role,privilege=DELETE
+TABLE GRANT,public.indicator_submissions.service_role,privilege=REFERENCES
+TABLE GRANT,public.scans.authenticated,privilege=SELECT
+TABLE GRANT,public.scans.authenticated,privilege=DELETE
+TABLE GRANT,public.scans.postgres,privilege=INSERT
+TABLE GRANT,public.scans.postgres,privilege=TRIGGER
+TABLE GRANT,public.scans.postgres,privilege=REFERENCES
+TABLE GRANT,public.scans.postgres,privilege=TRUNCATE
+TABLE GRANT,public.scans.postgres,privilege=DELETE
+TABLE GRANT,public.scans.postgres,privilege=UPDATE
+TABLE GRANT,public.scans.postgres,privilege=SELECT
+TABLE GRANT,public.scans.service_role,privilege=TRIGGER
+TABLE GRANT,public.scans.service_role,privilege=REFERENCES
+TABLE GRANT,public.scans.service_role,privilege=TRUNCATE
+TABLE GRANT,public.scans.service_role,privilege=DELETE
+TABLE GRANT,public.scans.service_role,privilege=UPDATE
+TABLE GRANT,public.scans.service_role,privilege=SELECT
+TABLE GRANT,public.scans.service_role,privilege=INSERT
+TABLE GRANT,public.shared_indicators.postgres,privilege=INSERT
+TABLE GRANT,public.shared_indicators.postgres,privilege=SELECT
+TABLE GRANT,public.shared_indicators.postgres,privilege=UPDATE
+TABLE GRANT,public.shared_indicators.postgres,privilege=DELETE
+TABLE GRANT,public.shared_indicators.postgres,privilege=TRUNCATE
+TABLE GRANT,public.shared_indicators.postgres,privilege=REFERENCES
+TABLE GRANT,public.shared_indicators.postgres,privilege=TRIGGER
+TABLE GRANT,public.shared_indicators.service_role,privilege=INSERT
+TABLE GRANT,public.shared_indicators.service_role,privilege=TRIGGER
+TABLE GRANT,public.shared_indicators.service_role,privilege=SELECT
+TABLE GRANT,public.shared_indicators.service_role,privilege=UPDATE
+TABLE GRANT,public.shared_indicators.service_role,privilege=DELETE
+TABLE GRANT,public.shared_indicators.service_role,privilege=TRUNCATE
+TABLE GRANT,public.shared_indicators.service_role,privilege=REFERENCES
+TRIGGER,public.shared_indicators.shared_indicators_updated_at,CREATE TRIGGER shared_indicators_updated_at BEFORE UPDATE ON public.shared_indicators FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()
