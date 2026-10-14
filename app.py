@@ -8589,6 +8589,39 @@ st.html(
     </script>""",
     unsafe_allow_javascript=True,
 )
+# Collapse empty layout rows in the main area. Style-only / script-only elements and empty placeholders
+# still take a row plus the flex gap, which shows up as blank bands between sections. Pure DOM check,
+# so it does not depend on Streamlit's internal markup; a row is restored the moment it gets content.
+st.html(
+    """<script>
+    (function () {
+      var P = (window.parent && window.parent !== window) ? window.parent : window;
+      if (P.__emptyRowTimer) clearInterval(P.__emptyRowTimer);
+      var MEDIA = 'svg,canvas,img,iframe,input,button,textarea,select,video,audio,table,[role],[data-testid="stDataFrame"],[data-testid="stImage"],[data-testid*="Chart"],[data-baseweb]';
+      function hasText(el) {
+        var w = P.document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
+        while ((n = w.nextNode())) {
+          var t = n.parentNode && n.parentNode.nodeName;
+          if (t === 'STYLE' || t === 'SCRIPT') continue;
+          if (n.nodeValue.trim()) return true;
+        }
+        return false;
+      }
+      function sweep() {
+        try {
+          var rows = P.document.querySelectorAll('[data-testid="stMain"] [data-testid="stElementContainer"]');
+          rows.forEach(function (el) {
+            var empty = !hasText(el) && !el.querySelector(MEDIA);
+            if (empty && !el.dataset.rowHidden) { el.dataset.rowHidden = '1'; el.style.setProperty('display', 'none', 'important'); }
+            else if (!empty && el.dataset.rowHidden) { delete el.dataset.rowHidden; el.style.removeProperty('display'); }
+          });
+        } catch (err) {}
+      }
+      sweep(); P.__emptyRowTimer = setInterval(sweep, 300);
+    })();
+    </script>""",
+    unsafe_allow_javascript=True,
+)
 with st.container(key="topnav"):
     active_panel = st.radio(
         "Forensic workflow",
