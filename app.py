@@ -8628,57 +8628,6 @@ st.markdown(
 
 st.markdown(
     r"""<style>
-/* Accent-spine fix: a thick left border or a 3px background bar on a rounded box leaves a coloured
-   sliver ("crescent") at the left corners. Keep the spine, square only the left corners. */
-.stage-card:not(#_x):not(#_x),
-.st-key-imap_connected_actions:not(#_x):not(#_x),
-.stAlert:not(#_x):not(#_x),
-div[data-testid="stAlertContainer"]:not(#_x):not(#_x),
-div[data-testid="stAlert"]:not(#_x):not(#_x),
-[data-testid="stExpander"]:not(#_x):not(#_x),
-.st-key-imap_custom_server_wrap [data-testid="stExpander"] > div:last-child:not(#_x):not(#_x),
-.acq-panel:not(#_x):not(#_x),
-.mode-card:not(#_x):not(#_x),
-.feedback-terminal:not(#_x):not(#_x),
-.ai-console-head:not(#_x):not(#_x),
-.panel-card-head:not(#_x):not(#_x),
-.panel-card-body:not(#_x):not(#_x),
-.st-key-scan_status_bar:not(#_x):not(#_x),
-.st-key-bulk_infra_scan:not(#_x):not(#_x),
-.st-key-right_dock_metrics_body:not(#_x):not(#_x),
-.st-key-dd_dock_metrics_body:not(#_x):not(#_x),
-.part-banner-batch:not(#_x):not(#_x),
-.part-banner-single:not(#_x):not(#_x),
-.part-banner-ai:not(#_x):not(#_x),
-.part-banner-intel:not(#_x):not(#_x),
-.sec-head:not(#_x):not(#_x),
-.part-banner-rose:not(#_x):not(#_x),
-.part-banner-sky:not(#_x):not(#_x),
-.part-banner-gold:not(#_x):not(#_x),
-.part-banner-teal:not(#_x):not(#_x),
-.part-banner-plum:not(#_x):not(#_x),
-.part-banner-lime:not(#_x):not(#_x),
-.st-key-single_email_select:not(#_x):not(#_x),
-.dossier-head:not(#_x):not(#_x),
-.stApp [data-testid="stExpander"]:not(#_x):not(#_x),
-.stApp [data-testid="stCode"]:not(#_x):not(#_x),
-.stApp .stCodeBlock:not(#_x):not(#_x),
-.stApp [data-testid="stText"]:not(#_x):not(#_x),
-.stApp .stText:not(#_x):not(#_x),
-html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .mbx-note:not(#_x):not(#_x),
-html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-imap_connected_panel .st-key-imap_loaded_folder_bar [data-baseweb="select"] > div:not(#_x):not(#_x),
-html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select [data-baseweb="select"] > div:not(#_x):not(#_x) {
-    border-top-left-radius:0 !important; border-bottom-left-radius:0 !important;
-}
-/* full-height accent bars that poke past rounded corners: inset them like the other accent bars */
-.inbox-stats .is-card:not(#_x):not(#_x)::before,
-.stApp .rd-tile:not(#_x):not(#_x)::before,
-.stApp .rd-card:not(#_x):not(#_x)::before,
-.stApp .st-key-geo_vpn_box:not(#_x):not(#_x)::before,
-.stApp .st-key-geo_trust_box:not(#_x):not(#_x)::before,
-.stApp .st-key-geo_tor_box:not(#_x):not(#_x)::before {
-    top:14px !important; bottom:14px !important; border-radius:0 3px 3px 0 !important;
-}
 /* helper-only st.html blocks (scripts/styles, no visible content) still take a layout row plus the
    flex gap; collapse them so they leave no blank bands between sections */
 .stApp .stElementContainer:has([data-testid="stHtml"]):not(:has([data-testid="stHtml"] :not(script):not(style))) {
