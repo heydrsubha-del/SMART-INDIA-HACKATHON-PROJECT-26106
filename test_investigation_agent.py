@@ -618,6 +618,53 @@ class FixDeadlines(Base):
         self.assertNotRegex(ui, r"AI-assisted planning and summary|AI summary")
 
 
+class UiIsolation(Base):
+    """Static + stubbed-Streamlit checks. NOT a Streamlit runtime test."""
+
+    def test_app_import_and_render_are_inside_their_own_panel_boundary(self):
+        import ast
+        tree = ast.parse(open("app.py", encoding="utf-8").read())
+        fn = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_agentic_investigation"]
+        self.assertEqual(len(fn), 1)
+        self.assertTrue([n for n in ast.walk(fn[0]) if isinstance(n, ast.ImportFrom) and n.module == "investigation_ui"])
+        imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module == "investigation_ui"]
+        self.assertEqual(len(imports), 1)                                    # no import anywhere outside the boundary
+        calls = {(c.args[0].id, c.args[1].value) for c in ast.walk(tree) if isinstance(c, ast.Call) and getattr(c.func, "id", "") == "panel"
+                 and len(c.args) == 2 and isinstance(c.args[0], ast.Name) and isinstance(c.args[1], ast.Constant)}
+        self.assertIn(("_agentic_investigation", "Agentic Investigation"), calls)
+        self.assertIn(("_ai_threat_analysis", "AI Threat Analysis"), calls)   # existing boundary untouched
+
+    def test_no_deprecated_use_container_width(self):
+        self.assertNotIn("use_container_width", open("investigation_ui.py", encoding="utf-8").read())
+
+    def test_panel_renders_with_stubbed_streamlit(self):
+        import sys
+        import types
+        st = types.ModuleType("streamlit")
+        mk = lambda *a, **k: mock.MagicMock()
+        st.session_state = {}
+        st.columns = lambda n, *a, **k: [mock.MagicMock() for _ in range(n if isinstance(n, int) else len(n))]
+        st.checkbox = lambda *a, **k: k.get("value", False)
+        st.number_input = lambda label, mn, mx, val, **k: val
+        st.button = lambda *a, **k: k.get("key", "").startswith("agent_go_") and STATE["click"]
+        for n in ("markdown", "caption", "info", "warning", "metric", "dataframe", "download_button", "expander", "spinner", "empty"):
+            setattr(st, n, mk)
+        STATE = {"click": False}
+        dl = []
+        with mock.patch.dict(sys.modules, {"streamlit": st}):
+            sys.modules.pop("investigation_ui", None)
+            import investigation_ui as ui
+            ui.render_investigation_panel(self.result, b"raw", [], None, "k", download_fn=lambda **kw: dl.append(kw))   # idle state
+            self.assertEqual(dl, [])
+            STATE["click"] = True
+            with mock.patch("investigation_agent.ai_unavailable_reason", return_value="off"):
+                ui.render_investigation_panel(self.result, b"raw", [], None, "k", download_fn=lambda **kw: dl.append(kw))
+            sys.modules.pop("investigation_ui", None)
+        self.assertIn("k", st.session_state["agent_investigations"])
+        self.assertEqual(dl[0]["file_name"], "agentic_investigation_report.md")
+        self.assertIn("## Agentic Investigation", dl[0]["markdown"])
+
+
 class Compatibility(Base):
     def test_report_extends_existing_report(self):
         inv = self.run_inv(limits=ia.Limits(max_tool_calls=3))
