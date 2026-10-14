@@ -5,6 +5,7 @@ Run:   streamlit run app.py
 """
 import traceback
 import hashlib
+import ui_helpers as _uh
 import csv
 import io
 import os
@@ -12703,6 +12704,8 @@ if active_panel == "Dashboard":
 .stApp .st-key-feedback_hero::before, .stApp .st-key-feedback_hero::after, .stApp .st-key-ai_learn_card::before, .stApp .st-key-ai_learn_card::after {content:none !important; display:none !important;}
 .stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) {width:100% !important; max-width:100% !important;}
 .stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button {width:100% !important; min-width:0 !important; height:auto !important; min-height:44px !important; padding:8px 14px !important; white-space:normal !important; justify-content:center !important;}
+.stApp .st-key-feedback_hero .st-key-false_positive button {background:transparent !important; color:#e6edf6 !important; border:1px solid #5b6b82 !important;}
+.stApp .st-key-feedback_hero .st-key-false_positive button:hover {border-color:#2fd8ff !important;}
 .stApp .st-key-feedback_hero :is(.st-key-confirm_threat, .st-key-false_positive) button:focus-visible {outline:2px solid #2fd8ff !important; outline-offset:2px !important;}
 @media (max-width:900px){ .stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) {flex-wrap:wrap !important;} .stApp [data-testid="stHorizontalBlock"]:has(.st-key-feedback_hero) > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;} }
 @media (max-width:640px){ .stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] {flex-wrap:wrap !important;} .stApp .st-key-feedback_hero [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;} }
@@ -12714,28 +12717,23 @@ if active_panel == "Dashboard":
     if st.session_state.get("feedback_email") != current_feedback_key:
         st.session_state["feedback_email"] = current_feedback_key
         st.session_state["feedback_action"] = None
+    _fb_items = _uh.current_feedback(st.session_state, feedback_hash)   # clears messages from another email
 
-    def _submit_feedback(label, saved_msg, kind):
-        """Store one analyst verdict; report only what the backend confirms."""
-        try:
-            with st.spinner("Saving feedback..."):
-                add_feedback(feedback_hash, label, parsed.get("full_text", ""))
-                tr = maybe_retrain_from_feedback()
-        except Exception:
-            return "Feedback could not be saved. Please try again.", "error"
-        status = tr.get("status")
-        if status == "trained":
-            get_model.clear()
-            analyze_bytes.clear()
-            get_sample_results.clear()
-            return f"{saved_msg} Adaptive model validated and accepted.", kind
-        if status == "rejected":
-            return (f"{saved_msg} Adaptive candidate was not promoted: validation regressed from "
-                    f"{tr.get('baseline_accuracy', 0):.1%} to {tr.get('candidate_accuracy', 0):.1%}; existing model kept."), "warning"
-        return f"{saved_msg} The model has not been changed by this action.", kind
+    def _on_trained():
+        get_model.clear()
+        analyze_bytes.clear()
+        get_sample_results.clear()
+
+    def _submit_feedback(label, saved_msg):
+        """Save the verdict first, then retrain; report each outcome separately."""
+        with st.spinner("Saving feedback..."):
+            items = _uh.save_then_retrain(
+                lambda: add_feedback(feedback_hash, label, parsed.get("full_text", "")),
+                maybe_retrain_from_feedback, _on_trained, saved_msg)
+        _uh.set_feedback(st.session_state, feedback_hash, items)   # replaces any older message
+        return items
 
     _colA, _colB = st.columns([3, 2], gap="medium")
-    feedback_message = feedback_type = None
     with _colA:
         with st.container(key="feedback_hero"):
             st.markdown("**Analyst Feedback**")
@@ -12745,12 +12743,12 @@ if active_panel == "Dashboard":
             fb1, fb2 = st.columns(2, gap="small")
             with fb1:
                 if st.button("Confirm Threat", key="confirm_threat", type="primary", help="This email is malicious or phishing."):
-                    feedback_message, feedback_type = _submit_feedback("phish", "Threat confirmed and saved.", "success")
+                    _fb_items = _submit_feedback("phish", "Threat confirmed and feedback saved.")
             with fb2:
-                if st.button("False Positive", key="false_positive", type="primary", help="This email is legitimate."):
-                    feedback_message, feedback_type = _submit_feedback("legit", "False positive saved.", "success")
-            if feedback_message:
-                {"success": st.success, "warning": st.warning, "error": st.error}.get(feedback_type, st.info)(feedback_message)
+                if st.button("False Positive", key="false_positive", type="secondary", help="This email is legitimate."):
+                    _fb_items = _submit_feedback("legit", "False positive recorded and feedback saved.")
+            for _k, _m in _fb_items:
+                {"success": st.success, "warning": st.warning, "error": st.error}.get(_k, st.info)(_m)
 
     try:
         feedback_count = get_feedback_count()
@@ -12985,18 +12983,14 @@ if active_panel == "AI Threat Analysis":
                 "Qwen runs a full evidence-bound assessment of the single message currently loaded "
                 "(uploaded .eml/.txt file or the selected Live IMAP message)."
             )
-            st.markdown(
-                '<nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 0;font-size:13px;">'
-                '<a href="#ai-overview">Overview</a><a href="#ai-assessment">AI Assessment</a>'
-                '<a href="#ai-agentic">Agentic Investigation</a><a href="#ai-downloads">Downloads</a></nav>',
-                unsafe_allow_html=True)
-            st.markdown('<div id="ai-overview"></div>', unsafe_allow_html=True)
+            st.markdown(_uh.nav_html(), unsafe_allow_html=True)
+            st.markdown(_uh.section_anchor("ai-overview"), unsafe_allow_html=True)
             _sec("Overview", "Verdict, score and the reasons behind it, from the existing scan.", tone="ai")
             st.markdown(f"**Evidence:** `{case_name}`  ·  **Verdict:** `{str(result.get('level','UNKNOWN')).upper()}`  ·  **Score:** `{float(result.get('score',0)):.1f}/100`")
             _ov_reasons = [str(x) for x in (result.get("reasons") or [])][:5]
             for _r in _ov_reasons:
                 st.markdown("- " + html.escape(_r))
-            st.markdown('<div id="ai-assessment"></div>', unsafe_allow_html=True)
+            st.markdown(_uh.section_anchor("ai-assessment"), unsafe_allow_html=True)
 
             single_reports = st.session_state.setdefault("single_ai_reports", {})
             run_clicked = st.button("Run AI Scan (Single Email)", type="primary", use_container_width=True, key="run_qwen_single")
@@ -13037,7 +13031,7 @@ if active_panel == "AI Threat Analysis":
                     if generation_summary(saved_single):
                         st.caption(generation_summary(saved_single))
 
-                    st.markdown('<div id="ai-downloads"></div>', unsafe_allow_html=True)
+                    st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
                     _sec("Download AI Threat Report", "Markdown export of this AI assessment.", tone="ai")
                     single_markdown_report = (
                         f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
@@ -13054,13 +13048,17 @@ if active_panel == "AI Threat Analysis":
                     )
                     st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
                 else:
+                    st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
                     st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
+                    st.caption("Downloads: no report is available because the AI scan failed.")
             elif not run_clicked:
                 st.info("Click **Run AI Scan** to send this message's forensic evidence to the local Qwen model.")
+                st.markdown(_uh.section_anchor("ai-downloads"), unsafe_allow_html=True)
+                st.caption("Downloads: no report is ready yet. Run the AI scan first.")
 
             st.divider()
 
-            st.markdown('<div id="ai-agentic"></div>', unsafe_allow_html=True)
+            st.markdown(_uh.section_anchor("ai-agentic"), unsafe_allow_html=True)
 
             def _agentic_investigation():
                 # Import lives INSIDE the error boundary: an import or render failure shows its own error and
