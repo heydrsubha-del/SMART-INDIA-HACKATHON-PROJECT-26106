@@ -20,7 +20,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key):
     st.caption("Read-only. Uses this app's existing analysis tools, a strict tool allowlist and hard limits. "
                "It never changes the scanner's score, sends mail or submits intelligence.")
     c1, c2 = st.columns(2)
-    use_ai = c1.checkbox("AI-assisted planning and summary", value=True, key="agent_ai_" + key,
+    use_ai = c1.checkbox("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
                          help="Uses the app's configured provider (local Ollama/Qwen or the Groq backend). "
                               "Sends only a short evidence digest, never the email body.")
     net = c2.checkbox("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
