@@ -5855,20 +5855,20 @@ st.markdown(
     /* Keep horizontal navigation usable without relying on wheel or drag
        handlers. The hidden native scrollbar made overflow hard to discover
        and impossible to operate directly on some desktop setups. */
-    .stApp .st-key-topnav [role="radiogroup"] {
+    html body .stApp .st-key-topnav .stRadio [role="radiogroup"] {
         scrollbar-width:thin !important;
         scrollbar-color:rgba(47,182,142,.72) rgba(255,255,255,.07) !important;
     }
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar {
+    html body .stApp .st-key-topnav .stRadio [role="radiogroup"]::-webkit-scrollbar {
         display:block !important; width:auto !important; height:6px !important;
     }
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-track {
+    html body .stApp .st-key-topnav .stRadio [role="radiogroup"]::-webkit-scrollbar-track {
         background:rgba(255,255,255,.07) !important; border-radius:6px !important;
     }
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb {
+    html body .stApp .st-key-topnav .stRadio [role="radiogroup"]::-webkit-scrollbar-thumb {
         background:rgba(47,182,142,.72) !important; border-radius:6px !important;
     }
-    .stApp .st-key-topnav [role="radiogroup"]::-webkit-scrollbar-thumb:hover {
+    html body .stApp .st-key-topnav .stRadio [role="radiogroup"]::-webkit-scrollbar-thumb:hover {
         background:#2fb68e !important;
     }
     @keyframes navLift {from {transform:translateY(14px) scale(.7); opacity:0;} to {transform:none; opacity:1;}}
