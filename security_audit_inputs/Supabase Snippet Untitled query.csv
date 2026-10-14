@@ -1,0 +1,50 @@
+pg_get_functiondef
+"CREATE OR REPLACE FUNCTION public.submit_indicators(p_items jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_uid uuid := auth.uid();
+  v_item jsonb; v_type text; v_value text; v_verdict text; v_log bigint;
+  v_n int; v_accepted int := 0; v_dups int := 0; v_rejected int := 0;
+  c_per_request constant int := 20;  c_per_hour constant int := 50;  c_per_day constant int := 200;
+  c_global_hour constant int := 2000; c_reject_block constant int := 10;
+begin
+  if v_uid is null then raise exception 'auth_required' using errcode = '42501'; end if;
+  perform pg_advisory_xact_lock(hashtext(v_uid::text));            -- serialise one contributor's calls
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) < 1 then
+    raise exception 'invalid_payload' using errcode = 'P0001';
+  end if;
+  v_n := jsonb_array_length(p_items);
+  if v_n > c_per_request then raise exception 'too_many_items' using errcode = 'P0001'; end if;
+  if (select count(*) from public.indicator_submissions
+        where contributor_id = v_uid and status = 'rejected' and reviewed_at > now() - interval '30 days') >= c_reject_block then
+    raise exception 'blocked' using errcode = 'P0001';
+  end if;
+  if coalesce((select sum(items) from public.contribution_log where contributor_id = v_uid and at > now() - interval '1 hour'), 0) + v_n > c_per_hour
+     or coalesce((select sum(items) from public.contribution_log where contributor_id = v_uid and at > now() - interval '1 day'), 0) + v_n > c_per_day
+     or coalesce((select sum(items) from public.contribution_log where at > now() - interval '1 hour'), 0) + v_n > c_global_hour then
+    raise exception 'rate_limited' using errcode = 'P0001';
+  end if;
+  insert into public.contribution_log (contributor_id, items) values (v_uid, v_n) returning id into v_log;
+
+  for v_item in select * from jsonb_array_elements(p_items) loop
+    -- Only these three fields are ever read. Any client-supplied status, identity or verification claim is ignored.
+    if jsonb_typeof(v_item) <> 'object' then v_rejected := v_rejected + 1; continue; end if;
+    v_type := v_item ->> 'indicator_type'; v_value := v_item ->> 'value_norm'; v_verdict := v_item ->> 'claimed_verdict';
+    if coalesce(v_type, '') not in ('url', 'domain', 'ip', 'hash') or coalesce(v_verdict, '') not in ('malicious', 'suspicious')
+       or not private.valid_indicator(v_type, v_value) then
+      v_rejected := v_rejected + 1; continue;
+    end if;
+    insert into public.indicator_submissions (contributor_id, indicator_type, value_norm, claimed_verdict)
+      values (v_uid, v_type, v_value, v_verdict)
+      on conflict (contributor_id, indicator_type, value_norm) do nothing;
+    if found then v_accepted := v_accepted + 1; else v_dups := v_dups + 1; end if;
+  end loop;
+
+  update public.contribution_log set accepted = v_accepted where id = v_log;
+  return jsonb_build_object('accepted', v_accepted, 'duplicates', v_dups, 'rejected', v_rejected);
+end $function$
+"

@@ -1,0 +1,46 @@
+section,object_name,details
+EXECUTE,anon.review_queue,false
+EXECUTE,anon.submit_indicators,false
+EXECUTE,authenticated.review_queue,true
+EXECUTE,authenticated.submit_indicators,true
+HELPER FUNCTION,private.is_anonymous(),"CREATE OR REPLACE FUNCTION private.is_anonymous()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+  select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false);
+$function$
+"
+HELPER FUNCTION,"private.valid_indicator(p_type text, p_value text)","CREATE OR REPLACE FUNCTION private.valid_indicator(p_type text, p_value text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+declare m text[]; seg text;
+begin
+  if p_value is null or char_length(p_value) not between 3 and 512 or p_value ~ '[@?#%[:space:]]' then return false; end if;
+  if p_type = 'hash'   then return p_value ~ '^([0-9a-f]{32}|[0-9a-f]{40}|[0-9a-f]{64})$'; end if;
+  if p_type = 'ip'     then return private.is_public_ip(p_value); end if;
+  if p_type = 'domain' then return private.valid_domain(p_value); end if;
+  if p_type = 'url' then
+    m := regexp_match(p_value, '^https?://([a-z0-9.-]+)((/[A-Za-z0-9._~-]*)*)$');   -- no port, userinfo, query, fragment or escapes
+    if m is null then return false; end if;
+    if not (private.valid_domain(m[1]) or (m[1] ~ '^[0-9.]+$' and private.is_public_ip(m[1]))) then return false; end if;
+    for seg in select t.s from unnest(string_to_array(m[2], '/')) as t(s) loop
+      if seg <> '' and private.looks_like_token(seg) then return false; end if;
+    end loop;
+    return true;
+  end if;
+  return false;
+end $function$
+"
+PRIVILEGE,anon.indicator_submissions.SELECT,false
+PRIVILEGE,anon.shared_indicators.SELECT,false
+PRIVILEGE,authenticated.indicator_submissions.SELECT,false
+PRIVILEGE,authenticated.scans.INSERT,false
+PRIVILEGE,authenticated.scans.SELECT,true
+PRIVILEGE,authenticated.scans.UPDATE,false
+PRIVILEGE,authenticated.shared_indicators.INSERT,false
+PRIVILEGE,authenticated.shared_indicators.SELECT,false
