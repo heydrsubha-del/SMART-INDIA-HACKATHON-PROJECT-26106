@@ -833,7 +833,9 @@ st.html(
     """
     <script>
     (function() {
-        const doc = window.parent.document;
+        if (window.__sihFormSync) return;
+        window.__sihFormSync = true;
+        const doc = document;
         const seen = new WeakMap();
         function sync() {
             const fields = doc.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], textarea');
@@ -881,7 +883,7 @@ st.html(
         // (popup blocked, original tab closed...), the popup simply
         // finishes the sign-in itself, exactly as it did before.
         function isFramed() {
-            try { return window.parent.top !== window.parent; } catch (e) { return true; }
+            try { return window.top !== window; } catch (e) { return true; }
         }
         // This script runs in a sandboxed iframe, and browsers do not let a
         // sandboxed iframe navigate the page that CONTAINS it -- so
@@ -930,7 +932,7 @@ st.html(
                 try {
                     var p = new URLSearchParams(d.search || '');
                     p.set('sih_relayed', '1');
-                    var loc = window.parent.location;
+                    var loc = window.location;
                     navigateAppFrame(loc.origin + loc.pathname + '?' + p.toString());
                 } catch (e) {}
             };
@@ -957,7 +959,7 @@ st.html(
                 waitingSince = Date.now();
                 var w = 520, h = 720, popup = null;
                 try {
-                    var pw = window.parent;
+                    var pw = window;
                     var left = Math.max(0, (pw.screenX || 0) + ((pw.outerWidth || 1024) - w) / 2);
                     var top = Math.max(0, (pw.screenY || 0) + ((pw.outerHeight || 768) - h) / 2);
                     var feat = 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top;
