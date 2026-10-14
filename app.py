@@ -6399,8 +6399,8 @@ st.markdown(
        ================================================================== */
     html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) {
         background:transparent !important; box-shadow:none !important; border:0 !important;
-        border-left:2px solid color-mix(in srgb,var(--panel-tone,#22d3ee) 55%,transparent) !important; border-radius:0 !important;
-        padding:2px 0 2px 10px !important; min-height:0 !important; margin:0 !important;
+        border-left:0 !important; border-radius:0 !important;
+        padding:2px 0 !important; min-height:0 !important; height:auto !important; overflow:visible !important; margin:0 !important;
     }
     html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) [data-testid="stAlertContainer"],
     html body .stApp [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) *::before,
