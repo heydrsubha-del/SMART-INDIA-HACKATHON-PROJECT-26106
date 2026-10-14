@@ -13075,6 +13075,19 @@ if active_panel == "AI Threat Analysis":
             elif not run_clicked:
                 st.info("Click **Run AI Scan** to send this message's forensic evidence to the local Qwen model.")
 
+            st.divider()
+            def _agent_conns():
+                out = []
+                for _sh in ((False, True) if MULTIUSER else (False,)):
+                    try:
+                        out.append(get_connection(shared=_sh))
+                    except Exception:
+                        pass
+                return out
+            from investigation_ui import render_investigation_panel
+            render_investigation_panel(dict(result, _evidence_hash=current_evidence_hash), raw,
+                                       [r for r in _corr_cases.values() if "error" not in r], _agent_conns, current_evidence_hash)
+
     panel(_ai_threat_analysis, "AI Threat Analysis")
 
 # --------------------------------------------------------------------------
