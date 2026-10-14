@@ -323,7 +323,8 @@ def t_threat_memory(ctx, indicator):
     _require_session()
     row = tracker.lookup_indicator(indicator, _kind(ctx, indicator))
     if not row:
-        return ["No record of %s in local threat memory" % clean(indicator, 80)], [], []
+        note = _distinct_note(ctx, indicator)
+        return ["No record of '%s' in local threat memory (exact indicator only)" % clean(indicator, 80)] + ([note] if note else []), [], []
     obs = int(row[7] or 0)
     facts = ["Local threat memory: reputation=%s, category=%s, observations=%d (this scan counts as one), first=%s, last=%s, source=%s" % (
         clean(row[3], 10), clean(row[4], 30), obs, clean(row[5], 25), clean(row[6], 25), clean(row[8], 40))]
@@ -336,15 +337,116 @@ def t_threat_memory(ctx, indicator):
     return facts, signals, []
 
 
+HIT_REP_ELEVATED = 0.7           # same threshold t_threat_memory uses for "high stored reputation"
+MAX_RECORDS = 40                 # records kept per evidence item (retro_hunt itself caps at MAX_ROWS)
+_NEUTRAL_CATS = {"", "observed", "unknown", "-", "none"}
+_REP_RE = re.compile(r"\(reputation ([0-9.]+)\)")
+_HIGH_RE = re.compile(r"\b(high|critical)\b", re.I)
+_REC_KEYS = ("#", "tier", "reason", "source", "type", "stored indicator", "hunted", "match", "category", "reputation",
+             "source class", "recorded source", "verdict", "score", "first seen", "last seen", "times", "details")
+
+
+def _na(v, unknown=False):
+    v = clean(v, 200)
+    return v if v and v != "-" else ("Unknown" if unknown else "Not available")
+
+
+def _parse_memory_where(where):
+    """'category via source (reputation 0.50)' -> (category|None, source|None, reputation|None). Nothing is invented."""
+    where = str(where or "")
+    cat = where.split(" via ")[0].strip() if " via " in where else None
+    src = where.split(" via ", 1)[1].split(" (reputation")[0].strip() if " via " in where else None
+    src = None if src in ("", "?") else src      # retro_hunt writes '?' when no source is stored
+    m = _REP_RE.search(where)
+    return cat, src, (float(m.group(1)) if m else None)
+
+
+def classify_hit(row):
+    """-> (tier, reason). Tiers: 'historical' (seen before only) < 'suspicious' < 'confirmed'.
+
+    Elevation needs STORED evidence in the matched record itself; a match alone never elevates:
+      confirmed  = recognised external feed + a non-neutral stored category + stored reputation >= HIT_REP_ELEVATED
+      suspicious = recognised feed + non-neutral category, or non-neutral category + reputation >= threshold from
+                   any source (local/community/unknown: not independently confirmed), or an earlier email / logged
+                   verdict of High/Critical
+      historical = everything else (e.g. 'observed' records at default reputation, Low/Medium verdicts, no data)"""
+    import retro_hunt
+    src = row.get("Source")
+    if src == "Threat memory":
+        cat, _, rep = _parse_memory_where(row.get("Where"))
+        cls = retro_hunt._row_class(row)
+        nonneutral = (cat or "").lower() not in _NEUTRAL_CATS
+        high = rep is not None and rep >= HIT_REP_ELEVATED
+        if cls == "external_feed" and nonneutral and high:
+            return "confirmed", "recognised external feed lists it as '%s' (stored reputation %.2f)" % (clean(cat, 40), rep)
+        if cls == "external_feed" and nonneutral:
+            return "suspicious", "recognised external feed lists it as '%s' (stored reputation %s)" % (clean(cat, 40), "%.2f" % rep if rep is not None else "not available")
+        if nonneutral and high:
+            return "suspicious", "stored as '%s' with reputation %.2f from a %s source (not independently confirmed)" % (clean(cat, 40), rep, cls.replace("_", " "))
+        return "historical", "seen before; the stored category/reputation do not indicate malicious activity"
+    if src == "Earlier email":
+        if _HIGH_RE.search(str(row.get("Verdict") or "")):
+            return "suspicious", "an earlier email containing it was scored %s by the scanner" % clean(row.get("Verdict"), 20)
+        return "historical", "appeared in an earlier email this session (verdict %s)" % _na(row.get("Verdict"))
+    if src == "Scored-email log":
+        if _HIGH_RE.search(str(row.get("Where") or "")):
+            return "suspicious", "earlier scored emails from this IP include a High/Critical verdict"
+        return "historical", "IP appeared in the scored-email log; logged verdicts do not include High/Critical"
+    return "historical", "no classification data stored"
+
+
+def _record(n, row, hunted):
+    tier, reason = classify_hit(row)
+    mem = row.get("Source") == "Threat memory"
+    cat, rsrc, rep = _parse_memory_where(row.get("Where")) if mem else (None, None, None)
+    basis = {"exact": "exact (normalised: lower-case, trailing dot removed)",
+             "subdomain": "subdomain of the hunted domain (suffix match only)"}.get(row.get("Match"), "Not available")
+    if row.get("Type") == "url" and basis != "Not available":
+        basis = "URL host: " + basis
+    vals = {"#": str(n), "tier": tier, "reason": reason, "source": _na(row.get("Source")), "type": _na(row.get("Type")),
+            "stored indicator": _na(row.get("Indicator")), "hunted": _na(hunted), "match": basis,
+            "category": _na(None if (cat or "").strip().lower() in ("", "unknown") else cat, unknown=True) if mem else "Not available",
+            "reputation": ("%.2f" % rep) if rep is not None else "Not available",
+            "source class": _na(retro_hunt_class(row)) if mem else "Not available",
+            "recorded source": _na(rsrc) if mem else "Not available",
+            "verdict": _na(row.get("Verdict")), "score": _na(row.get("Score")),
+            "first seen": _na(row.get("First seen")), "last seen": _na(row.get("Last seen")),
+            "times": _na(row.get("Times")), "details": _na(row.get("Where"))}
+    return {k: vals[k] for k in _REC_KEYS}
+
+
+def retro_hunt_class(row):
+    import retro_hunt
+    return retro_hunt._row_class(row)
+
+
+def _similar(a, b):
+    x, y = a.split(".")[0], b.split(".")[0]
+    return a != b and len(min(x, y, key=len)) >= 4 and (x.startswith(y) or y.startswith(x))
+
+
+def _distinct_note(ctx, indicator):
+    sim = [v for k, v in ctx.candidates if k == "domain" and _similar(v, indicator)][:3]
+    if not sim:
+        return None
+    return ("Similar but DISTINCT domain(s) in this email: %s. Each indicator is investigated exactly as written (no fuzzy matching); "
+            "evidence for one does not establish anything about the other." % ", ".join(clean(x, 80) for x in sim))
+
+
 def t_retro_hunt(ctx, indicator):
     import retro_hunt
     kind = _kind(ctx, indicator)
     inds = retro_hunt.build_indicators([indicator] if kind == "domain" else (), [indicator] if kind == "ip" else ())
-    conns = []
+    conns, unreadable = [], 0
     try:
         if ctx.conns_factory:
             _require_session()
             conns = list(ctx.conns_factory() or [])
+            for c in conns:                    # retro_hunt skips a broken connection silently; detect it so it is not read as "no sightings"
+                try:
+                    c.execute("SELECT 1 FROM threat_intel LIMIT 1")
+                except Exception:
+                    unreadable += 1
             deadline = ctx.tool_deadline       # this invocation's own, immutable deadline
             for c in conns:                    # bound DB work by it (best effort; sqlite aborts the statement)
                 try:
@@ -353,7 +455,10 @@ def t_retro_hunt(ctx, indicator):
                 except Exception:
                     pass
         r = ctx.result
-        rows = retro_hunt.hunt(inds, ctx.cases, conns, r.get("name"), r.get("_evidence_hash"))
+        # Exclude THIS scan's own records exactly as the app's Retro-Hunt panel does, so they are not reported as earlier sightings.
+        selfs = [(t, v) for t, v in (r.get("recorded_indicators") or []) if isinstance(t, str) and isinstance(v, str)]
+        origin_ip = ((r.get("geo") or {}).get("origin") or {}).get("ip")
+        rows = retro_hunt.hunt(inds, ctx.cases, conns, r.get("name"), r.get("_evidence_hash"), origin_ip, selfs)
     finally:
         for c in conns:
             try:
@@ -362,11 +467,36 @@ def t_retro_hunt(ctx, indicator):
                 pass
     if not ctx.cases and not conns:
         return [], [], ["No earlier cases or threat-memory connection were available for Retro-Hunt."]
-    c = retro_hunt.counts(rows) or {}
-    facts = ["Retro-Hunt for %s: %d earlier hit(s) across %d loaded case(s)" % (clean(indicator, 80), len(rows), len(ctx.cases)),
-             "Hit breakdown: " + clean(json.dumps(c, default=str, sort_keys=True), 200)]
-    signals = ["%s was seen before (%d hit(s))" % (clean(indicator, 80), len(rows))] if rows else []
-    return facts, signals, []
+    if not ctx.cases and unreadable >= len(conns):
+        raise RuntimeError("threat-memory database could not be read; Retro-Hunt did not run")
+    ind = clean(indicator, 80)
+    note = _distinct_note(ctx, indicator)
+    if not rows:
+        return (["Retro-Hunt for '%s': no earlier sighting found (exact or subdomain match only); this scan's own records were excluded." % ind]
+                + ([note] if note else []), [],
+                ["No earlier sighting only means this app has not recorded '%s' before." % ind]
+                + (["%d threat-memory connection(s) could not be read and were not searched." % unreadable] if unreadable else []),
+                bool(unreadable), [])
+    recs = [_record(i + 1, row, indicator) for i, row in enumerate(rows[:MAX_RECORDS])]
+    tiers = {t: sum(1 for x in recs if x["tier"] == t) for t in ("confirmed", "suspicious", "historical")}
+    exact = sum(1 for row in rows if row.get("Match") == "exact")
+    facts = ["Retro-Hunt for '%s': %d historical record(s) matched (%d exact, %d subdomain/other); %d shown with full fields in the evidence records."
+             % (ind, len(rows), exact, len(rows) - exact, len(recs)),
+             "Classification of shown records: %d confirmed, %d suspicious, %d historical-only. A historical sighting means 'seen before', not 'malicious'; "
+             "elevation requires stored evidence in the record itself." % (tiers["confirmed"], tiers["suspicious"], tiers["historical"]),
+             "This scan's own records were excluded; matching is exact or subdomain-suffix only (no similarity matching)."]
+    if note:
+        facts.append(note)
+    signals = ["Record #%s [%s]: %s - '%s'" % (x["#"], x["tier"], x["reason"], clean(x["stored indicator"], 80))
+               for x in recs if x["tier"] != "historical"][:8]
+    missing = []
+    if unreadable:
+        missing.append("%d threat-memory connection(s) could not be read and were not searched." % unreadable)
+    if len(rows) >= retro_hunt.MAX_ROWS:
+        missing.append("Retro-Hunt result list is capped at %d rows; further matches may exist." % retro_hunt.MAX_ROWS)
+    if len(rows) > len(recs):
+        missing.append("%d matched record(s) are not listed (display cap %d)." % (len(rows) - len(recs), MAX_RECORDS))
+    return facts, signals, missing, bool(unreadable), recs
 
 
 def _bounded_fetch(ctx):
@@ -626,10 +756,12 @@ def build_summary(inv):
     bad = sum(1 for e in ev if e["status"] != "ok")
     n = lambda k: sum(1 for f in inv.get("findings", []) if f["kind"] == k and f.get("origin") == "tool")
     sc = inv.get("score_snapshot") or {}
+    recs = [r for e in ev for r in e.get("records", [])]
+    rc = {t: sum(1 for r in recs if r["tier"] == t) for t in ("confirmed", "suspicious", "historical")}
     txt = ("Investigation %s (%s): %d check(s) run, %d failed/skipped/degraded; %d verified fact(s), %d suspicious signal(s), "
-           "%d gap(s) in evidence. Scanner verdict (unchanged): %s, %s/100."
+           "%d gap(s) in evidence; Retro-Hunt records shown: %d historical-only, %d suspicious, %d confirmed. Scanner verdict (unchanged): %s, %s/100."
            % (inv.get("status"), inv.get("stop_reason") or "-", len(ev), bad, n("verified"), n("suspicious"), n("uncertain"),
-              clean(sc.get("level"), 20), clean(sc.get("score"), 10)))
+              rc["historical"], rc["suspicious"], rc["confirmed"], clean(sc.get("level"), 20), clean(sc.get("score"), 10)))
     return txt + (" Evidence is incomplete; absence of findings is not evidence of safety." if bad or n("uncertain") else "")
 
 
@@ -703,11 +835,17 @@ def _run_tool(ctx, tool, args, timeout):
 
 
 def _coerce(out):
-    """-> (facts, signals, missing, degraded). Tools may return a 4th bool = a sub-check failed (partial evidence)."""
-    if not (isinstance(out, tuple) and len(out) in (3, 4) and all(isinstance(x, list) for x in out[:3])):
+    """-> (facts, signals, missing, degraded, records). A tool may return a 4th bool (a sub-check failed) and a 5th
+    list of record dicts (supporting evidence; keys limited to _REC_KEYS, values cleaned)."""
+    if not (isinstance(out, tuple) and len(out) in (3, 4, 5) and all(isinstance(x, list) for x in out[:3])):
         raise TypeError("tool returned an invalid structure")
     lists = tuple([clean(s, 300) for s in lst[:12]] for lst in out[:3])
-    return lists + (bool(out[3]) if len(out) == 4 else False,)
+    recs = []
+    if len(out) == 5:
+        if not isinstance(out[4], list) or not all(isinstance(r, dict) for r in out[4]):
+            raise TypeError("tool returned invalid records")
+        recs = [{k: clean(r.get(k, "Not available"), 200) for k in _REC_KEYS} for r in out[4][:MAX_RECORDS]]
+    return lists + ((bool(out[3]) if len(out) >= 4 else False), recs)
 
 
 def investigate(result, cases=None, conns_factory=None, allow_network=False, use_ai=True, limits=None,
@@ -774,9 +912,9 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
                 step.update(status="rejected", note=why_bad); inv["steps"].append(step); continue
             emit(step["n"], action["tool"])
             s0 = time.monotonic()
-            status, facts, signals, missing, degraded = "ok", [], [], [], False
+            status, facts, signals, missing, degraded, records = "ok", [], [], [], False, []
             try:
-                facts, signals, missing, degraded = _coerce(_run_tool(ctx, action["tool"], action["args"],
+                facts, signals, missing, degraded, records = _coerce(_run_tool(ctx, action["tool"], action["args"],
                                                             min(limits.tool_timeout, max(0.1, limits.max_seconds - elapsed()))))
             except _Skip as sk:
                 status, missing = "skipped", [clean(sk, 200)]
@@ -786,7 +924,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
                 status, missing = "error", ["Tool failed (%s: %s); this check did not complete." % (type(exc).__name__, clean(exc, 120))]
             status = "partial" if (status == "ok" and degraded) else status
             ev = {"id": "E%d" % (len(inv["evidence"]) + 1), "tool": action["tool"], "args": action["args"], "status": status,
-                  "facts": facts, "signals": signals, "missing": missing, "seconds": round(time.monotonic() - s0, 2)}
+                  "facts": facts, "signals": signals, "missing": missing, "records": records, "seconds": round(time.monotonic() - s0, 2)}
             inv["evidence"].append(ev)
             step.update(status=status, evidence_id=ev["id"], seconds=ev["seconds"])
             inv["steps"].append(step)
@@ -828,6 +966,53 @@ def _c(v):
     return clean(v, 300).replace("|", "\\|")
 
 
+def _all_records(inv):
+    return [(e, r) for e in inv.get("evidence", []) for r in e.get("records", [])]
+
+
+def _records_section(inv):
+    out = []
+    cols = ("#", "tier", "stored indicator", "hunted", "match", "category", "reputation", "source class", "recorded source",
+            "verdict", "score", "first seen", "last seen", "times", "reason", "details")
+    for e in inv.get("evidence", []):
+        recs = e.get("records") or []
+        if not recs:
+            continue
+        out += ["", "### Supporting records: %s (%s)" % (e["id"], _c(e["args"].get("indicator", "-"))), "",
+                "_Stored values as found; unavailable fields show 'Not available' or 'Unknown'. 'historical' = seen before only; "
+                "'suspicious'/'confirmed' require stored evidence in the record (see reason)._", "",
+                "| " + " | ".join(cols) + " |", "|" + " --- |" * len(cols)]
+        out += ["| " + " | ".join(_c(r.get(c, "Not available")) for c in cols) + " |" for r in recs]
+    return out
+
+
+def _recommendation_section(inv):
+    recs = [r for _, r in _all_records(inv)]
+    conf = [r for r in recs if r["tier"] == "confirmed"]
+    susp = [r for r in recs if r["tier"] == "suspicious"]
+    gaps = [f for f in inv.get("findings", []) if f["kind"] == "uncertain"]
+    failed = [e for e in inv.get("evidence", []) if e["status"] != "ok"]
+    sc = inv.get("score_snapshot") or {}
+    out = ["", "### Recommendation and limitations", "",
+           "- Scanner verdict (unchanged by this investigation): **%s**, %s / 100. The scanner's recommendation in the report above "
+           "was produced independently of this investigation; where it says 'No action required' it refers to the scanner's score only and is not an all-clear "
+           "when evidence below is incomplete." % (_c(sc.get("level")), _c(sc.get("score")))]
+    if conf:
+        out.append("- **Confirmed stored evidence present** (%d record(s), e.g. #%s): escalate and review the supporting records before releasing or acting on this message." % (len(conf), conf[0]["#"]))
+    if susp:
+        out.append("- **Suspicious stored evidence present** (%d record(s)): review the supporting records; these are indicators, not proof." % len(susp))
+    if failed or inv.get("status") != "complete":
+        out.append("- **Investigation incomplete** (%d check(s) failed, were skipped or degraded; status %s): do not treat the absence of flagged findings as evidence of safety; resolve the gaps below first." % (len(failed), _c(inv.get("status"))))
+    if gaps:
+        out.append("- %d evidence gap(s) are listed under 'Missing evidence and uncertainty'; they limit every conclusion above." % len(gaps))
+    if not (conf or susp or failed or gaps) and inv.get("status") == "complete":
+        out.append("- No investigation check produced suspicious or confirmed stored evidence. This is not proof the message is legitimate; heuristics and "
+                   "stored history are limited, so apply normal verification for any sensitive request.")
+    elif not (conf or susp):
+        out.append("- No stored record classified as suspicious or confirmed was found by the checks that did run; historical sightings alone are not evidence of malicious activity.")
+    return out
+
+
 def render_report(inv, result=None, raw=None, include_base=True):
     lines = []
     if include_base and result is not None:
@@ -854,6 +1039,7 @@ def render_report(inv, result=None, raw=None, include_base=True):
         lines += ["", "### " + title, ""]
         items = [f for f in inv.get("findings", []) if f["kind"] == kind]
         lines += ["- %s  `[%s]`" % (_c(f["statement"]), ",".join(f["evidence_ids"])) for f in items] or ["- None recorded."]
+    lines += _records_section(inv) + _recommendation_section(inv)
     if inv.get("narrative"):
         lines += ["", "### Summary (generated from the deterministic tool findings above)", "", _c(inv["narrative"])]
         if inv.get("narrative_findings"):

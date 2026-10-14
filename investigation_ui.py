@@ -65,6 +65,11 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
                 st.markdown(f"- {_t(f['statement'])} `[{','.join(f['evidence_ids'])}]`")
             if not items:
                 st.caption("None recorded.")
+    for e in inv["evidence"]:
+        if e.get("records"):
+            with st.expander(f"Supporting records: {e['id']} · {e['args'].get('indicator', '-')} ({len(e['records'])} shown)", expanded=False):
+                st.caption("Stored values as found. 'historical' = seen before only; 'suspicious'/'confirmed' require stored evidence in the record.")
+                st.dataframe(e["records"], hide_index=True)
     report_md = ia.render_report(inv, result, raw)
     if download_fn is not None:     # app's premium download (HTML report + Word), same as the AI assessment
         download_fn(label="Download Investigation Report", markdown=report_md, file_name="agentic_investigation_report.md",

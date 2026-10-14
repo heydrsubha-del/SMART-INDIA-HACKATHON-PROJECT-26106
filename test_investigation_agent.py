@@ -2,6 +2,7 @@
 import copy
 import json
 import os
+import re
 import socket
 import sqlite3
 import threading
@@ -280,8 +281,8 @@ class Safety(Base):
         c.execute("CREATE TABLE attackers (date TEXT, ip TEXT, country TEXT, score REAL, verdict TEXT)")
         c.execute("INSERT INTO threat_intel (indicator,indicator_type,reputation,category,first_seen,last_seen,observations,source) VALUES ('paypa1-secure.com','domain',.9,'phishing','a','b',3,'urlhaus')")
         ctx = ia.Ctx(self.result, conns_factory=lambda: [c])
-        facts, signals, missing = ia.t_retro_hunt(ctx, "paypa1-secure.com")
-        self.assertTrue(signals and "seen before" in signals[0])
+        facts, signals, missing, _, recs = ia.t_retro_hunt(ctx, "paypa1-secure.com")
+        self.assertTrue(signals and "[confirmed]" in signals[0])      # urlhaus + 'phishing' + reputation 0.9
 
 
 class FixSession(Base):
@@ -663,6 +664,139 @@ class UiIsolation(Base):
         self.assertIn("k", st.session_state["agent_investigations"])
         self.assertEqual(dl[0]["file_name"], "agentic_investigation_report.md")
         self.assertIn("## Agentic Investigation", dl[0]["markdown"])
+
+
+def _db(rows, attackers=()):
+    c = sqlite3.connect(":memory:", check_same_thread=False)
+    c.execute("CREATE TABLE threat_intel (id INTEGER PRIMARY KEY AUTOINCREMENT, indicator TEXT, indicator_type TEXT, reputation REAL, category TEXT, first_seen TEXT, last_seen TEXT, observations INTEGER, source TEXT)")
+    c.execute("CREATE TABLE attackers (date TEXT, ip TEXT, country TEXT, score REAL, verdict TEXT)")
+    for r in rows:
+        c.execute("INSERT INTO threat_intel (indicator,indicator_type,reputation,category,first_seen,last_seen,observations,source) VALUES (?,?,?,?,?,?,?,?)", r)
+    for a in attackers:
+        c.execute("INSERT INTO attackers VALUES (?,?,?,?,?)", a)
+    return c
+
+
+D = "paypa1-secure.com"
+
+
+class RetroEvidence(Base):
+    def hunt(self, rows, indicator=D, attackers=(), result=None):
+        if result is not None:
+            self.result = result; self.snap = copy.deepcopy(result)
+        c = _db(rows, attackers)
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [c]).for_call(time.monotonic() + 5)
+        return ia.t_retro_hunt(ctx, indicator)
+
+    def test_historical_hits_are_not_suspicious(self):
+        rows = [(D, "domain", .5, "observed", "2026-0%d-01" % i, "2026-0%d-09" % i, 2, "local_analysis") for i in range(1, 4)]
+        f, sig, miss, _, recs = self.hunt(rows, attackers=[("2026-01-01", "185.220.101.5", "US", 12.0, "LOW"), ("2026-01-02", "185.220.101.5", "US", 15.0, "LOW")])
+        self.assertEqual(sig, [])
+        self.assertTrue(recs and {r["tier"] for r in recs} == {"historical"})
+        self.assertIn("historical-only", " ".join(f))
+
+    def test_malicious_classification_requires_stored_evidence(self):
+        rows = [(D, "domain", .9, "malware_download", "a", "b", 2, "urlhaus"),            # feed + category + rep   -> confirmed
+                ("a." + D, "domain", .4, "phishing", "a", "b", 2, "urlhaus"),            # feed + category, low rep -> suspicious
+                ("b." + D, "domain", .9, "observed", "a", "b", 2, "urlhaus"),            # feed but no category     -> historical
+                ("c." + D, "domain", .8, "phishing", "a", "b", 2, "community"),          # community, high rep      -> suspicious, NOT confirmed
+                ("d." + D, "domain", .3, "phishing", "a", "b", 2, "community"),          # community, low rep       -> historical
+                ("e." + D, "domain", .9, "observed", "a", "b", 2, "local_analysis")]     # default category         -> historical
+        _, sig, _, _, recs = self.hunt(rows)
+        tier = {r["stored indicator"]: r["tier"] for r in recs}
+        self.assertEqual(tier, {D: "confirmed", "a." + D: "suspicious", "b." + D: "historical", "c." + D: "suspicious",
+                                "d." + D: "historical", "e." + D: "historical"})
+        self.assertEqual(len(sig), 3)
+        self.assertTrue(all("Record #" in x for x in sig))
+
+    def test_counts_and_displayed_records_agree_and_cap_is_disclosed(self):
+        rows = [("u%d.%s/x" % (i, D), "url", .5, "observed", "a", "b", 2, "local_analysis") for i in range(30)]
+        f, _, miss, _, recs = self.hunt(rows)
+        n = int(f[0].split(": ")[1].split(" ")[0])
+        self.assertEqual((n, len(recs)), (30, 30))
+        self.assertEqual([r["#"] for r in recs], [str(i) for i in range(1, 31)])
+        big = [("v%d.%s/x" % (i, D), "url", .5, "observed", "a", "b", 2, "local_analysis") for i in range(60)]
+        f, _, miss, _, recs = self.hunt(big)
+        total = int(f[0].split(": ")[1].split(" ")[0])
+        self.assertEqual((total, len(recs)), (60, ia.MAX_RECORDS))
+        self.assertTrue([m for m in miss if "not listed" in m and str(total - ia.MAX_RECORDS) in m])
+        t = sum(int(x) for x in re.findall(r"(\d+) (?:confirmed|suspicious|historical-only)", f[1]))
+        self.assertEqual(t, len(recs))
+
+    def test_similar_domains_are_not_conflated(self):
+        res = make_result(); res["parsed"]["from_domain"] = "facebookmail.com"
+        res["iocs"]["domains"] = [{"domain": "facebook.com"}, {"domain": "facebookmail.com"}]
+        rows = [("facebook.com", "domain", .5, "observed", "a%d" % i, "b", 1 + i, "local_analysis") for i in range(3)]
+        f, sig, miss, _, recs = self.hunt(rows, "facebook.com", result=res)
+        self.assertEqual({r["stored indicator"] for r in recs}, {"facebook.com"})
+        self.assertIn("facebookmail.com", " ".join(f)); self.assertIn("DISTINCT", " ".join(f))
+        out = self.hunt(rows, "facebookmail.com", result=res)
+        self.assertEqual((len(out), out[4]), (5, []))                              # no records for facebookmail.com
+        self.assertIn("no earlier sighting", out[0][0]); self.assertIn("DISTINCT", " ".join(out[0]))
+        with mock.patch("tracker.lookup_indicator", return_value=None):
+            tm = ia.t_threat_memory(ia.Ctx(res), "facebookmail.com")
+        self.assertIn("exact indicator only", tm[0][0]); self.assertIn("facebook.com", tm[0][1])
+
+    def test_missing_fields_are_not_fabricated(self):
+        rows = [(D, "domain", None, None, None, None, 1, None)]
+        _, sig, _, _, recs = self.hunt(rows)
+        r = recs[0]
+        self.assertEqual((r["category"], r["recorded source"], r["first seen"], r["last seen"], r["verdict"], r["score"]),
+                         ("Unknown", "Not available", "Not available", "Not available", "Not available", "Not available"))
+        self.assertEqual((r["tier"], sig), ("historical", []))
+        self.assertEqual(r["source class"], "unknown")
+
+    def test_own_scan_records_excluded(self):
+        self.result["recorded_indicators"] = [("domain", D)]; self.snap = copy.deepcopy(self.result)
+        out = self.hunt([(D, "domain", .5, "observed", "a", "b", 1, "local_analysis")], attackers=[("2026-01-01", "185.220.101.5", "US", 12.0, "LOW")])
+        self.assertEqual((len(out), out[4]), (5, []))
+        self.assertIn("no earlier sighting", out[0][0])                          # own domain record and own log row not counted
+        out = self.hunt([(D, "domain", .5, "observed", "a", "b", 2, "local_analysis")])
+        self.assertEqual(out[4][0]["times"], "1")                                 # one EARLIER observation
+
+    def test_summary_report_and_verdict_unchanged_by_retro_hunt(self):
+        rows = [(D, "domain", .5, "observed", "a", "b", 3, "local_analysis"), ("x<script>|y." + D, "domain", .9, "phish|ing", "a", "b", 3, "community")]
+        c = _db(rows)
+        inv = self.run_inv(conns_factory=lambda: [c], limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertEqual(inv["score_snapshot"], {"score": self.snap["score"], "level": self.snap["level"]})
+        self.assertRegex(inv["narrative"], r"Retro-Hunt records shown: \d+ historical-only, \d+ suspicious, \d+ confirmed")
+        self.assertNotRegex(inv["narrative"].lower(), r"all clear|is safe|benign|legitimate")
+        md = ia.render_report(inv, include_base=False)
+        self.assertIn("### Supporting records:", md)
+        self.assertIn("Not available", md)
+        row = [l for l in md.splitlines() if l.startswith("| 2 |") and "x<script>" in l][0]
+        self.assertEqual(row.count("|") - row.count("\\|"), 17)                  # pipes in data are escaped; table stays aligned
+        self.assertIn("### Recommendation and limitations", md)
+        self.assertNotRegex(md.split("### Recommendation and limitations")[1].lower(), r"all clear|is safe\b")
+
+    def test_recommendation_reflects_findings_and_limits(self):
+        base = {"status": "partial", "stop_reason": "tool_call_limit", "score_snapshot": {"score": 5, "level": "Low"}, "findings": [], "steps": [],
+                "evidence": [{"id": "E1", "tool": "x", "args": {}, "status": "error", "facts": [], "signals": [], "missing": ["m"], "records": []}]}
+        txt = "\n".join(ia._recommendation_section(base))
+        self.assertIn("Investigation incomplete", txt); self.assertIn("not an all-clear", txt)
+        self.assertNotIn("No investigation check produced", txt)
+        conf = dict(base, status="complete", evidence=[{"id": "E1", "tool": "retro_hunt_indicator", "args": {"indicator": D}, "status": "ok", "facts": [], "signals": [], "missing": [],
+                                                       "records": [{"#": "1", "tier": "confirmed"}]}])
+        self.assertIn("Confirmed stored evidence present", "\n".join(ia._recommendation_section(conf)))
+        clean_ = dict(conf, evidence=[dict(conf["evidence"][0], records=[])])
+        t = "\n".join(ia._recommendation_section(clean_))
+        self.assertIn("not proof the message is legitimate", t)
+
+
+class RetroHonesty(Base):
+    def test_unreadable_threat_memory_is_not_reported_as_no_sightings(self):
+        bad = sqlite3.connect(":memory:")                  # no threat_intel table -> unreadable
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [bad]).for_call(time.monotonic() + 5)
+        with self.assertRaisesRegex(RuntimeError, "could not be read"):
+            ia.t_retro_hunt(ctx, D)
+        good = _db([])
+        ctx = ia.Ctx(self.result, conns_factory=lambda: [good, sqlite3.connect(":memory:")]).for_call(time.monotonic() + 5)
+        f, sig, miss, degraded, recs = ia.t_retro_hunt(ctx, D)
+        self.assertTrue(degraded)
+        self.assertTrue([m for m in miss if "could not be read" in m])
+        inv = self.run_inv(conns_factory=lambda: [bad], limits=ia.Limits(max_tool_calls=15, max_iterations=15, max_indicators=1))
+        self.assertEqual(inv["status"], "partial")
+        self.assertEqual([e["status"] for e in inv["evidence"] if e["tool"] == "retro_hunt_indicator"], ["error"])
 
 
 class Compatibility(Base):
