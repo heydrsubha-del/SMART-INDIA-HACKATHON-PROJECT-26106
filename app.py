@@ -829,7 +829,7 @@ st.set_page_config(
 # extra click or retyping required. Runs in a hidden 1px iframe,
 # app-wide, since any text/password field could be autofilled, not just the
 # sign-in form.
-st.iframe(
+st.html(
     """
     <script>
     (function() {
@@ -992,8 +992,7 @@ st.iframe(
     })();
     </script>
     """,
-    height=1,
-    width=1,
+    unsafe_allow_javascript=True,
 )
 
 # Correlation case store and AI dossier store
@@ -7774,7 +7773,7 @@ st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True
 
 # Live sidebar search: Streamlit only commits a text_input on Enter/blur, so
 # watch the box and fire the same Enter commit shortly after typing pauses.
-st.iframe(
+st.html(
     """<script>
     (function () {
       function bind(inp) {
@@ -7800,8 +7799,7 @@ st.iframe(
       tick(); setInterval(tick, 400);
     })();
     </script>""",
-    height=1,
-    width=1,
+    unsafe_allow_javascript=True,
 )
 _ADMIN_TAB = admin_review.enabled()   # same gate as before; real access is still enforced by the database (admin role + MFA)
 with st.sidebar:
@@ -8484,7 +8482,7 @@ for _ni, _nopt in enumerate(NAV_OPTIONS, start=1):
     _nav_rules.append(_nsel + "{--c:" + _ncol + ";}")
     _nav_rules.append(_nsel + ' p::before{-webkit-mask-image:url("' + _nuri + '");mask-image:url("' + _nuri + '");}')
 st.markdown("<style>" + "".join(_nav_rules) + "</style>", unsafe_allow_html=True)
-st.iframe(
+st.html(
     """<script>
     (function () {
       var last = null, target = 0, raf = null, dragging = false;
@@ -8561,8 +8559,7 @@ st.iframe(
       tick(); setInterval(tick, 400);
     })();
     </script>""",
-    height=1,
-    width=1,
+    unsafe_allow_javascript=True,
 )
 with st.container(key="topnav"):
     active_panel = st.radio(
@@ -9079,7 +9076,7 @@ html, body, .stApp, [data-testid="stMain"], section.main, [data-testid="stAppVie
 </style>
 """
 st.markdown(_NAV_SMOOTH_CSS, unsafe_allow_html=True)
-st.iframe(
+st.html(
     r"""
     <script>
     (function () {
@@ -9128,10 +9125,9 @@ st.iframe(
     })();
     </script>
     """,
-    height=1,
-    width=1,
+    unsafe_allow_javascript=True,
 )
-st.iframe(
+st.html(
     r"""
     <script>
     (function() {
@@ -9161,8 +9157,7 @@ st.iframe(
     })();
     </script>
     """,
-    height=1,
-    width=1,
+    unsafe_allow_javascript=True,
 )
 
 _PREMIUM_DL_TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -11133,7 +11128,7 @@ if active_panel == "Dashboard":
         # this script runs), plus the persistent animation listener for
         # anything filled after that (covers new autofills later, e.g. after
         # "Change mailbox / Reconnect").
-        st.iframe(
+        st.html(
             """
             <script>
             (function () {
@@ -11183,8 +11178,7 @@ if active_panel == "Dashboard":
             })();
             </script>
             """,
-            height=1,
-            width=1,
+            unsafe_allow_javascript=True,
         )
 
         mailbox_loaded = bool(st.session_state.get("live_mailbox_messages"))
@@ -14423,7 +14417,7 @@ if active_panel == "Forensic Report":
                 # per-email dossier section further down) right after a
                 # fresh Full Report run. Streamlit components render in an
                 # iframe, so we reach the parent document to scroll it.
-                st.iframe(
+                st.html(
                     """
                     <script>
                     setTimeout(function() {
@@ -14432,8 +14426,7 @@ if active_panel == "Forensic Report":
                     }, 250);
                     </script>
                     """,
-                    height=1,
-                    width=1,
+                    unsafe_allow_javascript=True,
                 )
             _n_joint = pipeline_result.get('count', len(report_items))
             _banner(
