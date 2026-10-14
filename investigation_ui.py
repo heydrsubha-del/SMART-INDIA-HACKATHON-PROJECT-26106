@@ -1,4 +1,5 @@
 """Streamlit panel for the agentic investigation (explicit start, read-only)."""
+import json
 import re
 
 import streamlit as st
@@ -13,7 +14,7 @@ def _t(v):
     return _MD.sub(r"\\\1", ia.clean(v, 300))
 
 
-def render_investigation_panel(result, raw, cases, conns_factory, key):
+def render_investigation_panel(result, raw, cases, conns_factory, key, download_fn=None):
     store = st.session_state.setdefault("agent_investigations", {})
     key = str(key)
     st.markdown("#### Agentic Investigation")
@@ -66,6 +67,13 @@ def render_investigation_panel(result, raw, cases, conns_factory, key):
                 st.markdown(f"- {_t(f['statement'])} `[{','.join(f['evidence_ids'])}]`")
             if not items:
                 st.caption("None recorded.")
-    from_md = ia.render_report(inv, result, raw)
-    st.download_button("Download forensic report with investigation (.md)", from_md, file_name="agentic_investigation_report.md",
-                       mime="text/markdown", key="agent_dl_" + key)
+    report_md = ia.render_report(inv, result, raw)
+    st.markdown("**Download investigation report**")
+    if download_fn is not None:     # app's premium download (HTML report + Word), same as the AI assessment
+        download_fn(label="Download Investigation Report", markdown=report_md, file_name="agentic_investigation_report.md",
+                    key="agent_dl_" + key, help="Full forensic report with the agentic investigation (HTML, or Word)")
+    d1, d2 = st.columns(2)
+    d1.download_button("Markdown (.md)", report_md, file_name="agentic_investigation_report.md", mime="text/markdown",
+                       key="agent_dl_md_" + key, use_container_width=True)
+    d2.download_button("Evidence log (.json)", json.dumps(inv, indent=2, default=str), file_name="agentic_investigation_evidence.json",
+                       mime="application/json", key="agent_dl_json_" + key, use_container_width=True)
