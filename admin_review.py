@@ -307,7 +307,6 @@ def render(st, signin=None):
         st.caption(_MSG[err])
         return
     base, key = cfg
-    st.caption("Reviewers only. Access is enforced by the database (admin role + MFA); this page cannot grant it.")
     tok = review_token(store)
     if tok is None:
         bt, err = base_token(store, base, key)
@@ -357,7 +356,7 @@ def render(st, signin=None):
                     store.pop(ENROLL_KEY, None)
                     st.rerun()
         return
-    st.success("Review session active (admin role + MFA verified).")
+    st.caption("Status: review session active (admin role + MFA verified).")
     _e, _f = st.columns(2)
     if _e.button("End review session", key="admin_end", help="Signs out of the elevated review session only."):
         _clear(store)
