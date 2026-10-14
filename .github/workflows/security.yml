@@ -1,0 +1,86 @@
+name: Security and Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    name: Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+
+      - name: Check Python syntax
+        run: python -m compileall -q .
+
+      # This one audit test needs private SQL-export CSV files supplied via
+      # AUDIT_DIR; those exports are intentionally not committed to GitHub.
+      - name: Run offline Python tests
+        run: python -m pytest -q --ignore=test_package_integrity.py
+
+  security-scan:
+    name: Dependency and source security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install security scanners
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install bandit pip-audit
+
+      # Scan application Python modules, excluding tests and bundled datasets.
+      - name: Run Bandit high-severity scan
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          excluded_dirs = {".git", ".venv", "venv", "tests", "fixtures", "data"}
+          files = [
+              str(path)
+              for path in Path(".").rglob("*.py")
+              if not any(part in excluded_dirs for part in path.parts)
+              and not path.name.startswith("test_")
+          ]
+          if not files:
+              raise SystemExit("No application Python files found for Bandit scan")
+          subprocess.run([sys.executable, "-m", "bandit", "-lll", *files], check=True)
+          PY
+
+      # Audits requirements and their resolved dependency tree; findings fail the job.
+      - name: Audit Python dependencies
+        run: pip-audit -r requirements.txt
