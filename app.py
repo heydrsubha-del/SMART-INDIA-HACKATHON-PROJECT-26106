@@ -13139,25 +13139,30 @@ if active_panel == "AI Threat Analysis":
 
                 panel(_agentic_investigation, "Agentic Investigation")
 
-                # ---- Step 3: Downloads (always present, so the nav link is never dead) ----
-                _num_head(4, "Downloads", "#34d399", "Reports you can save \u00b7 the investigation report has its own button above")
-                if cleaned_single is not None:
-                    single_markdown_report = (
-                        f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
-                        f"**Evidence:** {case_name}\n\n"
-                        f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
-                        f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
-                        f"## AI Assessment\n\n{cleaned_single}"
-                    )
-                    _premium_download(
-                        label="Download AI Assessment (.md)",
-                        markdown=single_markdown_report,
-                        file_name="ai_threat_assessment.md",
-                        key="dl_ai_single_md",
-                    )
-                    st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
-                else:
-                    st.info("No report is ready yet. Run the AI assessment first to enable this download.")
+            # ---- Downloads (always present) ----
+            _sec("Download AI Threat Report", "Save the assessment as a report \u00b7 the investigation report has its own button above", tone="ai")
+            if cleaned_single is not None:
+                single_markdown_report = (
+                    f"# ALGORITHMISTIC - AI THREAT ASSESSMENT\n\n"
+                    f"**Evidence:** {case_name}\n\n"
+                    f"**Verdict:** {str(result.get('level','UNKNOWN')).upper()}  ·  "
+                    f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
+                    f"## AI Assessment\n\n{cleaned_single}"
+                )
+                _premium_download(
+                    label="Download AI Assessment (.md)",
+                    markdown=single_markdown_report,
+                    file_name="ai_threat_assessment.md",
+                    key="dl_ai_single_md",
+                )
+                st.caption("For the combined AI + machine dossier with all three download options, open the **Forensic Report** module.")
+            else:
+                st.markdown(
+                    '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border:1px dashed #2a3a52;'
+                    'border-radius:12px;background:linear-gradient(180deg,#0e1520,#0b111a);color:#8fa3b8;font-size:13.5px;">'
+                    '<span style="width:8px;height:8px;border-radius:50%;background:#a78bfa;box-shadow:0 0 10px #a78bfa;flex:none;"></span>'
+                    'No report yet \u2014 run the AI assessment above to unlock the download.</div>',
+                    unsafe_allow_html=True)
 
     panel(_ai_threat_analysis, "AI Threat Analysis")
 
