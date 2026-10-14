@@ -239,13 +239,21 @@ def _dedupe_memory(rows):
     return out
 
 
+def _rep_text(rep):
+    """'0.50' for a stored number (a real 0.00 stays '0.00'); 'n/a' when the database has NULL/unusable -- never a fabricated 0.00."""
+    try:
+        return "%.2f" % float(rep) if rep is not None else "n/a"
+    except (TypeError, ValueError):
+        return "n/a"
+
+
 def _mem_row(ind, typ, match, rep, cat, fs, ls, obs, src, selfset=frozenset()):
     if (typ, _norm(ind)) in selfset:
         obs = max(int(obs or 0) - 1, 0)
         if obs == 0:
             return None
     return {"Source": "Threat memory", "Indicator": ind, "Type": typ, "Match": match, "Class": classify_source(src),
-            "Where": f"{cat or 'unknown'} via {src or '?'} (reputation {float(rep or 0):.2f})",
+            "Where": f"{cat or 'unknown'} via {src or '?'} (reputation {_rep_text(rep)})",
             "First seen": fs or "-", "Last seen": ls or "-", "Times": int(obs or 0), "Verdict": "-", "Score": "-"}
 
 
