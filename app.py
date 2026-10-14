@@ -12457,17 +12457,15 @@ if not _csv_awaiting_scan:
     if active_panel == "Dashboard" and past_attacks > 1:
         st.error(f" **REPEAT OFFENDER DETECTED!** This IP ({current_ip}) is in our threat database. They have attacked your network {past_attacks - 1} times previously with a max threat score of {highest_past_score:.0f}/100. This is a persistent campaign.")
 
-    # Slim one-line status strip replaces the old full-width verdict banner and
-    # 5-metric row — the full detail now lives once, in the Dashboard's right pane.
-    st.caption(
-        f"**{case_name}** · Verdict **{result['level'].upper()}** ({result['score']:.0f}/100) · "
-        f"ML phishing {result['ml']['prob']:.0%} · "
-        f"Auth {sum(1 for m in ('spf','dkim','dmarc') if headers[m]=='pass')}/3 · "
-        f"Anomalies {len(headers['anomalies'])} · "
-        f"Origin {(geo['origin'].get('country_code') or geo['origin'].get('country','?'))}"
-    )
+    pass
 elif active_panel == "Dashboard":
     st.caption(f" **{uploaded.name}** loaded — choose a scan option above to begin forensic analysis.")
+
+st.markdown(
+    '<div style="height:2px;margin:6px 0 14px 0;border-radius:2px;opacity:.85;'
+    'background:linear-gradient(90deg,transparent 0%,var(--panel-tone,#22d3ee) 18%,rgba(148,163,184,.28) 60%,transparent 100%);'
+    'box-shadow:0 0 14px -2px color-mix(in srgb,var(--panel-tone,#22d3ee) 55%,transparent);"></div>',
+    unsafe_allow_html=True)
 
 # NAV_OPTIONS / active_panel are already set — the pill bar now renders once,
 # at the very top of the page, replacing the old 7-button top nav row.
