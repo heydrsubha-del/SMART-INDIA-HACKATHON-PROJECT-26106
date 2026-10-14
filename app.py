@@ -13086,7 +13086,8 @@ if active_panel == "AI Threat Analysis":
                 return out
             from investigation_ui import render_investigation_panel
             render_investigation_panel(dict(result, _evidence_hash=current_evidence_hash), raw,
-                                       [r for r in _corr_cases.values() if "error" not in r], _agent_conns, current_evidence_hash)
+                                       [r for r in _corr_cases.values() if "error" not in r], _agent_conns, current_evidence_hash,
+                                       download_fn=_premium_download)
 
     panel(_ai_threat_analysis, "AI Threat Analysis")
 
