@@ -16,7 +16,7 @@
 <br/><br/>
 
 <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
-<img src="https://img.shields.io/badge/Streamlit-1.30%2B-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit"/>
+<img src="https://img.shields.io/badge/Streamlit-1.56%2B-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit"/>
 <img src="https://img.shields.io/badge/scikit--learn-TF--IDF%20%2B%20LogReg-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" alt="scikit-learn"/>
 <img src="https://img.shields.io/badge/Ollama-Local%20AI-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama"/>
 <img src="https://img.shields.io/badge/Plotly-Dark%20SOC%20UI-3F4F75?style=flat-square&logo=plotly&logoColor=white" alt="Plotly"/>

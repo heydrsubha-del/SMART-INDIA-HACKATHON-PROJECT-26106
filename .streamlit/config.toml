@@ -1,5 +1,4 @@
 [server]
-[server]
 headless = true
 maxUploadSize = 50
 
@@ -14,12 +13,12 @@ gatherUsageStats = false
 # Streamlit's own generated styles, not ordinary page CSS. Setting the
 # real theme here changes it at the source for every widget in the app,
 # in one place.
-primaryColor = "#5470ff"
+primaryColor = "#2fb68e"
 
 # Matches the dark palette already used throughout app.py (--bg, --panel,
 # --panel-2 custom-CSS variables) so Streamlit's own chrome agrees with
 # the custom-styled content instead of clashing with it.
-backgroundColor = "#05070a"
-secondaryBackgroundColor = "#0d121c"
-textColor = "#eaf6ff"
+backgroundColor = "#0a0d12"
+secondaryBackgroundColor = "#131922"
+textColor = "#dde3ea"
 font = "sans serif"
