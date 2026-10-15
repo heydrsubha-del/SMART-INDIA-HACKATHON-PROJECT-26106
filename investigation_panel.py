@@ -262,23 +262,25 @@ _PRO_RES = _pro("""
 .ov-lgs span{display:inline-flex;align-items:center;gap:7px;}
 .ov-lgs span::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--c);}
 .ov-lgs b{font:700 14px Inter,sans-serif;color:#fff;}
-.rs-card.ov{border:1px solid color-mix(in srgb,var(--c) 38%,rgba(255,255,255,.08));border-radius:16px;background:#0b111a;overflow:hidden;}
-.ov .ov-top{padding:20px 24px 20px 28px;background:linear-gradient(105deg,color-mix(in srgb,var(--c) 22%,#0b111a) 0%,color-mix(in srgb,var(--c) 8%,#0b111a) 42%,#0e1520 42.2%,#0c121b 100%);}
-.ov .ov-eyebrow{display:flex;align-items:center;gap:10px;color:var(--c);letter-spacing:.2em;}
-.ov .ov-eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--c);}
-.ov .ov-eyebrow em{color:#8fa3b8;}
+.rs-sm.ov::before{display:none;}
+.rs-card.ov{border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#0b111a;overflow:hidden;}
+.ov .ov-hd{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#0f1722,#0b111a);}
+.ov .ov-hl{flex:0 0 auto;display:flex;align-items:center;padding:12px 52px 12px 22px;clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);background:linear-gradient(150deg,color-mix(in srgb,var(--c) 34%,#0a0f18),color-mix(in srgb,var(--c) 10%,#0a0f18));}
+.ov .ov-hl span{padding:5px 11px;border-radius:7px;font:700 10px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);}
+.ov .ov-hs{align-self:center;padding:0 22px;font:400 12.5px Inter,sans-serif;color:#8fa3b8;}
+.ov .ov-top{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:0;padding:0;background:none;align-items:stretch;}
+.ov .ov-main{padding:20px 24px 18px;}
 .ov .rs-sh{font-size:20px;letter-spacing:-.015em;}
-.ov .ov-score{padding:14px 18px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#0e1520;}
-.ov .ov-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,240px);gap:12px;padding:14px 24px 14px 28px;border-top:1px solid rgba(255,255,255,.07);background:#0b111a;}
-.ov .ov-c,.ov .ov-c+.ov-c{padding:14px 18px 16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#0e1520;}
-.ov .ov-l{color:var(--c);}
-.ov .ov-c+.ov-c .ov-l{color:#38bdf8;}
+.ov .ov-score{padding:18px 24px;border:0;border-left:1px solid rgba(255,255,255,.08);border-radius:0;background:none;}
+.ov .ov-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:0;padding:0;border-top:1px solid rgba(255,255,255,.08);background:none;}
+.ov .ov-c,.ov .ov-c+.ov-c{padding:16px 24px 18px;border:0;border-radius:0;background:none;}
+.ov .ov-c+.ov-c{border-left:1px solid rgba(255,255,255,.08);}
 .ov .ov-c .ov-l{color:#34d399;}
 .ov .ov-c+.ov-c .ov-l{color:#38bdf8;}
 .ov .ov-score .ov-l{color:#a78bfa;}
-.ov .ov-n{font-size:32px;margin-top:12px;}
-.ov .ov-bar{height:12px;}
-.ov .rs-raw{margin:0 24px 16px 28px;}
+.ov .ov-n{font-size:30px;margin-top:12px;}
+.ov .ov-bar{height:10px;}
+.ov .rs-raw{margin:0;padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);}
 """)
 def _bare(c):
     return c.replace("<style>", "").replace("</style>", "")
@@ -400,8 +402,10 @@ def _overview(inv):
             f'<span>Stopped <b>{_h(inv["stop_reason"] or "-", 40).replace("_", " ")}</b></span>')
     raw = (f'<details class="rs-raw"><summary>Show generated text</summary><p>{_h(inv["narrative"], 4000)}</p></details>'
            if inv.get("narrative") else "")
-    return (f'<div class="rs-card rs-sm ov {kc}"><div class="ov-top"><div class="ov-main">'
-            '<div class="ov-eyebrow">Summary<em>Generated from tool findings</em></div>'
+    return (f'<div class="rs-card rs-sm ov {kc}">'
+            '<div class="ov-hd"><div class="ov-hl"><span>Summary</span></div>'
+            '<div class="ov-hs">Generated from tool findings</div></div>'
+            '<div class="ov-top"><div class="ov-main">'
             f'<div class="rs-sh">{head}</div><div class="ov-meta">{meta}</div>'
             f'<div class="ov-vd">Scanner verdict (unchanged): <b>{_h(lv, 12)} \u00b7 {sc}/100</b>. '
             'Absence of findings is not evidence of safety.</div></div>'
