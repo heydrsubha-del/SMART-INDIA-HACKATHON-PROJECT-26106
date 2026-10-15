@@ -13239,6 +13239,12 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 ]
                 return "<style>\n" + "\n".join(f"{a}{{" + ";".join(d.strip() + " !important" for d in b.split(";") if d.strip()) + ";}" for a, b in _rules) + "\n</style>"
             st.markdown(_flat_boxes(), unsafe_allow_html=True)
+            _pp, _nn = "html body " + ".stApp" * 12, ":not(#_x)" * 8
+            _sel = ",".join(f"{_pp} .st-key-ai_step_{k}{_nn}{x}" for k in ("assess", "agent") for x in ("", " > [data-testid=\"stVerticalBlockBorderWrapper\"]"))
+            st.markdown(
+                f"<style>{_sel}{{border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;padding:0 !important;}}</style>",
+                unsafe_allow_html=True,
+            )
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
