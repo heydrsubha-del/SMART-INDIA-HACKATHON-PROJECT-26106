@@ -262,7 +262,23 @@ _PRO_RES = _pro("""
 .ov-lgs span{display:inline-flex;align-items:center;gap:7px;}
 .ov-lgs span::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--c);}
 .ov-lgs b{font:700 14px Inter,sans-serif;color:#fff;}
-.ov .rs-raw{margin:0 24px 16px;}
+.rs-card.ov{border:1px solid color-mix(in srgb,var(--c) 38%,rgba(255,255,255,.08));border-radius:16px;background:#0b111a;overflow:hidden;}
+.ov .ov-top{padding:20px 24px 20px 28px;background:linear-gradient(105deg,color-mix(in srgb,var(--c) 22%,#0b111a) 0%,color-mix(in srgb,var(--c) 8%,#0b111a) 42%,#0e1520 42.2%,#0c121b 100%);}
+.ov .ov-eyebrow{display:flex;align-items:center;gap:10px;color:var(--c);letter-spacing:.2em;}
+.ov .ov-eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--c);}
+.ov .ov-eyebrow em{color:#8fa3b8;}
+.ov .rs-sh{font-size:20px;letter-spacing:-.015em;}
+.ov .ov-score{padding:14px 18px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#0e1520;}
+.ov .ov-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,240px);gap:12px;padding:14px 24px 14px 28px;border-top:1px solid rgba(255,255,255,.07);background:#0b111a;}
+.ov .ov-c,.ov .ov-c+.ov-c{padding:14px 18px 16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#0e1520;}
+.ov .ov-l{color:var(--c);}
+.ov .ov-c+.ov-c .ov-l{color:#38bdf8;}
+.ov .ov-c .ov-l{color:#34d399;}
+.ov .ov-c+.ov-c .ov-l{color:#38bdf8;}
+.ov .ov-score .ov-l{color:#a78bfa;}
+.ov .ov-n{font-size:32px;margin-top:12px;}
+.ov .ov-bar{height:12px;}
+.ov .rs-raw{margin:0 24px 16px 28px;}
 """)
 def _bare(c):
     return c.replace("<style>", "").replace("</style>", "")
