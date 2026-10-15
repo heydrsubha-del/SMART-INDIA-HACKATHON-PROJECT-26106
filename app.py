@@ -13152,6 +13152,27 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label:hover {transform:translateY(-1px); border-color:rgba(167,139,250,.55) !important; box-shadow:0 8px 22px -12px #a78bfa !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label:has(input:checked) {border-color:rgba(52,211,153,.6) !important; background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(52,211,153,.03)) !important; box-shadow:0 0 0 3px rgba(52,211,153,.08), 0 10px 26px -14px #34d399 !important;}
 </style>""", unsafe_allow_html=True)
+
+            st.markdown("""<style>
+html body .stApp.stApp.stApp.stApp .st-key-ai_step_assess{position:relative;overflow:hidden;border:1px solid rgba(167,139,250,.28)!important;background:radial-gradient(60% 90% at 0% 0%,rgba(167,139,250,.16),transparent 65%),radial-gradient(50% 80% at 100% 100%,rgba(56,189,248,.08),transparent 70%),linear-gradient(180deg,#111827,#0a0f18)!important}
+html body .stApp.stApp.stApp.stApp .st-key-ai_step_assess::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,#a78bfa,#38bdf8,#34d399)}
+.ai1-pipe{display:flex;align-items:center;gap:0;height:48px;flex-wrap:wrap}
+.ai1-st{display:flex;align-items:center;gap:9px;padding:6px 14px 6px 8px;border-radius:999px;font:600 12px Inter,sans-serif;color:#9fb0c5;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
+.ai1-st i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 11px Inter,sans-serif;font-style:normal;color:#0a0f18;background:#34d399}
+.ai1-st.n i{background:#a78bfa}.ai1-st.l i{background:#38bdf8}
+.ai1-ln{width:26px;height:2px;background:linear-gradient(90deg,#34d399,#a78bfa)}
+.ai1-pill{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font:700 10.5px ui-monospace,monospace;letter-spacing:.14em;color:#6ee7b7;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35)}
+.ai1-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399;animation:a1p 2s infinite}
+@keyframes a1p{50%{opacity:.3}}
+.ai1-empty{display:block!important;padding:20px!important;border:1px dashed rgba(167,139,250,.35)!important;background:rgba(167,139,250,.04)!important}
+.ai1-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.ai1-c{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);transition:.18s}
+.ai1-c:hover{border-color:var(--t);transform:translateY(-2px)}
+.ai1-c b{display:block;font:700 13px Inter,sans-serif;color:var(--t)}
+.ai1-c span{display:block;margin-top:4px;font:12px/1.45 Inter,sans-serif;color:#8294aa}
+@media(max-width:700px){.ai1-cards{grid-template-columns:1fr}.ai1-pill{display:none}}
+</style>""", unsafe_allow_html=True)
+
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _num_head(1, "AI Assessment", "#a78bfa", "Local Qwen model \u00b7 nothing is sent to external services")
@@ -13159,9 +13180,12 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 _b1, _b2 = st.columns([1, 5], vertical_alignment="center")
                 run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
                                          use_container_width=True, key="run_qwen_single")
-                _b2.markdown('<div class="ai1-chips"><span class="ai1-chip">Local model</span>'
-                             '<span class="ai1-chip">Offline</span><span class="ai1-chip">No data leaves device</span></div>',
-                             unsafe_allow_html=True)
+                                _b2.markdown('<div class="ai1-pipe">
+                                <span class="ai1-st">
+                                <i>1</i>Evidence parsed</span><span class="ai1-ln"></span><span class="ai1-st n"><i>2</i>Qwen reasoning</span><span class="ai1-ln"></span>
+                                <span class="ai1-st l"><i>3</i>Threat report</span>
+                                <span class="ai1-pill">LOCAL · OFFLINE</span></div>', 
+                                unsafe_allow_html=True)
 
                 if run_clicked:
                     ai_progress = st.progress(0, text="Qwen AI analysis: 0%")
@@ -13202,7 +13226,8 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
                     st.caption("Check that the local model service is running, then use Run AI assessment again.")
                 else:
-                    st.markdown('<div class="ai1-empty"><div class="ai1-ico">\u2726</div><div><div class="ai1-et">No assessment yet</div>'
+                                        st.markdown('<div class="ai1-empty"><div style="display:flex;gap:14px;align-items:center"><div class="ai1-ico">✦</div><div><div class="ai1-et">No assessment yet</div><div class="ai1-eh">Press <b>Run AI assessment</b> to generate a threat summary for this message.</div></div></div><div class="ai1-cards"><div class="ai1-c" style="--t:#f0646e"><b>Verdict &amp; confidence</b><span>Clear call with reasoning tied to evidence.</span></div><div class="ai1-c" style="--t:#d9a35f"><b>Key indicators</b><span>Links, auth failures, origin anomalies.</span></div><div class="ai1-c" style="--t:#34d399"><b>Recommended actions</b><span>What to do next, in priority order.</span></div></div></div>', 
+                                        unsafe_allow_html=True)
                                 '<div class="ai1-eh">Press <b>Run AI assessment</b> to generate a threat summary for this message.</div></div></div>',
                                 unsafe_allow_html=True)
 
