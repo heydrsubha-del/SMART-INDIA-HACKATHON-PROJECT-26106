@@ -1,4 +1,5 @@
 """Streamlit panel for the agentic investigation (explicit start, read-only)."""
+import contextlib
 import html
 import re
 
@@ -101,6 +102,10 @@ _RES_CSS = """<style>
 .rs-t .mo{font:500 12px ui-monospace,Consolas,monospace;color:#b9c6da;word-break:break-all}.rs-t .mu{color:#8fa3b8;white-space:nowrap}.rs-t .wh{color:#9fb0c6;min-width:240px}
 .rs-b{display:inline-block;padding:2px 9px;border-radius:999px;font:700 11px Inter,sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);white-space:nowrap}
 .rs-ev span{font:600 11.5px Inter,sans-serif !important;color:#b9c6da !important}
+.rs-sh{font:600 16px/1.4 Inter,sans-serif;color:#fff}.rs-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.rs-chip{display:inline-flex;align-items:baseline;gap:7px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font:400 12.5px Inter,sans-serif;color:#8fa3b8}.rs-chip b{font:700 15px Inter,sans-serif;color:#fff}
+.rs-vd{font:400 13px/1.6 Inter,sans-serif;color:#9fb0c6}.rs-vd b{color:#e5ecf6;font-weight:600}
+.rs-raw{margin-top:12px}.rs-raw summary{cursor:pointer;font:500 12px Inter,sans-serif;color:#6f7f95}.rs-raw p{margin:8px 0 0;font:400 12.5px/1.6 Inter,sans-serif;color:#7d8da3}
 @media(max-width:900px){.rs-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.rs-k:nth-child(4){border-left:0}}
 </style>"""
 
@@ -108,6 +113,74 @@ _RES_CSS = """<style>
 def _h(v, n=300):
     """Escape email-derived text for HTML contexts (no markdown escaping)."""
     return html.escape(str(ia.clean(v, n)))
+
+_SCAN_CSS = """<style>
+.sc{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0b111a;margin:14px 0}
+.sc::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px) 0 0/100% 22px,linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) 0 0/22px 100%}
+.sc::after{content:'';position:absolute;top:0;bottom:0;width:140px;left:-140px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(56,189,248,.12),transparent);animation:scSweep 2.6s linear infinite}
+@keyframes scSweep{to{left:100%}}
+.sc-h{position:relative;z-index:1;display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sc-radar{position:relative;flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:1px solid rgba(56,189,248,.4);background:radial-gradient(circle,rgba(56,189,248,.16),transparent 70%)}
+.sc-radar::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(56,189,248,.6),transparent 35%);animation:scSpin 1.4s linear infinite}
+.sc-radar::after{content:'';position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#38bdf8}
+@keyframes scSpin{to{transform:rotate(360deg)}}
+.sc-t b{display:block;font:600 14px Inter,sans-serif;color:#fff}.sc-t span{font:400 12px Inter,sans-serif;color:#6f7f95}
+.sc-cnt{margin-left:auto;font:600 12px ui-monospace,Consolas,monospace;color:#8fa3b8}
+.sc-bar{position:relative;z-index:1;height:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.sc-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--p);background:linear-gradient(90deg,#6366f1,#38bdf8);transition:width .4s ease}
+.sc-bar::after{content:'';position:absolute;top:0;bottom:0;width:70px;left:-70px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:scSweep 1.3s linear infinite}
+.sc-log{position:relative;z-index:1;padding:12px 20px 16px;font:500 12.5px/1.9 ui-monospace,Consolas,monospace;color:#8fa3b8}
+.sc-log div{display:flex;gap:12px}.sc-log .ok{color:#34d399}.sc-log .run{color:#38bdf8}.sc-log .n{color:#5b6b82}
+.sc-log .cur::after{content:'';display:inline-block;width:7px;height:13px;margin-left:6px;background:#38bdf8;vertical-align:middle;animation:scBlink 1s steps(2) infinite}
+@keyframes scBlink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.sc::after,.sc-radar::before,.sc-bar::after,.sc-log .cur::after{animation:none}}
+</style>"""
+
+
+def _scan_html(seen, calls):
+    pct = min(95, len(seen) * 100 // max(1, int(calls))) if seen else 4
+    rows = []
+    for i, (n, tool) in enumerate(seen):
+        last = i == len(seen) - 1
+        rows.append(f'<div class="{"run" if last else ""}"><span class="{"run" if last else "ok"}">{"\u203A" if last else "\u2713"}</span>'
+                    f'<span class="n">{int(n):02d}</span><span class="{"cur" if last else ""}">{html.escape(_hum(tool))}</span></div>')
+    if not rows:
+        rows.append('<div class="run"><span class="run">\u203A</span><span class="cur">Planning investigation</span></div>')
+    return (_SCAN_CSS + '<div class="sc"><div class="sc-h"><div class="sc-radar"></div><div class="sc-t"><b>Investigating</b>'
+            '<span>Read-only checks \u00b7 results appear when complete</span></div>'
+            f'<div class="sc-cnt">{len(seen)} / {int(calls)} CALLS</div></div><div class="sc-bar" style="--p:{pct}%"><i></i></div>'
+            f'<div class="sc-log">{"".join(rows)}</div></div>')
+
+
+def _show(slot, markup):
+    try:
+        slot.markdown(markup, unsafe_allow_html=True)
+    except Exception:
+        pass
+
+
+def _summary(inv):
+    k = {x: sum(1 for f in inv["findings"] if f["kind"] == x) for x in ("suspicious", "uncertain", "verified")}
+    if k["suspicious"]:
+        head = "Suspicious signals found \u2014 review before acting."
+    elif k["uncertain"]:
+        head = f"No suspicious signals found, but {k['uncertain']} check(s) could not be completed."
+    else:
+        head = "No suspicious signals found."
+    snap = inv["score_snapshot"]
+    try:
+        sc = f"{float(snap['score']):.1f}"
+    except (TypeError, ValueError):
+        sc = _h(snap.get("score"), 12)
+    chips = "".join(f'<span class="rs-chip"><b>{v}</b>{lab}</span>' for v, lab in (
+        (len(inv["evidence"]), "checks run"), (k["verified"], "verified"), (k["suspicious"], "suspicious"), (k["uncertain"], "gaps")))
+    raw = (f'<details class="rs-raw"><summary>Show generated text</summary><p>{_h(inv["narrative"], 4000)}</p></details>'
+           if inv.get("narrative") else "")
+    return ('<div class="rs-card"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div><div class="rs-bd">'
+            f'<div class="rs-sh">{head}</div><div class="rs-chips">{chips}</div>'
+            f'<div class="rs-vd">Scanner verdict (unchanged): <b>{_h(snap.get("level"), 12)} \u00b7 {sc}/100</b>. '
+            f'Absence of findings is not evidence of safety.</div>{raw}</div></div>')
+
 
 
 def _hum(v):
@@ -232,13 +305,17 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     if go:
         log = st.empty()
         seen = []
-        with st.spinner("Investigating..."):
+        _show(log, _scan_html(seen, calls))
+        with contextlib.nullcontext():
             def _p(n, tool):
-                seen.append(f"{n}. {tool}")
-                log.caption("Running: " + " → ".join(seen))
+                seen.append((n, tool))
+                _show(log, _scan_html(seen, calls))
             store[key] = ia.investigate(result, cases=cases, conns_factory=conns_factory, allow_network=net, use_ai=use_ai,
                                         limits=ia.Limits(max_iterations=iters, max_tool_calls=calls, max_seconds=secs), progress=_p)
-        log.empty()
+        try:
+            log.empty()
+        except Exception:
+            pass
     inv = store.get(key)
     if not inv:
         return
@@ -246,9 +323,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     _pills(inv)
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
-    if inv.get("narrative"):
-        st.markdown('<div class="rs-card"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div>'
-                    f'<div class="rs-bd">{_h(inv["narrative"], 4000)}</div></div>', unsafe_allow_html=True)
+    st.markdown(_RES_CSS + _summary(inv), unsafe_allow_html=True)
 
     t1, t2, t3 = st.tabs(["Findings", "Action log", "Evidence"])
     with t1:
