@@ -13092,6 +13092,16 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"]:hover {border-color:#a78bfa66;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"] label {margin:0 !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton button {min-height:48px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) {box-shadow:none !important; border-radius:16px !important; padding:18px 20px 8px 20px !important; background:linear-gradient(180deg,#101826,#0c121b) !important; border:1px solid #232f43 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details[open] {border:0 !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary {padding:0 0 14px 0 !important; align-items:baseline !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary p {font:700 12px/1 Inter,"Segoe UI",sans-serif !important; letter-spacing:.16em !important; color:#d6c9ff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary p::after {content:"Per-run caps that keep the investigation bounded" !important; margin-left:14px; font:500 12.5px/1 Inter,"Segoe UI",sans-serif; letter-spacing:0; text-transform:none; color:#7d8fa5;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] {background:#0b111a; border:1px solid #1d2838; border-radius:12px; padding:12px 14px 14px 14px;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] label p {font-size:11px !important; letter-spacing:.14em !important; color:#8ea1b8 !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"] {width:fit-content !important; min-width:0;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {gap:14px !important; justify-content:flex-start !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) > [data-testid="stColumn"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
 </style>""", unsafe_allow_html=True)
             st.html(
                 """<script>
