@@ -36,6 +36,13 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
  background:radial-gradient(100% 140% at 0% 0%,color-mix(in srgb,var(--ac) 22%,transparent),transparent 65%), linear-gradient(180deg,#0e1520,#0a1018) !important; box-shadow:0 16px 32px -18px var(--ac) !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_lim_"]::before {content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg,var(--ac),transparent 85%);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] {background:linear-gradient(135deg,#8b5cf6,#38bdf8) !important; border:0 !important; box-shadow:0 14px 30px -12px #8b5cf6, inset 0 1px 0 rgba(255,255,255,.3) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] {position:relative; padding:12px 14px !important; border-radius:16px !important; background:#0a1018 !important; border:1px solid rgba(255,255,255,.1) !important; box-shadow:0 14px 30px -18px #000 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_calls_"] {border-color:rgba(167,139,250,.5) !important; box-shadow:0 14px 30px -16px #a78bfa !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_iters_"] {border-color:rgba(56,189,248,.5) !important; box-shadow:0 14px 30px -16px #38bdf8 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_secs_"] {border-color:rgba(52,211,153,.5) !important; box-shadow:0 14px 30px -16px #34d399 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] .ag-gauge {border:0; box-shadow:none; background:none; padding:0;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] [data-testid="stButton"] button {min-width:38px !important; width:38px !important; height:38px !important; min-height:38px !important; padding:0 !important; border-radius:10px !important; font:800 18px/1 Inter,sans-serif !important; background:#111a26 !important; border:1px solid rgba(255,255,255,.14) !important; color:#fff !important; box-shadow:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] [data-testid="stButton"] button:hover {border-color:#a78bfa !important; background:#1a2434 !important;}
 </style>"""
 
 
@@ -61,22 +68,31 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     with c2.container(key="agent_opt_net_" + key):
       net = st.checkbox("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
                       help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
+    def _step(k, d, lo, hi):
+        st.session_state[k] = max(lo, min(hi, int(st.session_state.get(k, lo)) + d))
+    _lim = {}
     with st.expander("Limits", expanded=False):
-        a, b, c = st.columns(3)
-        with a.container(key="agent_lim_calls_" + key):
-            calls = st.number_input("Max tool calls", 1, 15, 10, key="agent_calls_" + key)
-        with b.container(key="agent_lim_iters_" + key):
-            iters = st.number_input("Max iterations", 1, 15, 10, key="agent_iters_" + key)
-        with c.container(key="agent_lim_secs_" + key):
-            secs = st.number_input("Max seconds", 10, 300, 90, key="agent_secs_" + key)
-    _g = lambda c, p, v, t, d: ('<div class="ag-gauge" style="--c:' + c + ';--p:' + str(p) + '"><div class="ag-ring"><div>' + str(v)
-                                + '</div></div><div><span>' + t + '</span><small>' + d + '</small></div></div>')
+        _cols = st.columns(3)
+        for _col, (_n, _lab, _sub, _lo, _hi, _df, _c) in zip(_cols, (
+                ("calls", "TOOL CALLS", "hard cap per run", 1, 15, 10, "#a78bfa"),
+                ("iters", "ITERATIONS", "planning loops", 1, 15, 10, "#38bdf8"),
+                ("secs", "SECONDS", "wall-clock budget", 10, 300, 90, "#34d399"))):
+            _k = "agent_" + _n + "_" + key
+            st.session_state.setdefault(_k, _df)
+            _stp = 1 if _n != "secs" else 10
+            with _col.container(key="agent_g_" + _n + "_" + key):
+                _m, _x, _y = st.columns([5, 1.3, 1.3], vertical_alignment="center")
+                _v = int(st.session_state[_k])
+                _m.markdown('<div class="ag-gauge" style="--c:' + _c + ';--p:' + str((_v - 0) * 100 // _hi) + '"><div class="ag-ring"><div>' + str(_v)
+                            + '</div></div><div><span>MAX ' + _lab + '</span><small>' + _sub + '</small></div></div>', unsafe_allow_html=True)
+                _x.button("\u2212", key="agent_dn_" + _n + "_" + key, on_click=_step, args=(_k, -_stp, _lo, _hi))
+                _y.button("+", key="agent_up_" + _n + "_" + key, on_click=_step, args=(_k, _stp, _lo, _hi))
+            _lim[_n] = int(st.session_state[_k])
+    calls, iters, secs = _lim["calls"], _lim["iters"], _lim["secs"]
     st.markdown('<div class="ag-prof"><div class="ag-h">RUN PROFILE'
                 '<span class="ag-chip" style="--c:' + ('#34d399' if use_ai else '#8b96a5') + '">' + ('AI-ASSISTED' if use_ai else 'DETERMINISTIC') + '</span>'
-                '<span class="ag-chip" style="--c:' + ('#f59e0b' if net else '#8b96a5') + '">' + ('PUBLIC DNS/RDAP ON' if net else 'OFFLINE LOOKUPS') + '</span></div>'
-                + _g('#a78bfa', int(calls) * 100 // 15, calls, 'TOOL CALLS', 'hard cap per run')
-                + _g('#38bdf8', int(iters) * 100 // 15, iters, 'ITERATIONS', 'planning loops')
-                + _g('#34d399', int(secs) * 100 // 300, secs, 'SECONDS', 'wall-clock budget') + '</div>', unsafe_allow_html=True)
+                '<span class="ag-chip" style="--c:' + ('#f59e0b' if net else '#8b96a5') + '">' + ('PUBLIC DNS/RDAP ON' if net else 'OFFLINE LOOKUPS') + '</span></div></div>',
+                unsafe_allow_html=True)
     if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
