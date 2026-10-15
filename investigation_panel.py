@@ -281,6 +281,10 @@ _PRO_RES = _pro("""
 .ov .ov-n{font-size:30px;margin-top:12px;}
 .ov .ov-bar{height:10px;}
 .ov .rs-raw{margin:0;padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);}
+.rs-card:not(.ov) > .rs-hd{display:block;padding:0;background:linear-gradient(180deg,#0f1722,#0b111a);border-bottom:1px solid rgba(255,255,255,.08);}
+.rs-card:not(.ov) > .rs-hd .hd-l{display:inline-flex;flex-direction:column;gap:4px;padding:14px 56px 14px 22px;clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);background:linear-gradient(150deg,color-mix(in srgb,var(--t,#38bdf8) 34%,#0a0f18),color-mix(in srgb,var(--t,#38bdf8) 10%,#0a0f18));}
+.rs-card:not(.ov) > .rs-hd .hd-l b{display:block;font:800 16px/1.25 Inter,sans-serif;letter-spacing:-.01em;color:#fff;}
+.rs-card:not(.ov) > .rs-hd .hd-l span{padding:0;border:0;border-radius:0;background:none;font:400 12px/1.4 Inter,sans-serif;color:#b4c3d4;}
 """)
 def _bare(c):
     return c.replace("<style>", "").replace("</style>", "")
@@ -492,7 +496,7 @@ def _pills(inv):
 
 def _findings(inv):
     src = _src(inv)
-    parts = ['<div class="rs-card"><div class="rs-hd"><b>Findings</b><span>Source = the tool that produced each finding</span></div>']
+    parts = ['<div class="rs-card" style="--t:#a78bfa"><div class="rs-hd"><div class="hd-l"><b>Findings</b><span>Source = the tool that produced each finding</span></div></div>']
     for kind, title, color, desc in _KINDS:
         items = [f for f in inv["findings"] if f["kind"] == kind]
         op = " open" if kind != "verified" and items else ""
@@ -519,7 +523,7 @@ def _actions(inv):
         f'<tr><td class="n">{_h(x["n"], 6)}</td><td class="tl">{_h(_hum(x["tool"]), 60)}</td>'
         f'<td class="mo">{_h(x["args"].get("indicator", "-"), 120)}</td><td>{badge(x.get("status"))}</td>'
         f'<td class="mu">{_h(_hum(x["source"]), 30)}</td><td class="wh">{_h(x["reason"], 400)}</td></tr>' for x in inv["steps"])
-    st.markdown(f'<div class="rs-card"><div class="rs-hd"><b>Action log</b><span>{len(inv["steps"])} steps run by the agent</span></div>'
+    st.markdown(f'<div class="rs-card" style="--t:#38bdf8"><div class="rs-hd"><div class="hd-l"><b>Action log</b><span>{len(inv["steps"])} steps run by the agent</span></div></div>'
                 '<div class="rs-tw"><table class="rs-t"><thead><tr><th>Step</th><th>Tool</th><th>Target</th><th>Result</th><th>Chosen by</th><th>Why</th></tr></thead>'
                 f'<tbody>{rows}</tbody></table></div></div>', unsafe_allow_html=True)
 
@@ -565,8 +569,8 @@ def _evidence(inv):
             rows.append('<div class="ev-r"><div class="ev-top">' + chip + '<span class="ev-i">' + _h(r.get(icol), 600) + "</span>"
                         + badge + '</div><div class="ev-g">' + fields + "</div>" + why + "</div>")
         title = f"{src.get(e['id'], e['id'])} \u00b7 {e['args'].get('indicator', '-')}"
-        st.markdown('<div class="rs-card"><div class="rs-hd"><b>' + _h(title, 160) + "</b><span>" + str(len(recs))
-                    + " rows \u00b7 stored values as found</span></div>" + "".join(rows)
+        st.markdown('<div class="rs-card" style="--t:#34d399"><div class="rs-hd"><div class="hd-l"><b>' + _h(title, 160) + "</b><span>" + str(len(recs))
+                    + " rows \u00b7 stored values as found</span></div></div>" + "".join(rows)
                     + '<div class="ev-note">\u2018historical\u2019 = seen before only; \u2018suspicious\u2019 / \u2018confirmed\u2019 '
                     "require stored evidence in the record.</div></div>", unsafe_allow_html=True)
         vals = list(dict.fromkeys(str(r.get(icol, "")) for r in recs if r.get(icol)))
