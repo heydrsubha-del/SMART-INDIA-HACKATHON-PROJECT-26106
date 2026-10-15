@@ -13170,22 +13170,22 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     out.append(",".join(ss) + "{" + ";".join(d.strip() + " !important" for d in dec.split(";") if d.strip()) + ";}")
                 return "<style>\n" + "\n".join(out) + "\n</style>"
             # Same scale as the module banner above (21px title, 13px sub, 18/24/18/30 padding).
-            st.markdown(_sz("""{padding:18px 24px 18px 30px;margin:0 0 16px 0;border-radius:16px;}
-> [data-testid="stVerticalBlock"]{gap:1rem;}
-.aih{gap:14px;}
-.aih-ico{width:40px;height:40px;border-radius:12px;}
-.aih-ico svg{width:22px;height:22px;}
-.aih-n{font-size:10px;letter-spacing:.2em;}
-.aih-t{margin-top:5px;font:750 21px/1.2 Inter,'Segoe UI',sans-serif;}
-.aih-s{margin-top:3px;font-size:13px;line-height:1.5;}
-.ai1-chips{gap:6px;margin-top:10px;}
+            st.markdown(_sz("""{padding:20px 26px 22px 30px;margin:0 0 18px 0;border-radius:16px;}
+> [data-testid="stVerticalBlock"]{gap:1.25rem;padding-bottom:10px;}
+.aih{gap:12px;}
+.aih-ico{width:34px;height:34px;border-radius:10px;}
+.aih-ico svg{width:19px;height:19px;}
+.aih-n{font-size:9.5px;letter-spacing:.2em;}
+.aih-t{margin-top:4px;font:750 17px/1.25 Inter,'Segoe UI',sans-serif;}
+.aih-s{margin-top:3px;font-size:12.5px;line-height:1.5;}
+.ai1-chips{display:none;}
 .ai1-chip{padding:5px 11px;font-size:11.5px;}
 .ai1-empty{gap:14px;padding:14px 18px;border-radius:12px;}
-.ai1-ico{width:40px;height:40px;font-size:18px;border-radius:12px;}
-.ai1-et{font-size:15px;}
-.ai1-eh{font-size:13px;}
+.ai1-ico{width:34px;height:34px;font-size:16px;border-radius:10px;}
+.ai1-et{font-size:14px;}
+.ai1-eh{font-size:12.5px;}
 [data-testid="stButton"] button[kind="primary"]{min-height:42px;height:42px;border-radius:11px;font-size:14px;}
-[data-testid="stCheckbox"] label{padding:12px 18px;}
+[data-testid="stCheckbox"] label{padding:10px 16px;}
 [data-testid="stCheckbox"] label p strong{font-size:13.5px;}
 [data-testid="stCheckbox"] label p{font-size:12px;}
 """), unsafe_allow_html=True)
