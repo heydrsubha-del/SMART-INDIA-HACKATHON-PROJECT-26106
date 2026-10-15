@@ -13131,16 +13131,15 @@ if active_panel == "AI Threat Analysis":
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stNumberInput"] button:hover {background:rgba(56,189,248,.16) !important; color:#fff !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stTabs"] [role="tab"] {font-size:13px !important; padding:6px 14px !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] {border:1px solid rgba(255,255,255,.08) !important; border-radius:12px !important; background:rgba(255,255,255,.02) !important; margin:6px 0 !important;}
-.stApp.stApp.stApp .st-key-ai_step_assess {position:relative; overflow:hidden; border:1px solid rgba(167,139,250,.28) !important; background:radial-gradient(60% 140% at 100% 0%,rgba(167,139,250,.20),transparent 60%), radial-gradient(50% 100% at 0% 100%,rgba(56,189,248,.08),transparent 60%), linear-gradient(180deg,#121a2b,#0b111a) !important; box-shadow:0 24px 50px -30px #a78bfa, inset 0 1px 0 rgba(255,255,255,.07) !important;}
-.stApp.stApp.stApp .st-key-ai_step_assess::before {content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg,#a78bfa,#38bdf8 60%,transparent);}
-.ai1-chips {display:flex; flex-wrap:wrap; gap:8px; align-items:center; height:48px;}
-.ai1-chip {padding:5px 12px; border-radius:999px; font:600 11.5px Inter,sans-serif; letter-spacing:.04em; color:#c9b8ff; background:rgba(167,139,250,.10); border:1px solid rgba(167,139,250,.28);}
-.ai1-chip:first-child {color:#6ee7b7; background:rgba(52,211,153,.10); border-color:rgba(52,211,153,.30);}
-.ai1-empty {display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:14px; border:1px dashed rgba(167,139,250,.38); background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,255,255,.015));}
-.ai1-ico {width:42px; height:42px; flex:none; display:grid; place-items:center; border-radius:12px; font-size:18px; color:#c9b8ff; background:rgba(167,139,250,.14); border:1px solid rgba(167,139,250,.35); box-shadow:0 0 22px -4px #a78bfa;}
-.ai1-et {font:700 14.5px Inter,sans-serif; color:#f1f5f9;}
-.ai1-eh {margin-top:2px; font-size:12.5px; color:#8fa3b8;}
-.ai1-eh b {color:#d8ccff;}
+.stApp.stApp.stApp .st-key-ai_step_assess {border:1px solid rgba(255,255,255,.08) !important; background:radial-gradient(70% 120% at 100% 0%,rgba(167,139,250,.07),transparent 65%), linear-gradient(180deg,#101726,#0b111a) !important; box-shadow:0 18px 40px -30px #000, inset 0 1px 0 rgba(255,255,255,.05) !important;}
+.ai1-chips {display:flex; flex-wrap:wrap; gap:6px; align-items:center; height:48px;}
+.ai1-chip {display:inline-flex; align-items:center; gap:7px; padding:4px 11px; border-radius:8px; font:500 12px Inter,sans-serif; color:#9fb0c5; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08);}
+.ai1-chip::before {content:''; width:6px; height:6px; border-radius:50%; background:#34d399;}
+.ai1-empty {display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:12px; border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.025);}
+.ai1-ico {width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:9px; font-size:15px; color:#b9a7ff; background:rgba(167,139,250,.12);}
+.ai1-et {font:600 13.5px Inter,sans-serif; color:#e6edf6;}
+.ai1-eh {margin-top:1px; font-size:12.5px; color:#8294aa;}
+.ai1-eh b {color:#c9b8ff; font-weight:600;}
 @media (prefers-reduced-motion:reduce) { 
 
 /* AGENTIC v2 -- dossier-style card */
@@ -13157,11 +13156,11 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 # ---- Step 1: AI assessment ----
                 _num_head(1, "AI Assessment", "#a78bfa", "Local Qwen model \u00b7 nothing is sent to external services")
                 _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
-                _b1, _b2 = st.columns([2, 3], vertical_alignment="center")
+                _b1, _b2 = st.columns([1, 5], vertical_alignment="center")
                 run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
                                          use_container_width=True, key="run_qwen_single")
-                _b2.markdown('<div class="ai1-chips"><span class="ai1-chip">\u25cf Local model</span>'
-                             '<span class="ai1-chip">\u25cf Offline</span><span class="ai1-chip">\u25cf No data leaves device</span></div>',
+                _b2.markdown('<div class="ai1-chips"><span class="ai1-chip">Local model</span>'
+                             '<span class="ai1-chip">Offline</span><span class="ai1-chip">No data leaves device</span></div>',
                              unsafe_allow_html=True)
 
                 if run_clicked:
