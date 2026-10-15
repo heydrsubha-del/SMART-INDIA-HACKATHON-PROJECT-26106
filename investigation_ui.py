@@ -8,57 +8,15 @@ import investigation_agent as ia
 _MD = re.compile(r"([\\`*_{}\[\]()#+!|<>~])")
 
 
-_P = "html body .stApp" + ".stApp" * 22 + " .st-key-ai_step_agent" + ":not(#_x)" * 22
-_SVG = ("url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='@D' "
-        "stroke='%23e2e8f0' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E\")")
 _AGENT_CSS = """<style>
-@P {border-radius:16px !important; border:1px solid rgba(255,255,255,.08) !important; background:#0d131c !important; box-shadow:none !important; padding:6px 8px !important;}
-@P::before, @P::after {content:none !important; display:none !important;}
-.ag-con {position:relative; display:block; margin:0 0 4px;}
-.ag-eye {display:flex; align-items:center; gap:10px; margin-bottom:10px; font:600 11px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; color:#7dd3fc;}
-.ag-eye i {width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.18);}
-.ag-eye b {padding:4px 9px; border-radius:6px; font-weight:700; letter-spacing:.16em; color:#f59e0b; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.35);}
-.ag-con p {margin:0 0 12px; max-width:70ch; font:400 13.5px/1.55 Inter,'Segoe UI',sans-serif; color:#9fb0c6;}
-.ag-meta {display:flex; flex-wrap:wrap; gap:8px;}
-.ag-meta span {display:inline-flex; align-items:center; gap:9px; padding:7px 12px; border-radius:10px; font:600 12.5px/1 Inter,'Segoe UI',sans-serif; color:#e6edf7; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);}
-.ag-meta em {font:700 10px/1 ui-monospace,Consolas,monospace; font-style:normal; letter-spacing:.14em; color:var(--c);}
-.ag-stamp {position:absolute; right:6px; top:-2px; transform:rotate(-7deg); padding:6px 12px; border:2px solid rgba(52,211,153,.4); border-radius:5px; font:700 10px/1.5 ui-monospace,Consolas,monospace; letter-spacing:.22em; text-align:center; color:rgba(52,211,153,.6); pointer-events:none;}
-@media (max-width:760px) {.ag-stamp {display:none;}}
-.ag-rule {height:1px; margin:14px 0 12px; background:rgba(255,255,255,.07);}
-.ag-sec {margin-bottom:10px; font:700 10.5px/1 Inter,'Segoe UI',sans-serif; letter-spacing:.16em; color:#8b98ab;}
-.ag-plan {display:flex; flex-wrap:wrap; gap:12px 18px; margin-bottom:12px;}
-.ag-bar {flex:1 1 150px; min-width:140px;}
-.ag-bar b {display:flex; justify-content:space-between; margin-bottom:6px; font:600 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#8b98ab;}
-.ag-bar b span {color:var(--c);}
-.ag-bar i {display:block; height:4px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden;}
-.ag-bar u {display:block; height:100%; width:var(--w); border-radius:3px; background:var(--c); text-decoration:none;}
-.ag-gauge {display:flex; align-items:center; gap:12px; flex-wrap:nowrap; margin:0; padding:0;}
-.ag-ring {flex:none; width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.09) 0);}
-.ag-ring div {width:34px; height:34px; border-radius:50%; background:#0b1119; display:grid; place-items:center; font:700 13px Inter,sans-serif; color:#fff;}
-.ag-gauge span {display:block; font:600 10px ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#cbd5e1;}
-.ag-gauge small {display:block; margin-top:3px; font:400 11px Inter,sans-serif; color:#7d8aa0;}
-@P [class*="st-key-agent_opt_"], @P [class*="st-key-agent_opt_"] > div, @P [class*="st-key-agent_opt_"] [data-testid="stVerticalBlock"], @P [class*="st-key-agent_opt_"] [data-testid="stElementContainer"], @P [class*="st-key-agent_opt_"] [data-testid="stCheckbox"] {border:0 !important; background:none !important; box-shadow:none !important; outline:0 !important; padding:0 !important; margin:0 !important; border-radius:0 !important;}
-@P [data-testid="stCheckbox"] label {padding:10px 14px !important; border-radius:10px !important; background:rgba(255,255,255,.03) !important; border:1px solid rgba(255,255,255,.12) !important; box-shadow:none !important; width:100%; transform:none !important; transition:border-color .15s;}
-@P [data-testid="stCheckbox"] label:hover {border-color:rgba(255,255,255,.28) !important; box-shadow:none !important; transform:none !important;}
-@P [data-testid="stCheckbox"] label:has(input:checked) {background:rgba(52,211,153,.07) !important; border-color:rgba(52,211,153,.45) !important; box-shadow:none !important;}
-@P [data-testid="stHorizontalBlock"]:has([class*="st-key-agent_opt_"]) {gap:12px !important; margin:4px 0 8px !important;}
-@P [class*="st-key-agent_g_"] {padding:12px 14px !important; border-radius:12px !important; background:#0b1119 !important; border:1px solid rgba(255,255,255,.08) !important; box-shadow:none !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stVerticalBlock"] {gap:0 !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stElementContainer"], @P [class*="st-key-agent_g_"] [data-testid="stMarkdownContainer"] {margin:0 !important; padding:0 !important; width:auto !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stHorizontalBlock"] {gap:6px !important; flex-wrap:nowrap !important; align-items:center !important; min-height:46px !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {flex:1 1 auto !important; min-width:0 !important; width:auto !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+2) {flex:0 0 30px !important; width:30px !important; min-width:30px !important;}
-@P [class*="st-key-agent_g_calls_"] {--bc:#a78bfa;}
-@P [class*="st-key-agent_g_iters_"] {--bc:#38bdf8;}
-@P [class*="st-key-agent_g_secs_"] {--bc:#34d399;}
-@P [class*="st-key-agent_g_"] [data-testid="stButton"] button::before, @P [class*="st-key-agent_g_"] [data-testid="stButton"] button::after {content:none !important; display:none !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stButton"] button > * {display:none !important;}
-@P [class*="st-key-agent_g_"] [data-testid="stButton"] button {width:30px !important; min-width:30px !important; height:30px !important; min-height:30px !important; padding:0 !important; border-radius:50% !important; background-color:rgba(255,255,255,.05) !important; background-repeat:no-repeat !important; background-position:center !important; background-size:14px 14px !important; border:1px solid rgba(255,255,255,.14) !important; box-shadow:none !important; transition:background-color .15s, border-color .15s;}
-@P [class*="st-key-agent_g_"] [data-testid="stButton"] button:hover {background-color:rgba(255,255,255,.12) !important; border-color:rgba(255,255,255,.3) !important;}
-@P [class*="st-key-agent_dn_"] button {background-image:@MINUS !important;}
-@P [class*="st-key-agent_up_"] button {background-image:@PLUS !important;}
-@P [data-testid="stButton"] button[kind="primary"] {background:linear-gradient(135deg,#6d5ef0,#3b9be8) !important; border:0 !important; box-shadow:none !important;}
-</style>""".replace("@P", _P).replace("@MINUS", _SVG.replace("@D", "M6 12h12")).replace("@PLUS", _SVG.replace("@D", "M6 12h12M12 6v12"))
+.ag-chips {display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px;}
+.ag-chips span {display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; font:600 12px/1 Inter,'Segoe UI',sans-serif; color:#dbe4f0; background:rgba(255,255,255,.035); border:1px solid var(--line-strong, rgba(255,255,255,.1));}
+.ag-chips em {font:700 9.5px/1 ui-monospace,Consolas,monospace; font-style:normal; letter-spacing:.14em; color:var(--c);}
+</style>"""
+
+
+def _chips(items):
+    return '<div class="ag-chips">' + "".join('<span><em style="--c:%s">%s</em>%s</span>' % (c, k, v) for c, k, v in items) + "</div>"
 
 
 def _t(v):
@@ -69,51 +27,22 @@ def _t(v):
 def render_investigation_panel(result, raw, cases, conns_factory, key, download_fn=None):
     store = st.session_state.setdefault("agent_investigations", {})
     key = str(key)
-    st.markdown(_AGENT_CSS + '<div class="ag-con"><div class="ag-eye"><i></i>AGENTIC INVESTIGATION<b>MISSION BRIEF</b></div>'
-                '<p>Runs this app\'s existing analysis tools under a strict allowlist and hard limits. '
-                'It never changes the scanner\'s score, sends mail or submits intelligence.</p>'
-                '<div class="ag-meta"><span><em style="--c:#38bdf8">ACCESS</em>Read-only</span><span><em style="--c:#a78bfa">TOOLS</em>Allowlist</span>'
-                '<span><em style="--c:#34d399">SCORE</em>Unchanged</span><span><em style="--c:#f59e0b">MAIL</em>None outbound</span></div>'
-                '<div class="ag-stamp">AUTHORIZED<br>READ-ONLY</div>'
-                '<div class="ag-rule"></div><div class="ag-sec">CONFIGURE RUN</div></div>',
-                unsafe_allow_html=True)
+    st.markdown(_AGENT_CSS + _chips((("#38bdf8", "ACCESS", "Read-only"), ("#a78bfa", "TOOLS", "Allowlist"),
+                                     ("#34d399", "SCORE", "Unchanged"), ("#f59e0b", "MAIL", "None outbound"))), unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    with c1.container(key="agent_opt_ai_" + key):
-      use_ai = st.checkbox("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
-                         help="Uses the app's configured provider (local Ollama/Qwen or the Groq backend). "
-                              "Sends only a short evidence digest, never the email body.")
-    with c2.container(key="agent_opt_net_" + key):
-      net = st.checkbox("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
-                      help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
-    def _step(k, d, lo, hi):
-        st.session_state[k] = max(lo, min(hi, int(st.session_state.get(k, lo)) + d))
-    _lim = {}
+    use_ai = c1.toggle("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
+                       help="Uses the app's configured provider (local Ollama/Qwen or the Groq backend). "
+                            "Sends only a short evidence digest, never the email body.")
+    net = c2.toggle("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
+                    help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
     with st.expander("Limits", expanded=False):
-        _cols = st.columns(3)
-        for _col, (_n, _lab, _sub, _lo, _hi, _df, _c) in zip(_cols, (
-                ("calls", "TOOL CALLS", "hard cap per run", 1, 15, 10, "#a78bfa"),
-                ("iters", "ITERATIONS", "planning loops", 1, 15, 10, "#38bdf8"),
-                ("secs", "SECONDS", "wall-clock budget", 10, 300, 90, "#34d399"))):
-            _k = "agent_" + _n + "_" + key
-            st.session_state.setdefault(_k, _df)
-            _stp = 1 if _n != "secs" else 10
-            with _col.container(key="agent_g_" + _n + "_" + key):
-                _m, _x, _y = st.columns([5, 1.3, 1.3], vertical_alignment="center")
-                _v = int(st.session_state[_k])
-                _m.markdown('<div class="ag-gauge" style="--c:' + _c + ';--p:' + str(_v * 100 // _hi) + '"><div class="ag-ring"><div>' + str(_v)
-                            + '</div></div><div><span>MAX ' + _lab + '</span><small>' + _sub + '</small></div></div>', unsafe_allow_html=True)
-                _x.button("\u2212", key="agent_dn_" + _n + "_" + key, on_click=_step, args=(_k, -_stp, _lo, _hi))
-                _y.button("+", key="agent_up_" + _n + "_" + key, on_click=_step, args=(_k, _stp, _lo, _hi))
-            _lim[_n] = int(st.session_state[_k])
-    calls, iters, secs = _lim["calls"], _lim["iters"], _lim["secs"]
-    def _bar(lab, v, mx, unit, c):
-        return ('<div class="ag-bar" style="--c:' + c + ';--w:' + str(min(100, v * 100 // mx)) + '%"><b>' + lab + '<span>' + str(v) + unit
-                + '</span></b><i><u></u></i></div>')
-    st.markdown('<div class="ag-rule"></div><div class="ag-sec">RUN PLAN</div><div class="ag-plan">'
-                + _bar("TOOL CALLS", calls, 15, "", "#a78bfa") + _bar("ITERATIONS", iters, 15, "", "#38bdf8") + _bar("TIME BUDGET", secs, 300, "s", "#34d399")
-                + '</div><div class="ag-meta"><span><em style="--c:#34d399">PLANNER</em>' + ("AI-assisted" if use_ai else "Deterministic")
-                + '</span><span><em style="--c:#f59e0b">LOOKUPS</em>' + ("Public DNS/RDAP" if net else "Offline only") + '</span></div>',
-                unsafe_allow_html=True)
+        l1, l2, l3 = st.columns(3)
+        calls = int(l1.number_input("Max tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
+        iters = int(l2.number_input("Max iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
+        secs = int(l3.number_input("Max seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
+    st.markdown(_chips((("#34d399", "PLANNER", "AI-assisted" if use_ai else "Deterministic"),
+                        ("#f59e0b", "LOOKUPS", "Public DNS/RDAP" if net else "Offline only"),
+                        ("#a78bfa", "BUDGET", f"{calls} calls \u00b7 {iters} loops \u00b7 {secs}s"))), unsafe_allow_html=True)
     if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
