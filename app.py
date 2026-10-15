@@ -13131,6 +13131,16 @@ if active_panel == "AI Threat Analysis":
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stNumberInput"] button:hover {background:rgba(56,189,248,.16) !important; color:#fff !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stTabs"] [role="tab"] {font-size:13px !important; padding:6px 14px !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] {border:1px solid rgba(255,255,255,.08) !important; border-radius:12px !important; background:rgba(255,255,255,.02) !important; margin:6px 0 !important;}
+.stApp.stApp.stApp .st-key-ai_step_assess {position:relative; overflow:hidden; border:1px solid rgba(167,139,250,.28) !important; background:radial-gradient(60% 140% at 100% 0%,rgba(167,139,250,.20),transparent 60%), radial-gradient(50% 100% at 0% 100%,rgba(56,189,248,.08),transparent 60%), linear-gradient(180deg,#121a2b,#0b111a) !important; box-shadow:0 24px 50px -30px #a78bfa, inset 0 1px 0 rgba(255,255,255,.07) !important;}
+.stApp.stApp.stApp .st-key-ai_step_assess::before {content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg,#a78bfa,#38bdf8 60%,transparent);}
+.ai1-chips {display:flex; flex-wrap:wrap; gap:8px; align-items:center; height:48px;}
+.ai1-chip {padding:5px 12px; border-radius:999px; font:600 11.5px Inter,sans-serif; letter-spacing:.04em; color:#c9b8ff; background:rgba(167,139,250,.10); border:1px solid rgba(167,139,250,.28);}
+.ai1-chip:first-child {color:#6ee7b7; background:rgba(52,211,153,.10); border-color:rgba(52,211,153,.30);}
+.ai1-empty {display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:14px; border:1px dashed rgba(167,139,250,.38); background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,255,255,.015));}
+.ai1-ico {width:42px; height:42px; flex:none; display:grid; place-items:center; border-radius:12px; font-size:18px; color:#c9b8ff; background:rgba(167,139,250,.14); border:1px solid rgba(167,139,250,.35); box-shadow:0 0 22px -4px #a78bfa;}
+.ai1-et {font:700 14.5px Inter,sans-serif; color:#f1f5f9;}
+.ai1-eh {margin-top:2px; font-size:12.5px; color:#8fa3b8;}
+.ai1-eh b {color:#d8ccff;}
 @media (prefers-reduced-motion:reduce) { 
 
 /* AGENTIC v2 -- dossier-style card */
@@ -13150,6 +13160,9 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 _b1, _b2 = st.columns([2, 3], vertical_alignment="center")
                 run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
                                          use_container_width=True, key="run_qwen_single")
+                _b2.markdown('<div class="ai1-chips"><span class="ai1-chip">\u25cf Local model</span>'
+                             '<span class="ai1-chip">\u25cf Offline</span><span class="ai1-chip">\u25cf No data leaves device</span></div>',
+                             unsafe_allow_html=True)
 
                 if run_clicked:
                     ai_progress = st.progress(0, text="Qwen AI analysis: 0%")
@@ -13190,7 +13203,9 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
                     st.caption("Check that the local model service is running, then use Run AI assessment again.")
                 else:
-                    st.info("No assessment yet. Press **Run AI assessment** to generate one for this message.")
+                    st.markdown('<div class="ai1-empty"><div class="ai1-ico">\u2726</div><div><div class="ai1-et">No assessment yet</div>'
+                                '<div class="ai1-eh">Press <b>Run AI assessment</b> to generate a threat summary for this message.</div></div></div>',
+                                unsafe_allow_html=True)
 
             with st.container(border=True, key="ai_step_agent"):
                 # ---- Step 2: Agentic investigation ----
