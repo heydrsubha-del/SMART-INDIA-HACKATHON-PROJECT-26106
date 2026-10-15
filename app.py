@@ -9010,6 +9010,36 @@ html body .stApp.stApp.stApp.stApp.stApp [data-testid="stSidebar"] [class*="st-k
 """
 st.markdown(_SIDEBAR_ACTIVE_CSS, unsafe_allow_html=True)
 
+_DOSSIER_HERO_CSS = """<style>
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero {padding:0 !important; overflow:hidden; border-radius:18px !important; border:1px solid rgba(255,255,255,.08) !important;
+ background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px) 0 0/100% 26px, linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) 0 0/26px 100%, radial-gradient(70% 160% at 100% 0%,color-mix(in srgb,var(--panel-tone) 16%,transparent),transparent 60%), linear-gradient(180deg,#0f1622,#0a0f17) !important;
+ box-shadow:0 24px 50px -28px #000, inset 0 1px 0 rgba(255,255,255,.07) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero::before {top:0 !important; bottom:0 !important; width:4px !important; border-radius:0 !important; background:linear-gradient(180deg,var(--panel-tone),#a78bfa 55%,#f59e0b) !important; box-shadow:0 0 18px var(--panel-tone);}
+.dh3 {position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; flex-wrap:wrap; padding:26px 30px 20px 32px;}
+.dh3-c {position:absolute; width:12px; height:12px; border:2px solid color-mix(in srgb,var(--vc) 70%,transparent); opacity:.8;}
+.dh3-c.a {top:10px; right:12px; border-left:0; border-bottom:0;} .dh3-c.b {bottom:6px; right:12px; border-left:0; border-top:0;}
+.dh3-c.c {display:none;} .dh3-c.d {display:none;}
+.dh3-main {min-width:0; flex:1 1 360px;}
+.dh3-eyebrow {display:flex; align-items:center; gap:9px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.22em; color:color-mix(in srgb,var(--panel-tone) 75%,#fff);}
+.dh3-eyebrow i {width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.2),0 0 10px #34d399; animation:dh3p 2s infinite;}
+.dh3-eyebrow b {font-weight:700; padding:3px 8px; border-radius:5px; letter-spacing:.16em; color:#f59e0b; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.35);}
+@keyframes dh3p {50% {opacity:.35;}}
+.dh3-title {margin-top:12px; font:800 34px/1.1 Inter,'Segoe UI',sans-serif; letter-spacing:-.02em; color:#fff;}
+.dh3-title span {margin-left:10px; font:600 15px Inter,sans-serif; letter-spacing:0; color:#7d8aa0;}
+.dh3-subj {margin-top:9px; font:500 14px/1.45 Inter,'Segoe UI',sans-serif; color:#c3cde0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+.dh3-chips {display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+.dh3-chips span {display:inline-flex; gap:8px; align-items:center; max-width:100%; padding:6px 11px; border-radius:8px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); font:600 12px ui-monospace,Consolas,monospace; color:#dbe4f3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.dh3-chips em {font-style:normal; font-size:9.5px; letter-spacing:.16em; color:#7d8aa0;}
+.dh3-chips span:nth-child(1) em {color:#38bdf8;} .dh3-chips span:nth-child(2) em {color:#a78bfa;} .dh3-chips span:nth-child(3) em {color:#f59e0b;}
+.dh3-stamp {display:flex; flex-direction:column; align-items:center; gap:10px; padding:4px 6px;}
+.dh3-ring {width:112px; height:112px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--vc) calc(var(--pct)*1%),rgba(255,255,255,.08) 0); box-shadow:0 0 30px -6px var(--vc);}
+.dh3-ring > div {width:88px; height:88px; border-radius:50%; background:#0b111a; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+.dh3-ring strong {font:800 25px/1 Inter,sans-serif; color:#fff;} .dh3-ring small {font:600 10px ui-monospace,monospace; color:#7d8aa0; margin-top:3px;}
+.dh3-lvl {font:800 11.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.22em; padding:7px 14px; border-radius:6px; color:var(--vc); border:1px solid color-mix(in srgb,var(--vc) 55%,transparent); background:color-mix(in srgb,var(--vc) 12%,transparent);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp .st-key-dossier_hero .st-key-single_email_select {margin:0 !important; padding:14px 30px 22px 32px !important; border-top:1px solid rgba(255,255,255,.06) !important; background:rgba(0,0,0,.18) !important;}
+@media (max-width:640px){.dh3{padding:20px 16px 14px 20px;} .dh3-title{font-size:26px;} .dh3-ring{width:92px;height:92px;} .dh3-ring>div{width:70px;height:70px;} .dh3-ring strong{font-size:20px;} html body .stApp .st-key-dossier_hero .st-key-single_email_select{padding:12px 16px 18px 20px !important;}}
+</style>"""
+
 _MAILBOX_DOSSIER_CSS = """
 <style>
 /* Live mailbox section = the Forensic Dossier hero recipe: spine, eyebrow, big title, sub line, pill, controls inside ONE card. */
@@ -14753,7 +14783,7 @@ if active_panel == "Forensic Report":
                 "Choose which email to inspect",
                 key="single_email_select",
                 options=list(range(1, len(report_items) + 1)),
-                format_func=lambda num: f"Email #{num} | Row {report_items[num-1].get('row', 'Single File')} | {str(report_items[num-1]['result'].get('level','UNKNOWN')).upper()}"
+                format_func=lambda num: f"Email #{num} | Row {report_items[num-1].get('row') or 'Single File'} | {str(report_items[num-1]['result'].get('level','UNKNOWN')).upper()}"
             )
 
         sel_item = report_items[sel_pos - 1]
@@ -14772,12 +14802,20 @@ if active_panel == "Forensic Report":
         _dh_col = _LEVEL_MARKER_COLORS.get(sel_lvl, "#8b96a5")
         _hero_subj = html.escape(str(sel_p.get("subject") or "(no subject)")[:140])
         _hero_from = html.escape(str(sel_p.get("from_addr") or "unknown sender")[:80])
+        _hero_row = html.escape(str(sel_item.get("row") or "Single file"))
+        _hero_pct = max(0, min(100, int(round(sel_score))))
         _hero_slot.markdown(
-            '<div class="dh2"><div class="dh2-main"><div class="dh2-eyebrow">Forensic dossier</div>'
-            '<div class="dh2-title">Email #' + str(sel_pos) + ' <span>of ' + str(len(report_items)) + '</span></div>'
-            '<div class="dh2-sub">' + _hero_subj + ' &middot; ' + _hero_from + '</div></div>'
-            '<span class="dh2-pill" style="color:' + _dh_col + ';border-color:' + _dh_col + '66;background:' + _dh_col + '1a;">'
-            + html.escape(sel_lvl) + ' \u00b7 ' + f"{sel_score:.1f}" + '</span></div>',
+            _DOSSIER_HERO_CSS
+            + '<div class="dh3" style="--vc:' + _dh_col + ';--pct:' + str(_hero_pct) + ';">'
+            '<span class="dh3-c a"></span><span class="dh3-c b"></span><span class="dh3-c c"></span><span class="dh3-c d"></span>'
+            '<div class="dh3-main"><div class="dh3-eyebrow"><i></i>FORENSIC DOSSIER<b>CASE FILE</b></div>'
+            '<div class="dh3-title">Email #' + str(sel_pos) + '<span>of ' + str(len(report_items)) + '</span></div>'
+            '<div class="dh3-subj">' + _hero_subj + '</div>'
+            '<div class="dh3-chips"><span><em>FROM</em>' + _hero_from + '</span>'
+            '<span><em>ROW</em>' + _hero_row + '</span>'
+            '<span><em>SHA-256</em>' + sel_hash[:12] + '&hellip;</span></div></div>'
+            '<div class="dh3-stamp"><div class="dh3-ring"><div><strong>' + f"{sel_score:.1f}" + '</strong><small>/100</small></div></div>'
+            '<div class="dh3-lvl">' + html.escape(sel_lvl) + '</div></div></div>',
             unsafe_allow_html=True,
         )
 
