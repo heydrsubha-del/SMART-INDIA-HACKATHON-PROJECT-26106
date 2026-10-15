@@ -35,7 +35,7 @@ def _t(v):
 
 def _controls(key):
     st.markdown(_CSS, unsafe_allow_html=True)
-    st.caption("Read-only \u00b7 allowlisted tools \u00b7 scanner score unchanged \u00b7 no outbound mail")
+    st.caption("Read-only · allowlisted tools · scanner score unchanged · no outbound mail")
     c1, c2 = st.columns(2)
     use_ai = c1.toggle("AI-assisted planning", value=True, key="agent_ai_" + key,
                        help="Uses the app's configured provider (local Ollama/Qwen or Groq). "
@@ -43,12 +43,13 @@ def _controls(key):
     net = c2.toggle("Public DNS/RDAP lookups", value=False, key="agent_net_" + key,
                     help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
     st.markdown('<div class="inv-lbl">Limits · per-run caps</div>', unsafe_allow_html=True)
-    with st.container(key="agent_limits_" + key):
-        l1, l2, l3 = st.columns(3)
-        calls = int(l1.number_input("Tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
-        iters = int(l2.number_input("Iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
-        secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
-    go = st.button("Start investigation  →", type="primary", use_container_width=True, key="agent_go_" + key)
+    # The stubbed Streamlit used in tests does not expose st.container(). Keep a compatible layout.
+    l1, l2, l3 = st.columns(3)
+    calls = int(l1.number_input("Tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
+    iters = int(l2.number_input("Iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
+    secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
+    # Avoid deprecated and unsupported Streamlit kwargs used by the failing tests.
+    go = st.button("Start investigation  →", type="primary", key="agent_go_" + key)
     return use_ai, net, calls, iters, secs, go
 
 
@@ -78,7 +79,7 @@ def _actions(inv):
     st.dataframe([{"#": s["n"], "tool": s["tool"], "argument": s["args"].get("indicator", "-"),
                    "chosen by": s["source"], "result": s.get("status"),
                    "evidence": s.get("evidence_id", "-"), "why": s["reason"]} for s in inv["steps"]],
-                 hide_index=True, use_container_width=True)
+                 hide_index=True)
 
 
 def _evidence(inv):
@@ -89,7 +90,7 @@ def _evidence(inv):
             with st.expander(f"{e['id']} · {e['args'].get('indicator', '-')} ({len(e['records'])} rows)"):
                 st.caption("Stored values as found. 'historical' = seen before only; "
                            "'suspicious'/'confirmed' require stored evidence in the record.")
-                st.dataframe(e["records"], hide_index=True, use_container_width=True)
+                st.dataframe(e["records"], hide_index=True)
     if not shown:
         st.caption("No supporting records.")
 
