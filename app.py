@@ -13102,6 +13102,12 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"] {width:fit-content !important; min-width:0;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {gap:14px !important; justify-content:flex-start !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) > [data-testid="stColumn"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton), .stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(.stButton) {display:flex !important; justify-content:flex-end !important; border-top:1px solid #1d2838; padding-top:18px; margin-top:4px;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton {width:auto !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton button {padding:0 26px !important; min-height:50px !important; gap:12px !important; white-space:nowrap !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton button p {margin:0 !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton + [data-testid="stCaptionContainer"], .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton) + [data-testid="stElementContainer"] [data-testid="stCaptionContainer"] {text-align:right !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {margin-bottom:2px !important;}
 </style>""", unsafe_allow_html=True)
             st.html(
                 """<script>
