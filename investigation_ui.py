@@ -8,17 +8,6 @@ import investigation_agent as ia
 _MD = re.compile(r"([\\`*_{}\[\]()#+!|<>~])")
 
 
-_AGENT_CSS = """<style>
-.ag-chips {display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px;}
-.ag-chips span {display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; font:600 12px/1 Inter,'Segoe UI',sans-serif; color:#dbe4f0; background:rgba(255,255,255,.035); border:1px solid var(--line-strong, rgba(255,255,255,.1));}
-.ag-chips em {font:700 9.5px/1 ui-monospace,Consolas,monospace; font-style:normal; letter-spacing:.14em; color:var(--c);}
-</style>"""
-
-
-def _chips(items):
-    return '<div class="ag-chips">' + "".join('<span><em style="--c:%s">%s</em>%s</span>' % (c, k, v) for c, k, v in items) + "</div>"
-
-
 def _t(v):
     """Escape email-derived text so it cannot render as markdown/HTML."""
     return _MD.sub(r"\\\1", ia.clean(v, 300))
@@ -27,8 +16,7 @@ def _t(v):
 def render_investigation_panel(result, raw, cases, conns_factory, key, download_fn=None):
     store = st.session_state.setdefault("agent_investigations", {})
     key = str(key)
-    st.markdown(_AGENT_CSS + _chips((("#38bdf8", "ACCESS", "Read-only"), ("#a78bfa", "TOOLS", "Allowlist"),
-                                     ("#34d399", "SCORE", "Unchanged"), ("#f59e0b", "MAIL", "None outbound"))), unsafe_allow_html=True)
+    st.caption("Read-only \u00b7 allowlisted tools \u00b7 scanner score unchanged \u00b7 no outbound mail")
     c1, c2 = st.columns(2)
     use_ai = c1.toggle("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
                        help="Uses the app's configured provider (local Ollama/Qwen or the Groq backend). "
@@ -40,9 +28,6 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
         calls = int(l1.number_input("Max tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
         iters = int(l2.number_input("Max iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
         secs = int(l3.number_input("Max seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
-    st.markdown(_chips((("#34d399", "PLANNER", "AI-assisted" if use_ai else "Deterministic"),
-                        ("#f59e0b", "LOOKUPS", "Public DNS/RDAP" if net else "Offline only"),
-                        ("#a78bfa", "BUDGET", f"{calls} calls \u00b7 {iters} loops \u00b7 {secs}s"))), unsafe_allow_html=True)
     if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
