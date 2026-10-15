@@ -13198,8 +13198,8 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     _rules += [
                         (_r, "background:#0b111a;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:none;overflow:hidden;padding:0"),
                         (_r + "::before", "display:none"),
-                        (_r + " > [data-testid=\"stVerticalBlock\"] > :first-child", "background:linear-gradient(180deg,#0f1722,#0b111a);border-bottom:1px solid rgba(255,255,255,.08);margin:0;width:100%"),
-                        (_r + " > [data-testid=\"stVerticalBlock\"] > :not(:first-child)", "margin:0 24px;width:calc(100% - 48px)"),
+                        (_r + " > [data-testid=\"stVerticalBlock\"] > :first-child", "background:linear-gradient(180deg,#0f1722,#0b111a);border-bottom:1px solid rgba(255,255,255,.08);margin:0;width:100%;padding:18px 28px"),
+                        (_r + " > [data-testid=\"stVerticalBlock\"] > :not(:first-child)", "margin:0 26px;width:calc(100% - 52px)"),
                         (_r + " .aih-ico", "background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);box-shadow:none;color:#fff"),
                         (_r + " .aih-n i", f"background:{_ac};box-shadow:none;animation:none"),
                         (_r + " .num-head .nh-badge", "box-shadow:none"),
@@ -13212,12 +13212,12 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 _a = f"{_pp} .st-key-ai_step_assess{_nn}"
                 _g = f"{_pp} .st-key-ai_step_agent{_nn}"
                 _rules += [
-                    (_a + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding:0 0 22px 0"),
-                    (_g + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding:0 0 22px 0"),
-                    (_a + " [data-testid=\"stHorizontalBlock\"]", "align-items:center;gap:16px;margin:0"),
+                    (_a + " > [data-testid=\"stVerticalBlock\"]", "gap:20px;padding:0 0 26px 0"),
+                    (_g + " > [data-testid=\"stVerticalBlock\"]", "gap:20px;padding:0 0 26px 0"),
+                    (_a + " [data-testid=\"stHorizontalBlock\"]", "align-items:center;gap:24px;margin:0;padding:0"),
                     (_a + " [data-testid=\"stColumn\"]", "padding:0;min-height:0;align-self:center"),
                     (_a + " [data-testid=\"stColumn\"] > [data-testid=\"stVerticalBlock\"]", "gap:0"),
-                    (_a + " [data-testid=\"stColumn\"]:last-child", "padding:0 22px 0 0;display:flex;justify-content:flex-end"),
+                    (_a + " [data-testid=\"stColumn\"]:last-child", "padding:0;display:flex;justify-content:flex-end"),
                     (_a + " [data-testid=\"stButton\"]", "margin:0"),
                     (_a + " .aih", "margin:0"),
                     (_both(".ai1-empty"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
