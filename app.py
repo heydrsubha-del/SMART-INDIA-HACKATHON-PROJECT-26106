@@ -13242,23 +13242,26 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 f"**Score:** {float(result.get('score',0)):.1f}/100\n\n"
                 f"## AI Assessment\n\n{cleaned_single or '_No AI assessment generated yet._'}"
             )
-            _premium_download(
-                label="Download AI Assessment (.md)",
-                markdown=single_markdown_report,
-                file_name="ai_threat_assessment.md",
-                key="dl_ai_single_md",
-                disabled=cleaned_single is None,
-                help="Run the AI assessment first to unlock this download." if cleaned_single is None else None,
-            )
             _agent_rep = st.session_state.get("agent_reports", {}).get(str(current_evidence_hash))
-            _premium_download(
-                label="Download Investigation Report",
-                markdown=_agent_rep or "",
-                file_name="agentic_investigation_report.md",
-                key="dl_agent_report",
-                disabled=not _agent_rep,
-                help="Run the agentic investigation first to unlock this download." if not _agent_rep else None,
-            )
+            _dl1, _dl2 = st.columns(2)
+            with _dl1:
+                _premium_download(
+                    label="Download AI Assessment (.md)",
+                    markdown=single_markdown_report,
+                    file_name="ai_threat_assessment.md",
+                    key="dl_ai_single_md",
+                    disabled=cleaned_single is None,
+                    help="Run the AI assessment first to unlock this download." if cleaned_single is None else None,
+                )
+            with _dl2:
+                _premium_download(
+                    label="Download Investigation Report",
+                    markdown=_agent_rep or "",
+                    file_name="agentic_investigation_report.md",
+                    key="dl_agent_report",
+                    disabled=not _agent_rep,
+                    help="Run the agentic investigation first to unlock this download." if not _agent_rep else None,
+                )
             if cleaned_single is None:
                 st.caption("Run the AI assessment above to unlock the download.")
             else:
