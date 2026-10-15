@@ -43,6 +43,15 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] .ag-gauge {border:0; box-shadow:none; background:none; padding:0;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] [data-testid="stButton"] button {min-width:38px !important; width:38px !important; height:38px !important; min-height:38px !important; padding:0 !important; border-radius:10px !important; font:800 18px/1 Inter,sans-serif !important; background:#111a26 !important; border:1px solid rgba(255,255,255,.14) !important; color:#fff !important; box-shadow:none !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x):not(#_x) [class*="st-key-agent_g_"] [data-testid="stButton"] button:hover {border-color:#a78bfa !important; background:#1a2434 !important;}
+html body .stApp .st-key-ai_step_agent [class*="st-key-agent_g_"] [data-testid="stButton"] button::before,
+html body .stApp .st-key-ai_step_agent [class*="st-key-agent_g_"] [data-testid="stButton"] button::after {content:none !important; display:none !important; background:none !important;}
+html body .stApp .st-key-ai_step_agent [class*="st-key-agent_g_"] [data-testid="stButton"] button p {display:block !important; font-size:20px !important; line-height:1 !important; margin:0 !important; color:#fff !important; visibility:visible !important;}
+html body .stApp .st-key-ai_step_agent [class*="st-key-agent_lim_"],
+html body .stApp .st-key-ai_step_agent [class*="st-key-agent_g_"] {border-radius:4px !important; border:1px solid rgba(245,158,11,.35) !important; border-left:4px solid var(--ac,#f59e0b) !important; background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 22px),#0b1118 !important;}
+.ag-gauge span::before {content:'FILE \00b7 '; opacity:.55;}
+.ag-gauge span {text-transform:uppercase; letter-spacing:.22em;}
+.ag-ring {border-radius:6px; background:none; border:2px solid var(--c); box-shadow:none;}
+.ag-ring div {border-radius:3px; width:46px; height:46px; font-family:ui-monospace,Consolas,monospace;}
 </style>"""
 
 
@@ -83,7 +92,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
             with _col.container(key="agent_g_" + _n + "_" + key):
                 _m, _x, _y = st.columns([5, 1.3, 1.3], vertical_alignment="center")
                 _v = int(st.session_state[_k])
-                _m.markdown('<div class="ag-gauge" style="--c:' + _c + ';--p:' + str((_v - 0) * 100 // _hi) + '"><div class="ag-ring"><div>' + str(_v)
+                _m.markdown('<div class="ag-gauge" style="--c:' + _c + ';--p:' + str(_v * 100 // _hi) + '"><div class="ag-ring"><div>' + str(_v)
                             + '</div></div><div><span>MAX ' + _lab + '</span><small>' + _sub + '</small></div></div>', unsafe_allow_html=True)
                 _x.button("\u2212", key="agent_dn_" + _n + "_" + key, on_click=_step, args=(_k, -_stp, _lo, _hi))
                 _y.button("+", key="agent_up_" + _n + "_" + key, on_click=_step, args=(_k, _stp, _lo, _hi))
