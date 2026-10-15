@@ -13102,12 +13102,22 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"] {width:fit-content !important; min-width:0;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {gap:14px !important; justify-content:flex-start !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) > [data-testid="stColumn"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
-.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton), .stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(.stButton) {display:flex !important; justify-content:flex-end !important; border-top:1px solid #1d2838; padding-top:18px; margin-top:4px;}
-.stApp.stApp.stApp .st-key-ai_step_agent .stButton {width:auto !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(> .stButton), .stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(> .stButton) {display:block !important; border-top:0 !important; padding-top:6px !important; margin-top:2px !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton {width:100% !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton button {padding:0 26px !important; min-height:50px !important; gap:12px !important; white-space:nowrap !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton button p {margin:0 !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton + [data-testid="stCaptionContainer"], .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton) + [data-testid="stElementContainer"] [data-testid="stCaptionContainer"] {text-align:right !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {margin-bottom:2px !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton button {width:100% !important; min-height:56px !important; font-size:15.5px !important; letter-spacing:.02em !important; justify-content:center !important; box-shadow:0 14px 30px -14px #a78bfa99, inset 0 1px 0 rgba(255,255,255,.25) !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton + [data-testid="stCaptionContainer"], .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton) + [data-testid="stElementContainer"] [data-testid="stCaptionContainer"] {text-align:center !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"] {padding:14px 18px !important; border-radius:14px !important; transition:all .18s ease;}
+.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"]:has(input:checked) {border-color:#34d39977 !important; background:linear-gradient(180deg,#10261f,#0c1a16) !important; box-shadow:0 0 0 3px #34d3991a;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) {padding:20px 22px 10px 22px !important; background:radial-gradient(60% 120% at 100% 0%, #38bdf812, transparent 60%), linear-gradient(180deg,#101826,#0c121b) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] {position:relative; overflow:hidden; padding:14px 16px 16px 16px !important; background:linear-gradient(180deg,#0e1520,#0a1018) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"]::before {content:""; position:absolute; left:0; top:0; right:0; height:2px; background:linear-gradient(90deg,#a78bfa,#38bdf8);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] input {font-size:22px !important; font-weight:750 !important; letter-spacing:-.01em;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] button {border-radius:8px !important; background:#141d2b !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] button:hover {background:#a78bfa33 !important; color:#fff !important;}
 </style>""", unsafe_allow_html=True)
             st.html(
                 """<script>
@@ -13115,7 +13125,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
                   if (window.__aiLimitsOpen) clearInterval(window.__aiLimitsOpen);
                   function open() {
                     document.querySelectorAll('.st-key-ai_step_agent [data-testid="stExpander"] details').forEach(function (d) {
-                      if (!d.open) d.open = true;
+                      if (!d.dataset.aiOpened) { d.dataset.aiOpened = '1'; d.open = true; }
                     });
                   }
                   open(); window.__aiLimitsOpen = setInterval(open, 300);
