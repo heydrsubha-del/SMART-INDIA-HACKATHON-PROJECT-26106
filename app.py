@@ -7780,7 +7780,14 @@ _ruri = "data:image/svg+xml," + _sb_up.quote(
 _rsel = '.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button'
 _btn_rules.append(_rsel + '{--bt:#8b7cf6;--tile:block;--pl:40px;padding-left:52px !important;padding-right:36px !important;}')
 _btn_rules.append(_rsel + ' p::before{-webkit-mask-image:url("' + _ruri + '");mask-image:url("' + _ruri + '");animation:aiIconBeat 2.2s ease-in-out infinite;}')
-_btn_rules.append('@keyframes aiIconBeat{0%,100%{transform:scale(1);}50%{transform:scale(1.16);}}@media (prefers-reduced-motion:reduce){' + _rsel + ' p::before{animation:none;}}')
+_btn_rules.append('@keyframes aiIconBeat{0%,100%{transform:translateY(-50%) scale(1);}50%{transform:translateY(-50%) scale(1.16);}}@media (prefers-reduced-motion:reduce){' + _rsel + ' p::before{animation:none;}}')
+_ksel = '.stApp.stApp.stApp.stApp .st-key-ai_step_agent button[kind="primaryFormSubmit"], .stApp.stApp.stApp.stApp .st-key-ai_step_agent button[kind="primary"]'
+for _kk in ('primaryFormSubmit', 'primary'):
+    _kb = '.stApp.stApp.stApp.stApp .st-key-ai_step_agent button[kind="' + _kk + '"]'
+    _btn_rules.append(_kb + '::before{background:rgba(255,255,255,.2) !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3) !important;}')
+    _btn_rules.append(_kb + ':hover::before{background:rgba(255,255,255,.32) !important;}')
+    _btn_rules.append(_kb + ' p::before{background-color:#fff !important;}')
+    _btn_rules.append(_kb + '::after{color:#fff;opacity:.8;}')
 st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True)
 
 # Live sidebar search: Streamlit only commits a text_input on Enter/blur, so
