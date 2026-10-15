@@ -13250,6 +13250,15 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 disabled=cleaned_single is None,
                 help="Run the AI assessment first to unlock this download." if cleaned_single is None else None,
             )
+            _agent_rep = st.session_state.get("agent_reports", {}).get(str(current_evidence_hash))
+            _premium_download(
+                label="Download Investigation Report",
+                markdown=_agent_rep or "",
+                file_name="agentic_investigation_report.md",
+                key="dl_agent_report",
+                disabled=not _agent_rep,
+                help="Run the agentic investigation first to unlock this download." if not _agent_rep else None,
+            )
             if cleaned_single is None:
                 st.caption("Run the AI assessment above to unlock the download.")
             else:

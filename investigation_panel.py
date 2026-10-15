@@ -131,7 +131,7 @@ def _pro(css):
         sel = ",".join(_P + " " + p.strip() for p in sel.split(","))
         dec = ";".join(d.strip() + " !important" for d in dec.split(";") if d.strip())
         out.append(sel + "{" + dec + ";}")
-    return "<style>\n" + "\n".join(out) + "\n</style>"
+    return "\n".join(out)
 
 
 _PRO_CSS = _pro("""
@@ -216,9 +216,24 @@ _PRO_RES = _pro("""
 .rs-raw summary::-webkit-details-marker{display:none;}
 .rs-raw summary::before{content:'▸';font-size:9px;}
 .rs-raw[open] summary::before{content:'▾';}
+.ev-r{padding:16px 22px;border-top:1px solid rgba(255,255,255,.06);}
+.ev-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.ev-n{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:7px;font:700 11px Inter,sans-serif;color:#a5b4fc;background:rgba(99,102,241,.16);border:1px solid rgba(129,140,248,.35);}
+.ev-i{font:600 13.5px ui-monospace,Consolas,monospace;color:#f1f5f9;word-break:break-all;}
+.ev-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px 22px;}
+.ev-f{min-width:0;}
+.ev-f span{display:block;margin-bottom:4px;font:600 10px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6f7f95;}
+.ev-f b{display:block;font:500 13px/1.45 Inter,sans-serif;color:#d3dcea;word-break:break-word;}
+.ev-f.na b{color:#4b5a70;}
+.ev-why{margin-top:12px;padding:10px 14px;border-radius:10px;font:400 13px/1.55 Inter,sans-serif;color:#9fb0c6;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
+.ev-note{padding:12px 22px;border-top:1px solid rgba(255,255,255,.06);font:400 12px Inter,sans-serif;color:#6f7f95;}
 """)
-_CSS = _CSS + _PRO_CSS
-_RES_CSS = _RES_CSS + _PRO_RES
+def _bare(c):
+    return c.replace("<style>", "").replace("</style>", "")
+
+
+# ONE <style> element: a second <style> after "</style>" on the same markdown line is parsed as markdown, not raw HTML.
+_ALL_CSS = "<style>\n" + _bare(_CSS) + "\n" + _bare(_RES_CSS) + "\n" + _PRO_CSS + "\n" + _PRO_RES + "\n</style>"
 
 
 def _h(v, n=300):
@@ -316,7 +331,7 @@ def _t(v):
 
 
 def _controls(key):
-    st.markdown(_CSS, unsafe_allow_html=True)
+    st.markdown(_ALL_CSS, unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     use_ai = c1.toggle("**AI-assisted planning**  \n:gray[Let the AI plan its investigation approach.]", value=True, key="agent_ai_" + key,
                        help="Uses the app's configured provider (local Ollama/Qwen or Groq). "
@@ -363,7 +378,7 @@ def _pills(inv):
         ("Stopped", f'<b>{_h(inv["stop_reason"] or "-", 40).replace("_", " ")}</b>'),
         ("Scanner score", f'<b>{sc}<small>/100</small><span class="rs-lvl" style="--c:{lc}">{_h(lv, 12)}</span></b>'),
     )
-    st.markdown(_RES_CSS + '<div class="rs-kpis">' + "".join(f"<div class=\"rs-k\"><span>{k}</span>{v}</div>" for k, v in cells) + "</div>",
+    st.markdown('<div class="rs-kpis">' + "".join(f"<div class=\"rs-k\"><span>{k}</span>{v}</div>" for k, v in cells) + "</div>",
                 unsafe_allow_html=True)
 
 
@@ -396,9 +411,17 @@ def _actions(inv):
         f'<tr><td class="n">{_h(x["n"], 6)}</td><td class="tl">{_h(_hum(x["tool"]), 60)}</td>'
         f'<td class="mo">{_h(x["args"].get("indicator", "-"), 120)}</td><td>{badge(x.get("status"))}</td>'
         f'<td class="mu">{_h(_hum(x["source"]), 30)}</td><td class="wh">{_h(x["reason"], 400)}</td></tr>' for x in inv["steps"])
-    st.markdown(_RES_CSS + f'<div class="rs-card"><div class="rs-hd"><b>Action log</b><span>{len(inv["steps"])} steps run by the agent</span></div>'
+    st.markdown(f'<div class="rs-card"><div class="rs-hd"><b>Action log</b><span>{len(inv["steps"])} steps run by the agent</span></div>'
                 '<div class="rs-tw"><table class="rs-t"><thead><tr><th>Step</th><th>Tool</th><th>Target</th><th>Result</th><th>Chosen by</th><th>Why</th></tr></thead>'
                 f'<tbody>{rows}</tbody></table></div></div>', unsafe_allow_html=True)
+
+
+_DASH = "\u2014"
+
+
+def _fv(v):
+    t = "" if v is None else str(v).strip()
+    return "" if t.lower() in ("", "none", "nan", "not available", "n/a", "-") else t
 
 
 def _evidence(inv):
@@ -410,31 +433,41 @@ def _evidence(inv):
             continue
         shown = True
         cols = list(recs[0].keys())
-
-        def cell(c, v):
-            k = str(c).lower()
-            if k == "tier":
-                t = str(v).lower()
-                col = "#f87171" if t in ("suspicious", "confirmed") else "#94a3b8" if t == "historical" else "#fbbf24"
-                return f'<td><span class="rs-b" style="--c:{col}">{_h(v, 24)}</span></td>'
-            cls = "mo ind" if "indicator" in k else "wh" if k == "reason" else "n" if k == "#" else ""
-            return f'<td class="{cls}">{_h(v, 600)}</td>'
-        head = "".join(f"<th>{_h(c, 30)}</th>" for c in cols)
-        rows = "".join("<tr>" + "".join(cell(c, r.get(c, "")) for c in cols) + "</tr>" for r in recs)
+        low = {str(c).lower(): c for c in cols}
+        icol = next((c for c in cols if "indicator" in str(c).lower()), cols[0])
+        tcol, rcol, ncol = low.get("tier"), low.get("reason"), low.get("#")
+        skip = {icol, tcol, rcol, ncol}
+        rows = []
+        for r in recs:
+            tier = _fv(r.get(tcol)) if tcol else ""
+            tl = tier.lower()
+            col = "#f87171" if tl in ("suspicious", "confirmed") else "#94a3b8" if tl == "historical" else "#fbbf24"
+            badge = '<span class="rs-b" style="--c:' + col + '">' + _h(tier, 24) + "</span>" if tier else ""
+            num = _fv(r.get(ncol)) if ncol else ""
+            chip = '<span class="ev-n">' + _h(num, 6) + "</span>" if num else ""
+            fields = ""
+            for c in cols:
+                if c in skip:
+                    continue
+                val = _fv(r.get(c))
+                fields += ('<div class="ev-f' + ("" if val else " na") + '"><span>' + _h(c, 30) + "</span><b>"
+                           + (_h(val, 300) if val else _DASH) + "</b></div>")
+            why = _fv(r.get(rcol)) if rcol else ""
+            why = '<div class="ev-why">' + _h(why, 600) + "</div>" if why else ""
+            rows.append('<div class="ev-r"><div class="ev-top">' + chip + '<span class="ev-i">' + _h(r.get(icol), 600) + "</span>"
+                        + badge + '</div><div class="ev-g">' + fields + "</div>" + why + "</div>")
         title = f"{src.get(e['id'], e['id'])} \u00b7 {e['args'].get('indicator', '-')}"
-        st.markdown(_RES_CSS + f'<div class="rs-card"><div class="rs-hd"><b>{_h(title, 160)}</b><span>{len(recs)} rows \u00b7 stored values as found</span></div>'
-                    f'<div class="rs-tw"><table class="rs-t rs-sel"><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
-                    '<div class="rs-bd" style="padding:10px 20px;font-size:12px;color:#6f7f95">\u2018historical\u2019 = seen before only; '
-                    '\u2018suspicious\u2019 / \u2018confirmed\u2019 require stored evidence in the record.</div></div>', unsafe_allow_html=True)
-        icol = next((c for c in cols if "indicator" in str(c).lower()), None)
-        if icol:
-            vals = list(dict.fromkeys(str(r.get(icol, "")) for r in recs if r.get(icol)))
-            if vals:
-                try:
-                    st.caption("Copy indicators")
-                    st.code("\n".join(vals), language=None)
-                except Exception:
-                    pass
+        st.markdown('<div class="rs-card"><div class="rs-hd"><b>' + _h(title, 160) + "</b><span>" + str(len(recs))
+                    + " rows \u00b7 stored values as found</span></div>" + "".join(rows)
+                    + '<div class="ev-note">\u2018historical\u2019 = seen before only; \u2018suspicious\u2019 / \u2018confirmed\u2019 '
+                    "require stored evidence in the record.</div></div>", unsafe_allow_html=True)
+        vals = list(dict.fromkeys(str(r.get(icol, "")) for r in recs if r.get(icol)))
+        if vals:
+            try:
+                st.caption("Copy indicators")
+                st.code("\n".join(vals), language=None)
+            except Exception:
+                pass
     if not shown:
         st.caption("No supporting records.")
 
@@ -464,7 +497,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     _pills(inv)
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
-    st.markdown(_RES_CSS + _summary(inv), unsafe_allow_html=True)
+    st.markdown(_summary(inv), unsafe_allow_html=True)
 
     _nev = sum(1 for e in inv["evidence"] if e.get("records"))
     t1, t2, t3 = st.tabs([f"Findings ({len(inv['findings'])})", f"Action log ({len(inv['steps'])})", f"Evidence ({_nev})"])
@@ -475,10 +508,5 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     with t3:
         _evidence(inv)
 
-    report_md = ia.render_report(inv, result, raw)
-    if download_fn is not None:     # app's premium download (HTML report + Word)
-        download_fn(label="Download Investigation Report", markdown=report_md, file_name="agentic_investigation_report.md",
-                    key="agent_dl_" + key, help="Full forensic report with the agentic investigation (HTML, or Word)")
-    else:
-        st.download_button("Download report (.md)", report_md, file_name="agentic_investigation_report.md",
-                           mime="text/markdown", key="agent_dl_md_" + key)
+    # Download lives in the app's "Download AI Threat Report" section; hand the report over via session state.
+    st.session_state.setdefault("agent_reports", {})[key] = ia.render_report(inv, result, raw)
