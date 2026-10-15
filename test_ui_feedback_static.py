@@ -78,7 +78,7 @@ class Navigation(unittest.TestCase):
         self.assertNotIn("<script>", bad); self.assertNotIn("<b>", bad)
         self.assertIn("#22d3ee", bad)
 
-    def test_forensic_downloads_remain_available(self:
+    def test_forensic_downloads_remain_available(self):
         a = _read("app.py")
         self.assertIn('_sec("Download Forensic Report", tone="single")', a)
         self.assertIn('label="AI Result Only (.md)"', a)
