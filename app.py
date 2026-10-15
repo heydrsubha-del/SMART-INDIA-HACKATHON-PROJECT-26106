@@ -13180,7 +13180,7 @@ html body .stApp.stApp.stApp.stApp .st-key-ai_step_assess::before{content:"";pos
                 _b1, _b2 = st.columns([1, 5], vertical_alignment="center")
                 run_clicked = _b1.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
                                          use_container_width=True, key="run_qwen_single")
-                                 _b2.markdown('<div class="ai1-pipe">
+                _b2.markdown('<div class="ai1-pipe">
                                 <span class="ai1-st">
                                 <i>1</i>Evidence parsed</span><span class="ai1-ln"></span><span class="ai1-st n"><i>2</i>Qwen reasoning</span><span class="ai1-ln"></span>
                                 <span class="ai1-st l"><i>3</i>Threat report</span>
