@@ -13114,7 +13114,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stCheckbox"]:has(input:checked) {border-color:#34d39977 !important; background:linear-gradient(180deg,#10261f,#0c1a16) !important; box-shadow:0 0 0 3px #34d3991a;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) {padding:20px 22px 10px 22px !important; background:radial-gradient(60% 120% at 100% 0%, #38bdf812, transparent 60%), linear-gradient(180deg,#101826,#0c121b) !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] {position:relative; overflow:hidden; padding:14px 16px 16px 16px !important; background:linear-gradient(180deg,#0e1520,#0a1018) !important;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"]::before {content:""; position:absolute; left:0; top:0; right:0; height:2px; background:linear-gradient(90deg,#a78bfa,#38bdf8);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"]::before {content:""; position:absolute; pointer-events:none; left:0; top:0; right:0; height:2px; background:linear-gradient(90deg,#a78bfa,#38bdf8);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] input {font-size:22px !important; font-weight:750 !important; letter-spacing:-.01em;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] button {border-radius:8px !important; background:#141d2b !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] button:hover {background:#a78bfa33 !important; color:#fff !important;}
@@ -13124,8 +13124,16 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
                 (function () {
                   if (window.__aiLimitsOpen) clearInterval(window.__aiLimitsOpen);
                   function open() {
-                    document.querySelectorAll('.st-key-ai_step_agent [data-testid="stExpander"] details').forEach(function (d) {
-                      if (!d.dataset.aiOpened) { d.dataset.aiOpened = '1'; d.open = true; }
+                    document.querySelectorAll('.st-key-ai_step_agent [data-testid="stExpander"]').forEach(function (ex) {
+                      var d = ex.querySelector('details');
+                      if (!d) return;
+                      if (!d.open) {
+                        var sm = d.querySelector('summary');
+                        if (!d.dataset.aiOpened && sm) { d.dataset.aiOpened = '1'; sm.click(); }
+                        else { d.open = true; }
+                      }
+                      ex.querySelectorAll('[inert]').forEach(function (n) { n.removeAttribute('inert'); });
+                      ex.querySelectorAll('[aria-hidden="true"]').forEach(function (n) { if (n.querySelector('input,button')) n.removeAttribute('aria-hidden'); });
                     });
                   }
                   open(); window.__aiLimitsOpen = setInterval(open, 300);
