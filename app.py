@@ -13217,7 +13217,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 def _agentic_investigation():
                     # Import lives INSIDE the error boundary: an import or render failure shows its own error and
                     # traceback and cannot stop AI Threat Analysis or any other panel from rendering.
-                    from investigation_ui import render_investigation_panel
+                    from investigation_panel import render_investigation_panel
 
                     def _agent_conns():
                         out = []
