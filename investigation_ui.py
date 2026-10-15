@@ -34,10 +34,8 @@ def _t(v):
 
 
 def _controls(key):
-    st.markdown(_CSS + '<div class="inv-head"><div class="inv-badge">02</div><div>'
-                '<div class="inv-title">Agentic Investigation</div>'
-                '<div class="inv-sub">Optional · read-only · allowlisted tools · score unchanged · no outbound mail</div>'
-                '</div></div>', unsafe_allow_html=True)
+    st.markdown(_CSS, unsafe_allow_html=True)
+    st.caption("Read-only \u00b7 allowlisted tools \u00b7 scanner score unchanged \u00b7 no outbound mail")
     c1, c2 = st.columns(2)
     use_ai = c1.toggle("AI-assisted planning", value=True, key="agent_ai_" + key,
                        help="Uses the app's configured provider (local Ollama/Qwen or Groq). "
@@ -45,10 +43,11 @@ def _controls(key):
     net = c2.toggle("Public DNS/RDAP lookups", value=False, key="agent_net_" + key,
                     help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
     st.markdown('<div class="inv-lbl">Limits · per-run caps</div>', unsafe_allow_html=True)
-    l1, l2, l3 = st.columns(3)
-    calls = int(l1.number_input("Tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
-    iters = int(l2.number_input("Iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
-    secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
+    with st.container(key="agent_limits_" + key):
+        l1, l2, l3 = st.columns(3)
+        calls = int(l1.number_input("Tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
+        iters = int(l2.number_input("Iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
+        secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
     go = st.button("Start investigation  →", type="primary", use_container_width=True, key="agent_go_" + key)
     return use_ai, net, calls, iters, secs, go
 
