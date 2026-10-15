@@ -13070,7 +13070,29 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stExpanderDetails"] {padding:4px 4px 20px 4px !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stExpanderDetails"] [data-testid="stHorizontalBlock"] {gap:18px !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] label p {font-size:11.5px !important; letter-spacing:.1em !important; text-transform:uppercase !important; color:#8fa3b8 !important; font-weight:600 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) {border-top:0 !important; border-bottom:0 !important; margin:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary {pointer-events:none !important; cursor:default !important; padding:2px 0 6px 0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary::after, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details[open] > summary::after {display:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary [data-testid="stExpanderToggleIcon"] {display:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) summary p {font:600 11px/1 ui-monospace,Menlo,Consolas,monospace !important; letter-spacing:.16em !important; text-transform:uppercase !important; color:#b6a4ff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details > summary + * {display:block !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) details::details-content {content-visibility:visible !important; height:auto !important; display:block !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"]:not(#_x):not(#_x):not(#_x) [data-testid="stExpanderDetails"] {padding:6px 0 14px 0 !important; border:0 !important; background:transparent !important;}
 </style>""", unsafe_allow_html=True)
+            st.html(
+                """<script>
+                (function () {
+                  if (window.__aiLimitsOpen) clearInterval(window.__aiLimitsOpen);
+                  function open() {
+                    document.querySelectorAll('.st-key-ai_step_agent [data-testid="stExpander"] details').forEach(function (d) {
+                      if (!d.open) d.open = true;
+                    });
+                  }
+                  open(); window.__aiLimitsOpen = setInterval(open, 300);
+                })();
+                </script>""",
+                unsafe_allow_javascript=True,
+            )
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _num_head(1, "AI Assessment", "#a78bfa", "Local Qwen model \u00b7 nothing is sent to external services")
