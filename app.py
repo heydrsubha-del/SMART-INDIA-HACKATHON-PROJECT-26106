@@ -7741,7 +7741,7 @@ _BTN_ICONS = {
     "x": "<path d='M6 6l12 12M18 6L6 18'/>",
     "report": "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/>",
 }
-_BTN_ICONS.update({k: _SB_ICONS[k] for k in ("chip", "globe", "feed")})
+_BTN_ICONS.update({k: _SB_ICONS[k] for k in ("chip", "globe", "feed", "radiate")})
 _BTN_STYLE = {
     "mailbox_quick_full_report_btn": ("#2fb68e", "report"),
     "connect_imap": ("#2fb68e", "plug"),
@@ -7772,6 +7772,15 @@ for _bk2, (_bc2, _bi2) in _BTN_STYLE.items():
     _bsel = '.stApp.stApp.stApp.stApp .st-key-' + _bk2 + ' button'
     _btn_rules.append(_bsel + '{--bt:' + _bc2 + ';--tile:block;--pl:40px;padding-left:48px !important;padding-right:34px !important;}')
     _btn_rules.append(_bsel + ' p::before{-webkit-mask-image:url("' + _buri + '");mask-image:url("' + _buri + '");}')
+_ruri = "data:image/svg+xml," + _sb_up.quote(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' "
+    "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>" + _BTN_ICONS["radiate"] + "</svg>",
+    safe="/:=' ()",
+)
+_rsel = '.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button'
+_btn_rules.append(_rsel + '{--bt:#8b7cf6;--tile:block;--pl:40px;padding-left:52px !important;padding-right:36px !important;}')
+_btn_rules.append(_rsel + ' p::before{-webkit-mask-image:url("' + _ruri + '");mask-image:url("' + _ruri + '");animation:aiIconBeat 2.2s ease-in-out infinite;}')
+_btn_rules.append('@keyframes aiIconBeat{0%,100%{transform:scale(1);}50%{transform:scale(1.16);}}@media (prefers-reduced-motion:reduce){' + _rsel + ' p::before{animation:none;}}')
 st.markdown("<style>" + "".join(_btn_rules) + "</style>", unsafe_allow_html=True)
 
 # Live sidebar search: Streamlit only commits a text_input on Enter/blur, so
@@ -13104,7 +13113,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) > [data-testid="stColumn"] {flex:0 0 auto !important; width:auto !important; min-width:0 !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(> .stButton), .stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(> .stButton) {display:block !important; border-top:0 !important; padding-top:6px !important; margin-top:2px !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton {width:100% !important;}
-.stApp.stApp.stApp .st-key-ai_step_agent .stButton button {padding:0 26px !important; min-height:50px !important; gap:12px !important; white-space:nowrap !important;}
+.stApp.stApp.stApp .st-key-ai_step_agent .stButton button {min-height:50px !important; gap:12px !important; white-space:nowrap !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton button p {margin:0 !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent .stButton + [data-testid="stCaptionContainer"], .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton) + [data-testid="stElementContainer"] [data-testid="stCaptionContainer"] {text-align:right !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {margin-bottom:2px !important;}
@@ -13145,10 +13154,10 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):hover {transform:translateY(-2px); background-position:-70% 0,0 0 !important; filter:saturate(1.12) brightness(1.05);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):active {transform:translateY(0) scale(.992);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):focus-visible {outline:2px solid #e6dcff !important; outline-offset:3px !important;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {content:"\\25B6"; display:inline-grid !important; place-items:center; width:30px; height:30px; flex:none; border-radius:50%; font-size:11px; padding-left:2px; color:#fff; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.38); box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
+
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) p {letter-spacing:.03em !important;}
 @media (prefers-reduced-motion:reduce) { html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {animation:none;} }
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {display:none !important; content:none !important;}
+
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::after {display:inline-block; transition:transform .25s cubic-bezier(.2,.8,.2,1);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):hover::after {transform:translateX(8px);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton), html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(.stButton):not(:has([data-testid="stElementContainer"])) {width:auto !important;}
@@ -13157,16 +13166,13 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton + [data-testid="stCaptionContainer"], html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton) + [data-testid="stElementContainer"] [data-testid="stCaptionContainer"] {text-align:left !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(> .stButton), html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(> .stButton) {width:auto !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent div[data-testid="stButton"] {width:auto !important; display:inline-block !important;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {width:auto !important; min-width:0 !important; padding:0 30px !important; justify-content:center !important;}
-@keyframes aiChipPulse {0% {box-shadow:0 0 0 0 rgba(255,255,255,.5), inset 0 1px 0 rgba(255,255,255,.4);} 70%,100% {box-shadow:0 0 0 10px rgba(255,255,255,0), inset 0 1px 0 rgba(255,255,255,.4);}}
-@keyframes aiScanIcon {0%,100% {background-position:46% 54%;} 50% {background-position:56% 44%;}}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {display:inline-block !important; content:"" !important; width:36px; height:36px; flex:none; border-radius:11px; margin-right:2px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") 50% 50%/20px 20px no-repeat, linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.1)); border:1px solid rgba(255,255,255,.4); animation:aiChipPulse 2.4s ease-out infinite, aiScanIcon 3s ease-in-out infinite;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):hover::before {background-color:rgba(255,255,255,.15);}
-@media (prefers-reduced-motion:reduce) { html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {animation:none;} }
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {padding:0 30px 0 74px !important;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {position:absolute !important; left:14px !important; top:50% !important; right:auto !important; bottom:auto !important; transform:translateY(-50%) !important; margin:0 !important; width:38px !important; height:38px !important; border-radius:12px !important;
-  -webkit-mask:none !important; mask:none !important; filter:none !important; opacity:1 !important; background-color:transparent !important; background-size:21px 21px, 100% 100% !important; background-position:50% 50%, 0 0 !important; background-repeat:no-repeat !important;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") 50% 50%/21px 21px no-repeat, linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.1)) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {width:auto !important; min-width:0 !important; justify-content:center !important;}
+
+
+
+
+@media (prefers-reduced-motion:reduce) { 
+
 </style>""", unsafe_allow_html=True)
             st.html(
                 """<script>
