@@ -650,8 +650,9 @@ class UiIsolation(Base):
         st.checkbox = lambda *a, **k: k.get("value", False)
         st.number_input = lambda label, mn, mx, val, **k: val
         st.button = lambda *a, **k: k.get("key", "").startswith("agent_go_") and STATE["click"]
-        for n in ("markdown", "caption", "info", "warning", "metric", "dataframe", "download_button", "expander", "spinner", "empty"):
-            setattr(st, n, mk)
+         for n in ("markdown", "caption", "info", "warning", "metric", "dataframe", "download_button", "expander", "spinner", "empty", "tabs"):
+             setattr(st, n, mk)
++        st.tabs = lambda labels: [mock.MagicMock() for _ in labels]
         STATE = {"click": False}
         dl = []
         with mock.patch.dict(sys.modules, {"streamlit": st}):
