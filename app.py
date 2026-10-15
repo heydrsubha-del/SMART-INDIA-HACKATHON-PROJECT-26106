@@ -13201,6 +13201,9 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                         (_r + " .aih-ico", f"background:color-mix(in srgb,{_ac} 12%,#0b111a);border:1px solid color-mix(in srgb,{_ac} 38%,transparent);box-shadow:none;color:{_ac}"),
                         (_r + " .aih-n i", "box-shadow:none;animation:none"),
                         (_r + " .num-head .nh-badge", "box-shadow:none"),
+                        (_r + " .aih", f"padding:16px 20px;border-radius:14px;border:1px solid color-mix(in srgb,{_ac} 34%,transparent);background:linear-gradient(105deg,color-mix(in srgb,{_ac} 24%,#0b111a) 0%,color-mix(in srgb,{_ac} 9%,#0b111a) 38%,#0e1520 38.2%,#0c121b 100%);box-shadow:none"),
+                        (_r + " .aih-n", f"color:{_ac};letter-spacing:.2em"),
+                        (_r + " .aih-t", "font-size:19px;letter-spacing:-.01em"),
                     ]
                 _both = lambda sub: ",".join(f"{_pp} .st-key-ai_step_{k}{_nn} {sub}" for k in ("assess", "agent"))
                 _a = f"{_pp} .st-key-ai_step_assess{_nn}"
