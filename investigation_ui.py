@@ -19,16 +19,21 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     st.caption("Read-only. Uses this app's existing analysis tools, a strict tool allowlist and hard limits. "
                "It never changes the scanner's score, sends mail or submits intelligence.")
     c1, c2 = st.columns(2)
-    use_ai = c1.checkbox("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
+    with c1.container(key="agent_opt_ai_" + key):
+      use_ai = st.checkbox("AI-assisted planning and proposed findings", value=True, key="agent_ai_" + key,
                          help="Uses the app's configured provider (local Ollama/Qwen or the Groq backend). "
                               "Sends only a short evidence digest, never the email body.")
-    net = c2.checkbox("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
+    with c2.container(key="agent_opt_net_" + key):
+      net = st.checkbox("Allow public DNS/RDAP lookups", value=False, key="agent_net_" + key,
                       help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
     with st.expander("Limits", expanded=False):
         a, b, c = st.columns(3)
-        calls = a.number_input("Max tool calls", 1, 15, 10, key="agent_calls_" + key)
-        iters = b.number_input("Max iterations", 1, 15, 10, key="agent_iters_" + key)
-        secs = c.number_input("Max seconds", 10, 300, 90, key="agent_secs_" + key)
+        with a.container(key="agent_lim_calls_" + key):
+            calls = st.number_input("Max tool calls", 1, 15, 10, key="agent_calls_" + key)
+        with b.container(key="agent_lim_iters_" + key):
+            iters = st.number_input("Max iterations", 1, 15, 10, key="agent_iters_" + key)
+        with c.container(key="agent_lim_secs_" + key):
+            secs = st.number_input("Max seconds", 10, 300, 90, key="agent_secs_" + key)
     if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
