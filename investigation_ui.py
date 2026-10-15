@@ -118,6 +118,109 @@ _RES_CSS = """<style>
 </style>"""
 
 
+_P = "html body " + ".stApp" * 11 + " .st-key-ai_step_agent" + ":not(#_x)" * 6
+
+
+def _pro(css):
+    """Prefix every rule with the high-specificity scope and force !important."""
+    out = []
+    for blk in css.split("}"):
+        if "{" not in blk:
+            continue
+        sel, dec = blk.split("{", 1)
+        sel = ",".join(_P + " " + p.strip() for p in sel.split(","))
+        dec = ";".join(d.strip() + " !important" for d in dec.split(";") if d.strip())
+        out.append(sel + "{" + dec + ";}")
+    return "<style>\n" + "\n".join(out) + "\n</style>"
+
+
+_PRO_CSS = _pro("""
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]){padding-top:44px;border-color:rgba(255,255,255,.1);background:radial-gradient(circle,#38bdf8 3.5px,transparent 4.5px) 22px 17px/9px 9px no-repeat,linear-gradient(rgba(255,255,255,.03),rgba(255,255,255,.03)) 0 0/100% 42px no-repeat,linear-gradient(rgba(255,255,255,.08),rgba(255,255,255,.08)) 0 42px/100% 1px no-repeat,linear-gradient(180deg,#0e1622,#0a1019);}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"])::before{content:'Limits';left:42px;top:14px;font:700 13px/1 Inter,sans-serif;letter-spacing:.01em;color:#f1f5f9;}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"])::after{content:'Per-run caps';right:16px;top:9px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);font:500 11.5px/1 Inter,sans-serif;color:#8fa3b8;}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]{position:relative;padding:20px 22px 24px;--ac:#38bdf8;transition:background .15s ease;}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:nth-child(2){--ac:#a78bfa;}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:nth-child(3){--ac:#34d399;}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:hover{background:rgba(255,255,255,.02);}
+[data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]::before{content:'';position:absolute;left:22px;top:0;width:30px;height:2px;border-radius:0 0 2px 2px;background:var(--ac);}
+[data-testid="stNumberInput"] label p{display:flex;align-items:center;font:600 10.5px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#94a3b8;}
+[data-testid="stNumberInput"] label p::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;background:var(--ac);}
+[data-testid="stNumberInput"] [data-testid="stTooltipIcon"] svg{color:#5f7089;transition:color .15s ease;}
+[data-testid="stNumberInput"] [data-testid="stTooltipIcon"]:hover svg{color:var(--ac);}
+[data-testid="stNumberInputContainer"] input{font:700 36px/1 Inter,sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#fff;}
+[data-testid="stNumberInputContainer"] button{width:36px;height:36px;min-width:36px;color:#cbd5e1;background:linear-gradient(180deg,#1a2435,#111a28);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.07);transition:all .15s ease;}
+[data-testid="stNumberInputContainer"] button:hover{color:var(--ac);border-color:var(--ac);background:linear-gradient(180deg,#1d2a3f,#131d2c);}
+[data-testid="stNumberInputContainer"] button:active{transform:scale(.92);}
+[data-testid="stHorizontalBlock"]:has(.inv-run){align-items:center;gap:20px;margin-top:8px;padding:14px 18px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:linear-gradient(90deg,rgba(99,102,241,.13),rgba(99,102,241,0) 42%),#0b111a;}
+[data-testid="stButton"] button[kind="primary"]{height:46px;min-height:46px;padding:0 28px;border-radius:11px;border:1px solid rgba(165,180,252,.38);background:linear-gradient(180deg,#7478f7,#5046e5 62%,#4338ca);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.5);}
+[data-testid="stButton"] button[kind="primary"] p{font:700 14.5px Inter,sans-serif;letter-spacing:.01em;}
+.inv-run{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.inv-rl{margin-right:6px;padding-right:14px;border-right:1px solid rgba(255,255,255,.1);font:700 10px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6f7f95;}
+.inv-tag{display:inline-flex;align-items:baseline;gap:5px;padding:6px 11px;border-radius:8px;font:400 12.5px Inter,sans-serif;color:#8fa3b8;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.inv-tag b{color:#fff;font-weight:700;}
+.inv-tag.v{color:#c4b5fd;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);}
+.inv-tag.g{color:#6ee7b7;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);}
+[data-baseweb="tab-list"]{display:inline-flex;width:auto;gap:4px;padding:4px;margin-bottom:6px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#0b111a;}
+button[data-baseweb="tab"]{padding:8px 18px;border-radius:8px;transition:background .15s ease,color .15s ease;}
+button[data-baseweb="tab"]:hover{background:rgba(255,255,255,.04);}
+button[data-baseweb="tab"][aria-selected="true"]{color:#fff;background:linear-gradient(180deg,rgba(99,102,241,.30),rgba(99,102,241,.16));box-shadow:inset 0 0 0 1px rgba(129,140,248,.45);}
+[data-baseweb="tab-highlight"]{display:none;}
+[data-baseweb="tab-panel"]{padding-top:14px;}
+""")
+
+_PRO_RES = _pro("""
+.rs-kpis{position:relative;margin:16px 0 14px;border-color:rgba(255,255,255,.1);border-radius:16px;background:linear-gradient(180deg,#0e1624,#0a1019);}
+.rs-kpis::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;z-index:1;background:linear-gradient(90deg,#38bdf8,#6366f1 50%,#a78bfa);}
+.rs-k{padding:20px 22px 26px;}
+.rs-k:nth-child(1){--ka:#34d399;}
+.rs-k:nth-child(2){--ka:#38bdf8;}
+.rs-k:nth-child(3){--ka:#a78bfa;}
+.rs-k:nth-child(4){--ka:#6366f1;}
+.rs-k:nth-child(5){--ka:#fbbf24;}
+.rs-k:nth-child(6){--ka:#34d399;}
+.rs-k > span{display:flex;align-items:center;gap:8px;font:600 10.5px Inter,sans-serif;letter-spacing:.14em;color:#8aa0b8;}
+.rs-k > span::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--ka,#38bdf8);}
+.rs-k b{margin-top:12px;font:700 22px/1.1 Inter,sans-serif;letter-spacing:-.01em;}
+.rs-k:nth-child(5) b{font-size:17px;font-weight:600;color:#dbe4f2;}
+.rs-k b small{font:500 13px Inter,sans-serif;color:#6f7f95;}
+.rs-k b.ok{display:inline-flex;align-items:center;margin-top:10px;padding:5px 14px;border-radius:999px;font:700 14.5px Inter,sans-serif;color:#6ee7b7;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.32);}
+.rs-k b.warn{display:inline-flex;align-items:center;margin-top:10px;padding:5px 14px;border-radius:999px;font:700 14.5px Inter,sans-serif;color:#fcd34d;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.32);}
+.rs-k i{bottom:12px;height:4px;border-radius:3px;background:rgba(255,255,255,.07);}
+.rs-k i::after{border-radius:3px;background:linear-gradient(90deg,#38bdf8,#6366f1);}
+.rs-k b span.rs-lvl{display:inline-flex;align-items:center;margin:0 0 0 10px;padding:3px 9px;border-radius:6px;vertical-align:middle;font:700 10px Inter,sans-serif;letter-spacing:.1em;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 38%,transparent);}
+.rs-card{border-color:rgba(255,255,255,.1);border-radius:16px;background:linear-gradient(180deg,#0e1624,#0a1019);}
+.rs-hd{padding:14px 22px;background:rgba(255,255,255,.025);}
+.rs-hd b{display:flex;align-items:center;gap:10px;font:700 13.5px Inter,sans-serif;letter-spacing:.01em;color:#f1f5f9;}
+.rs-hd span{padding:5px 11px;border-radius:999px;font:500 11.5px Inter,sans-serif;color:#7d8da3;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);}
+.rs-sm{position:relative;--c:#34d399;}
+.rs-sm.k-s{--c:#f87171;}
+.rs-sm.k-u{--c:#fbbf24;}
+.rs-sm.k-v{--c:#34d399;}
+.rs-sm::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;z-index:1;background:var(--c);}
+.rs-sm .rs-hd b::before{content:'✦';display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-size:12px;color:#a5b4fc;background:rgba(99,102,241,.16);border:1px solid rgba(129,140,248,.4);}
+.rs-sm .rs-bd{padding:22px 26px 24px;}
+.rs-sh{display:flex;align-items:center;gap:12px;font:700 19px/1.35 Inter,sans-serif;letter-spacing:-.01em;color:#fff;}
+.rs-sh::before{content:'!';flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font:800 14px Inter,sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 40%,transparent);}
+.rs-sm.k-v .rs-sh::before{content:'✓';}
+.rs-chips{gap:10px;margin:18px 0 16px;}
+.rs-chip{align-items:center;gap:8px;padding:9px 15px;border-radius:10px;font:500 12.5px Inter,sans-serif;color:#9fb0c6;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);}
+.rs-chip b{font:700 18px/1 Inter,sans-serif;color:var(--cc,#fff);}
+.rs-chip.c1{--cc:#38bdf8;background:rgba(56,189,248,.06);border-color:rgba(56,189,248,.28);}
+.rs-chip.c2{--cc:#34d399;background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.28);}
+.rs-chip.c3{--cc:#f87171;background:rgba(248,113,113,.06);border-color:rgba(248,113,113,.28);}
+.rs-chip.c4{--cc:#fbbf24;background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.28);}
+.rs-vd{padding:12px 16px;border-radius:10px;font:400 13px/1.6 Inter,sans-serif;color:#9fb0c6;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);box-shadow:inset 3px 0 0 var(--c);}
+.rs-raw{margin-top:14px;}
+.rs-raw summary{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;list-style:none;font:500 12px Inter,sans-serif;color:#8fa3b8;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);transition:all .15s ease;}
+.rs-raw summary:hover{color:#e5ecf6;border-color:rgba(255,255,255,.2);}
+.rs-raw summary::-webkit-details-marker{display:none;}
+.rs-raw summary::before{content:'▸';font-size:9px;}
+.rs-raw[open] summary::before{content:'▾';}
+""")
+_CSS = _CSS + _PRO_CSS
+_RES_CSS = _RES_CSS + _PRO_RES
+
+
 def _h(v, n=300):
     """Escape email-derived text for HTML contexts (no markdown escaping)."""
     return html.escape(str(ia.clean(v, n)))
@@ -180,11 +283,12 @@ def _summary(inv):
         sc = f"{float(snap['score']):.1f}"
     except (TypeError, ValueError):
         sc = _h(snap.get("score"), 12)
-    chips = "".join(f'<span class="rs-chip"><b>{v}</b>{lab}</span>' for v, lab in (
-        (len(inv["evidence"]), "checks run"), (k["verified"], "verified"), (k["suspicious"], "suspicious"), (k["uncertain"], "gaps")))
+    kc = "k-s" if k["suspicious"] else "k-u" if k["uncertain"] else "k-v"
+    chips = "".join(f'<span class="rs-chip c{i}"><b>{v}</b>{lab}</span>' for i, (v, lab) in enumerate((
+        (len(inv["evidence"]), "checks run"), (k["verified"], "verified"), (k["suspicious"], "suspicious"), (k["uncertain"], "gaps")), 1))
     raw = (f'<details class="rs-raw"><summary>Show generated text</summary><p>{_h(inv["narrative"], 4000)}</p></details>'
            if inv.get("narrative") else "")
-    return ('<div class="rs-card"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div><div class="rs-bd">'
+    return (f'<div class="rs-card rs-sm {kc}"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div><div class="rs-bd">'
             f'<div class="rs-sh">{head}</div><div class="rs-chips">{chips}</div>'
             f'<div class="rs-vd">Scanner verdict (unchanged): <b>{_h(snap.get("level"), 12)} \u00b7 {sc}/100</b>. '
             f'Absence of findings is not evidence of safety.</div>{raw}</div></div>')
@@ -227,8 +331,12 @@ def _controls(key):
     # Avoid deprecated and unsupported Streamlit kwargs used by the failing tests.
     b1, b2 = st.columns([1, 3])
     go = b1.button("Start investigation  →", type="primary", key="agent_go_" + key)
-    b2.markdown('<div class="inv-run">Up to <b>' + str(calls) + '</b> tool calls \u00b7 <b>' + str(iters) + '</b> iterations \u00b7 <b>' + str(secs) + 's</b> \u00b7 '
-                + ('AI-assisted' if use_ai else 'Deterministic') + (' \u00b7 public DNS/RDAP on' if net else ' \u00b7 offline lookups') + '</div>', unsafe_allow_html=True)
+    b2.markdown('<div class="inv-run"><span class="inv-rl">Run plan</span>'
+                f'<span class="inv-tag">Up to <b>{calls}</b> tool calls</span><span class="inv-tag"><b>{iters}</b> iterations</span>'
+                f'<span class="inv-tag"><b>{secs}s</b></span>'
+                + ('<span class="inv-tag v">AI-assisted</span>' if use_ai else '<span class="inv-tag">Deterministic</span>')
+                + ('<span class="inv-tag g">Public DNS/RDAP on</span>' if net else '<span class="inv-tag">Offline lookups</span>')
+                + '</div>', unsafe_allow_html=True)
     return use_ai, net, calls, iters, secs, go
 
 
