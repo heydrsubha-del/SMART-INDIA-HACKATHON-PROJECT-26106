@@ -220,6 +220,46 @@ _PRO_RES = _pro("""
 _CSS = _CSS + _PRO_CSS
 _RES_CSS = _RES_CSS + _PRO_RES
 
+_SUM_CSS = _pro("""
+.sm-card{position:relative;overflow:hidden;border-radius:16px;border-color:rgba(255,255,255,.1);background:#0b111a;--c:#34d399;}
+.sm-card.k-s{--c:#f87171;}
+.sm-card.k-u{--c:#fbbf24;}
+.sm-card.k-v{--c:#34d399;}
+.sm-card::before{display:none;}
+.sm-head{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#0f1722,#0b111a);}
+.sm-l{flex:0 0 auto;display:flex;align-items:center;padding:14px 52px 14px 22px;clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);background:linear-gradient(150deg,color-mix(in srgb,var(--c) 34%,#0a0f18),color-mix(in srgb,var(--c) 10%,#0a0f18));}
+.sm-k{padding:5px 11px;border-radius:7px;font:700 10px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);}
+.sm-t{flex:1 1 auto;align-self:center;padding:0 12px 0 6px;font:700 17px/1.35 Inter,sans-serif;letter-spacing:-.01em;color:#fff;}
+.sm-s{align-self:center;padding:0 22px;font:400 12px Inter,sans-serif;color:#6f7f95;white-space:nowrap;}
+.sm-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;}
+.sm-c{padding:16px 22px 18px;border-top:1px solid rgba(255,255,255,.07);min-width:0;}
+.sm-main{border-top:0;display:flex;flex-direction:column;justify-content:center;gap:12px;}
+.sm-sc{border-top:0;border-left:1px solid rgba(255,255,255,.07);}
+.sm-tc{border-left:1px solid rgba(255,255,255,.07);}
+.sm-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.sm-m{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:8px;font:400 12.5px Inter,sans-serif;color:#8fa3b8;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.sm-m b{color:#fff;font-weight:600;}
+.sm-m i{width:7px;height:7px;border-radius:50%;background:#34d399;}
+.sm-m i.warn{background:#fbbf24;}
+.sm-vd{font:400 13px/1.6 Inter,sans-serif;color:#9fb0c6;}
+.sm-vd b{color:#e5ecf6;font-weight:600;}
+.sm-lb{display:flex;align-items:center;gap:8px;font:700 10.5px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--a);}
+.sm-lb small{font:500 11px Inter,sans-serif;letter-spacing:0;color:#6f7f95;}
+.sm-n{display:flex;align-items:baseline;gap:4px;margin-top:10px;font:700 26px/1.1 Inter,sans-serif;color:#fff;}
+.sm-n small{font:500 13px Inter,sans-serif;color:#6f7f95;}
+.sm-n em{align-self:center;margin-left:8px;padding:3px 9px;border-radius:6px;font:700 10px Inter,sans-serif;font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 40%,transparent);}
+.sm-bar{margin-top:12px;height:4px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;}
+.sm-bar u{display:block;height:100%;width:var(--p);min-width:3px;border-radius:3px;background:var(--c);text-decoration:none;}
+.sm-seg{display:flex;gap:3px;margin-top:14px;height:10px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,.06);}
+.sm-seg u{display:block;background:var(--c);text-decoration:none;}
+.sm-leg{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px;font:400 12.5px Inter,sans-serif;color:#8fa3b8;}
+.sm-leg span{display:inline-flex;align-items:center;gap:7px;}
+.sm-leg i{width:8px;height:8px;border-radius:2px;background:var(--c);}
+.sm-leg b{font:700 15px Inter,sans-serif;color:#fff;}
+.sm-card .rs-raw{margin:0;padding:14px 22px;border-top:1px solid rgba(255,255,255,.07);}
+""")
+_RES_CSS = _RES_CSS + _SUM_CSS
+
 
 def _h(v, n=300):
     """Escape email-derived text for HTML contexts (no markdown escaping)."""
@@ -281,17 +321,47 @@ def _summary(inv):
     snap = inv["score_snapshot"]
     try:
         sc = f"{float(snap['score']):.1f}"
+        sp = max(0, min(100, int(float(snap["score"]))))
     except (TypeError, ValueError):
-        sc = _h(snap.get("score"), 12)
+        sc, sp = _h(snap.get("score"), 12), 0
+    lv = str(snap.get("level") or "").strip()
+    lc = {"low": "#34d399", "medium": "#fbbf24", "high": "#f87171", "critical": "#f87171"}.get(lv.lower(), "#94a3b8")
     kc = "k-s" if k["suspicious"] else "k-u" if k["uncertain"] else "k-v"
-    chips = "".join(f'<span class="rs-chip c{i}"><b>{v}</b>{lab}</span>' for i, (v, lab) in enumerate((
-        (len(inv["evidence"]), "checks run"), (k["verified"], "verified"), (k["suspicious"], "suspicious"), (k["uncertain"], "gaps")), 1))
+    done = str(inv["status"]).lower() == "complete"
+    mx = max(1, int(inv["limits"]["max_tool_calls"]))
+    nev = len(inv["evidence"])
+    pct = max(0, min(100, nev * 100 // mx))
+    try:
+        tm = f"{float(inv['seconds']):.1f}s"
+    except (TypeError, ValueError):
+        tm = _h(inv["seconds"], 12)
+    tot = k["verified"] + k["uncertain"] + k["suspicious"]
+    segs = "".join(f'<u style="flex:{v};--c:{c}"></u>' for v, c in (
+        (k["verified"], "#34d399"), (k["uncertain"], "#fbbf24"), (k["suspicious"], "#f87171")) if v)
+    leg = "".join(f'<span style="--c:{c}"><i></i><b>{v}</b>{lab}</span>' for v, lab, c in (
+        (k["verified"], "verified", "#34d399"), (k["uncertain"], "gaps", "#fbbf24"), (k["suspicious"], "suspicious", "#f87171")))
     raw = (f'<details class="rs-raw"><summary>Show generated text</summary><p>{_h(inv["narrative"], 4000)}</p></details>'
            if inv.get("narrative") else "")
-    return (f'<div class="rs-card rs-sm {kc}"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div><div class="rs-bd">'
-            f'<div class="rs-sh">{head}</div><div class="rs-chips">{chips}</div>'
-            f'<div class="rs-vd">Scanner verdict (unchanged): <b>{_h(snap.get("level"), 12)} \u00b7 {sc}/100</b>. '
-            f'Absence of findings is not evidence of safety.</div>{raw}</div></div>')
+    meta = (f'<span class="sm-m"><i class="{"ok" if done else "warn"}"></i><b>{_h(inv["status"], 20).capitalize()}</b></span>'
+            f'<span class="sm-m">Mode <b>{"AI" if inv["mode"] == "ai" else "Deterministic"}</b></span>'
+            f'<span class="sm-m">Time <b>{tm}</b></span>'
+            f'<span class="sm-m">Stopped <b>{_h(inv["stop_reason"] or "-", 40).replace("_", " ")}</b></span>')
+    return (f'<div class="rs-card sm-card {kc}">'
+            f'<div class="sm-head"><div class="sm-l"><span class="sm-k">Summary</span></div>'
+            f'<div class="sm-t">{head}</div><div class="sm-s">Generated from tool findings</div></div>'
+            f'<div class="sm-grid">'
+            f'<div class="sm-c sm-main"><div class="sm-meta">{meta}</div>'
+            f'<div class="sm-vd">Scanner verdict (unchanged): <b>{_h(lv, 12)} \u00b7 {sc}/100</b>. '
+            f'Absence of findings is not evidence of safety.</div></div>'
+            f'<div class="sm-c sm-sc"><span class="sm-lb" style="--a:#a78bfa">Scanner score</span>'
+            f'<b class="sm-n">{sc}<small>/100</small><em style="--c:{lc}">{_h(lv, 12)}</em></b>'
+            f'<div class="sm-bar" style="--p:{sp}%;--c:{lc}"><u></u></div></div>'
+            f'<div class="sm-c sm-fd"><span class="sm-lb" style="--a:#34d399">Findings<small>{tot}</small></span>'
+            f'<div class="sm-seg">{segs}</div><div class="sm-leg">{leg}</div></div>'
+            f'<div class="sm-c sm-tc"><span class="sm-lb" style="--a:#38bdf8">Tool calls</span>'
+            f'<b class="sm-n">{nev}<small>/{mx}</small></b>'
+            f'<div class="sm-bar" style="--p:{pct}%;--c:#38bdf8"><u></u></div></div>'
+            f'</div>{raw}</div>')
 
 
 
@@ -461,7 +531,6 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     if not inv:
         return
 
-    _pills(inv)
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
     st.markdown(_RES_CSS + _summary(inv), unsafe_allow_html=True)
