@@ -94,6 +94,13 @@ _RES_CSS = """<style>
 .rs-ev{display:flex;flex-wrap:wrap;gap:5px;flex:0 0 auto;justify-content:flex-end}
 .rs-ev span{padding:2px 7px;border-radius:5px;font:600 11px ui-monospace,Consolas,monospace;color:#8fa3b8;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .rs-none{padding:10px 20px 14px 40px;border-top:1px solid rgba(255,255,255,.05);font:400 13px Inter,sans-serif;color:#6f7f95}
+.rs-tw{overflow-x:auto}.rs-t{width:100%;border-collapse:collapse;font:400 13px/1.5 Inter,sans-serif;color:#d3dcea}
+.rs-t th{padding:10px 16px;text-align:left;font:600 10.5px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8fa3b8;background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap}
+.rs-t td{padding:11px 16px;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.05)}.rs-t tr:last-child td{border-bottom:0}.rs-t tbody tr:hover{background:rgba(255,255,255,.025)}
+.rs-t .n{color:#6f7f95;width:48px;font-variant-numeric:tabular-nums}.rs-t .tl{font-weight:600;color:#fff;white-space:nowrap}
+.rs-t .mo{font:500 12px ui-monospace,Consolas,monospace;color:#b9c6da;word-break:break-all}.rs-t .mu{color:#8fa3b8;white-space:nowrap}.rs-t .wh{color:#9fb0c6;min-width:240px}
+.rs-b{display:inline-block;padding:2px 9px;border-radius:999px;font:700 11px Inter,sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);white-space:nowrap}
+.rs-ev span{font:600 11.5px Inter,sans-serif !important;color:#b9c6da !important}
 @media(max-width:900px){.rs-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.rs-k:nth-child(4){border-left:0}}
 </style>"""
 
@@ -101,6 +108,21 @@ _RES_CSS = """<style>
 def _h(v, n=300):
     """Escape email-derived text for HTML contexts (no markdown escaping)."""
     return html.escape(str(ia.clean(v, n)))
+
+
+def _hum(v):
+    return str(v or "-").replace("_", " ").strip().capitalize()
+
+
+def _src(inv):
+    m = {}
+    for st_ in inv.get("steps", []):
+        if st_.get("evidence_id"):
+            m[st_["evidence_id"]] = _hum(st_.get("tool"))
+    for e in inv.get("evidence", []):
+        if e.get("tool"):
+            m.setdefault(e.get("id"), _hum(e["tool"]))
+    return m
 
 
 def _t(v):
@@ -157,14 +179,16 @@ def _pills(inv):
 
 
 def _findings(inv):
-    parts = ['<div class="rs-card"><div class="rs-hd"><b>Findings</b><span>Every item cites its evidence ID</span></div>']
+    src = _src(inv)
+    parts = ['<div class="rs-card"><div class="rs-hd"><b>Findings</b><span>Source = the tool that produced each finding</span></div>']
     for kind, title, color, desc in _KINDS:
         items = [f for f in inv["findings"] if f["kind"] == kind]
         op = " open" if kind != "verified" and items else ""
         parts.append(f'<details class="rs-grp"{op} style="--c:{color}"><summary><i></i><span class="t">{title}</span><em>{len(items)}</em>'
                      f'<span class="d">{html.escape(desc)}</span></summary>')
         for f in items:
-            ev = "".join(f"<span>{_h(e, 20)}</span>" for e in f["evidence_ids"])
+            names = list(dict.fromkeys(src.get(e, e) for e in f["evidence_ids"]))
+            ev = "".join(f'<span title="Evidence {_h(",".join(f["evidence_ids"]), 60)}">{_h(n, 40)}</span>' for n in names)
             parts.append(f'<div class="rs-row"><div>{_h(f["statement"], 600)}</div><div class="rs-ev">{ev}</div></div>')
         if not items:
             parts.append('<div class="rs-none">None recorded.</div>')
@@ -174,10 +198,18 @@ def _findings(inv):
 
 
 def _actions(inv):
-    st.dataframe([{"#": s["n"], "tool": s["tool"], "argument": s["args"].get("indicator", "-"),
-                   "chosen by": s["source"], "result": s.get("status"),
-                   "evidence": s.get("evidence_id", "-"), "why": s["reason"]} for s in inv["steps"]],
-                 hide_index=True)
+    def badge(v):
+        t = str(v or "-").lower()
+        c = "#34d399" if any(k in t for k in ("ok", "success", "done", "complete")) else \
+            "#f87171" if any(k in t for k in ("fail", "error", "denied", "blocked")) else "#fbbf24"
+        return f'<span class="rs-b" style="--c:{c}">{_h(_hum(v), 24)}</span>'
+    rows = "".join(
+        f'<tr><td class="n">{_h(x["n"], 6)}</td><td class="tl">{_h(_hum(x["tool"]), 60)}</td>'
+        f'<td class="mo">{_h(x["args"].get("indicator", "-"), 120)}</td><td>{badge(x.get("status"))}</td>'
+        f'<td class="mu">{_h(_hum(x["source"]), 30)}</td><td class="wh">{_h(x["reason"], 400)}</td></tr>' for x in inv["steps"])
+    st.markdown(_RES_CSS + f'<div class="rs-card"><div class="rs-hd"><b>Action log</b><span>{len(inv["steps"])} steps run by the agent</span></div>'
+                '<div class="rs-tw"><table class="rs-t"><thead><tr><th>Step</th><th>Tool</th><th>Target</th><th>Result</th><th>Chosen by</th><th>Why</th></tr></thead>'
+                f'<tbody>{rows}</tbody></table></div></div>', unsafe_allow_html=True)
 
 
 def _evidence(inv):
@@ -185,7 +217,7 @@ def _evidence(inv):
     for e in inv["evidence"]:
         if e.get("records"):
             shown = True
-            with st.expander(f"{e['id']} · {e['args'].get('indicator', '-')} ({len(e['records'])} rows)"):
+            with st.expander(f"{_src(inv).get(e['id'], e['id'])} · {e['args'].get('indicator', '-')} ({len(e['records'])} rows)"):
                 st.caption("Stored values as found. 'historical' = seen before only; "
                            "'suspicious'/'confirmed' require stored evidence in the record.")
                 st.dataframe(e["records"], hide_index=True)
