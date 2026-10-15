@@ -63,6 +63,14 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has(.inv-run) {align-items:center !important; gap:18px !important; margin-top:4px;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run {font:400 12.5px/1.5 Inter,sans-serif; color:#7d8da3;} html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run b {color:#c9d5e6; font-weight:600;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p::before {content:'▶' !important; -webkit-mask-image:none !important; mask-image:none !important; animation:none !important; position:static !important; display:inline-block !important; width:auto !important; height:auto !important; transform:none !important; background:none !important; background-color:transparent !important; color:#fff; font-size:10px; margin-right:10px; opacity:.9;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-baseweb="tab-list"] {gap:4px !important; border-bottom:1px solid rgba(255,255,255,.08) !important; background:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) button[data-baseweb="tab"] {height:auto !important; padding:10px 18px !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important; color:#8fa3b8 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) button[data-baseweb="tab"] p {font:600 13.5px Inter,sans-serif !important; color:inherit !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) button[data-baseweb="tab"][aria-selected="true"] {color:#fff !important; box-shadow:inset 0 -2px 0 #6366f1 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) button[data-baseweb="tab"]:hover {color:#e5ecf6 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-baseweb="tab-highlight"] {background:#6366f1 !important; height:2px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-baseweb="tab-border"] {display:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .rs-sel td, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .rs-sel th {user-select:text;} html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .rs-t .ind {min-width:260px;}
 </style>"""
 
 _RES_CSS = """<style>
@@ -286,14 +294,39 @@ def _actions(inv):
 
 
 def _evidence(inv):
+    src = _src(inv)
     shown = False
     for e in inv["evidence"]:
-        if e.get("records"):
-            shown = True
-            with st.expander(f"{_src(inv).get(e['id'], e['id'])} · {e['args'].get('indicator', '-')} ({len(e['records'])} rows)"):
-                st.caption("Stored values as found. 'historical' = seen before only; "
-                           "'suspicious'/'confirmed' require stored evidence in the record.")
-                st.dataframe(e["records"], hide_index=True)
+        recs = e.get("records")
+        if not recs:
+            continue
+        shown = True
+        cols = list(recs[0].keys())
+
+        def cell(c, v):
+            k = str(c).lower()
+            if k == "tier":
+                t = str(v).lower()
+                col = "#f87171" if t in ("suspicious", "confirmed") else "#94a3b8" if t == "historical" else "#fbbf24"
+                return f'<td><span class="rs-b" style="--c:{col}">{_h(v, 24)}</span></td>'
+            cls = "mo ind" if "indicator" in k else "wh" if k == "reason" else "n" if k == "#" else ""
+            return f'<td class="{cls}">{_h(v, 600)}</td>'
+        head = "".join(f"<th>{_h(c, 30)}</th>" for c in cols)
+        rows = "".join("<tr>" + "".join(cell(c, r.get(c, "")) for c in cols) + "</tr>" for r in recs)
+        title = f"{src.get(e['id'], e['id'])} \u00b7 {e['args'].get('indicator', '-')}"
+        st.markdown(_RES_CSS + f'<div class="rs-card"><div class="rs-hd"><b>{_h(title, 160)}</b><span>{len(recs)} rows \u00b7 stored values as found</span></div>'
+                    f'<div class="rs-tw"><table class="rs-t rs-sel"><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
+                    '<div class="rs-bd" style="padding:10px 20px;font-size:12px;color:#6f7f95">\u2018historical\u2019 = seen before only; '
+                    '\u2018suspicious\u2019 / \u2018confirmed\u2019 require stored evidence in the record.</div></div>', unsafe_allow_html=True)
+        icol = next((c for c in cols if "indicator" in str(c).lower()), None)
+        if icol:
+            vals = list(dict.fromkeys(str(r.get(icol, "")) for r in recs if r.get(icol)))
+            if vals:
+                try:
+                    st.caption("Copy indicators")
+                    st.code("\n".join(vals), language=None)
+                except Exception:
+                    pass
     if not shown:
         st.caption("No supporting records.")
 
@@ -325,7 +358,8 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
         st.warning(_t(inv["mode_note"]))
     st.markdown(_RES_CSS + _summary(inv), unsafe_allow_html=True)
 
-    t1, t2, t3 = st.tabs(["Findings", "Action log", "Evidence"])
+    _nev = sum(1 for e in inv["evidence"] if e.get("records"))
+    t1, t2, t3 = st.tabs([f"Findings ({len(inv['findings'])})", f"Action log ({len(inv['steps'])})", f"Evidence ({_nev})"])
     with t1:
         _findings(inv)
     with t2:
