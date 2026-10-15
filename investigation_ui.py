@@ -25,6 +25,30 @@ _CSS = """<style>
 .inv-ev{opacity:.55;font-family:monospace;font-size:.75rem;margin-left:6px}
 .inv-sum{border-radius:12px;padding:14px 16px;margin:10px 0;background:rgba(129,140,248,.08);
  border:1px solid rgba(129,140,248,.25)}
+/* AG */
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-info {display:flex; align-items:center; gap:12px; padding:13px 18px; border-radius:12px; font:400 13.5px Inter,sans-serif; color:#b9c6da; background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.28);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-info b {display:grid; place-items:center; width:20px; height:20px; border-radius:50%; font:700 12px Inter,sans-serif; color:#38bdf8; border:1.5px solid #38bdf8;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) {gap:16px !important; flex-wrap:nowrap !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has([data-testid="stCheckbox"]) > [data-testid="stColumn"] {flex:1 1 0 !important; width:auto !important; min-width:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] {width:100% !important; padding:0 !important; border:0 !important; background:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label {display:flex !important; flex-direction:row-reverse; justify-content:space-between; align-items:center; width:100% !important; min-height:78px; padding:16px 22px !important; border-radius:14px !important; border:1px solid rgba(255,255,255,.1) !important; background:rgba(255,255,255,.035) !important; transition:all .18s ease;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label:hover {transform:translateY(-2px); border-color:rgba(167,139,250,.6) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label:has(input:checked) {border-color:rgba(52,211,153,.65) !important; background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(52,211,153,.03)) !important; box-shadow:0 0 0 3px rgba(52,211,153,.08), 0 12px 28px -14px #34d399 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stCheckbox"] label p {font:700 15px/1.4 Inter,sans-serif !important; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-div {display:flex; align-items:center; gap:14px; margin:14px 0 2px; font:700 10.5px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; color:#8fa3b8;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-div::after {content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,255,255,.14),transparent);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:nth-child(1) {--ac:#a78bfa;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:nth-child(2) {--ac:#38bdf8;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) > [data-testid="stColumn"]:nth-child(3) {--ac:#34d399;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInput"] label p {font:700 11px ui-monospace,Consolas,monospace !important; letter-spacing:.18em !important; text-transform:uppercase; color:color-mix(in srgb,var(--ac,#a78bfa) 70%,#fff) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] {display:flex !important; align-items:stretch; border-radius:12px; overflow:hidden; border:1px solid color-mix(in srgb,var(--ac,#a78bfa) 45%,transparent) !important; border-top:3px solid var(--ac,#a78bfa) !important; background:#0a1018 !important; box-shadow:0 14px 28px -18px var(--ac,#a78bfa);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] > div {flex:1 1 auto; order:0; border:0 !important; background:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] input {text-align:center !important; font:800 22px Inter,sans-serif !important; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepDown"] {order:-1 !important;} html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepUp"] {order:1 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepDown"], html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepUp"] {width:52px; height:auto !important; border-radius:0 !important; background:rgba(255,255,255,.04) !important; color:#fff !important; border:0 !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepDown"]:hover, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputStepUp"]:hover {background:color-mix(in srgb,var(--ac,#a78bfa) 28%,#0d141d) !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] {width:auto !important; padding:0 30px !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p::before {content:'\25B6'; margin-right:12px; font-size:13px;}
 </style>"""
 
 
@@ -35,14 +59,14 @@ def _t(v):
 
 def _controls(key):
     st.markdown(_CSS, unsafe_allow_html=True)
-    st.caption("Read-only · allowlisted tools · scanner score unchanged · no outbound mail")
+    st.markdown('<div class="inv-info"><b>i</b>Read-only \u00b7 allowlisted tools \u00b7 scanner score unchanged \u00b7 no outbound mail</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    use_ai = c1.toggle("AI-assisted planning", value=True, key="agent_ai_" + key,
+    use_ai = c1.toggle("**AI-assisted planning**  \n:gray[Let the AI plan its investigation approach.]", value=True, key="agent_ai_" + key,
                        help="Uses the app's configured provider (local Ollama/Qwen or Groq). "
                             "Sends only a short evidence digest, never the email body.")
-    net = c2.toggle("Public DNS/RDAP lookups", value=False, key="agent_net_" + key,
+    net = c2.toggle("**Public DNS/RDAP lookups**  \n:gray[Allow lookups to public DNS and RDAP services.]", value=False, key="agent_net_" + key,
                     help="Sends only domain names found in this email to public DNS-over-HTTPS and RDAP services.")
-    st.markdown('<div class="inv-lbl">Limits · per-run caps</div>', unsafe_allow_html=True)
+    st.markdown('<div class="inv-div">LIMITS \u00b7 PER-RUN CAPS</div>', unsafe_allow_html=True)
     # The stubbed Streamlit used in tests does not expose st.container(). Keep a compatible layout.
     l1, l2, l3 = st.columns(3)
     calls = int(l1.number_input("Tool calls", 1, 15, 10, 1, key="agent_calls_" + key, help="Hard cap per run"))
@@ -50,6 +74,7 @@ def _controls(key):
     secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
     # Avoid deprecated and unsupported Streamlit kwargs used by the failing tests.
     go = st.button("Start investigation  →", type="primary", key="agent_go_" + key)
+    st.caption("Runs only the enabled lookups and stops at the limits above.")
     return use_ai, net, calls, iters, secs, go
 
 
