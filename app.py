@@ -13189,6 +13189,46 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 [data-testid="stCheckbox"] label p strong{font-size:13.5px;}
 [data-testid="stCheckbox"] label p{font-size:12px;}
 """), unsafe_allow_html=True)
+            def _flat_boxes():
+                _pp = "html body " + ".stApp" * 11
+                _nn = ":not(#_x)" * 7
+                _rules = []
+                for _k, _ac in (("assess", "#a78bfa"), ("agent", "#38bdf8")):
+                    _r = f"{_pp} .st-key-ai_step_{_k}{_nn}"
+                    _rules += [
+                        (_r, "background:#0b111a;border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:none;overflow:hidden"),
+                        (_r + "::before", f"width:3px;background:{_ac};box-shadow:none;opacity:.9"),
+                        (_r + " .aih-ico", f"background:color-mix(in srgb,{_ac} 12%,#0b111a);border:1px solid color-mix(in srgb,{_ac} 38%,transparent);box-shadow:none;color:{_ac}"),
+                        (_r + " .aih-n i", "box-shadow:none;animation:none"),
+                        (_r + " .num-head .nh-badge", "box-shadow:none"),
+                    ]
+                _both = lambda sub: ",".join(f"{_pp} .st-key-ai_step_{k}{_nn} {sub}" for k in ("assess", "agent"))
+                _a = f"{_pp} .st-key-ai_step_assess{_nn}"
+                _g = f"{_pp} .st-key-ai_step_agent{_nn}"
+                _rules += [
+                    (_a + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding-bottom:0"),
+                    (_g + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding-bottom:0"),
+                    (_a + " [data-testid=\"stHorizontalBlock\"]", "align-items:center;gap:16px;margin:0"),
+                    (_a + " [data-testid=\"stColumn\"]", "padding:0;min-height:0;align-self:center"),
+                    (_a + " [data-testid=\"stColumn\"] > [data-testid=\"stVerticalBlock\"]", "gap:0"),
+                    (_a + " [data-testid=\"stButton\"]", "margin:0"),
+                    (_a + " .aih", "margin:0"),
+                    (_both(".ai1-empty"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
+                    (_both(".ai1-ico"), "background:#131c2a;border:1px solid rgba(255,255,255,.08);color:#a78bfa;box-shadow:none"),
+                    (_both("[data-testid=\"stCheckbox\"]"), "padding:0;border:0;background:none;box-shadow:none;border-radius:0;transform:none;width:100%"),
+                    (_both("[data-testid=\"stCheckbox\"] label"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none;transform:none;padding:12px 16px;width:100%;margin:0"),
+                    (_both("[data-testid=\"stCheckbox\"] label:hover"), "border-color:rgba(255,255,255,.16);box-shadow:none;transform:none"),
+                    (_both("[data-testid=\"stCheckbox\"]:has(input:checked) label"), "background:#0e1520;border-color:color-mix(in srgb,#34d399 45%,transparent);box-shadow:none"),
+                    (_both("[data-testid=\"stCheckbox\"] label:has(input:checked)"), "background:#0e1520;border-color:color-mix(in srgb,#34d399 45%,transparent);box-shadow:none"),
+                    (_both("[data-testid=\"stExpander\"]"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
+                    (_both("[data-testid=\"stNumberInput\"] [data-baseweb=\"input\"]"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);box-shadow:none"),
+                    (_both(".ai-report-frame"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none;overflow:hidden;margin:0"),
+                    (_both(".ai-report-bar"), "background:#111a28;border-bottom:1px solid rgba(255,255,255,.07);box-shadow:none"),
+                    (_both(".ai-report-body"), "background:transparent;padding:16px 18px"),
+                    (_both("[data-testid=\"stAlert\"]"), "border-radius:12px;box-shadow:none"),
+                ]
+                return "<style>\n" + "\n".join(f"{a}{{" + ";".join(d.strip() + " !important" for d in b.split(";") if d.strip()) + ";}" for a, b in _rules) + "\n</style>"
+            st.markdown(_flat_boxes(), unsafe_allow_html=True)
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
