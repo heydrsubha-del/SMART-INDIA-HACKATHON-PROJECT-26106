@@ -1,4 +1,5 @@
 """Streamlit panel for the agentic investigation (explicit start, read-only)."""
+import html
 import re
 
 import streamlit as st
@@ -54,14 +55,52 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] {width:auto !important; min-width:0 !important; height:44px !important; min-height:44px !important; padding:0 26px !important; justify-content:center !important; border-radius:10px !important; border:1px solid rgba(255,255,255,.14) !important; background:linear-gradient(180deg,#6d70f5,#4f46e5) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.5) !important; transition:transform .12s ease,filter .12s ease;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]::before, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]::after {display:none !important; content:none !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p {font:600 14px Inter,sans-serif !important; letter-spacing:.01em; color:#fff !important;}
-html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p::before {content:'▶'; font-size:10px; margin-right:10px; opacity:.9;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:hover {filter:brightness(1.1); transform:translateY(-1px);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:active {filter:brightness(.94); transform:translateY(0) scale(.98);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:focus-visible {outline:2px solid #a5b4fc !important; outline-offset:2px;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:disabled {opacity:.45; filter:grayscale(.4); cursor:not-allowed; transform:none;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has(.inv-run) {align-items:center !important; gap:18px !important; margin-top:4px;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run {font:400 12.5px/1.5 Inter,sans-serif; color:#7d8da3;} html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run b {color:#c9d5e6; font-weight:600;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p::before {content:'▶' !important; -webkit-mask-image:none !important; mask-image:none !important; animation:none !important; position:static !important; display:inline-block !important; width:auto !important; height:auto !important; transform:none !important; background:none !important; background-color:transparent !important; color:#fff; font-size:10px; margin-right:10px; opacity:.9;}
 </style>"""
+
+_RES_CSS = """<style>
+.rs-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0b111a;overflow:hidden;margin:18px 0 12px}
+.rs-k{position:relative;padding:14px 18px 20px;border-left:1px solid rgba(255,255,255,.07);min-width:0}
+.rs-k:first-child{border-left:0}
+.rs-k span{display:block;font:600 10.5px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8fa3b8}
+.rs-k b{display:block;margin-top:8px;font:700 20px/1.1 Inter,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs-k b small{font:500 13px Inter,sans-serif;color:#7d8da3;margin-left:2px}
+.rs-k b.ok::before,.rs-k b.warn::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#34d399}
+.rs-k b.warn::before{background:#fbbf24}
+.rs-k i{position:absolute;left:18px;right:18px;bottom:9px;height:3px;border-radius:2px;background:rgba(255,255,255,.08)}
+.rs-k i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--p);border-radius:2px;background:#38bdf8}
+.rs-lvl{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:5px;font:700 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
+.rs-card{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0b111a;margin:0 0 12px;overflow:hidden}
+.rs-hd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.rs-hd b{font:600 13px Inter,sans-serif;color:#e5ecf6}.rs-hd span{font:400 12px Inter,sans-serif;color:#6f7f95}
+.rs-bd{padding:16px 20px;font:400 14px/1.7 Inter,sans-serif;color:#c3cde0}
+.rs-grp{border-bottom:1px solid rgba(255,255,255,.07)}.rs-grp:last-child{border-bottom:0}
+.rs-grp summary{display:flex;align-items:center;gap:12px;padding:13px 20px;cursor:pointer;list-style:none}
+.rs-grp summary::-webkit-details-marker{display:none}
+.rs-grp summary:hover{background:rgba(255,255,255,.025)}
+.rs-grp summary i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.rs-grp summary .t{font:600 14px Inter,sans-serif;color:#fff}
+.rs-grp summary em{font:700 11px Inter,sans-serif;font-style:normal;padding:2px 9px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.rs-grp summary .d{margin-left:auto;font:400 12px Inter,sans-serif;color:#6f7f95}
+.rs-grp summary::after{content:'▸';color:#6f7f95;margin-left:8px}
+.rs-grp[open] summary::after{content:'▾'}
+.rs-row{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;padding:10px 20px 10px 40px;border-top:1px solid rgba(255,255,255,.05);font:400 13.5px/1.55 Inter,sans-serif;color:#d3dcea}
+.rs-ev{display:flex;flex-wrap:wrap;gap:5px;flex:0 0 auto;justify-content:flex-end}
+.rs-ev span{padding:2px 7px;border-radius:5px;font:600 11px ui-monospace,Consolas,monospace;color:#8fa3b8;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.rs-none{padding:10px 20px 14px 40px;border-top:1px solid rgba(255,255,255,.05);font:400 13px Inter,sans-serif;color:#6f7f95}
+@media(max-width:900px){.rs-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.rs-k:nth-child(4){border-left:0}}
+</style>"""
+
+
+def _h(v, n=300):
+    """Escape email-derived text for HTML contexts (no markdown escaping)."""
+    return html.escape(str(ia.clean(v, n)))
 
 
 def _t(v):
@@ -92,24 +131,46 @@ def _controls(key):
 
 def _pills(inv):
     snap = inv["score_snapshot"]
-    items = (("Status", inv["status"]), ("Calls", f"{len(inv['evidence'])}/{inv['limits']['max_tool_calls']}"),
-             ("Time", f"{inv['seconds']}s"), ("Mode", "AI" if inv["mode"] == "ai" else "Deterministic"),
-             ("Stopped", inv["stop_reason"] or "-"), ("Score", f"{snap['score']} ({snap['level']})"))
-    st.markdown('<div class="inv-pills">' + "".join(
-        f'<span class="inv-pill">{k}<b>{_t(v)}</b></span>' for k, v in items) + "</div>", unsafe_allow_html=True)
+    try:
+        sc = f"{float(snap['score']):.1f}"
+    except (TypeError, ValueError):
+        sc = _h(snap.get("score"), 12)
+    lv = str(snap.get("level") or "").strip()
+    lc = {"low": "#34d399", "medium": "#fbbf24", "high": "#f87171", "critical": "#f87171"}.get(lv.lower(), "#94a3b8")
+    done = str(inv["status"]).lower() == "complete"
+    mx = max(1, int(inv["limits"]["max_tool_calls"]))
+    pct = max(0, min(100, len(inv["evidence"]) * 100 // mx))
+    try:
+        tm = f"{float(inv['seconds']):.1f}"
+    except (TypeError, ValueError):
+        tm = _h(inv["seconds"], 12)
+    cells = (
+        ("Status", f'<b class="{"ok" if done else "warn"}">{_h(inv["status"], 20).capitalize()}</b>'),
+        ("Tool calls", f'<b>{len(inv["evidence"])}<small>/{mx}</small></b><i style="--p:{pct}%"></i>'),
+        ("Time", f'<b>{tm}<small>s</small></b>'),
+        ("Mode", f'<b>{"AI" if inv["mode"] == "ai" else "Deterministic"}</b>'),
+        ("Stopped", f'<b>{_h(inv["stop_reason"] or "-", 40).replace("_", " ")}</b>'),
+        ("Scanner score", f'<b>{sc}<small>/100</small><span class="rs-lvl" style="--c:{lc}">{_h(lv, 12)}</span></b>'),
+    )
+    st.markdown(_RES_CSS + '<div class="rs-kpis">' + "".join(f"<div class=\"rs-k\"><span>{k}</span>{v}</div>" for k, v in cells) + "</div>",
+                unsafe_allow_html=True)
 
 
 def _findings(inv):
+    parts = ['<div class="rs-card"><div class="rs-hd"><b>Findings</b><span>Every item cites its evidence ID</span></div>']
     for kind, title, color, desc in _KINDS:
         items = [f for f in inv["findings"] if f["kind"] == kind]
-        with st.expander(f"{title} ({len(items)})", expanded=kind != "verified" and bool(items)):
-            st.caption(desc)
-            for f in items:
-                st.markdown(f'<div class="inv-card" style="--c:{color}">{_t(f["statement"])}'
-                            f'<span class="inv-ev">[{_t(",".join(f["evidence_ids"]))}]</span></div>',
-                            unsafe_allow_html=True)
-            if not items:
-                st.caption("None recorded.")
+        op = " open" if kind != "verified" and items else ""
+        parts.append(f'<details class="rs-grp"{op} style="--c:{color}"><summary><i></i><span class="t">{title}</span><em>{len(items)}</em>'
+                     f'<span class="d">{html.escape(desc)}</span></summary>')
+        for f in items:
+            ev = "".join(f"<span>{_h(e, 20)}</span>" for e in f["evidence_ids"])
+            parts.append(f'<div class="rs-row"><div>{_h(f["statement"], 600)}</div><div class="rs-ev">{ev}</div></div>')
+        if not items:
+            parts.append('<div class="rs-none">None recorded.</div>')
+        parts.append("</details>")
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
 
 
 def _actions(inv):
@@ -154,8 +215,8 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
     if inv.get("narrative"):
-        st.markdown(f'<div class="inv-sum"><div class="inv-lbl" style="margin-top:0">Summary · generated from tool findings</div>'
-                    f'{_t(inv["narrative"])}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="rs-card"><div class="rs-hd"><b>Summary</b><span>Generated from tool findings</span></div>'
+                    f'<div class="rs-bd">{_h(inv["narrative"], 4000)}</div></div>', unsafe_allow_html=True)
 
     t1, t2, t3 = st.tabs(["Findings", "Action log", "Evidence"])
     with t1:
