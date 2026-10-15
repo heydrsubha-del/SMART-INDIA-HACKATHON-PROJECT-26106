@@ -650,7 +650,7 @@ class UiIsolation(Base):
         st.checkbox = lambda *a, **k: k.get("value", False)
         st.number_input = lambda label, mn, mx, val, **k: val
         st.button = lambda *a, **k: k.get("key", "").startswith("agent_go_") and STATE["click"]
-        for n in ("markdown", "caption", "info", "warning", "metric", "dataframe", "download_button", "expander", "spinner", "empty"):
+        for n in ("markdown", "caption", "info", "warning", "metric", "dataframe", "download_button", "expander", "spinner", "empty", "tabs"):
             setattr(st, n, mk)
         STATE = {"click": False}
         dl = []
