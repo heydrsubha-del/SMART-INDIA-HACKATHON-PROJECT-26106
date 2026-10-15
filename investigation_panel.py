@@ -234,6 +234,35 @@ _PRO_RES = _pro("""
 .ev-f.na b{color:#4b5a70;}
 .ev-why{margin-top:12px;padding:10px 14px;border-radius:10px;font:400 13px/1.55 Inter,sans-serif;color:#9fb0c6;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
 .ev-note{padding:12px 22px;border-top:1px solid rgba(255,255,255,.06);font:400 12px Inter,sans-serif;color:#6f7f95;}
+.ov-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,240px);gap:28px;padding:22px 26px 22px;align-items:start;}
+.ov-eyebrow{margin-bottom:14px;font:700 10.5px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8aa0b8;}
+.ov-eyebrow em{margin-left:10px;font:400 12px Inter,sans-serif;letter-spacing:0;text-transform:none;font-style:normal;color:#6f7f95;}
+.ov-meta{display:flex;flex-wrap:wrap;align-items:center;margin:12px 0 0 40px;font:400 13px Inter,sans-serif;color:#8fa3b8;}
+.ov-meta span{display:inline-flex;align-items:center;gap:6px;}
+.ov-meta span + span::before{content:'';width:3px;height:3px;border-radius:50%;margin:0 12px;background:#475569;}
+.ov-meta b{color:#e5ecf6;font-weight:600;}
+.ov-meta i.st{width:8px;height:8px;border-radius:50%;background:var(--sc);}
+.ov-vd{margin:10px 0 0 40px;font:400 13px/1.6 Inter,sans-serif;color:#8fa3b8;}
+.ov-vd b{color:#e5ecf6;font-weight:600;}
+.ov-score{padding-left:28px;border-left:1px solid rgba(255,255,255,.08);}
+.ov-l{display:block;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8aa0b8;}
+.ov-l em{margin-left:8px;font:600 11px Inter,sans-serif;letter-spacing:0;font-style:normal;color:#6f7f95;}
+.ov-n{display:flex;align-items:baseline;gap:4px;margin-top:12px;font:700 34px/1 Inter,sans-serif;letter-spacing:-.02em;color:#fff;}
+.ov-n small{font:500 14px Inter,sans-serif;letter-spacing:0;color:#6f7f95;}
+.ov-n span.rs-lvl{display:inline-flex;align-items:center;align-self:center;margin:0 0 0 10px;padding:3px 9px;border-radius:6px;font:700 10px Inter,sans-serif;letter-spacing:.1em;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 38%,transparent);}
+.ov-meter{position:relative;height:4px;margin-top:16px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.07);}
+.ov-meter i{position:absolute;left:0;top:0;bottom:0;width:var(--p);border-radius:3px;background:var(--m,#38bdf8);}
+.ov-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,240px);gap:28px;padding:0 26px;border-top:1px solid rgba(255,255,255,.07);}
+.ov-c{padding:18px 0 20px;}
+.ov-c + .ov-c{padding-left:28px;border-left:1px solid rgba(255,255,255,.08);}
+.ov-bar{display:flex;gap:3px;height:10px;margin-top:14px;}
+.ov-bar i{display:block;min-width:6px;border-radius:3px;}
+.ov-bar.e{border-radius:3px;background:rgba(255,255,255,.07);}
+.ov-lgs{display:flex;flex-wrap:wrap;gap:6px 24px;margin-top:12px;font:400 12.5px Inter,sans-serif;color:#8fa3b8;}
+.ov-lgs span{display:inline-flex;align-items:center;gap:7px;}
+.ov-lgs span::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--c);}
+.ov-lgs b{font:700 14px Inter,sans-serif;color:#fff;}
+.ov .rs-raw{margin:0 26px 20px;}
 """)
 def _bare(c):
     return c.replace("<style>", "").replace("</style>", "")
@@ -315,6 +344,58 @@ def _summary(inv):
             f'<div class="rs-vd">Scanner verdict (unchanged): <b>{_h(snap.get("level"), 12)} \u00b7 {sc}/100</b>. '
             f'Absence of findings is not evidence of safety.</div>{raw}</div></div>')
 
+
+
+def _overview(inv):
+    """One merged result card: verdict headline, run meta, score, findings split and tool-call usage."""
+    k = {x: sum(1 for f in inv["findings"] if f["kind"] == x) for x in ("suspicious", "uncertain", "verified")}
+    kc = "k-s" if k["suspicious"] else "k-u" if k["uncertain"] else "k-v"
+    if k["suspicious"]:
+        head = "Suspicious signals found \u2014 review before acting."
+    elif k["uncertain"]:
+        head = f"No suspicious signals found, but {k['uncertain']} check(s) could not be completed."
+    else:
+        head = "No suspicious signals found."
+    snap = inv["score_snapshot"]
+    try:
+        scf = max(0.0, min(100.0, float(snap["score"])))
+        sc = f"{float(snap['score']):.1f}"
+    except (TypeError, ValueError):
+        scf, sc = 0.0, _h(snap.get("score"), 12)
+    lv = str(snap.get("level") or "").strip()
+    lc = {"low": "#34d399", "medium": "#fbbf24", "high": "#f87171", "critical": "#f87171"}.get(lv.lower(), "#94a3b8")
+    done = str(inv["status"]).lower() == "complete"
+    mx = max(1, int(inv["limits"]["max_tool_calls"]))
+    used = len(inv["evidence"])
+    pct = max(0, min(100, used * 100 // mx))
+    try:
+        tm = f"{float(inv['seconds']):.1f}"
+    except (TypeError, ValueError):
+        tm = _h(inv["seconds"], 12)
+    segs = "".join(f'<i style="flex:{k[x]};background:{c}"></i>'
+                   for x, c in (("verified", "#34d399"), ("uncertain", "#fbbf24"), ("suspicious", "#f87171")) if k[x])
+    bar = f'<div class="ov-bar">{segs}</div>' if segs else '<div class="ov-bar e"></div>'
+    legend = "".join(f'<span style="--c:{c}"><b>{k[x]}</b>{lab}</span>'
+                     for x, lab, c in (("verified", "verified", "#34d399"), ("uncertain", "gaps", "#fbbf24"),
+                                       ("suspicious", "suspicious", "#f87171")))
+    meta = (f'<span><i class="st" style="--sc:{"#34d399" if done else "#fbbf24"}"></i><b>{_h(inv["status"], 20).capitalize()}</b></span>'
+            f'<span>Mode <b>{"AI" if inv["mode"] == "ai" else "Deterministic"}</b></span>'
+            f'<span>Time <b>{tm}s</b></span>'
+            f'<span>Stopped <b>{_h(inv["stop_reason"] or "-", 40).replace("_", " ")}</b></span>')
+    raw = (f'<details class="rs-raw"><summary>Show generated text</summary><p>{_h(inv["narrative"], 4000)}</p></details>'
+           if inv.get("narrative") else "")
+    return (f'<div class="rs-card rs-sm ov {kc}"><div class="ov-top"><div class="ov-main">'
+            '<div class="ov-eyebrow">Summary<em>Generated from tool findings</em></div>'
+            f'<div class="rs-sh">{head}</div><div class="ov-meta">{meta}</div>'
+            f'<div class="ov-vd">Scanner verdict (unchanged): <b>{_h(lv, 12)} \u00b7 {sc}/100</b>. '
+            'Absence of findings is not evidence of safety.</div></div>'
+            f'<div class="ov-score"><span class="ov-l">Scanner score</span>'
+            f'<b class="ov-n">{sc}<small>/100</small><span class="rs-lvl" style="--c:{lc}">{_h(lv, 12)}</span></b>'
+            f'<div class="ov-meter" style="--p:{scf:.1f}%;--m:{lc}"><i></i></div></div></div>'
+            f'<div class="ov-grid"><div class="ov-c"><span class="ov-l">Findings<em>{sum(k.values())}</em></span>{bar}'
+            f'<div class="ov-lgs">{legend}</div></div>'
+            f'<div class="ov-c"><span class="ov-l">Tool calls</span><b class="ov-n">{used}<small>/{mx}</small></b>'
+            f'<div class="ov-meter" style="--p:{pct}%"><i></i></div></div></div>{raw}</div>')
 
 
 def _hum(v):
@@ -501,10 +582,9 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     if not inv:
         return
 
-    _pills(inv)
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
-    st.markdown(_summary(inv), unsafe_allow_html=True)
+    st.markdown(_overview(inv), unsafe_allow_html=True)
 
     _nev = sum(1 for e in inv["evidence"] if e.get("records"))
     t1, t2, t3 = st.tabs([f"Findings ({len(inv['findings'])})", f"Action log ({len(inv['steps'])})", f"Evidence ({_nev})"])
