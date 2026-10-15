@@ -13196,24 +13196,28 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 for _k, _ac in (("assess", "#a78bfa"), ("agent", "#38bdf8")):
                     _r = f"{_pp} .st-key-ai_step_{_k}{_nn}"
                     _rules += [
-                        (_r, f"background:linear-gradient(90deg,color-mix(in srgb,{_ac} 7%,#0b111a),#0b111a 40%);border:1px solid rgba(255,255,255,.08);border-left:3px solid {_ac};border-radius:16px;box-shadow:none;overflow:hidden"),
-                        (_r + "::before", f"width:3px;background:{_ac};box-shadow:none;opacity:.9"),
-                        (_r + " .aih-ico", f"background:color-mix(in srgb,{_ac} 12%,#0b111a);border:1px solid color-mix(in srgb,{_ac} 38%,transparent);box-shadow:none;color:{_ac}"),
-                        (_r + " .aih-n i", "box-shadow:none;animation:none"),
+                        (_r, "background:#0b111a;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:none;overflow:hidden;padding:0"),
+                        (_r + "::before", "display:none"),
+                        (_r + " > [data-testid=\"stVerticalBlock\"] > :first-child", "background:linear-gradient(180deg,#0f1722,#0b111a);border-bottom:1px solid rgba(255,255,255,.08);margin:0;width:100%"),
+                        (_r + " > [data-testid=\"stVerticalBlock\"] > :not(:first-child)", "margin:0 24px;width:calc(100% - 48px)"),
+                        (_r + " .aih-ico", "background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);box-shadow:none;color:#fff"),
+                        (_r + " .aih-n i", f"background:{_ac};box-shadow:none;animation:none"),
                         (_r + " .num-head .nh-badge", "box-shadow:none"),
-                        (_r + " .aih", f"padding:16px 20px;border-radius:14px;border:1px solid color-mix(in srgb,{_ac} 34%,transparent);background:linear-gradient(105deg,color-mix(in srgb,{_ac} 24%,#0b111a) 0%,color-mix(in srgb,{_ac} 9%,#0b111a) 38%,#0e1520 38.2%,#0c121b 100%);box-shadow:none"),
-                        (_r + " .aih-n", f"color:{_ac};letter-spacing:.2em"),
-                        (_r + " .aih-t", "font-size:19px;letter-spacing:-.01em"),
+                        (_r + " .aih", f"width:fit-content;margin:0;padding:14px 56px 14px 22px;border:0;border-radius:0;box-shadow:none;clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);background:linear-gradient(150deg,color-mix(in srgb,{_ac} 34%,#0a0f18),color-mix(in srgb,{_ac} 10%,#0a0f18))"),
+                        (_r + " .aih-n", "color:#fff;letter-spacing:.2em"),
+                        (_r + " .aih-s", "color:#b4c3d4"),
+                        (_r + " .aih-t", "font-size:19px;letter-spacing:-.01em;color:#fff"),
                     ]
                 _both = lambda sub: ",".join(f"{_pp} .st-key-ai_step_{k}{_nn} {sub}" for k in ("assess", "agent"))
                 _a = f"{_pp} .st-key-ai_step_assess{_nn}"
                 _g = f"{_pp} .st-key-ai_step_agent{_nn}"
                 _rules += [
-                    (_a + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding-bottom:0"),
-                    (_g + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding-bottom:0"),
+                    (_a + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding:0 0 22px 0"),
+                    (_g + " > [data-testid=\"stVerticalBlock\"]", "gap:14px;padding:0 0 22px 0"),
                     (_a + " [data-testid=\"stHorizontalBlock\"]", "align-items:center;gap:16px;margin:0"),
                     (_a + " [data-testid=\"stColumn\"]", "padding:0;min-height:0;align-self:center"),
                     (_a + " [data-testid=\"stColumn\"] > [data-testid=\"stVerticalBlock\"]", "gap:0"),
+                    (_a + " [data-testid=\"stColumn\"]:last-child", "padding:0 22px 0 0;display:flex;justify-content:flex-end"),
                     (_a + " [data-testid=\"stButton\"]", "margin:0"),
                     (_a + " .aih", "margin:0"),
                     (_both(".ai1-empty"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
