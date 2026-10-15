@@ -13196,7 +13196,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 for _k, _ac in (("assess", "#a78bfa"), ("agent", "#38bdf8")):
                     _r = f"{_pp} .st-key-ai_step_{_k}{_nn}"
                     _rules += [
-                        (_r, "background:#0b111a;border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:none;overflow:hidden"),
+                        (_r, f"background:linear-gradient(90deg,color-mix(in srgb,{_ac} 7%,#0b111a),#0b111a 40%);border:1px solid rgba(255,255,255,.08);border-left:3px solid {_ac};border-radius:16px;box-shadow:none;overflow:hidden"),
                         (_r + "::before", f"width:3px;background:{_ac};box-shadow:none;opacity:.9"),
                         (_r + " .aih-ico", f"background:color-mix(in srgb,{_ac} 12%,#0b111a);border:1px solid color-mix(in srgb,{_ac} 38%,transparent);box-shadow:none;color:{_ac}"),
                         (_r + " .aih-n i", "box-shadow:none;animation:none"),
