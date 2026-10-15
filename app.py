@@ -13148,6 +13148,12 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-a
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {content:"\\25B6"; display:inline-grid !important; place-items:center; width:30px; height:30px; flex:none; border-radius:50%; font-size:11px; padding-left:2px; color:#fff; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.38); box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) p {letter-spacing:.03em !important;}
 @media (prefers-reduced-motion:reduce) { html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {animation:none;} }
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::before {display:none !important; content:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x)::after {display:inline-block; transition:transform .25s cubic-bezier(.2,.8,.2,1);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x):hover::after {transform:translateX(8px);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stElementContainer"]:has(.stButton), html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stElementContainer:has(.stButton):not(:has([data-testid="stElementContainer"])) {width:100% !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent div[data-testid="stButton"] {width:100% !important; display:block !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent .stButton button:not(#_x):not(#_x) {width:100% !important; max-width:100% !important; justify-content:center !important; text-align:center;}
 </style>""", unsafe_allow_html=True)
             st.html(
                 """<script>
