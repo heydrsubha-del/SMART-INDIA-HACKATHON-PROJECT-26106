@@ -14,13 +14,24 @@ _SVG = ("url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' view
 _AGENT_CSS = """<style>
 @P {border-radius:16px !important; border:1px solid rgba(255,255,255,.08) !important; background:#0d131c !important; box-shadow:none !important; padding:6px 8px !important;}
 @P::before, @P::after {content:none !important; display:none !important;}
-.ag-con {display:block; margin:0 0 6px;}
-.ag-eye {display:flex; align-items:center; gap:8px; margin-bottom:8px; font:600 11px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; color:#8b98ab;}
-.ag-eye i {width:6px; height:6px; border-radius:50%; background:#34d399;}
-.ag-con p {margin:0 0 12px; max-width:78ch; font:400 13.5px/1.55 Inter,'Segoe UI',sans-serif; color:#9fb0c6;}
-.ag-tags {display:flex; flex-wrap:wrap; gap:8px;}
-.ag-tag {display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font:500 11.5px/1 Inter,'Segoe UI',sans-serif; color:#a9b6c8; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);}
-.ag-tag::before {content:''; width:5px; height:5px; border-radius:50%; background:#34d399;}
+.ag-con {position:relative; display:block; margin:0 0 4px;}
+.ag-eye {display:flex; align-items:center; gap:10px; margin-bottom:10px; font:600 11px/1 ui-monospace,Consolas,monospace; letter-spacing:.2em; color:#7dd3fc;}
+.ag-eye i {width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 0 3px rgba(52,211,153,.18);}
+.ag-eye b {padding:4px 9px; border-radius:6px; font-weight:700; letter-spacing:.16em; color:#f59e0b; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.35);}
+.ag-con p {margin:0 0 12px; max-width:70ch; font:400 13.5px/1.55 Inter,'Segoe UI',sans-serif; color:#9fb0c6;}
+.ag-meta {display:flex; flex-wrap:wrap; gap:8px;}
+.ag-meta span {display:inline-flex; align-items:center; gap:9px; padding:7px 12px; border-radius:10px; font:600 12.5px/1 Inter,'Segoe UI',sans-serif; color:#e6edf7; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);}
+.ag-meta em {font:700 10px/1 ui-monospace,Consolas,monospace; font-style:normal; letter-spacing:.14em; color:var(--c);}
+.ag-stamp {position:absolute; right:6px; top:-2px; transform:rotate(-7deg); padding:6px 12px; border:2px solid rgba(52,211,153,.4); border-radius:5px; font:700 10px/1.5 ui-monospace,Consolas,monospace; letter-spacing:.22em; text-align:center; color:rgba(52,211,153,.6); pointer-events:none;}
+@media (max-width:760px) {.ag-stamp {display:none;}}
+.ag-rule {height:1px; margin:14px 0 12px; background:rgba(255,255,255,.07);}
+.ag-sec {margin-bottom:10px; font:700 10.5px/1 Inter,'Segoe UI',sans-serif; letter-spacing:.16em; color:#8b98ab;}
+.ag-plan {display:flex; flex-wrap:wrap; gap:12px 18px; margin-bottom:12px;}
+.ag-bar {flex:1 1 150px; min-width:140px;}
+.ag-bar b {display:flex; justify-content:space-between; margin-bottom:6px; font:600 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:#8b98ab;}
+.ag-bar b span {color:var(--c);}
+.ag-bar i {display:block; height:4px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden;}
+.ag-bar u {display:block; height:100%; width:var(--w); border-radius:3px; background:var(--c); text-decoration:none;}
 .ag-gauge {display:flex; align-items:center; gap:12px; flex-wrap:nowrap; margin:0; padding:0;}
 .ag-ring {flex:none; width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.09) 0);}
 .ag-ring div {width:34px; height:34px; border-radius:50%; background:#0b1119; display:grid; place-items:center; font:700 13px Inter,sans-serif; color:#fff;}
@@ -58,11 +69,13 @@ def _t(v):
 def render_investigation_panel(result, raw, cases, conns_factory, key, download_fn=None):
     store = st.session_state.setdefault("agent_investigations", {})
     key = str(key)
-    st.markdown(_AGENT_CSS + '<div class="ag-con"><div class="ag-eye"><i></i>AGENTIC INVESTIGATION</div>'
+    st.markdown(_AGENT_CSS + '<div class="ag-con"><div class="ag-eye"><i></i>AGENTIC INVESTIGATION<b>MISSION BRIEF</b></div>'
                 '<p>Runs this app\'s existing analysis tools under a strict allowlist and hard limits. '
                 'It never changes the scanner\'s score, sends mail or submits intelligence.</p>'
-                '<div class="ag-tags"><span class="ag-tag">Read-only</span><span class="ag-tag">Tool allowlist</span>'
-                '<span class="ag-tag">Score unchanged</span><span class="ag-tag">No outbound mail</span></div></div>',
+                '<div class="ag-meta"><span><em style="--c:#38bdf8">ACCESS</em>Read-only</span><span><em style="--c:#a78bfa">TOOLS</em>Allowlist</span>'
+                '<span><em style="--c:#34d399">SCORE</em>Unchanged</span><span><em style="--c:#f59e0b">MAIL</em>None outbound</span></div>'
+                '<div class="ag-stamp">AUTHORIZED<br>READ-ONLY</div>'
+                '<div class="ag-rule"></div><div class="ag-sec">CONFIGURE RUN</div></div>',
                 unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1.container(key="agent_opt_ai_" + key):
@@ -93,8 +106,14 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
                 _y.button("+", key="agent_up_" + _n + "_" + key, on_click=_step, args=(_k, _stp, _lo, _hi))
             _lim[_n] = int(st.session_state[_k])
     calls, iters, secs = _lim["calls"], _lim["iters"], _lim["secs"]
-    st.caption(("AI-assisted" if use_ai else "Deterministic") + " · " + ("Public DNS/RDAP on" if net else "Offline lookups")
-               + f" · up to {calls} tool calls, {iters} iterations, {secs}s")
+    def _bar(lab, v, mx, unit, c):
+        return ('<div class="ag-bar" style="--c:' + c + ';--w:' + str(min(100, v * 100 // mx)) + '%"><b>' + lab + '<span>' + str(v) + unit
+                + '</span></b><i><u></u></i></div>')
+    st.markdown('<div class="ag-rule"></div><div class="ag-sec">RUN PLAN</div><div class="ag-plan">'
+                + _bar("TOOL CALLS", calls, 15, "", "#a78bfa") + _bar("ITERATIONS", iters, 15, "", "#38bdf8") + _bar("TIME BUDGET", secs, 300, "s", "#34d399")
+                + '</div><div class="ag-meta"><span><em style="--c:#34d399">PLANNER</em>' + ("AI-assisted" if use_ai else "Deterministic")
+                + '</span><span><em style="--c:#f59e0b">LOOKUPS</em>' + ("Public DNS/RDAP" if net else "Offline only") + '</span></div>',
+                unsafe_allow_html=True)
     if st.button("Start investigation", type="primary", key="agent_go_" + key):
         log = st.empty()
         seen = []
