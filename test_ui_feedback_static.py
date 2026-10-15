@@ -78,11 +78,13 @@ class Navigation(unittest.TestCase):
         self.assertNotIn("<script>", bad); self.assertNotIn("<b>", bad)
         self.assertIn("#22d3ee", bad)
 
-    def test_downloads_section_is_unconditional(self):
+    def test_forensic_downloads_remain_available(self:
         a = _read("app.py")
-        self.assertEqual(a.count('_uh.section_anchor("ai-downloads")'), 1)
-        i = a.index('_uh.section_anchor("ai-downloads")')
-        self.assertIn("No report is ready yet", a[i:i + 1800])
+        self.assertIn('_sec("Download Forensic Report", tone="single")', a)
+        self.assertIn('label="AI Result Only (.md)"', a)
+        self.assertIn('label="Machine Result Only (.md)"', a)
+        self.assertIn('label="Combined Report (.md)"', a)
+        self.assertIn('disabled=not ai_markdown_body', a)
 
 
 class Styling(unittest.TestCase):
