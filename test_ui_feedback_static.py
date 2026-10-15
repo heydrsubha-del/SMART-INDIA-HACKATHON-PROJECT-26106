@@ -75,15 +75,21 @@ class Navigation(unittest.TestCase):
     def test_pill_validates_colour(self):
         self.assertIn("#ff0000", uh.verdict_pill_html("high", "#ff0000"))
         bad = uh.verdict_pill_html("<b>x</b>", "red;}<script>")
-        self.assertNotIn("<script>", bad); self.assertNotIn("<b>", bad)
+        self.assertNotIn("<script>", bad)
+        self.assertNotIn("<b>", bad)
         self.assertIn("#22d3ee", bad)
 
-    def
-test_downloads_section_is_unconditional(self):a = _read("app.py")
-
-self.assertEqual(a.count('_uh.section_anchor(" ai-downloads")'), 1)
-        i =
-a.index('_uh.section_anchor("ai-downloads")')  self.assertIn("No report is ready yet", a[i:i + 1800])
+    def test_forensic_downloads_remain_available(self):
+        a = _read("app.py")
+        self.assertIn('_sec("Download Forensic Report", tone="single")', a)
+        self.assertIn('label="AI Result Only (.md)"', a)
+        self.assertIn('label="Machine Result Only (.md)"', a)
+        self.assertIn('label="Combined Report (.md)"', a)
+        self.assertIn('disabled=not ai_markdown_body', a)
+        self.assertIn(
+            "Generate the AI Threat Report above first to unlock a true combined download.",
+            a,
+        )
 
 
 class Styling(unittest.TestCase):
