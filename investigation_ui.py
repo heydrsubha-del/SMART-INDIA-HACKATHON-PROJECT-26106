@@ -51,6 +51,16 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] button {flex:0 0 auto; width:38px !important; height:38px !important; min-width:38px; margin:0 !important; border-radius:50% !important; color:#e5ecf6 !important; background:#121a27 !important; border:1px solid rgba(255,255,255,.1) !important; box-shadow:none !important; transition:all .15s;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] button:hover {background:#1b2536 !important; border-color:#3b4a63 !important;}
 html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stNumberInputContainer"] button:disabled {opacity:.3;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] {width:auto !important; min-width:0 !important; height:44px !important; min-height:44px !important; padding:0 26px !important; justify-content:center !important; border-radius:10px !important; border:1px solid rgba(255,255,255,.14) !important; background:linear-gradient(180deg,#6d70f5,#4f46e5) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.5) !important; transition:transform .12s ease,filter .12s ease;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]::before, html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]::after {display:none !important; content:none !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p {font:600 14px Inter,sans-serif !important; letter-spacing:.01em; color:#fff !important;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"] p::before {content:'▶'; font-size:10px; margin-right:10px; opacity:.9;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:hover {filter:brightness(1.1); transform:translateY(-1px);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:active {filter:brightness(.94); transform:translateY(0) scale(.98);}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:focus-visible {outline:2px solid #a5b4fc !important; outline-offset:2px;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stButton"] button[kind="primary"]:disabled {opacity:.45; filter:grayscale(.4); cursor:not-allowed; transform:none;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) [data-testid="stHorizontalBlock"]:has(.inv-run) {align-items:center !important; gap:18px !important; margin-top:4px;}
+html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run {font:400 12.5px/1.5 Inter,sans-serif; color:#7d8da3;} html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st-key-ai_step_agent:not(#_x):not(#_x):not(#_x):not(#_x) .inv-run b {color:#c9d5e6; font-weight:600;}
 </style>"""
 
 
@@ -73,7 +83,10 @@ def _controls(key):
     iters = int(l2.number_input("Iterations", 1, 15, 10, 1, key="agent_iters_" + key, help="Planning loops"))
     secs = int(l3.number_input("Seconds", 10, 300, 90, 10, key="agent_secs_" + key, help="Wall-clock budget"))
     # Avoid deprecated and unsupported Streamlit kwargs used by the failing tests.
-    go = st.button("Start investigation  →", type="primary", key="agent_go_" + key)
+    b1, b2 = st.columns([1, 3])
+    go = b1.button("Start investigation  →", type="primary", key="agent_go_" + key)
+    b2.markdown('<div class="inv-run">Up to <b>' + str(calls) + '</b> tool calls \u00b7 <b>' + str(iters) + '</b> iterations \u00b7 <b>' + str(secs) + 's</b> \u00b7 '
+                + ('AI-assisted' if use_ai else 'Deterministic') + (' \u00b7 public DNS/RDAP on' if net else ' \u00b7 offline lookups') + '</div>', unsafe_allow_html=True)
     return use_ai, net, calls, iters, secs, go
 
 
