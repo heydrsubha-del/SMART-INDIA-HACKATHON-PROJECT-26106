@@ -13220,7 +13220,8 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     (_a + " [data-testid=\"stColumn\"]", "padding:0;min-height:0;align-self:center"),
                     (_a + " [data-testid=\"stColumn\"] > [data-testid=\"stVerticalBlock\"]", "gap:0"),
                     (_a + " [data-testid=\"stColumn\"]:last-child", "padding:0;display:flex;justify-content:flex-end"),
-                    (_a + " [data-testid=\"stButton\"]", "margin:0"),
+                    (_a + " [data-testid=\"stButton\"]", "margin:14px 0 0 0"),
+                    (_a + " [data-testid=\"stButton\"] button", "width:auto;min-width:220px"),
                     (_a + " .aih", "margin:0"),
                     (_both(".ai1-empty"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
                     (_both(".ai1-ico"), "background:#131c2a;border:1px solid rgba(255,255,255,.08);color:#a78bfa;box-shadow:none"),
@@ -13241,11 +13242,10 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
             with st.container(border=True, key="ai_step_assess"):
                 # ---- Step 1: AI assessment ----
                 _had_report = bool((single_reports.get(current_evidence_hash) or {}).get("ok"))
-                _b1, _b2 = st.columns([4, 1.25], vertical_alignment="center")
-                _b1.markdown(_ai_head("01", "<svg viewBox='0 0 24 24'><path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/></svg>", "AI Assessment", "Local Qwen model \u00b7 nothing is sent to external services",
+                st.markdown(_ai_head("01", "<svg viewBox='0 0 24 24'><path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/><path d='M14 3v5h5M9 13h6M9 17h6'/></svg>", "AI Assessment", "Local Qwen model \u00b7 nothing is sent to external services",
                                       ("Local Qwen model", "Offline", "No data leaves device")), unsafe_allow_html=True)
-                run_clicked = _b2.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
-                                         use_container_width=True, key="run_qwen_single")
+                run_clicked = st.button("Re-run AI assessment" if _had_report else "Run AI assessment", type="primary",
+                                         use_container_width=False, key="run_qwen_single")
 
                 if run_clicked:
                     ai_progress = st.progress(0, text="Qwen AI analysis: 0%")
