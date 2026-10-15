@@ -13171,9 +13171,9 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
             # Same scale as the module banner above (21px title, 13px sub, 18/24/18/30 padding).
             st.markdown(_sz("""{padding:20px 26px 22px 30px;margin:0 0 18px 0;border-radius:16px;}
 > [data-testid="stVerticalBlock"]{gap:1.25rem;padding-bottom:10px;}
-.aih{gap:12px;}
-.aih-ico{width:34px;height:34px;border-radius:10px;}
-.aih-ico svg{width:19px;height:19px;}
+.aih{display:flex;align-items:center;gap:12px;}
+.aih-ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;}
+.aih-ico svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .aih-n{font-size:9.5px;letter-spacing:.2em;}
 .aih-t{margin-top:4px;font:750 17px/1.25 Inter,'Segoe UI',sans-serif;}
 .aih-s{margin-top:3px;font-size:12.5px;line-height:1.5;}
@@ -13282,10 +13282,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 elif saved_single:
                     st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
                     st.caption("Check that the local model service is running, then use Run AI assessment again.")
-                else:
-                    st.markdown('<div class="ai1-empty"><div class="ai1-ico">\u2726</div><div><div class="ai1-et">No assessment yet</div>'
-                                '<div class="ai1-eh">Press <b>Run AI assessment</b> to generate a threat summary for this message.</div></div></div>',
-                                unsafe_allow_html=True)
+
 
             with st.container(border=True, key="ai_step_agent"):
                 # ---- Step 2: Agentic investigation ----
