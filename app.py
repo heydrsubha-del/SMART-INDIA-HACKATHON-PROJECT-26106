@@ -13132,7 +13132,7 @@ if active_panel == "AI Threat Analysis":
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stTabs"] [role="tab"] {font-size:13px !important; padding:6px 14px !important;}
 .stApp.stApp.stApp .st-key-ai_step_agent [data-testid="stExpander"] {border:1px solid rgba(255,255,255,.08) !important; border-radius:12px !important; background:rgba(255,255,255,.02) !important; margin:6px 0 !important;}
 .stApp.stApp.stApp .st-key-ai_step_assess {border:1px solid rgba(255,255,255,.08) !important; background:radial-gradient(70% 120% at 100% 0%,rgba(167,139,250,.07),transparent 65%), linear-gradient(180deg,#101726,#0b111a) !important; box-shadow:0 18px 40px -30px #000, inset 0 1px 0 rgba(255,255,255,.05) !important;}
-.ai1-chips {display:flex; flex-wrap:wrap; gap:6px; align-items:center; height:auto;}
+.ai1-chips {display:flex; flex-wrap:wrap; gap:6px; align-items:center; height:48px;}
 .ai1-chip {display:inline-flex; align-items:center; gap:7px; padding:4px 11px; border-radius:8px; font:500 12px Inter,sans-serif; color:#9fb0c5; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08);}
 .ai1-chip::before {content:''; width:6px; height:6px; border-radius:50%; background:#34d399;}
 .ai1-empty {display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:12px; border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.025);}
@@ -13178,7 +13178,7 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
 .aih-n{font-size:9.5px;letter-spacing:.2em;}
 .aih-t{margin-top:4px;font:750 17px/1.25 Inter,'Segoe UI',sans-serif;}
 .aih-s{margin-top:3px;font-size:12.5px;line-height:1.5;}
-.ai1-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;height:auto;margin:10px 0 0 46px;}
+.ai1-chips{display:none;}
 .ai1-chip{padding:5px 11px;font-size:11.5px;}
 .ai1-empty{gap:14px;padding:14px 18px;border-radius:12px;}
 .ai1-ico{width:34px;height:34px;font-size:16px;border-radius:10px;}
@@ -13226,13 +13226,10 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                     (_both(".ai1-empty"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
                     (_both(".ai1-ico"), "background:#131c2a;border:1px solid rgba(255,255,255,.08);color:#a78bfa;box-shadow:none"),
                     (_both("[data-testid=\"stCheckbox\"]"), "padding:0;border:0;background:none;box-shadow:none;border-radius:0;transform:none;width:100%"),
-                    (_both("[data-testid=\"stCheckbox\"] label"), "position:relative;isolation:isolate;overflow:hidden;background:#0e1520;border:1px solid rgba(56,189,248,.28);border-radius:14px;box-shadow:inset 3px 0 #38bdf8;transform:none;padding:14px 18px;width:100%;margin:0"),
-                    (_both("[data-testid=\"stCheckbox\"] label::before"), "content:'';position:absolute;z-index:0;left:0;top:0;bottom:0;width:156px;clip-path:polygon(0 0,100% 0,calc(100% - 24px) 100%,0 100%);background:linear-gradient(110deg,rgba(56,189,248,.18),rgba(56,189,248,.035));pointer-events:none"),
-                    (_both("[data-testid=\"stCheckbox\"] label > *"), "position:relative;z-index:1"),
-                    (_both("[data-testid=\"stCheckbox\"] label:hover"), "border-color:rgba(56,189,248,.5);box-shadow:inset 3px 0 #38bdf8;transform:none"),
-                    (_both("[data-testid=\"stCheckbox\"]:has(input:checked) label"), "background:linear-gradient(180deg,#10261f,#0c1a16);border-color:rgba(52,211,153,.55);box-shadow:inset 3px 0 #34d399"),
-                    (_both("[data-testid=\"stCheckbox\"] label:has(input:checked)"), "background:linear-gradient(180deg,#10261f,#0c1a16);border-color:rgba(52,211,153,.55);box-shadow:inset 3px 0 #34d399"),
-                    (_both("[data-testid=\"stCheckbox\"] label:has(input:checked)::before"), "background:linear-gradient(110deg,rgba(52,211,153,.2),rgba(52,211,153,.035))"),
+                    (_both("[data-testid=\"stCheckbox\"] label"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none;transform:none;padding:12px 16px;width:100%;margin:0"),
+                    (_both("[data-testid=\"stCheckbox\"] label:hover"), "border-color:rgba(255,255,255,.16);box-shadow:none;transform:none"),
+                    (_both("[data-testid=\"stCheckbox\"]:has(input:checked) label"), "background:#0e1520;border-color:color-mix(in srgb,#34d399 45%,transparent);box-shadow:none"),
+                    (_both("[data-testid=\"stCheckbox\"] label:has(input:checked)"), "background:#0e1520;border-color:color-mix(in srgb,#34d399 45%,transparent);box-shadow:none"),
                     (_both("[data-testid=\"stExpander\"]"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none"),
                     (_both("[data-testid=\"stNumberInput\"] [data-baseweb=\"input\"]"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);box-shadow:none"),
                     (_both(".ai-report-frame"), "background:#0e1520;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:none;overflow:hidden;margin:0"),
@@ -13294,13 +13291,6 @@ html body .stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp.stApp .st
                 elif saved_single:
                     st.error(f"AI Analysis Error: {saved_single.get('error', 'Unknown Error')}")
                     st.caption("Check that the local model service is running, then use Run AI assessment again.")
-                else:
-                    st.markdown(
-                        '<div class="ai1-empty"><div class="ai1-ico" aria-hidden="true">✦</div>'
-                        '<div><div class="ai1-et">No assessment yet</div>'
-                        '<div class="ai1-eh">Press <b>Run AI assessment</b> to generate a threat summary for this message.</div></div></div>',
-                        unsafe_allow_html=True,
-                    )
 
             with st.container(border=True, key="ai_step_agent"):
                 # ---- Step 2: Agentic investigation ----
