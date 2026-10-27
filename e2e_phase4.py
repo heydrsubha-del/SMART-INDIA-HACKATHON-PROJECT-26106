@@ -34,6 +34,7 @@ CONFIRM_ENV, REF_ENV, PROD_REFS_ENV = "SIH26106_E2E_CONFIRM", "SIH26106_E2E_PROJ
 CONFIRM_PREFIX = "TEST-PROJECT-ONLY:"
 _REF_RE = re.compile(r"^[a-z0-9]{6,40}$")
 EMAIL_ENV, PASS_ENV, TOTP_ENV = "SIH26106_E2E_REVIEWER_EMAIL", "SIH26106_E2E_REVIEWER_PASSWORD", "SIH26106_E2E_REVIEWER_TOTP_SECRET"
+OWNER_ENVS = ("SIH26106_E2E_OWNER_EMAIL", "SIH26106_E2E_OWNER_PASSWORD", "SIH26106_E2E_OWNER_TOTP_SECRET")   # optional: a TEST platform owner
 _state = {"marker_ok": None}
 
 
@@ -330,6 +331,34 @@ def run():
             on, off = scan(dx, True), scan(dx, False)
             check("scan result carries community_intel only when the flag is on", "community_intel" in on and "community_intel" not in off)
             check("detection score and level are identical with community intel on/off", (on["score"], on["level"]) == (off["score"], off["level"]))
+
+    # --- optional: platform-owner self-review (needs a TEST account that is app_metadata admin + enrolled in MFA + listed in
+    #     private.platform_owners, set up by hand in the TEST project's SQL editor). Skipped silently (NOTE only) when not configured.
+    oe, op, os_ = (os.environ.get(n, "") for n in OWNER_ENVS)
+    if not (oe and op and os_):
+        print("NOTE: owner self-review checks not run (set %s to enable; the SQL suite supabase/tests/004 covers them)" % ", ".join(OWNER_ENVS))
+    else:
+        do = "synthetic-%s-o.example.org" % tag
+        otok = login(oe, op)
+        ow2 = mfa_session(otok, os_) if otok else None
+        check("owner MFA session obtained", ow2, "check the owner credentials / TOTP secret")
+        if ow2 and IS.sanitize_indicator(do, "domain").status == "accepted":
+            sub = rpc(ow2, "submit_indicators", {"p_items": item(do)})
+            check("owner can submit an indicator", sub.status_code == 200 and jr(sub).get("accepted") == 1, sub.text)
+            qo = jr(rpc(ow2, "review_queue", {"p_limit": 200}))
+            ro = next((x for x in (qo if isinstance(qo, list) else []) if x.get("value_norm") == do), None)
+            if ro is None:
+                skip("owner self-review checks", "owner's own submission not found in the review queue")
+            else:
+                for label, note in (("no reason", None), ("too-short reason", "short")):
+                    r = rpc(ow2, "review_submission", {"p_id": ro["id"], "p_decision": "approve", "p_note": note})
+                    check("owner self-review with %s is refused" % label, r.status_code == 400 and "reason_required" in r.text, r.text)
+                r = rpc(ow2, "review_submission", {"p_id": ro["id"], "p_decision": "approve", "p_note": "e2e synthetic owner self-review"})
+                check("owner self-review with a reason succeeds", r.status_code == 200 and jr(r).get("status") == "approved", r.text)
+                got = jr(call("GET", "/rest/v1/shared_indicators?select=review_kind,confidence,contributor_count&value_norm=eq.%s" % do))
+                check("self-reviewed indicator is labelled self_reviewed, low confidence, zero independent contributors",
+                      isinstance(got, list) and len(got) == 1 and got[0].get("review_kind") == "self_reviewed"
+                      and float(got[0].get("confidence", 1)) == 0.25 and got[0].get("contributor_count") == 0, str(got))
 
     # --- private scan isolation (needs two email users: disable 'confirm email' in the TEST project)
     ua, ub = ("e2e-%s-%s@example.test" % (tag, s) for s in "ab")
