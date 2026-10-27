@@ -26,6 +26,12 @@ begin
   execute format('set local role %I', p_role);
   begin
     execute p_sql into v_out;
+  exception when others then
+    v_out := 'err:' || sqlstate || ':' || sqlerrm;
+  end;
+  reset role;
+  return v_out;
+end $$;
 
 create or replace function pg_temp.run_tests() returns table (n int, passed boolean, test text, detail text)
 language plpgsql as $fn$
