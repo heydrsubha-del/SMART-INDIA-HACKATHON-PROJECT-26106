@@ -326,7 +326,8 @@ def _scan_html(seen, calls):
     rows = []
     for i, (n, tool) in enumerate(seen):
         last = i == len(seen) - 1
-        rows.append(f'<div class="{"run" if last else ""}"><span class="{"run" if last else "ok"}">{"\u203A" if last else "\u2713"}</span>'
+        mark = "\u203A" if last else "\u2713"
+        rows.append(f'<div class="{"run" if last else ""}"><span class="{"run" if last else "ok"}">{mark}</span>'
                     f'<span class="n">{int(n):02d}</span><span class="{"cur" if last else ""}">{html.escape(_hum(tool))}</span></div>')
     if not rows:
         rows.append('<div class="run"><span class="run">\u203A</span><span class="cur">Planning investigation</span></div>')
