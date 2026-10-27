@@ -617,7 +617,7 @@ class FixDeadlines(Base):
         self.assertIn("generated from the deterministic tool findings", md)
         self.assertIn("summary is deterministic", md)
         self.assertNotRegex(md, r"AI summary|AI-assisted planner \+ summary")
-        ui = open("investigation_ui.py", encoding="utf-8").read()
+        ui = open("investigation_panel.py", encoding="utf-8").read()
         self.assertNotRegex(ui, r"AI-assisted planning and summary|AI summary")
 
 
@@ -629,8 +629,8 @@ class UiIsolation(Base):
         tree = ast.parse(open("app.py", encoding="utf-8").read())
         fn = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_agentic_investigation"]
         self.assertEqual(len(fn), 1)
-        self.assertTrue([n for n in ast.walk(fn[0]) if isinstance(n, ast.ImportFrom) and n.module == "investigation_ui"])
-        imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module == "investigation_ui"]
+        self.assertTrue([n for n in ast.walk(fn[0]) if isinstance(n, ast.ImportFrom) and n.module == "investigation_panel"])
+        imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module == "investigation_panel"]
         self.assertEqual(len(imports), 1)                                    # no import anywhere outside the boundary
         calls = {(c.args[0].id, c.args[1].value) for c in ast.walk(tree) if isinstance(c, ast.Call) and getattr(c.func, "id", "") == "panel"
                  and len(c.args) == 2 and isinstance(c.args[0], ast.Name) and isinstance(c.args[1], ast.Constant)}
@@ -638,7 +638,7 @@ class UiIsolation(Base):
         self.assertIn(("_ai_threat_analysis", "AI Threat Analysis"), calls)   # existing boundary untouched
 
     def test_no_deprecated_use_container_width(self):
-        self.assertNotIn("use_container_width", open("investigation_ui.py", encoding="utf-8").read())
+        self.assertNotIn("use_container_width", open("investigation_panel.py", encoding="utf-8").read())
 
     def test_panel_renders_with_stubbed_streamlit(self):
         import sys
@@ -656,17 +656,17 @@ class UiIsolation(Base):
         STATE = {"click": False}
         dl = []
         with mock.patch.dict(sys.modules, {"streamlit": st}):
-            sys.modules.pop("investigation_ui", None)
-            import investigation_ui as ui
+            sys.modules.pop("investigation_panel", None)
+            import investigation_panel as ui
             ui.render_investigation_panel(self.result, b"raw", [], None, "k", download_fn=lambda **kw: dl.append(kw))   # idle state
             self.assertEqual(dl, [])
             STATE["click"] = True
             with mock.patch("investigation_agent.ai_unavailable_reason", return_value="off"):
                 ui.render_investigation_panel(self.result, b"raw", [], None, "k", download_fn=lambda **kw: dl.append(kw))
-            sys.modules.pop("investigation_ui", None)
+            sys.modules.pop("investigation_panel", None)
         self.assertIn("k", st.session_state["agent_investigations"])
-        self.assertEqual(dl[0]["file_name"], "agentic_investigation_report.md")
-        self.assertIn("## Agentic Investigation", dl[0]["markdown"])
+        self.assertEqual(dl, [])   # download now lives in app.py; panel hands the report over via session state
+        self.assertIn("## Agentic Investigation", st.session_state["agent_reports"]["k"])
 
 
 def _db(rows, attackers=()):
@@ -960,7 +960,7 @@ class Compatibility(Base):
     def test_engine_is_streamlit_free_and_ui_compiles(self):
         self.assertFalse(hasattr(ia, "st"))
         import py_compile
-        py_compile.compile("investigation_ui.py", doraise=True)
+        py_compile.compile("investigation_panel.py", doraise=True)
 
     def test_failure_never_raises(self):
         inv = ia.investigate({}, use_ai=False)
