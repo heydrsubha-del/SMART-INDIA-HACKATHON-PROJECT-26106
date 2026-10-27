@@ -237,13 +237,56 @@ def run():
     negative("anon cannot read submissions", denied(r) or (r.status_code == 200 and jr(r) == []), "HTTP %s" % r.status_code)
     negative("no-session caller cannot submit", denied(rpc(None, "submit_indicators", {"p_items": []})), control="submit")
 
-    # --- contributor (Supabase anonymous sign-in)
-    tok_a = _token(call("POST", "/auth/v1/signup", json={}))
-    check("anonymous sign-in available (enable it in Auth settings of the TEST project)", tok_a)
+        # --- anonymous-session rejection + registered contributor
+    anon_tok = _token(call("POST", "/auth/v1/signup", json={}))
+    check("anonymous sign-in available", anon_tok)
+
+    item = lambda d: [{
+        "indicator_type": "domain",
+        "value_norm": d,
+        "claimed_verdict": "malicious"
+    }]
+
+    if anon_tok:
+        r_anon = rpc(
+            anon_tok,
+            "submit_indicators",
+            {"p_items": item(dx)}
+        )
+        check(
+            "anonymous sign-in cannot submit indicators",
+            r_anon.status_code == 403
+            and _code(r_anon) == "42501"
+            and "auth_required" in r_anon.text,
+            r_anon.text
+        )
+    else:
+        skip("anonymous submission denial", "anonymous session unavailable")
+
+    contributor_email = "e2e-%s-contributor@example.test" % tag
+    contributor_pw = "E2e-" + secrets.token_hex(8)
+
+    tok_a = _token(call(
+        "POST",
+        "/auth/v1/signup",
+        json={
+            "email": contributor_email,
+            "password": contributor_pw
+        }
+    ))
+
+    check(
+        "registered contributor can sign up",
+        tok_a,
+        "check email confirmation settings in the TEST project"
+    )
+
     if not tok_a:
-        skip("contribution, review, scan-isolation and failure-handling checks", "no anonymous session")
+        skip(
+            "contribution and dependent checks",
+            "registered contributor did not receive a session"
+        )
         return finish()
-    item = lambda d: [{"indicator_type": "domain", "value_norm": d, "claimed_verdict": "malicious"}]
     r = rpc(tok_a, "submit_indicators", {"p_items": item(dx)})
     accepted = r.status_code == 200 and isinstance(jr(r), dict) and jr(r).get("accepted") == 1
     check("sanitized synthetic indicator accepted into quarantine", accepted, "HTTP %s %s" % (r.status_code, r.text))
@@ -383,7 +426,7 @@ def run():
             mine = jr(call("GET", "/rest/v1/scans?select=summary&id=eq.%s" % sid, ta))
             check("user B could not modify or delete A's scan", mine == [{"summary": {"score": 10}}], str(mine))
             negative("user A cannot assign a scan to another user", denied(call("POST", "/rest/v1/scans", ta, json={"user_id": "00000000-0000-0000-0000-000000000001", "evidence_hash": "b" * 64, "summary": {}})), control="scans")
-            negative("anonymous sign-in session cannot store private scans", denied(call("POST", "/rest/v1/scans", tok_a, json={"evidence_hash": "c" * 64, "summary": {}})), control="scans")
+            negative("anonymous sign-in session cannot store private scans", denied(call("POST", "/rest/v1/scans", anon_tok, json={"evidence_hash": "c" * 64, "summary": {}})), control="scans")
             r = call("POST", "/rest/v1/scans", ta, json={"evidence_hash": "d" * 64, "summary": {"body": "x"}})
             negative("scan summaries with email-content keys are refused", r.status_code in (400, 403), "HTTP %s" % r.status_code, control="scans")
         call("PUT", "/auth/v1/user", ta, json={"data": {"role": "admin"}})            # self-escalation attempt via user_metadata
