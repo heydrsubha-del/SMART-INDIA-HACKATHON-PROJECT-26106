@@ -1,6 +1,6 @@
 # Algorithmistic — Current Security & Database Review
 
-**Last reviewed:** 2026-10-28 (documentation update). Last independent live checks in this review series: 2026-10-14. Live facts marked *owner-reported* come from the owner's own production checks (through 2026-10-28) and were not re-verified by the reviewer; no reviewer access to Supabase existed for this update.  
+**Last reviewed:** 2026-10-28 (documentation update). The last **full** production security review was on 2026-10-14. On 2026-10-28 only limited read-only Supabase checks were performed: the project list showed that only the production project remains, and the scheduled-purge query on `cron.job_run_details` returned no execution records. They do not re-verify the rest of the production configuration. Other live facts marked *owner-reported* come from the owner's own production checks (through 2026-10-28) and were not independently re-verified. The temporary isolated test project (`tmldbzsxfqqetxyzppec`) used for the latest E2E and SQL runs has been **deleted** (consistent with that project list).  
 **Status:** Live production hardening, follow-up performance changes and scan-expiry cleanup (owner-reported applied) are recorded here. The first scheduled purge run is **not yet confirmed**. Historical proposal and discussion remain at `docs/archive/REVIEW_supabase_hardening_2026-10.md`.
 
 ## 1. Production safety and evidence
@@ -62,15 +62,15 @@ At the last count query, there were **0 verified shared indicators** and **0 pen
   - `scans_owner_select` hides expired scans from their owner;
   - `private.scans_cap()` deletes the current user's own expired scans before applying the 500-row cap;
   - `private.purge_expired_scans()` deletes at most 5,000 expired rows per run and writes one `audit_log` heartbeat row (`reason` = rows deleted);
-  - EXECUTE on the purge is revoked from `PUBLIC`, `anon`, `authenticated` and `service_role` (false/false/false).
+  - `has_function_privilege(..., 'execute')` returns false for each of `anon`, `authenticated` and `service_role` (false/false/false; this includes any grant inherited from `PUBLIC`). `PUBLIC` itself was not queried separately; the migration revokes it.
   
-  A manual purge returned `0` with no expired scans present, so **deletion by the purge and the heartbeat row it writes have not been exercised on real expired data in production**. `supabase/tests/005_followup_and_scan_expiry.sql` covers them but has not yet passed against a project with the migration applied (see section 8). Expired rows are hidden from owners immediately but physically remain until the owner's next scan insert or the scheduled purge.
-- **Scheduler (`pg_cron`).** Owner-reported (independently checked by the owner): the extension is enabled; job `purge-expired-scans` exists, schedule `17 3 * * *` (03:17 UTC / 08:47 IST), command `SELECT private.purge_expired_scans();`, active, runs as `postgres`. **Configured is not completed:** no execution history existed at the last check, so a successful scheduled run is **NOT yet confirmed**. Remaining task, after the first 03:17 UTC run: confirm `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 3;` shows `succeeded`, and that `select at, reason from public.audit_log where action='purge_expired_scans' order by at desc limit 3;` shows a new heartbeat row. Alert if the newest heartbeat is older than 2 days. Do not put a service-role key in GitHub Actions or the client to call the purge.
+  A manual purge returned `0` with no expired scans present, so **deletion by the purge and the heartbeat row it writes have not been exercised on real expired data in production**. `supabase/tests/005_followup_and_scan_expiry.sql` passed 17/17 on the isolated test project, run through the Supabase SQL runner, with migration `20261028000001` applied, which covers purge deletion, the heartbeat, the cap and the closed privileges there; that is test-project evidence, not production evidence (see section 8). Expired rows are hidden from owners immediately but physically remain until the owner's next scan insert or the scheduled purge.
+- **Scheduler (`pg_cron`).** Owner-reported (independently checked by the owner): the extension is enabled; job `purge-expired-scans` exists, schedule `17 3 * * *` (03:17 UTC / 08:47 IST), command `SELECT private.purge_expired_scans();`, active, runs as `postgres`. **Configured is not completed:** no execution history existed at the last check (the 2026-10-28 read-only query returned no `cron.job_run_details` records), so a successful scheduled run is **NOT yet confirmed**. Remaining task, after the first 03:17 UTC run: confirm `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 3;` shows `succeeded`, and that `select at, reason from public.audit_log where action='purge_expired_scans' order by at desc limit 3;` shows a new heartbeat row. Alert if the newest heartbeat is older than 2 days. Do not put a service-role key in GitHub Actions or the client to call the purge.
 - Four RLS-enabled tables have no policies; this is intentional for server-only / deny-by-default tables. Do not add permissive policies merely to silence the informational advisory.
 
 The latest live Performance Advisor no longer reports the three unindexed foreign keys, the five RLS init-plan policies, or the duplicate authenticated `shared_indicators` SELECT policies. It now reports the three newly created indexes as unused. This is expected on a database with very little data and immediately after index creation; do not drop them solely to silence that advisory. Reevaluate usage only after meaningful production workload accumulates.
 
-GitHub CodeQL succeeded for commit `d3a6ed4` and again for the `REVIEW.md` update. CodeQL is static analysis, not a Python test run. A full Python test-suite run and true Phase 4 E2E run were **not** independently performed during this audit; the available environment cannot clone the repo, no Supabase development branch is available, and the Phase 4 script deliberately refuses production. Earlier test counts of 31/31 SQL assertions, 40/40 Python tests, and 12/12 package-integrity tests were owner-reported and not independently rerun here. A later owner-reported full Python run (2026-10-28) was 572 passed; also not independently verified.
+GitHub CodeQL succeeded for commit `d3a6ed4`. CI/CodeQL status for the later documentation and test-file commits has **not been confirmed** by the reviewer; check the GitHub Actions result for the exact commit SHA before relying on it. CodeQL is static analysis, not a Python test run. Two separate sets of results exist (section 8): the five SQL suites, executed against the isolated test project through the Supabase SQL runner (115/115 assertions passed), and the owner-run Phase 4 HTTP E2E, executed locally over HTTP against that project (42 passed, 0 failed, 0 skipped). The Phase 4 script deliberately refuses production. The **full Python suite was not rerun for the latest audit**: the earlier counts of 40/40 Python tests and 12/12 package-integrity tests, and a full Python run of 572 passed on 2026-10-28, are older owner-reported figures and must not be read as results of the latest audit.
 
 ## 6. Proposals, tests and rollback artifacts
 
@@ -87,6 +87,22 @@ When in doubt, stop before executing SQL. Confirm the project ref, take a verifi
 
 ## 8. Test coverage and procedure
 
+**Latest isolated-test results (2026-10-28).** Both sets ran against a temporary test project (`tmldbzsxfqqetxyzppec`, now deleted), never against production. They differ in how they were run:
+- **SQL suites:** executed against the test project through the Supabase SQL runner; all five passed (115/115 assertions). Synthetic test data was rolled back.
+- **Phase 4 HTTP E2E:** owner-run locally (`e2e_phase4.py run`) against the test project's API; 42 passed, 0 failed, 0 skipped, as reported by the owner.
+
+| Suite | Result |
+|---|---|
+| Phase 4 HTTP E2E (`e2e_phase4.py run`) | 42 passed, 0 failed, 0 skipped/inconclusive. Covered reviewer MFA, approval/rejection, self-review protection, contributor restrictions, community-intelligence retrieval, private-scan isolation and database-outage handling |
+| `001_shared_indicators_rls.sql` | 17/17 |
+| `002_scans_isolation.sql` | 16/16 |
+| `003_contributions.sql` | 34/34 |
+| `004_self_review.sql` | 31/31 |
+| `005_followup_and_scan_expiry.sql` | 17/17, with migration `20261028000001` applied (an earlier run on a project without it gave 12/17, the five failures being the expiry behaviours it adds) |
+| SQL total | 115/115 assertions |
+
+Not covered by these results: the optional platform-owner HTTP E2E checks (`SIH26106_E2E_OWNER_*`) were not configured for this run; platform-owner self-review is covered only by the SQL suite `004` (31/31). The full Python suite was not rerun. Test-project results say nothing about production data: the production purge has not deleted real expired scans and the first scheduled run is unconfirmed (section 5).
+
 **CI limitation (owner-reported):** when the private audit dataset is unavailable, CI excludes three corpus-dependent test modules (the modules that need `AUDIT_DIR` are `test_label_regression`, `test_package_integrity` and `test_validation_parity`; the CI workflow file was not supplied, so the exact exclusion list is unverified). `test_model_audit`'s independent-set check also needs `fixtures/independent_eval.csv`. A green CI run is therefore not a full-suite result. Run the whole suite locally with `AUDIT_DIR=<folder with the five CSV exports> python -m unittest discover -s . -p "test_*.py"`.
 
 | Requirement | Where it is tested | Run against |
@@ -96,9 +112,9 @@ When in doubt, stop before executing SQL. Confirm the project ref, take a verifi
 | Withdrawn indicator not re-verified; new-account 500 cap; scan 500 cap, retention and closed purge function | `supabase/tests/005_followup_and_scan_expiry.sql` (17 checks; helper `run_as` repaired 2026-10-28, it was truncated) | TEST project SQL editor |
 | Limits, duplicates, pending caps | `supabase/tests/003_contributions.sql`, `005` | TEST project |
 
-Not testable through the public API (they need privileged writes): withdrawn indicators, pending-cap saturation and `audit_log` contents; these are SQL-only. The optional owner block has **not been executed**. `005` has been run once (owner-reported) on a test project where the scan-expiry migration was apparently not applied: 12 of 17 passed, and the 5 failures (06, 08, 09, 10, 17) are exactly the expiry behaviours that migration adds. **It has not yet been rerun with `20261028000001` applied, so no 17 of 17 result exists.**
+Not testable through the public API (they need privileged writes): withdrawn indicators, pending-cap saturation and `audit_log` contents; these are SQL-only. The optional owner HTTP block was not executed in the latest run; the SQL suites above are the only platform-owner evidence.
 
-Manual procedure (TEST project only; production is `qozfyuiloitutpfthuwn` and must never be used):
+Manual procedure (TEST project only; production is `qozfyuiloitutpfthuwn` and must never be used). The previous test project has been deleted, so repeating any live E2E or SQL test requires creating a **new** isolated test project first:
 1. Create a new Supabase project; apply all migrations in `supabase/migrations/` in order; in the TEST project only, override the marker: `create or replace function public.is_test_project() returns boolean language sql stable set search_path = pg_catalog as $$ select true $$;` (the repository migration returns false for production).
 2. Enable anonymous sign-ins, TOTP MFA, and disable email confirmation. Create the reviewer user, set `app_metadata.role = 'admin'` in the dashboard (never `user_metadata`); for the optional owner test create a second such user and `insert into private.platform_owners (user_id) values ('<id>');`.
 3. In a shell (never in git): `SIH26106_SUPABASE_URL`, `SIH26106_SUPABASE_ANON_KEY` (publishable key only), `SIH26106_E2E_PROJECT_REF`, `SIH26106_E2E_CONFIRM=TEST-PROJECT-ONLY:<ref>`, `SIH26106_E2E_PROD_REFS=qozfyuiloitutpfthuwn`, reviewer email/password.
