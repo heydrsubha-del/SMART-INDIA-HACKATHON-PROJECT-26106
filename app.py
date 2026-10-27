@@ -9537,7 +9537,7 @@ def panel(fn, label):
     except Exception:
         st.error(f"The **{label}** panel failed. Everything else still works.")
         with st.expander("Technical detail"):
-            st.code(traceback.format_exc())
+            (st.code(traceback.format_exc()) if os.getenv("SIH26106_DEBUG")=="1" else None)
 
 
 # Settings and About need no evidence (they only read config.py, the Google
@@ -13957,7 +13957,7 @@ if active_panel == "Origin & Route":
         except Exception as _oi_err:
             st.warning(f"Origin intelligence unavailable for this email ({type(_oi_err).__name__}: {_oi_err}). "
                        "The existing origin summary above is unaffected.")
-            st.code(traceback.format_exc())
+            (st.code(traceback.format_exc()) if os.getenv("SIH26106_DEBUG")=="1" else None)
 
         # Domain & DNS Intelligence (domain_intel.py): DNS records + RDAP registration for
         # the domains this email claims or links to. Lookup runs only on button press.
@@ -13968,7 +13968,7 @@ if active_panel == "Origin & Route":
                 _active_case, raw if _oi_is_loaded else None, is_loaded=_oi_is_loaded), is_loaded=_oi_is_loaded)
         except Exception as _di_err:
             st.warning(f"Domain intelligence unavailable for this email ({type(_di_err).__name__}: {_di_err}). Everything above is unaffected.")
-            st.code(traceback.format_exc())
+            (st.code(traceback.format_exc()) if os.getenv("SIH26106_DEBUG")=="1" else None)
 
         # ------------------------------------------------------------------
         # Tor exit-node list status (read-only) -- the Tor Exit

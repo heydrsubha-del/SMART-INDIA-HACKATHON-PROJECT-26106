@@ -30,3 +30,9 @@ supabase/.env
 *token*.json
 supabase/.branches
 supabase/.temp/
+
+# --- secret pass
+client_secret*.json
+*.apps.googleusercontent.com.json
+supabase/.temp/
+security_audit_inputs/

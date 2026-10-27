@@ -853,3 +853,7 @@ The software is provided **"as is"**, without warranty of any kind.
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:a389f4,30:2fd8ff,65:1e3853,100:0b1626&height=120&section=footer" alt="footer" width="100%"/>
 
 </div>
+
+
+## ⚠️ Security: rotate leaked secrets
+If any secret was ever hardcoded or committed (e.g. `client_secret_*.json`, Supabase keys), it remains in git history. **Rotate it immediately** (Google/Yandex/Microsoft OAuth client secrets, Supabase keys, VT/Groq/Cohere keys). Load secrets only via env vars / `.env` (see `.env.example`); never commit `.env` or `client_secret*.json`.
