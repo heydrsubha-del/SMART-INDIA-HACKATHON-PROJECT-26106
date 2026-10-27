@@ -1,7 +1,7 @@
 # Algorithmistic — Current Security & Database Review
 
-**Last reviewed:** 2026-10-14 (live checks). Repository re-read 2026-10-28; no live Supabase access then. Live facts marked *owner-reported* come from the owner's read-only audit (2026-10-28), not independently verified.  
-**Status:** Live production hardening and follow-up performance changes are recorded here. Historical proposal and discussion remain at `docs/archive/REVIEW_supabase_hardening_2026-10.md`.
+**Last reviewed:** 2026-10-28 (documentation update). Last independent live checks in this review series: 2026-10-14. Live facts marked *owner-reported* come from the owner's own production checks (through 2026-10-28) and were not re-verified by the reviewer; no reviewer access to Supabase existed for this update.  
+**Status:** Live production hardening, follow-up performance changes and scan-expiry cleanup (owner-reported applied) are recorded here. The first scheduled purge run is **not yet confirmed**. Historical proposal and discussion remain at `docs/archive/REVIEW_supabase_hardening_2026-10.md`.
 
 ## 1. Production safety and evidence
 
@@ -17,7 +17,7 @@ Live database checks on 2026-10-14 confirmed the production marker returns false
 
 ## 2. Versioned migrations
 
-The repository should contain these ten versioned migrations, in order:
+The repository should contain these eleven versioned migrations, in order:
 
 1. `20261012000001_helpers.sql`
 2. `20261012000002_shared_indicators.sql`
@@ -28,11 +28,10 @@ The repository should contain these ten versioned migrations, in order:
 7. `20261015000001_owner_self_review.sql`
 8. `20261015000002_optimize_rls_and_fk_indexes.sql`
 9. `20261027000001_followup_hardening.sql` (owner-reported as recorded; confirm the live function body contains `withdrawn_indicator`)
-10. `20261027164451_restrict_review_queue_rpc_access.sql` (owner-reported: all ten versions are recorded in production; Supabase compares versions, not file contents)
+10. `20261027164451_restrict_review_queue_rpc_access.sql` (owner-reported: recorded in production; Supabase compares versions, not file contents)
+11. `20261028000001_scan_expiry_cleanup.sql` (owner-reported applied and verified, see section 5; rollback: `supabase/rollback/scan_expiry_down.sql`, never run against production without an approved recovery plan)
 
-**Proposed, NOT applied:** `20261028000001_scan_expiry_cleanup.sql` (scan retention, see section 5). Rollback: `supabase/rollback/scan_expiry_down.sql`. Apply only to a test project first.
-
-The first seven versions are already recorded in live Supabase migration history. The eighth migration's SQL was applied directly to production on 2026-10-14 and verified. Reconcile migration history read-only first: run `npx supabase migration list --linked` and `npx supabase db push --dry-run --linked`. Run `npx supabase migration repair --status applied <version> --linked` only for a version that is genuinely missing from remote history (it records state; it does not execute SQL). Per the owner-retrieved history, 20261015000002 and migrations 9 and 10 were already recorded, so no repair should be needed; confirm before running anything. Confirm no pending migrations before considering the repository/database synced.
+The first seven versions are already recorded in live Supabase migration history. The eighth migration's SQL was applied directly to production on 2026-10-14 and verified. Reconcile migration history read-only first: run `npx supabase migration list --linked` and `npx supabase db push --dry-run --linked`. Run `npx supabase migration repair --status applied <version> --linked` only for a version that is genuinely missing from remote history (it records state; it does not execute SQL). Per the owner-retrieved history, 20261015000002 and migrations 9 and 10 were already recorded, so no repair should be needed; confirm before running anything. Owner-reported (2026-10-28): version `20261028000001` was reconciled with `migration repair` (which records history only and executes no SQL; the SQL itself was applied separately and checked, section 5), `migration list --linked` shows local and remote matching through `20261028000001`, and `db push --dry-run --linked` reports `Remote database is up to date`. Not re-verified by the reviewer. Do not rerun the applied migration.
 
 The production-hardening migration is committed on `main` as `d3a6ed419e86db9fbf39815328d0b3fd5c692cc4` (`Harden production API functions`). Migration 10 in the repository is the corrected version (authenticated reviewer access kept, anon/PUBLIC revoked); Supabase compares versions, not contents, so confirm the live grants match it. Never edit or delete an applied migration file. Future database changes must use new timestamped migrations.
 
@@ -58,7 +57,15 @@ At the last count query, there were **0 verified shared indicators** and **0 pen
 
 - `review_queue()`, `review_submission()`, and `submit_indicators()` remain authenticated-callable SECURITY DEFINER RPCs because they are application entry points requiring tightly restricted writes. Their definitions contain internal admin/MFA or submitter checks, their search path is pinned, and anon/PUBLIC execution is revoked. Supabase's authenticated SECURITY DEFINER warning is therefore an intentional architectural warning (migration 10 also grants `service_role` EXECUTE, which adds no capability: a service-role JWT fails `private.is_admin()`; the reviewer clients refuse service-role credentials), not something to silence by breaking the RPCs. Revisit if the app changes to a non-public RPC architecture.
 - Leaked-password protection is disabled. Supabase's password-security docs state it is available on the **Pro plan and above**; it cannot be set with SQL. On Free it stays open: set a long minimum password length, keep MFA mandatory for administrators, and consider CAPTCHA on sign-up.
-- **Scan expiry is not enforced in production** (owner-reported: `pg_cron` is not installed, so the purge function exists but nothing runs it). Plan: `20261028000001_scan_expiry_cleanup.sql` hides expired scans from their owner, deletes a user's own expired scans whenever they store a new one, batch-limits `purge_expired_scans()` (5000 rows, writes one `audit_log` heartbeat row, EXECUTE revoked from every API role including `service_role`), and schedules a daily job **only if** `pg_cron` is already installed. Inactive users' expired rows stay until a scheduler runs: enable `pg_cron` in Dashboard → Database → Extensions if the project offers it (verify; not assumed), then re-run the migration's `DO` block or run `select cron.schedule('purge-expired-scans','17 3 * * *','select private.purge_expired_scans()');` as the postgres role. Monitor with `select at, reason from public.audit_log where action='purge_expired_scans' order by at desc limit 3;` (alert if older than 2 days). Do not put a service-role key in GitHub Actions or the client to call the purge.
+- **Scan expiry (migration 11).** Owner-reported as applied and verified in production (SQL checks, not a reviewer re-check):
+  - the `scans_expires_at_idx` index exists;
+  - `scans_owner_select` hides expired scans from their owner;
+  - `private.scans_cap()` deletes the current user's own expired scans before applying the 500-row cap;
+  - `private.purge_expired_scans()` deletes at most 5,000 expired rows per run and writes one `audit_log` heartbeat row (`reason` = rows deleted);
+  - EXECUTE on the purge is revoked from `PUBLIC`, `anon`, `authenticated` and `service_role` (false/false/false).
+  
+  A manual purge returned `0` with no expired scans present, so **deletion by the purge and the heartbeat row it writes have not been exercised on real expired data in production**. `supabase/tests/005_followup_and_scan_expiry.sql` covers them but has not yet passed against a project with the migration applied (see section 8). Expired rows are hidden from owners immediately but physically remain until the owner's next scan insert or the scheduled purge.
+- **Scheduler (`pg_cron`).** Owner-reported (independently checked by the owner): the extension is enabled; job `purge-expired-scans` exists, schedule `17 3 * * *` (03:17 UTC / 08:47 IST), command `SELECT private.purge_expired_scans();`, active, runs as `postgres`. **Configured is not completed:** no execution history existed at the last check, so a successful scheduled run is **NOT yet confirmed**. Remaining task, after the first 03:17 UTC run: confirm `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 3;` shows `succeeded`, and that `select at, reason from public.audit_log where action='purge_expired_scans' order by at desc limit 3;` shows a new heartbeat row. Alert if the newest heartbeat is older than 2 days. Do not put a service-role key in GitHub Actions or the client to call the purge.
 - Four RLS-enabled tables have no policies; this is intentional for server-only / deny-by-default tables. Do not add permissive policies merely to silence the informational advisory.
 
 The latest live Performance Advisor no longer reports the three unindexed foreign keys, the five RLS init-plan policies, or the duplicate authenticated `shared_indicators` SELECT policies. It now reports the three newly created indexes as unused. This is expected on a database with very little data and immediately after index creation; do not drop them solely to silence that advisory. Reevaluate usage only after meaningful production workload accumulates.
@@ -86,14 +93,14 @@ When in doubt, stop before executing SQL. Confirm the project ref, take a verifi
 |---|---|---|
 | Anonymous cannot submit / review; ordinary user cannot read queue or decide; admin without MFA refused; admin with MFA can review; admin cannot self-review; self-metadata admin ignored | `e2e_phase4.py run` | isolated TEST project, over HTTP |
 | Platform-owner self-review needs a reason, is labelled `self_reviewed`, confidence 0.25, 0 independent contributors | `e2e_phase4.py run` with the optional `SIH26106_E2E_OWNER_*` variables; `supabase/tests/004_self_review.sql` (31 checks, includes audit log) | TEST project |
-| Withdrawn indicator not re-verified; new-account 500 cap; scan 500 cap, retention and closed purge function | `supabase/tests/005_followup_and_scan_expiry.sql` (17 checks) | TEST project SQL editor |
+| Withdrawn indicator not re-verified; new-account 500 cap; scan 500 cap, retention and closed purge function | `supabase/tests/005_followup_and_scan_expiry.sql` (17 checks; helper `run_as` repaired 2026-10-28, it was truncated) | TEST project SQL editor |
 | Limits, duplicates, pending caps | `supabase/tests/003_contributions.sql`, `005` | TEST project |
 
-Not testable through the public API (they need privileged writes): withdrawn indicators, pending-cap saturation and `audit_log` contents; these are SQL-only. `005` and the optional owner block were written without a PostgreSQL server or a Supabase project available, so **neither has been executed yet**.
+Not testable through the public API (they need privileged writes): withdrawn indicators, pending-cap saturation and `audit_log` contents; these are SQL-only. The optional owner block has **not been executed**. `005` has been run once (owner-reported) on a test project where the scan-expiry migration was apparently not applied: 12 of 17 passed, and the 5 failures (06, 08, 09, 10, 17) are exactly the expiry behaviours that migration adds. **It has not yet been rerun with `20261028000001` applied, so no 17 of 17 result exists.**
 
 Manual procedure (TEST project only; production is `qozfyuiloitutpfthuwn` and must never be used):
 1. Create a new Supabase project; apply all migrations in `supabase/migrations/` in order; in the TEST project only, override the marker: `create or replace function public.is_test_project() returns boolean language sql stable set search_path = pg_catalog as $$ select true $$;` (the repository migration returns false for production).
 2. Enable anonymous sign-ins, TOTP MFA, and disable email confirmation. Create the reviewer user, set `app_metadata.role = 'admin'` in the dashboard (never `user_metadata`); for the optional owner test create a second such user and `insert into private.platform_owners (user_id) values ('<id>');`.
 3. In a shell (never in git): `SIH26106_SUPABASE_URL`, `SIH26106_SUPABASE_ANON_KEY` (publishable key only), `SIH26106_E2E_PROJECT_REF`, `SIH26106_E2E_CONFIRM=TEST-PROJECT-ONLY:<ref>`, `SIH26106_E2E_PROD_REFS=qozfyuiloitutpfthuwn`, reviewer email/password.
 4. `python e2e_phase4.py check`, then `python e2e_phase4.py enroll-mfa` (export the printed TOTP secret), then `python e2e_phase4.py run`. Exit code 0 means nothing failed or was skipped.
-5. Paste `supabase/tests/004_self_review.sql` and `005_followup_and_scan_expiry.sql` into the TEST project's SQL editor; expect "31 of 31 passed" and "17 of 17 passed". Each rolls back its data.
+5. Paste `supabase/tests/004_self_review.sql` and `005_followup_and_scan_expiry.sql` into the TEST project's SQL editor; expect "31 of 31 passed" and "17 of 17 passed". Each rolls back its data. Never run `004` or `005` against production.
