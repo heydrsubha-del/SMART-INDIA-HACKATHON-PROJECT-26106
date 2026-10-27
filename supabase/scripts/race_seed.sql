@@ -1,9 +1,15 @@
--- TEST-ONLY: algorithmistic-test (qozfyuiloitutpfthuwn) ONLY.
+-- TEST-ONLY: a dedicated TEST project - NEVER production (ref qozfyuiloitutpfthuwn is PRODUCTION) ONLY.
 -- This script COMMITS synthetic contribution_log rows. Clean them up with race_cleanup.sql.
 -- Requires three fresh, ordinary authenticated users: A and B for the race; C owns seed rows and must NEVER sign in or submit.
 -- Replace each UUID placeholder once. Never use real-user accounts.
 -- Seed timestamp has a fractional-second marker (.000777) so cleanup can identify this seed without a second UUID paste.
 -- Run the race within 10 minutes of the reported seed_time.
+-- GUARD: aborts unless this project answers public.is_test_project() = true (production returns false).
+do $guard$ begin
+  if not coalesce(public.is_test_project(), false) then
+    raise exception 'ABORT: not a test project (is_test_project() is not true). Never run this on production.';
+  end if;
+end $guard$;
 
 DO $test$
 DECLARE

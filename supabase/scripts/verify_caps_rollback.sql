@@ -1,4 +1,4 @@
--- TEST-ONLY. Project algorithmistic-test (qozfyuiloitutpfthuwn) ONLY. NOT EXECUTED.
+-- TEST-ONLY. Project a dedicated TEST project - NEVER production (ref qozfyuiloitutpfthuwn is PRODUCTION) ONLY. NOT EXECUTED.
 --
 -- ONE statement (a single DO block), no BEGIN/COMMIT, no top-level DDL:
 --   * Each scenario (T1..T4) runs in its own sub-block and ends with a sentinel error (SQLSTATE ZZ001) that rolls back that
@@ -8,7 +8,7 @@
 --   * The helper functions are created with EXECUTE inside the block (transactional DDL), so they roll back too.
 -- Only non-transactional side effect: id sequence values consumed by the seed inserts are NOT returned (gaps only).
 --
--- BEFORE RUNNING: SQL Editor role = postgres; dashboard project = algorithmistic-test (qozfyuiloitutpfthuwn);
+-- BEFORE RUNNING: SQL Editor role = postgres; dashboard project = a dedicated TEST project - NEVER production (ref qozfyuiloitutpfthuwn is PRODUCTION);
 -- paste the disposable user's UUID below. The report arrives as an ERROR message starting "REPORT". That is intentional.
 
 do $t$
@@ -19,6 +19,7 @@ declare
   v_cnt bigint; v_cnt2 bigint; v_locks bigint; v_ok boolean;
   v_b_sub bigint; v_b_log bigint; v_rep text := ''; v_fail int;
 begin
+  if not coalesce(public.is_test_project(), false) then raise exception 'ABORT: not a test project (is_test_project() is not true)'; end if;
   -- ---------- guards (any failure aborts and rolls back everything) ----------
   if v_txt like 'PASTE%' then raise exception 'ABORT: paste the disposable user UUID into v_txt'; end if;
   v_uid := v_txt::uuid;

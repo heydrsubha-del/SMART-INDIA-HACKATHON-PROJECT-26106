@@ -1,6 +1,13 @@
 -- Manual rollback for 20261015000001_owner_self_review.sql. Run only after a pg_dump.
 -- Restores the original review_submission (self-review blocked for everyone). Self-reviewed rows already published stay;
 -- audit_log keeps its extra columns' data until dropped below.
+-- GUARD: destructive recovery script. To run it, first uncomment the next line IN THE SAME EXECUTION, after a verified backup:
+-- set app.allow_destructive = 'yes';
+do $guard$ begin
+  if coalesce(current_setting('app.allow_destructive', true), '') <> 'yes' then
+    raise exception 'ABORT: destructive rollback not confirmed. Verify backup + project ref, then uncomment the set app.allow_destructive line.';
+  end if;
+end $guard$;
 create or replace function public.review_submission(p_id uuid, p_decision text, p_note text default null) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare

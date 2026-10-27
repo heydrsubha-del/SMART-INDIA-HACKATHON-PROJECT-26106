@@ -1,7 +1,13 @@
--- TEST-ONLY: algorithmistic-test (qozfyuiloitutpfthuwn) ONLY.
+-- TEST-ONLY: a dedicated TEST project - NEVER production (ref qozfyuiloitutpfthuwn is PRODUCTION) ONLY.
 -- This cleanup removes only the exact synthetic seed rows and the two named race submissions/logs.
 -- Paste the same three disposable UUIDs used in race_seed.sql, plus its exact seed_time.
 -- All checks occur before any delete. Any unexpected row or count mismatch aborts and rolls back the entire DO statement.
+-- GUARD: aborts unless this project answers public.is_test_project() = true (production returns false).
+do $guard$ begin
+  if not coalesce(public.is_test_project(), false) then
+    raise exception 'ABORT: not a test project (is_test_project() is not true). Never run this on production.';
+  end if;
+end $guard$;
 
 DO $test$
 DECLARE

@@ -1,4 +1,4 @@
--- PROPOSED - NOT APPLIED. Only ever for project algorithmistic-test (qozfyuiloitutpfthuwn). NOT executed on any PostgreSQL instance.
+-- PROPOSED - NOT APPLIED. Only ever for project a dedicated TEST project - NEVER production (ref qozfyuiloitutpfthuwn is PRODUCTION). NOT executed on any PostgreSQL instance.
 -- Objects: NEW private.valid_host_labels(text); REPLACED private.valid_indicator(text,text); REPLACED public.submit_indicators(jsonb).
 -- Not touched: tables, indexes, RLS, grants (apart from REVOKE on the new helper), looks_like_token, valid_domain, is_public_ip,
 -- review_queue, review_submission, scans. No IPv6-URL support here (deferred to a separate proposal).

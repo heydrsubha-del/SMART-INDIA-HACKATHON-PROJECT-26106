@@ -22,3 +22,11 @@ client_secret*.json
 supabase/.temp
 supabase/.env
 
+
+# --- added by security pass
+.env.*
+!.env.example
+*_token_cache.json
+*token*.json
+supabase/.branches
+supabase/.temp/
