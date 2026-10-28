@@ -269,6 +269,157 @@ class AttachmentStatusUI(unittest.TestCase):
         self.assertNotIn('"Threats Found"', src)
 
 
+class MalformedVerdicts(unittest.TestCase):
+    def test_only_explicit_booleans_give_a_verdict(self):
+        bad = [{"ok": True}, {"ok": True, "infected": None}, {"ok": True, "infected": "false"},
+               {"ok": True, "infected": 0}, {"ok": True, "infected": 1}, {"ok": True, "infected": []},
+               {"ok": 1, "infected": False}, {"ok": "yes", "infected": False}, {"ok": None, "infected": False},
+               {"infected": False}, {}, [], "ok", 5, None]
+        for outcome in bad:
+            if outcome is None:
+                continue                       # None means "no backend" in attachment_status (tested elsewhere)
+            s, d, c = AV.attachment_status({"filename": "f"}, outcome)
+            self.assertNotEqual(s, "Clean", outcome)
+            self.assertNotEqual(s, "INFECTED", outcome)
+            self.assertIn(c, (AV.CAT_ERROR, AV.CAT_NOT_SCANNED), outcome)
+            self.assertIsNone(AV._verdict(outcome), outcome)
+        self.assertEqual(AV.attachment_status({"filename": "f"}, {"ok": True})[:1], ("Scan error",))
+        self.assertEqual(AV.attachment_status({"filename": "f"}, {"ok": True, "infected": None})[0], "Scan error")
+
+    def test_explicit_booleans_accepted(self):
+        self.assertEqual(AV.attachment_status({}, {"ok": True, "infected": False})[0], "Clean")
+        self.assertEqual(AV.attachment_status({}, {"ok": True, "infected": True, "signature": "S"})[:2], ("INFECTED", "S"))
+
+    def test_scan_attachments_rejects_malformed_results(self):
+        att = {"attachments": [{"filename": "a", "size": 1, "data": b"x"}]}
+        for bad in ({"ok": True}, {"ok": True, "infected": None}, {"ok": True, "infected": "no"}, "junk", None):
+            with mock.patch.object(AV, "scan_bytes", return_value=bad):
+                r = AV.scan_attachments(att)[0]
+            self.assertFalse(r["scanned"]); self.assertFalse(r["infected"]); self.assertTrue(r["error"])
+
+    def test_virustotal_empty_or_missing_stats_never_clean(self):
+        for bad in (None, {}, {"harmless": 0, "malicious": 0}, "x", {"harmless": 5}):
+            self.assertFalse(AV._vt_stats_ok(bad), bad)
+        self.assertTrue(AV._vt_stats_ok({"harmless": 3, "malicious": 0}))
+
+
+class _VTResp:
+    def __init__(self, body, status=200, clock=None, cost=0):
+        self.status_code, self._body = status, body
+        self.clock, self.cost = clock, cost
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+            raise requests.exceptions.HTTPError("http %s" % self.status_code)
+    def iter_content(self, chunk_size=65536):
+        if self.clock is not None:
+            self.clock.t += self.cost            # time consumed while reading the body
+        yield __import__("json").dumps(self._body).encode()
+    def close(self): pass
+
+
+class _Clock:
+    def __init__(self): self.t = 1000.0; self.sleeps = []
+    def monotonic(self): return self.t
+    def sleep(self, s): self.sleeps.append(s); self.t += s
+
+
+DONE = {"data": {"attributes": {"status": "completed", "stats": {"malicious": 0, "harmless": 60}}}}
+QUEUED = {"data": {"attributes": {"status": "queued"}}}
+
+
+class VirusTotalDeadline(unittest.TestCase):
+    def run_vt(self, get_fn, post_fn=None, total=120):
+        clk = _Clock()
+        post_fn = post_fn or (lambda *a, **k: _VTResp({"data": {"id": "AID"}}))
+        with mock.patch.object(AV.time, "monotonic", clk.monotonic), mock.patch.object(AV.time, "sleep", clk.sleep), \
+             mock.patch.object(AV, "VT_TOTAL_DEADLINE", total), \
+             mock.patch.object(AV.requests, "get", side_effect=lambda *a, **k: get_fn(clk, *a, **k)), \
+             mock.patch.object(AV.requests, "post", side_effect=post_fn):
+            return AV._scan_bytes_virustotal(b"data", "key"), clk
+
+    def test_timeouts_bounded_by_remaining_budget(self):
+        seen = []
+        def get_fn(clk, url, **kw):
+            seen.append(kw["timeout"]); clk.t += 40
+            return _VTResp({}, status=404) if "/files/" in url else _VTResp(DONE)
+        out, clk = self.run_vt(get_fn)
+        for conn, read in seen:
+            self.assertLessEqual(read, 30); self.assertLessEqual(conn, 10); self.assertGreater(read, 0)
+        self.assertTrue(out["ok"] and out["infected"] is False)
+
+    def test_time_consumed_in_lookup_expires_deadline(self):
+        def get_fn(clk, url, **kw):
+            clk.t += 200
+            return _VTResp({}, status=404)
+        with mock.patch.object(AV.requests, "post", side_effect=AssertionError("must not upload")):
+            out, _ = self.run_vt(get_fn)
+        self.assertFalse(out["ok"]); self.assertIn("time limit", out["error"])
+
+    def test_time_consumed_in_upload_expires_deadline(self):
+        def get_fn(clk, url, **kw):
+            return _VTResp({}, status=404)
+        def post_fn(*a, **k):
+            _clock_holder[0].t += 130
+            return _VTResp({"data": {"id": "AID"}})
+        _clock_holder = [None]
+        clk = _Clock(); _clock_holder[0] = clk
+        gets = []
+        with mock.patch.object(AV.time, "monotonic", clk.monotonic), mock.patch.object(AV.time, "sleep", clk.sleep), \
+             mock.patch.object(AV.requests, "get", side_effect=lambda *a, **k: (gets.append(a[0]), get_fn(clk, *a, **k))[1]), \
+             mock.patch.object(AV.requests, "post", side_effect=post_fn):
+            out = AV._scan_bytes_virustotal(b"data", "key")
+        self.assertFalse(out["ok"]); self.assertIn("time limit", out["error"])
+        self.assertEqual(len(gets), 1)                       # no polling after the budget is gone
+
+    def test_polling_stops_at_deadline_and_sleeps_are_clamped(self):
+        def get_fn(clk, url, **kw):
+            if "/files/" in url:
+                return _VTResp({}, status=404)
+            clk.t += 25                                      # each poll burns 25 s
+            return _VTResp(QUEUED)
+        out, clk = self.run_vt(get_fn, total=60)
+        self.assertFalse(out["ok"])
+        self.assertLessEqual(clk.t - 1000.0, 60 + 1e-6 + 25)  # never more than one request past the budget
+        self.assertTrue(all(s <= AV.VT_POLL_INTERVAL for s in clk.sleeps))
+
+    def test_nearly_expired_deadline_gives_tiny_timeout_then_stops(self):
+        calls = []
+        def get_fn(clk, url, **kw):
+            calls.append(kw["timeout"])
+            clk.t += 119.5 if "/files/" in url else 0
+            return _VTResp({}, status=404)
+        post = lambda *a, **k: calls.append(k["timeout"]) or _VTResp({"data": {"id": "AID"}})
+        out, _ = self.run_vt(get_fn, post)
+        self.assertGreaterEqual(len(calls), 2)
+        for conn, read in calls[1:]:
+            self.assertLessEqual(read, 0.5 + 1e-6)             # remaining budget, not the 30 s default
+            self.assertLessEqual(conn, 0.5 + 1e-6)
+        self.assertFalse(out["ok"])
+
+    def test_slow_body_read_hits_deadline(self):
+        def get_fn(clk, url, **kw):
+            return _VTResp({"data": {"attributes": {"last_analysis_stats": {"malicious": 0, "harmless": 9}}}},
+                           clock=clk, cost=500)
+        out, _ = self.run_vt(get_fn)
+        self.assertFalse(out["ok"]); self.assertIn("time limit", out["error"])
+
+    def test_cached_lookup_clean_and_malformed(self):
+        ok = {"data": {"attributes": {"last_analysis_stats": {"malicious": 0, "harmless": 9}}}}
+        out, _ = self.run_vt(lambda clk, url, **kw: _VTResp(ok))
+        self.assertEqual((out["ok"], out["infected"]), (True, False))
+        det = {"data": {"attributes": {"last_analysis_stats": {"malicious": 3, "harmless": 9}}}}
+        out, _ = self.run_vt(lambda clk, url, **kw: _VTResp(det))
+        self.assertTrue(out["ok"] and out["infected"] is True)
+        # known file with empty stats must fall through to upload+poll, and an empty final analysis is not clean
+        def get_fn(clk, url, **kw):
+            if "/files/" in url:
+                return _VTResp({"data": {"attributes": {"last_analysis_stats": {}}}})
+            return _VTResp({"data": {"attributes": {"status": "completed", "stats": {}}}})
+        out, _ = self.run_vt(get_fn)
+        self.assertFalse(out["ok"])
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):

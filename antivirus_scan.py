@@ -16,6 +16,7 @@ heuristic when this is unavailable.
 """
 import hashlib
 import io
+import json
 import os
 import socket
 import time
@@ -300,60 +301,120 @@ def _vt_signature_from_results(results):
     return None
 
 
-def _scan_bytes_virustotal(data, api_key):
-    """Cloud fallback: VirusTotal file scan.
+class _VTDeadline(Exception):
+    pass
 
-    Hashes first and checks GET /files/{sha256} -- if VirusTotal has
-    already seen this exact file, that's an instant verdict with no
-    upload needed. Only genuinely new files get uploaded and polled.
-    """
-    sha256 = hashlib.sha256(data).hexdigest()
+
+VT_CONNECT_TIMEOUT = 10
+VT_MAX_BODY_BYTES = 2 * 1024 * 1024
+
+
+def _vt_stats_ok(stats):
+    """A verdict needs real engine counts; empty/malformed stats must never read as 'clean'."""
+    if not isinstance(stats, dict):
+        return False
     try:
-        lookup = requests.get(
-            f"{VT_BASE}/files/{sha256}",
-            headers=_vt_headers(api_key),
-            timeout=VT_TIMEOUT,
-        )
-        if lookup.status_code == 200:
-            attrs = lookup.json().get("data", {}).get("attributes", {}) or {}
-            stats = attrs.get("last_analysis_stats", {}) or {}
-            results = attrs.get("last_analysis_results", {}) or {}
-            infected = _vt_verdict_from_analysis_stats(stats)
-            return {
-                "ok": True,
-                "infected": infected,
-                "signature": _vt_signature_from_results(results) if infected else None,
-                "raw": f"VirusTotal (cached): malicious={stats.get('malicious', 0)}",
-            }
-        if lookup.status_code not in (404,):
-            lookup.raise_for_status()
+        return sum(int(v) for v in stats.values() if not isinstance(v, bool)) > 0 and "malicious" in stats
+    except (TypeError, ValueError):
+        return False
 
-        # Not seen before -- upload and poll the analysis.
-        upload = requests.post(
-            f"{VT_BASE}/files",
-            headers=_vt_headers(api_key),
-            files={"file": ("scan_target", data)},
-            timeout=VT_TIMEOUT,
-        )
-        upload.raise_for_status()
-        analysis_id = upload.json().get("data", {}).get("id")
+
+def _scan_bytes_virustotal(data, api_key):
+    """Cloud fallback: VirusTotal file scan, bounded by ONE overall deadline (VT_TOTAL_DEADLINE).
+
+    The deadline starts before the first request. Each request gets a (connect, read) timeout capped by the
+    remaining budget, response bodies are read in chunks with a deadline check, the deadline is re-checked after
+    every network call and sleeps never exceed it. LIMITATION: `requests` timeouts are per socket operation, so
+    a single request that keeps trickling bytes can overrun by up to one timeout interval, and the upload body
+    is sent in one call (send time is bounded only per socket write). This is a best-effort bound, not a strict
+    wall-clock guarantee.
+    """
+    deadline = time.monotonic() + VT_TOTAL_DEADLINE
+    headers = _vt_headers(api_key)
+
+    def left():
+        rem = deadline - time.monotonic()
+        if rem <= 0:
+            raise _VTDeadline()
+        return rem
+
+    def timeouts():
+        rem = left()
+        return (min(VT_CONNECT_TIMEOUT, rem), min(VT_TIMEOUT, rem))
+
+    def body_json(resp):
+        try:
+            chunks, size = [], 0
+            for chunk in resp.iter_content(chunk_size=65536):
+                left()
+                size += len(chunk)
+                if size > VT_MAX_BODY_BYTES:
+                    raise ValueError("VirusTotal response too large")
+                chunks.append(chunk)
+            return json.loads(b"".join(chunks).decode("utf-8"))
+        finally:
+            try:
+                resp.close()
+            except Exception:
+                pass
+
+    try:
+        sha256 = hashlib.sha256(data).hexdigest()
+        lookup = requests.get(f"{VT_BASE}/files/{sha256}", headers=headers, timeout=timeouts(), stream=True)
+        left()
+        if lookup.status_code == 200:
+            attrs = ((body_json(lookup) or {}).get("data") or {}).get("attributes") or {}
+            stats = attrs.get("last_analysis_stats")
+            if _vt_stats_ok(stats):
+                results = attrs.get("last_analysis_results", {}) or {}
+                infected = _vt_verdict_from_analysis_stats(stats)
+                return {
+                    "ok": True,
+                    "infected": infected,
+                    "signature": _vt_signature_from_results(results) if infected else None,
+                    "raw": f"VirusTotal (cached): malicious={stats.get('malicious', 0)}",
+                }
+            # known file without usable analysis stats: fall through to a fresh upload
+        else:
+            try:
+                if lookup.status_code != 404:
+                    lookup.raise_for_status()
+            finally:
+                try:
+                    lookup.close()
+                except Exception:
+                    pass
+
+        upload = requests.post(f"{VT_BASE}/files", headers=headers, files={"file": ("scan_target", data)},
+                               timeout=timeouts(), stream=True)
+        left()
+        try:
+            upload.raise_for_status()
+            analysis_id = ((body_json(upload) or {}).get("data") or {}).get("id")
+        finally:
+            try:
+                upload.close()
+            except Exception:
+                pass
+        left()
         if not analysis_id:
             return {"ok": False, "error": "VirusTotal upload did not return an analysis id."}
 
-        vt_deadline = time.monotonic() + VT_TOTAL_DEADLINE
         for _ in range(VT_POLL_MAX_ATTEMPTS):
-            if time.monotonic() > vt_deadline:
-                break
-            poll = requests.get(
-                f"{VT_BASE}/analyses/{analysis_id}",
-                headers=_vt_headers(api_key),
-                timeout=VT_TIMEOUT,
-            )
-            poll.raise_for_status()
-            attrs = poll.json().get("data", {}).get("attributes", {}) or {}
-            status = attrs.get("status")
-            if status == "completed":
-                stats = attrs.get("stats", {}) or {}
+            poll = requests.get(f"{VT_BASE}/analyses/{analysis_id}", headers=headers, timeout=timeouts(), stream=True)
+            left()
+            try:
+                poll.raise_for_status()
+                attrs = ((body_json(poll) or {}).get("data") or {}).get("attributes") or {}
+            finally:
+                try:
+                    poll.close()
+                except Exception:
+                    pass
+            if attrs.get("status") == "completed":
+                stats = attrs.get("stats")
+                if not _vt_stats_ok(stats):
+                    return {"ok": False, "error": "VirusTotal returned an incomplete analysis."}
                 results = attrs.get("results", {}) or {}
                 infected = _vt_verdict_from_analysis_stats(stats)
                 return {
@@ -362,11 +423,14 @@ def _scan_bytes_virustotal(data, api_key):
                     "signature": _vt_signature_from_results(results) if infected else None,
                     "raw": f"VirusTotal: malicious={stats.get('malicious', 0)}",
                 }
-            time.sleep(VT_POLL_INTERVAL)
+            rem = left()
+            time.sleep(min(VT_POLL_INTERVAL, rem))
+            left()
 
-        # Still queued after bounded polling -- ok: False, never a false
-        # "clean". The UI's existing risky-extension fallback handles this.
+        # Still queued after bounded polling -- ok: False, never a false "clean".
         return {"ok": False, "error": "VirusTotal analysis is still queued after the polling window."}
+    except _VTDeadline:
+        return {"ok": False, "error": "VirusTotal scan exceeded the overall time limit."}
     except requests.exceptions.ConnectionError:
         return {"ok": False, "error": "Could not reach VirusTotal."}
     except requests.exceptions.Timeout:
@@ -374,7 +438,19 @@ def _scan_bytes_virustotal(data, api_key):
     except requests.exceptions.HTTPError as exc:
         return {"ok": False, "error": f"VirusTotal HTTP error: {exc}"}
     except Exception as exc:
-        return {"ok": False, "error": str(exc)}
+        return {"ok": False, "error": "VirusTotal scan failed: %s" % type(exc).__name__}
+
+
+def _verdict(outcome):
+    """'clean' / 'infected' only for a well-formed success (ok is True and infected is a real bool); else None."""
+    if not isinstance(outcome, dict) or outcome.get("ok") is not True:
+        return None
+    inf = outcome.get("infected")
+    if inf is True:
+        return "infected"
+    if inf is False:
+        return "clean"
+    return None
 
 
 def scan_attachments(parsed):
@@ -399,13 +475,15 @@ def scan_attachments(parsed):
                 outcome = scan_bytes(data)
             except Exception as exc:
                 outcome = {"ok": False, "error": "Scanner error: %s" % type(exc).__name__}
+        if not isinstance(outcome, dict):
+            outcome = {"ok": False, "error": "Malformed scan result."}
         results.append({
             "filename": att.get("filename", "-"),
             "size": att.get("size", 0),
-            "infected": bool(outcome.get("ok") and outcome.get("infected", False)),
-            "scanned": bool(outcome.get("ok")),
-            "signature": outcome.get("signature"),
-            "error": None if outcome.get("ok") else outcome.get("error"),
+            "infected": _verdict(outcome) == "infected",
+            "scanned": _verdict(outcome) is not None,
+            "signature": outcome.get("signature") if _verdict(outcome) == "infected" else None,
+            "error": None if _verdict(outcome) else (outcome.get("error") or "scan failed") if outcome.get("ok") is not True else "Malformed scan result.",
         })
     return results
 
@@ -440,10 +518,15 @@ def attachment_status(att, outcome=None):
             return ("Potentially risky extension",
                     "Heuristic only (file type by name); not scanned, not a malware verdict", CAT_RISKY_EXT)
         return "Not scanned", "No antivirus backend available", CAT_NOT_SCANNED
-    if not isinstance(outcome, dict) or not outcome.get("ok"):
-        err = str((outcome or {}).get("error") or "scan failed") if isinstance(outcome, dict) else "scan failed"
-        cat = CAT_NOT_SCANNED if err.startswith("Not scanned") else CAT_ERROR
-        return ("Not scanned" if cat == CAT_NOT_SCANNED else "Scan error"), err, cat
-    if outcome.get("infected"):
+    verdict = _verdict(outcome)
+    if verdict is None:
+        if isinstance(outcome, dict) and outcome.get("ok") is not True:
+            err = str(outcome.get("error") or "scan failed")
+        else:
+            err = "Malformed scan result"
+        if err.startswith("Not scanned"):
+            return "Not scanned", err, CAT_NOT_SCANNED
+        return "Scan error", err, CAT_ERROR
+    if verdict == "infected":
         return "INFECTED", outcome.get("signature") or "-", CAT_DETECTED
     return "Clean", "-", CAT_CLEAN
