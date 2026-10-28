@@ -196,8 +196,8 @@ def scan_bytes(data, timeout=CLAMD_TIMEOUT):
     Returns {"ok": True, "infected": bool, "signature": str|None, "raw": str}
     or {"ok": False, "error": ...}. Never raises.
     """
-    if not data:
-        return {"ok": True, "infected": False, "signature": None, "raw": "empty"}
+    if not data:          # nothing to scan: no backend ran, so this must never read as "clean"
+        return {"ok": False, "error": "Not scanned: attachment is empty (0 bytes)."}
 
     blocked = _blocked_reason(data)
     if blocked:                               # ok False -> never reported as "clean"
@@ -513,6 +513,8 @@ def attachment_status(att, outcome=None):
         reason = _SKIP_REASONS.get(str(skipped), str(skipped))
         note = "; extension is potentially risky" if risky else ""
         return "Not scanned", "Skipped: %s%s" % (reason, note), CAT_NOT_SCANNED
+    if outcome is not None and not att.get("data") and att.get("size") == 0:
+        return "Not scanned", "Attachment is empty (0 bytes); nothing to scan", CAT_NOT_SCANNED
     if outcome is None:
         if risky:
             return ("Potentially risky extension",
@@ -530,3 +532,15 @@ def attachment_status(att, outcome=None):
     if verdict == "infected":
         return "INFECTED", outcome.get("signature") or "-", CAT_DETECTED
     return "Clean", "-", CAT_CLEAN
+
+
+def summarize_categories(cats):
+    """Counts for the Antivirus panel metrics. 'clean' counts ONLY successfully scanned, clean files."""
+    cats = list(cats)
+    return {
+        "found": len(cats),
+        "detected": cats.count(CAT_DETECTED),
+        "clean": cats.count(CAT_CLEAN),
+        "risky_extension": cats.count(CAT_RISKY_EXT),
+        "not_scanned_or_error": cats.count(CAT_NOT_SCANNED) + cats.count(CAT_ERROR),
+    }

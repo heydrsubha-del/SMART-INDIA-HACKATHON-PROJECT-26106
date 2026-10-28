@@ -420,6 +420,68 @@ class VirusTotalDeadline(unittest.TestCase):
         self.assertFalse(out["ok"])
 
 
+class ZeroByteAttachments(unittest.TestCase):
+    CLEAN = {"ok": True, "infected": False, "signature": None}
+
+    def test_scan_bytes_empty_is_not_scanned(self):
+        for empty in (b"", None):
+            with mock.patch.object(AV, "resolve_backend", side_effect=AssertionError("no backend should run")):
+                out = AV.scan_bytes(empty)
+            self.assertIs(out["ok"], False)
+            self.assertTrue(out["error"].startswith("Not scanned"))
+            self.assertIsNone(AV._verdict(out))
+            self.assertEqual(AV.attachment_status({"filename": "e"}, out)[::2], ("Not scanned", AV.CAT_NOT_SCANNED))
+
+    def test_parsed_zero_byte_attachment_end_to_end(self):
+        r = EP.parse_eml(_eml(_att(b"empty.txt", b"") + _att(b"empty.exe", b"")))
+        atts = r["attachments"]
+        self.assertEqual([a["size"] for a in atts], [0, 0])
+        self.assertFalse(any(a.get("skipped") for a in atts))       # genuinely empty, not skipped/decode error
+        res = AV.scan_attachments(r)
+        self.assertTrue(all(not x["scanned"] and not x["infected"] and x["error"].startswith("Not scanned") for x in res))
+
+    def test_panel_status_and_metrics_for_zero_byte(self):
+        att = {"filename": "e.txt", "size": 0, "data": b"", "risky": False}
+        # scanner available: outcome comes from scan_bytes
+        s, d, c = AV.attachment_status(att, AV.scan_bytes(b""))
+        self.assertEqual((s, c), ("Not scanned", AV.CAT_NOT_SCANNED))
+        # even a stale/forged clean outcome cannot make an empty file Clean
+        s, d, c = AV.attachment_status(att, self.CLEAN)
+        self.assertEqual((s, c), ("Not scanned", AV.CAT_NOT_SCANNED))
+        self.assertIn("empty", d)
+        # scanner unavailable
+        self.assertEqual(AV.attachment_status(att, None)[0], "Not scanned")
+        cats = [AV.attachment_status(att, self.CLEAN)[2], AV.attachment_status(att, None)[2]]
+        self.assertEqual(AV.summarize_categories(cats)["clean"], 0)
+        self.assertEqual(AV.summarize_categories(cats)["not_scanned_or_error"], 2)
+
+    def test_genuine_results_unchanged_and_counted(self):
+        real = {"filename": "a.pdf", "size": 5, "data": b"hello", "risky": False}
+        self.assertEqual(AV.attachment_status(real, self.CLEAN)[::2], ("Clean", AV.CAT_CLEAN))
+        self.assertEqual(AV.attachment_status(real, {"ok": True, "infected": True, "signature": "Eicar"}),
+                         ("INFECTED", "Eicar", AV.CAT_DETECTED))
+        empty = {"filename": "e", "size": 0, "data": b""}
+        cats = [AV.attachment_status(real, self.CLEAN)[2],
+                AV.attachment_status(real, {"ok": True, "infected": True, "signature": "E"})[2],
+                AV.attachment_status(empty, self.CLEAN)[2],
+                AV.attachment_status({"filename": "x.exe", "size": 3, "data": b"abc", "risky": True}, None)[2],
+                AV.attachment_status({"filename": "s", "size": 9, "data": b"", "skipped": "decode_error"}, self.CLEAN)[2]]
+        self.assertEqual(AV.summarize_categories(cats),
+                         {"found": 5, "detected": 1, "clean": 1, "risky_extension": 1, "not_scanned_or_error": 2})
+
+    def test_skipped_reasons_and_nonempty_scan_path_preserved(self):
+        s, d, c = AV.attachment_status({"filename": "b", "size": 99, "data": b"", "skipped": "attachment_too_large"}, self.CLEAN)
+        self.assertIn("per-file size limit", d)
+        with mock.patch.object(AV, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(AV, "_scan_bytes_clamd", return_value=self.CLEAN):
+            self.assertEqual(AV.scan_bytes(b"x"), self.CLEAN)
+
+    def test_app_uses_summary_helper(self):
+        src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
+        self.assertIn("_av_mod.summarize_categories(_cats)", src)
+        self.assertIn('m3.metric("Clean (scanned)", _sum["clean"])', src)
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):

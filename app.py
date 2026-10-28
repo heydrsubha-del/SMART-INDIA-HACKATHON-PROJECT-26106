@@ -14594,12 +14594,13 @@ if active_panel == "Antivirus":
                     "Detail": detail,
                 })
 
+        _sum = _av_mod.summarize_categories(_cats)
         m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Files Found", total_files)
-        m2.metric("Detections (antivirus)", _cats.count(_av_mod.CAT_DETECTED))
-        m3.metric("Clean (scanned)", _cats.count(_av_mod.CAT_CLEAN))
-        m4.metric("Risky extension (heuristic)", _cats.count(_av_mod.CAT_RISKY_EXT))
-        m5.metric("Not scanned / error", _cats.count(_av_mod.CAT_NOT_SCANNED) + _cats.count(_av_mod.CAT_ERROR))
+        m1.metric("Files Found", _sum["found"])
+        m2.metric("Detections (antivirus)", _sum["detected"])
+        m3.metric("Clean (scanned)", _sum["clean"])
+        m4.metric("Risky extension (heuristic)", _sum["risky_extension"])
+        m5.metric("Not scanned / error", _sum["not_scanned_or_error"])
 
         if rows:
             _render_polished_table(pd.DataFrame(rows))

@@ -189,3 +189,9 @@ Fixed in `app.py` via the new pure helper `antivirus_scan.attachment_status()`: 
 Tests: `MalformedVerdicts` and `VirusTotalDeadline` (fake clock; time consumed in lookup, upload, polling, body read; nearly expired deadline) in `test_security_hardening.py`.
 
 **Actual results (all 10 intended files overlaid on a fresh extraction of the original full project in a scratch Git repo; your real repo's branch/history not verified):** `pytest -q`: **629 passed, 0 failed** (10 subtests passed; 57 in `test_security_hardening.py`). `compileall -q .`: OK. `git diff --cached --check`: clean (CRLF warnings only). `sha256sum -c MANIFEST.sha256`: 7/7 OK. No live VirusTotal/ClamAV/Supabase testing.
+
+### 9.4 Zero-byte attachments (2026-10-28)
+
+`scan_bytes(b"")`/`None` previously returned `ok: True, infected: False`, so an empty attachment could count as "Clean (scanned)" although no backend ran. It now returns `ok: False, error: "Not scanned: attachment is empty (0 bytes)."` before any backend is chosen. `attachment_status()` also forces "Not scanned" for a genuinely empty attachment (`size == 0`, no data) even if handed a clean outcome (e.g. a stale cache entry). Metric counting moved into `summarize_categories()`, which the Antivirus panel now uses; "Clean (scanned)" counts only successful non-empty clean scans. Size limits, decode-error handling, skipped reasons, genuine clean scans and detections are unchanged (tests cover each). Tests: `ZeroByteAttachments` in `test_security_hardening.py`.
+
+**Actual results (10 intended files overlaid on a fresh extraction of the original full project in a scratch Git repo; your real repo's branch/history not verified):** `pytest -q`: **635 passed, 0 failed** (10 subtests passed; 63 in `test_security_hardening.py`). `compileall -q .`: OK. `git diff --cached --check`: clean (CRLF warnings only). `sha256sum -c MANIFEST.sha256`: 7/7 OK. No live scanner testing.
