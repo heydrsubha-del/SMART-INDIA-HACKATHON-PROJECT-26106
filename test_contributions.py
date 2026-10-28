@@ -26,6 +26,11 @@ def jwt(role):
 class Resp:
     def __init__(self, data=None, status=200):
         self.data, self.status_code = data if data is not None else {}, status
+    headers = {}
+    def iter_content(self, chunk_size=65536):   # shared_intel_client streams the body
+        yield __import__("json").dumps(self.data).encode()
+    def close(self):
+        pass
     def json(self):
         return self.data
     def raise_for_status(self):

@@ -38,6 +38,7 @@ VT_TIMEOUT = 30
 # "clean") so the caller's existing fallback-of-a-fallback still applies.
 VT_POLL_INTERVAL = 3
 VT_POLL_MAX_ATTEMPTS = 20
+VT_TOTAL_DEADLINE = 120                     # wall-clock cap across lookup + upload + polling
 
 
 def _env_int(name, default):
@@ -58,12 +59,36 @@ ZIP_MAX_UNCOMPRESSED = 1024 * 1024 * 1024    # 1 GiB declared
 ZIP_MAX_RATIO = 200                          # declared uncompressed / compressed
 
 
+ZIP_MAX_ENTRY_BYTES = 512 * 1024 * 1024      # declared size of any single entry
+ZIP_MAX_NESTED = 5                           # nested archives per ZIP
+_ARCHIVE_EXT = (".zip", ".jar", ".apk", ".7z", ".rar", ".gz", ".tgz", ".bz2", ".xz", ".tar", ".cab", ".iso")
+_EOCD = b"PK\x05\x06"
+
+
+def _looks_like_zip(data):
+    """True if a ZIP signature appears at the start, a local header appears early (prefixed/self-extracting
+    archives), or an end-of-central-directory record sits in the tail (where zipfile itself looks)."""
+    return (data[:4] in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+            or b"PK\x03\x04" in data[:1024 * 1024]
+            or _EOCD in data[-(65535 + 22):])
+
+
 def inspect_zip(data):
-    """Return a reason string if `data` is a ZIP that looks like a bomb, else None. Metadata only; never raises."""
-    if not data or data[:2] != b"PK":
+    """Return a reason string if `data` is (or hides) a ZIP that is unsafe to scan, else None.
+    Reads the central directory only, never extracts. Fails CLOSED: an unreadable ZIP structure or any
+    unexpected error returns a reason, so the file is reported as not scanned rather than clean."""
+    if not data:
         return None
     try:
-        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        if not _looks_like_zip(data):
+            return None
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(data))      # tolerates data prepended to the archive
+        except zipfile.BadZipFile:
+            if _EOCD in data[-(65535 + 22):]:
+                return "malformed ZIP structure"
+            return None                                   # stray 'PK' bytes in a non-ZIP file
+        with zf:
             infos = zf.infolist()
             if len(infos) > ZIP_MAX_ENTRIES:
                 return "ZIP has too many entries (%d)" % len(infos)
@@ -71,22 +96,32 @@ def inspect_zip(data):
             packed = max(sum(i.compress_size for i in infos), 1)
             if total > ZIP_MAX_UNCOMPRESSED:
                 return "ZIP declares an excessive uncompressed size"
-            if total / packed > ZIP_MAX_RATIO and total > 10 * 1024 * 1024:
+            if total > 10 * 1024 * 1024 and total / packed > ZIP_MAX_RATIO:
                 return "ZIP compression ratio is suspiciously high"
-            for i in infos:                  # nested archives are the classic recursive bomb
-                if i.filename.lower().endswith((".zip", ".7z", ".rar", ".gz", ".bz2", ".xz")) and i.file_size > 10 * 1024 * 1024:
-                    return "ZIP contains a large nested archive"
-    except (zipfile.BadZipFile, RuntimeError, ValueError, NotImplementedError, OSError):
-        return None                          # not a readable ZIP: let the scanner decide
+            nested = 0
+            for i in infos:
+                if i.file_size > ZIP_MAX_ENTRY_BYTES:
+                    return "ZIP contains an oversized entry"
+                if i.file_size > 10 * 1024 * 1024 and i.file_size / max(i.compress_size, 1) > ZIP_MAX_RATIO:
+                    return "ZIP entry compression ratio is suspiciously high"
+                if i.filename.lower().endswith(_ARCHIVE_EXT):
+                    nested += 1
+                    if nested > ZIP_MAX_NESTED:
+                        return "ZIP contains too many nested archives"
+                    if i.file_size > 10 * 1024 * 1024:
+                        return "ZIP contains a large nested archive"
     except Exception:
-        return None
+        return "ZIP could not be inspected safely"
     return None
 
 
 def _blocked_reason(data):
     if len(data) > MAX_SCAN_BYTES:
         return "File exceeds the %d MB scan limit; not scanned." % (MAX_SCAN_BYTES // (1024 * 1024))
-    bomb = inspect_zip(data)
+    try:
+        bomb = inspect_zip(data)
+    except Exception:
+        bomb = "inspection failed"
     if bomb:
         return "Not scanned (possible archive bomb): %s." % bomb
     return None
@@ -176,36 +211,52 @@ def scan_bytes(data, timeout=CLAMD_TIMEOUT):
     except BackendError as exc:
         return {"ok": False, "error": str(exc)}
 
-    if backend == "cloud":
-        return _scan_bytes_virustotal(data, api_key)
-    return _scan_bytes_clamd(data, timeout=timeout)
+    try:
+        if backend == "cloud":
+            return _scan_bytes_virustotal(data, api_key)
+        return _scan_bytes_clamd(data, timeout=timeout)
+    except Exception as exc:                  # unexpected scanner failure is "not scanned", never "clean"
+        return {"ok": False, "error": "Scanner error: %s" % type(exc).__name__}
 
 
 def _scan_bytes_clamd(data, timeout=CLAMD_TIMEOUT):
-    """Original local clamd INSTREAM scan -- unmoved."""
+    """Local clamd INSTREAM scan under ONE wall-clock deadline covering connect, send and receive."""
+    sock = None
+    deadline = time.monotonic() + CLAMD_TOTAL_DEADLINE
+
+    def remaining():
+        left = deadline - time.monotonic()
+        if left <= 0:
+            raise socket.timeout("overall deadline")
+        sock.settimeout(min(left, timeout))
+        return left
+
     try:
-        sock = _connect(timeout=timeout)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(min(timeout, CLAMD_TOTAL_DEADLINE))
+        sock.connect((CLAMD_HOST, CLAMD_PORT))
+        remaining()
         sock.sendall(b"zINSTREAM\0")
 
-        # clamd wants <4-byte big-endian length><chunk> frames, ending with
-        # a zero-length frame.
+        # clamd wants <4-byte big-endian length><chunk> frames, ending with a zero-length frame.
         chunk_size = 8192
-        deadline = time.monotonic() + CLAMD_TOTAL_DEADLINE
         for offset in range(0, len(data), chunk_size):
-            if time.monotonic() > deadline:
-                sock.close()
-                return {"ok": False, "error": "ClamAV scan timed out."}
+            remaining()
             chunk = data[offset:offset + chunk_size]
             sock.sendall(len(chunk).to_bytes(4, "big") + chunk)
+        remaining()
         sock.sendall((0).to_bytes(4, "big"))
 
-        chunks = []
+        chunks, got = [], 0
         while True:
+            remaining()                       # a trickling server cannot extend the scan past the deadline
             chunk = sock.recv(4096)
             if not chunk:
                 break
             chunks.append(chunk)
-        sock.close()
+            got += len(chunk)
+            if got > 65536:
+                return {"ok": False, "error": "Unexpected oversized clamd response."}
 
         reply = b"".join(chunks).decode("utf-8", errors="replace").strip().strip("\0")
         if reply.endswith("OK"):
@@ -220,6 +271,12 @@ def _scan_bytes_clamd(data, timeout=CLAMD_TIMEOUT):
         return {"ok": False, "error": "ClamAV scan timed out."}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+    finally:
+        if sock is not None:
+            try:
+                sock.close()
+            except Exception:
+                pass
 
 
 def _vt_headers(api_key):
@@ -283,7 +340,10 @@ def _scan_bytes_virustotal(data, api_key):
         if not analysis_id:
             return {"ok": False, "error": "VirusTotal upload did not return an analysis id."}
 
+        vt_deadline = time.monotonic() + VT_TOTAL_DEADLINE
         for _ in range(VT_POLL_MAX_ATTEMPTS):
+            if time.monotonic() > vt_deadline:
+                break
             poll = requests.get(
                 f"{VT_BASE}/analyses/{analysis_id}",
                 headers=_vt_headers(api_key),
@@ -335,11 +395,15 @@ def scan_attachments(parsed):
         elif count > MAX_SCAN_FILES or total > MAX_SCAN_TOTAL_BYTES:
             outcome = {"ok": False, "error": "Not scanned: per-message scan limit reached."}
         else:
-            outcome = scan_bytes(data)
+            try:
+                outcome = scan_bytes(data)
+            except Exception as exc:
+                outcome = {"ok": False, "error": "Scanner error: %s" % type(exc).__name__}
         results.append({
             "filename": att.get("filename", "-"),
             "size": att.get("size", 0),
-            "infected": outcome.get("infected", False),
+            "infected": bool(outcome.get("ok") and outcome.get("infected", False)),
+            "scanned": bool(outcome.get("ok")),
             "signature": outcome.get("signature"),
             "error": None if outcome.get("ok") else outcome.get("error"),
         })

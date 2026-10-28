@@ -120,12 +120,126 @@ class ScannerLimits(unittest.TestCase):
         self.assertTrue(all(r["error"] for r in res[2:]))
 
 
+class ZipAndScannerHardening(unittest.TestCase):
+    def test_prefixed_zip_bomb_detected(self):
+        bomb = _zip([("a.bin", b"\0" * (60 * 1024 * 1024))])
+        self.assertIsNotNone(AV.inspect_zip(b"MZ" + b"junk" * 100 + bomb))
+        self.assertIsNotNone(AV.inspect_zip(b"\x00" * 50 + bomb))
+
+    def test_nested_archives_and_entry_caps(self):
+        many = _zip([("n%d.zip" % i, b"x") for i in range(AV.ZIP_MAX_NESTED + 1)])
+        self.assertIn("nested", AV.inspect_zip(many))
+        with mock.patch.object(AV, "ZIP_MAX_ENTRY_BYTES", 10):
+            self.assertIn("oversized entry", AV.inspect_zip(_zip([("big", b"x" * 100)])))
+        with mock.patch.object(AV, "ZIP_MAX_ENTRIES", 2):
+            self.assertIn("too many", AV.inspect_zip(_zip([("a", b"1"), ("b", b"2"), ("c", b"3")])))
+
+    def test_malformed_zip_fails_closed(self):
+        good = _zip([("a.txt", b"hello" * 100)])
+        broken = good.replace(b"PK\x01\x02", b"XX\x01\x02", 1)   # EOCD present, central directory damaged
+        self.assertIsNotNone(AV.inspect_zip(broken))
+        self.assertIsNone(AV.inspect_zip(b"MZ" + b"PK" + b"no archive here"))
+
+    def test_inspector_exception_blocks_scan(self):
+        with mock.patch.object(AV, "inspect_zip", side_effect=RuntimeError("boom")), \
+             mock.patch.object(AV, "resolve_backend") as rb:
+            out = AV.scan_bytes(b"data")
+        self.assertFalse(out["ok"]); rb.assert_not_called()
+
+    def test_unexpected_scanner_error_is_not_clean(self):
+        with mock.patch.object(AV, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(AV, "_scan_bytes_clamd", side_effect=RuntimeError("boom")):
+            out = AV.scan_bytes(b"data")
+        self.assertFalse(out["ok"]); self.assertNotIn("infected", out)
+        with mock.patch.object(AV, "scan_bytes", side_effect=RuntimeError("boom")):
+            res = AV.scan_attachments({"attachments": [{"filename": "a", "size": 1, "data": b"x"}]})
+        self.assertFalse(res[0]["infected"]); self.assertFalse(res[0]["scanned"]); self.assertTrue(res[0]["error"])
+
+    def test_skipped_attachment_reported_not_scanned(self):
+        res = AV.scan_attachments({"attachments": [{"filename": "a", "size": 99, "data": b"", "skipped": "attachment_too_large"}]})
+        self.assertFalse(res[0]["scanned"]); self.assertFalse(res[0]["infected"]); self.assertIn("Not scanned", res[0]["error"])
+
+    def test_clamd_overall_deadline_with_trickling_server(self):
+        import socket, threading, time as _t
+        srv = socket.socket(); srv.bind(("127.0.0.1", 0)); srv.listen(1)
+        port = srv.getsockname()[1]
+        def serve():
+            c, _ = srv.accept()
+            try:
+                while True:
+                    c.sendall(b"x"); _t.sleep(0.1)       # never finishes, resets each recv timeout
+            except Exception:
+                pass
+        threading.Thread(target=serve, daemon=True).start()
+        with mock.patch.object(AV, "CLAMD_HOST", "127.0.0.1"), mock.patch.object(AV, "CLAMD_PORT", port), \
+             mock.patch.object(AV, "CLAMD_TOTAL_DEADLINE", 1):
+            t0 = _t.monotonic()
+            out = AV._scan_bytes_clamd(b"abc", timeout=5)
+        srv.close()
+        self.assertLess(_t.monotonic() - t0, 3)
+        self.assertFalse(out["ok"])
+
+    def test_clamd_roundtrip_clean_and_found(self):
+        import socket, threading
+        for reply, infected in ((b"stream: OK\0", False), (b"stream: Eicar-Test FOUND\0", True)):
+            srv = socket.socket(); srv.bind(("127.0.0.1", 0)); srv.listen(1)
+            def serve(reply=reply, srv=srv):
+                c, _ = srv.accept()
+                buf = b""
+                while not buf.endswith(b"\0\0\0\0"):
+                    d = c.recv(4096)
+                    if not d: break
+                    buf += d
+                c.sendall(reply); c.close()
+            threading.Thread(target=serve, daemon=True).start()
+            with mock.patch.object(AV, "CLAMD_HOST", "127.0.0.1"), mock.patch.object(AV, "CLAMD_PORT", srv.getsockname()[1]):
+                out = AV._scan_bytes_clamd(b"abc")
+            srv.close()
+            self.assertTrue(out["ok"]); self.assertEqual(out["infected"], infected)
+
+
+class MalformedInputs(unittest.TestCase):
+    def test_wrong_types_rejected_cleanly(self):
+        for bad in (None, 5, [], {"a": 1}):
+            with self.assertRaises(EP.EmailRejectedError):
+                EP.parse_eml(bad)
+        self.assertEqual(EP.parse_eml(bytearray(b"From: a@b.c\n\nhi"))["from_addr"], "a@b.c")
+
+    def test_rejections_share_base_class(self):
+        self.assertTrue(issubclass(EP.EmailTooLargeError, EP.EmailRejectedError))
+        txt = b"From: a@b.c\n" + b"".join(b"Content-Type: multipart/mixed; boundary=b%d\n\n--b%d\n" % (i, i) for i in range(2000))
+        with self.assertRaises(EP.EmailRejectedError):
+            EP.parse_eml(txt)
+
+    def test_random_garbage_never_crashes(self):
+        import random
+        rnd = random.Random(1234)
+        for _ in range(200):
+            blob = bytes(rnd.getrandbits(8) for _ in range(rnd.randint(0, 600)))
+            try:
+                EP.parse_eml(blob)
+            except EP.EmailRejectedError:
+                pass
+
+    def test_app_wires_rejection_and_scan_status(self):
+        src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
+        self.assertIn("except EmailRejectedError", src)
+        self.assertIn('"Not scanned"', src)
+        self.assertNotIn('m3.metric("Clean", total_files - threats_found)', src)
+
+
 class _R:
-    def __init__(self, data):
+    def __init__(self, data, raw=None):
         self.data = data
+        self.raw = raw
         self.headers = {}
+        self.closed = False
     def raise_for_status(self): pass
-    def json(self): return self.data
+    def iter_content(self, chunk_size=65536):
+        raw = self.raw if self.raw is not None else __import__("json").dumps(self.data).encode()
+        for i in range(0, len(raw), chunk_size):
+            yield raw[i:i + chunk_size]
+    def close(self): self.closed = True
 
 
 class SharedIntelClamps(unittest.TestCase):
@@ -158,6 +272,26 @@ class SharedIntelClamps(unittest.TestCase):
             def get(self, url, **kw): return _R([{}] * int(kw["params"]["limit"]))
         out = SI.fetch_verified(max_rows=1500, session=S())
         self.assertEqual(out["rejected"], 1500)
+
+    def test_streamed_body_over_2mb_refused_without_content_length(self):
+        r = _R(None, raw=b"[" + b"1," * (SI._MAX_RESPONSE_BYTES // 2) + b"1]")
+        class S:
+            def get(self, url, **kw):
+                assert kw.get("stream") is True
+                return r
+        self.assertFalse(SI.fetch_verified(session=S())["ok"])
+        self.assertTrue(r.closed)
+
+    def test_nan_inf_bounds(self):
+        self.assertEqual(SI._clamp_rows(float("inf")), SI._MAX_ROWS)
+        self.assertEqual(SI._clamp_rows(float("nan")), SI._MAX_ROWS)
+        self.assertEqual(SI._clamp_timeout(float("nan")), SI._DEFAULT_TIMEOUT)
+        self.assertEqual(SI._clamp_timeout(float("inf")), SI._MAX_TIMEOUT)
+
+    def test_zero_rows_makes_no_request(self):
+        class S:
+            def get(self, *a, **k): raise AssertionError("no request expected")
+        self.assertTrue(SI.fetch_verified(max_rows=0, session=S())["ok"])
 
     def test_oversized_response_refused(self):
         class S:

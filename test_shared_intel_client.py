@@ -22,6 +22,13 @@ class Resp:
             raise RuntimeError("http %s" % self.status)
     def json(self):
         return self.data
+    headers = {}
+    def iter_content(self, chunk_size=65536):      # the client streams and caps the body; mirror requests
+        raw = json.dumps(self.data).encode()
+        for i in range(0, len(raw), chunk_size):
+            yield raw[i:i + chunk_size]
+    def close(self):
+        pass
 
 
 def row(value, kind="domain", verdict="malicious", conf=0.8):

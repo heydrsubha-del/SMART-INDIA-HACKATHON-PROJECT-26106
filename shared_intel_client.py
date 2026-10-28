@@ -53,6 +53,27 @@ def _fail(msg):
     return {"ok": False, "rows": [], "rejected": 0, "error": msg}
 
 
+def _close(resp):
+    try:
+        resp.close()
+    except Exception:
+        pass
+
+
+def _read_json_capped(resp):
+    """Stream the body and abort once it exceeds _MAX_RESPONSE_BYTES (never trusts Content-Length alone)."""
+    clen = str((getattr(resp, "headers", None) or {}).get("Content-Length", "") or "")
+    if clen.isdigit() and int(clen) > _MAX_RESPONSE_BYTES:
+        raise ValueError("response too large")
+    buf, size = [], 0
+    for chunk in resp.iter_content(chunk_size=65536):
+        size += len(chunk)
+        if size > _MAX_RESPONSE_BYTES:
+            raise ValueError("response too large")
+        buf.append(chunk)
+    return json.loads(b"".join(buf).decode("utf-8"))
+
+
 def _clamp_rows(max_rows):
     try:
         n = int(max_rows)
@@ -90,13 +111,14 @@ def fetch_verified(max_rows=_MAX_ROWS, timeout=_DEFAULT_TIMEOUT, session=None):
     try:
         while offset < max_rows:
             resp = http.get(base + "/rest/v1/shared_indicators", headers=headers, timeout=timeout, allow_redirects=False,
+                            stream=True,
                             params={"select": _COLUMNS, "status": "eq.verified", "order": "updated_at.asc",
                                     "limit": str(min(_PAGE, max_rows - offset)), "offset": str(offset)})
-            resp.raise_for_status()
-            clen = str((getattr(resp, "headers", None) or {}).get("Content-Length", "") or "")
-            if clen.isdigit() and int(clen) > _MAX_RESPONSE_BYTES:
-                return _fail("Unexpected response from the shared-intelligence service.")
-            page = resp.json()
+            try:
+                resp.raise_for_status()
+                page = _read_json_capped(resp)
+            finally:
+                _close(resp)
             if not isinstance(page, list):
                 return _fail("Unexpected response from the shared-intelligence service.")
             want = min(_PAGE, max_rows - offset)

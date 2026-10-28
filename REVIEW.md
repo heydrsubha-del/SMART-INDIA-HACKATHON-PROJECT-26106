@@ -150,3 +150,24 @@ Manual procedure (TEST project only; production is `qozfyuiloitutpfthuwn` and mu
 3. **Dashboard settings to check:** Supabase Auth: CAPTCHA (Turnstile/hCaptcha) for sign-up/sign-in, email-signup off if Google-only, anonymous sign-ins off, rate limits (sign-in, OTP, token refresh) at defaults or lower, minimum password length >= 12, leaked-password protection (Pro), MFA TOTP enabled, redirect URL allowlist exact-match. Streamlit Cloud: app visibility, `SIH26106_DEBUG` unset, secrets only in the Secrets panel.
 4. Streamlit `maxUploadSize=25` must match `SIH26106_MAX_MESSAGE_BYTES`; the app has no per-user rate limit on analysis (platform-level only).
 5. CI/CodeQL for these changes is unconfirmed.
+
+
+### 9.1 Second hardening pass (2026-10-28)
+
+Verified first: HTML-injection fix present (`fix_html_injection.py --check` = 0 pending; not duplicated). Baseline for diff/`git diff --check` was a scratch Git repo built from your ZIP (the ZIP has no `.git`), so the real branch/status could not be confirmed here.
+
+| Finding | Fix |
+|---|---|
+| Rejected emails (oversized, deeply nested, wrong type) raised uncaught in `app.py` | `EmailRejectedError` base class; `analyze_bytes` shows a plain error and `st.stop()`s, no traceback. `parse_eml` also rejects non-bytes/str input and treats `MemoryError` like `RecursionError` |
+| Antivirus panel counted skipped/errored files as "Clean" and showed skipped files as clean when ClamAV was down | Clean metric counts only status "Clean"; new "Not scanned / error" metric; skipped files show "Not scanned". `scan_attachments` adds `scanned` and sets `infected` only on a successful scan |
+| ZIP check ignored prefixed/self-extracting archives and passed unreadable ZIPs | `inspect_zip` finds archives by header/EOCD anywhere, tolerates prefixes, **fails closed** on malformed structure or any inspector error; per-entry size (512 MB), per-entry ratio, >5 nested archives, large nested archive, entry count, total size, ratio. Metadata only; nothing extracted. Declared sizes can lie, so ClamAV/VirusTotal remain the real content scan |
+| ClamAV timeout applied only to the send loop | One 60 s monotonic deadline covers connect, send and every recv (a trickling server cannot extend it); response size capped; socket always closed. VirusTotal path has a 120 s deadline. `scan_bytes` converts any unexpected exception to `ok: False` |
+| Shared-intel body read via `.json()` | Streamed (`stream=True`) with a strict 2 MB cap (also refuses declared `Content-Length` > 2 MB), response always closed; `max_rows` clamped 0-50,000 (NaN/inf safe), timeout clamped (0, 30] s |
+
+**Tests (actually run, workspace):** see section 8 addendum below. New tests live in `test_security_hardening.py`; `test_shared_intel_client.py` test double gained `iter_content`/`close`/`headers` to match the streaming client.
+
+**Not done / remaining risk:** no live penetration test; no live ClamAV/VirusTotal/Supabase run (ClamAV protocol exercised only against a local fake socket server); `bandit`/`pip-audit` unavailable offline; Streamlit buffers uploads before app code runs, so `maxUploadSize=25` (config) is the first defence; a batch of CSV rows or a mailbox with one bad message stops at the first rejected message (graceful stop, not a crash); `unsafe_allow_html` sites other than those in `fix_html_injection.py` were not re-audited.
+
+**Credentials you must rotate manually (exposed in the archive you supplied; Git history unverified):** (1) Google OAuth client secret (`client_secret_462580216432-...apps.googleusercontent.com.json`): Google Cloud Console > APIs & Services > Credentials > add new secret, update Streamlit secrets, disable old. (2) Microsoft Entra app secret (if one was ever committed): App registrations > Certificates & secrets > new, delete old. (3) Supabase secret key (`sb_secret_...`) and, if legacy keys were exposed, the JWT secret: Project Settings > API Keys. (4) Yandex OAuth secret (`client_secret_yandex.json`): regenerate in the Yandex OAuth app. After rotating, remove any copies from history with `git filter-repo` on a fresh clone and force-push only after confirming (not done here).
+
+**Section 8 addendum - results actually run (2026-10-28, workspace, not CI):** `python -m pytest -q`: **610 passed, 0 failed** (10 subtests passed; 38 in `test_security_hardening.py`). `python -m compileall -q .`: OK. `git diff --check` (against a scratch baseline built from the ZIP): clean. `sha256sum -c MANIFEST.sha256`: all OK. `test_contributions.py` and `test_shared_intel_client.py` test doubles were extended with `iter_content`/`close`/`headers` to match the streaming client; no assertions were weakened.

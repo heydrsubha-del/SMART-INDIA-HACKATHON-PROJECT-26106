@@ -495,6 +495,7 @@ def _ensure_live_cases_from_prefetch(max_new=10):
 
 
 import antivirus_scan as _av_mod
+from email_parser import EmailRejectedError
 from antivirus_scan import clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 # ALGORITHMISTIC brand mark, embedded as a base64 PNG so the app stays a
@@ -9529,7 +9530,11 @@ def _analyze_bytes_cached(raw_bytes, name, analysis_nonce, code_version):
     return analyze_email(raw_bytes, name, get_model())
 
 def analyze_bytes(raw_bytes, name, analysis_nonce=0):
-    return _analyze_bytes_cached(raw_bytes, name, analysis_nonce, _analysis_code_version())
+    try:
+        return _analyze_bytes_cached(raw_bytes, name, analysis_nonce, _analysis_code_version())
+    except EmailRejectedError:      # oversized / pathologically nested / wrong-type input: fail safely, no traceback
+        st.error("This message was rejected: it is too large, too deeply nested or malformed.")
+        st.stop()
 analyze_bytes.clear = _analyze_bytes_cached.clear
 
 def panel(fn, label):
@@ -14585,6 +14590,8 @@ if active_panel == "Antivirus":
                     infected = bool(att.get("risky"))
                     status = "Risky extension" if infected else "Clean"
                     detail = "-"
+                    if att.get("skipped") and not infected:
+                        status, detail = "Not scanned", "Skipped by resource limit (%s)" % att.get("skipped")
                 if infected:
                     threats_found += 1
                 rows.append({
@@ -14595,10 +14602,12 @@ if active_panel == "Antivirus":
                     "Detail": detail,
                 })
 
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Files Scanned", total_files)
+        _clean_n = sum(1 for _r in rows if _r["Status"] == "Clean")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Files Found", total_files)
         m2.metric("Threats Found", threats_found)
-        m3.metric("Clean", total_files - threats_found)
+        m3.metric("Clean", _clean_n)
+        m4.metric("Not scanned / error", total_files - threats_found - _clean_n)
 
         if rows:
             _render_polished_table(pd.DataFrame(rows))

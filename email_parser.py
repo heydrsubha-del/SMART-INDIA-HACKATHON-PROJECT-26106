@@ -34,7 +34,11 @@ MAX_BODY_CHARS = 1_000_000
 MAX_HTML_LINKS = 500
 
 
-class EmailTooLargeError(ValueError):
+class EmailRejectedError(ValueError):
+    """Input refused for safety (too large, too deeply nested, wrong type). Callers must treat it as a clean failure."""
+
+
+class EmailTooLargeError(EmailRejectedError):
     """Raised when raw input exceeds MAX_MESSAGE_BYTES."""
 
 
@@ -202,12 +206,16 @@ def parse_eml(data):
     """Parse raw .eml bytes/str into a dict of forensic fields."""
     if isinstance(data, str):
         data = data.encode("utf-8", errors="replace")
+    elif isinstance(data, (bytearray, memoryview)):
+        data = bytes(data)
+    elif not isinstance(data, bytes):
+        raise EmailRejectedError("Unsupported input type.")
     if len(data) > MAX_MESSAGE_BYTES:
         raise EmailTooLargeError("Message exceeds the %d MB limit." % (MAX_MESSAGE_BYTES // (1024 * 1024)))
     try:
         msg = message_from_bytes(data, policy=policy.default)
-    except RecursionError as exc:          # pathologically nested MIME
-        raise ValueError("Malformed message: MIME nesting too deep.") from exc
+    except (RecursionError, MemoryError) as exc:     # pathologically nested / huge MIME
+        raise EmailRejectedError("Malformed message: MIME nesting too deep.") from exc
 
     def head(name):
         try:
