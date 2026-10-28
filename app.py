@@ -11058,7 +11058,7 @@ def _render_copilot_panel(cases, raw, case_name, result, current_evidence_hash):
         else:
             for _msg in _copilot_history[-6:]:
                 _css_cls = "copilot-msg-user" if _msg["role"] == "user" else "copilot-msg"
-                st.markdown(f'<div class="{_css_cls}">{_msg["content"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{_css_cls}">{html.escape(str(_msg["content"]))}</div>', unsafe_allow_html=True)
 
         with st.container(key="copilot_quick_actions"):
             _qa1, _qa2, _qa3 = st.columns(3)
@@ -12329,11 +12329,11 @@ if active_panel == "Dashboard":
                         st.markdown('<div class="panel-card-head panel-card-head-violet" style="margin-top:12px;"><span>INVESTIGATION SUMMARY</span></div>', unsafe_allow_html=True)
                         st.markdown(
                             f"""<div class="panel-card-body panel-card-body-violet">
-                                <b>From:</b> {dd_p.get('from_addr','Unknown')}<br>
-                                <b>Subject:</b> {dd_p.get('subject','No Subject')}<br>
-                                <b>Date:</b> {dd_p.get('date','Unknown')}<br>
-                                <b>Origin IP:</b> {dd_origin.get('ip','Unknown')}<br>
-                                <b>Infrastructure:</b> {dd_origin.get('infra_label','Unknown')}<br>
+                                <b>From:</b> {html.escape(str(dd_p.get('from_addr','Unknown')))}<br>
+                                <b>Subject:</b> {html.escape(str(dd_p.get('subject','No Subject')))}<br>
+                                <b>Date:</b> {html.escape(str(dd_p.get('date','Unknown')))}<br>
+                                <b>Origin IP:</b> {html.escape(str(dd_origin.get('ip','Unknown')))}<br>
+                                <b>Infrastructure:</b> {html.escape(str(dd_origin.get('infra_label','Unknown')))}<br>
                                 <b>Attachments:</b> {len(dd_p.get('attachments', []) or [])}<br>
                                 <b>Links:</b> {len((dd_result.get('iocs',{}) or {}).get('urls', []) or [])}<br>
                                 <b>Verdict:</b> {str(dd_result.get('level','UNKNOWN')).upper()}
@@ -12349,7 +12349,7 @@ if active_panel == "Dashboard":
                                 pct = c.get("strength", 0.0) * 100
                                 st.markdown(
                                     f"""<div class="threattype-row">
-                                        <span style="min-width:120px;font-size:11px;">{c.get('label','-')}</span>
+                                        <span style="min-width:120px;font-size:11px;">{html.escape(str(c.get('label','-')))}</span>
                                         <div class="bar-track"><div class="bar-fill" style="width:{pct:.0f}%;background:{colors[i % len(colors)]};"></div></div>
                                         <span class="pct">{pct:.0f}%</span>
                                     </div>""",
@@ -14288,10 +14288,10 @@ if active_panel == "Correlation":
         st.markdown(
             f'<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 18px;border:1px solid #263244;border-radius:10px;background:rgba(15,23,42,.62);margin-bottom:20px;">'
             f'<div><div style="font-size:10px;color:#6f7e93;text-transform:uppercase;letter-spacing:1px;">Current Investigation</div>'
-            f'<div style="margin-top:5px;color:#e5edf7;font-size:15px;font-weight:750;">{case_name}</div>'
-            f'<div style="margin-top:4px;color:#8795a8;font-size:12px;">Primary signal: {top_driver}</div></div>'
+            f'<div style="margin-top:5px;color:#e5edf7;font-size:15px;font-weight:750;">{html.escape(str(case_name))}</div>'
+            f'<div style="margin-top:4px;color:#8795a8;font-size:12px;">Primary signal: {html.escape(str(top_driver))}</div></div>'
             f'<div style="text-align:right;min-width:120px;"><div style="color:#00d2ff;font-size:11px;font-weight:800;letter-spacing:1px;">CURRENT VERDICT</div>'
-            f'<div style="margin-top:3px;color:#f1f5f9;font-size:22px;font-weight:800;">{current_level}</div>'
+            f'<div style="margin-top:3px;color:#f1f5f9;font-size:22px;font-weight:800;">{html.escape(str(current_level))}</div>'
             f'<div style="color:#8b98aa;font-size:12px;">Risk score {current_score:.0f}/100</div></div></div>',
             unsafe_allow_html=True
         )
