@@ -513,8 +513,9 @@ def attachment_status(att, outcome=None):
         reason = _SKIP_REASONS.get(str(skipped), str(skipped))
         note = "; extension is potentially risky" if risky else ""
         return "Not scanned", "Skipped: %s%s" % (reason, note), CAT_NOT_SCANNED
-    if outcome is not None and not att.get("data") and att.get("size") == 0:
-        return "Not scanned", "Attachment is empty (0 bytes); nothing to scan", CAT_NOT_SCANNED
+    if not att.get("data") and att.get("size") == 0:      # empty content: never Clean, never a risky-extension hit
+        note = "; extension is potentially risky" if risky else ""
+        return "Not scanned", "Attachment is empty (0 bytes); nothing to scan%s" % note, CAT_NOT_SCANNED
     if outcome is None:
         if risky:
             return ("Potentially risky extension",

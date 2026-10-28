@@ -455,6 +455,32 @@ class ZeroByteAttachments(unittest.TestCase):
         self.assertEqual(AV.summarize_categories(cats)["clean"], 0)
         self.assertEqual(AV.summarize_categories(cats)["not_scanned_or_error"], 2)
 
+    def test_empty_txt_and_exe_every_scanner_state(self):
+        outcomes = [None, self.CLEAN, AV.scan_bytes(b""), {"ok": True, "infected": False},
+                    {"ok": False, "error": "x"}, {"ok": True, "infected": True, "signature": "S"}, {}, "junk"]
+        for name, risky in (("empty.txt", False), ("empty.exe", True)):
+            att = {"filename": name, "size": 0, "data": b"", "risky": risky}
+            for o in outcomes:
+                s, d, c = AV.attachment_status(att, o)
+                self.assertEqual((s, c), ("Not scanned", AV.CAT_NOT_SCANNED), (name, o))
+                self.assertIn("empty", d)
+                self.assertEqual("potentially risky" in d, risky)
+        parsed = EP.parse_eml(_eml(_att(b"empty.txt", b"") + _att(b"empty.exe", b"")))
+        self.assertEqual([a["risky"] for a in parsed["attachments"]], [False, True])
+        for backend in (None, self.CLEAN):
+            cats = [AV.attachment_status(a, backend)[2] for a in parsed["attachments"]]
+            self.assertEqual(AV.summarize_categories(cats),
+                             {"found": 2, "detected": 0, "clean": 0, "risky_extension": 0, "not_scanned_or_error": 2})
+
+    def test_nonempty_risky_extension_heuristic_preserved(self):
+        att = {"filename": "a.exe", "size": 3, "data": b"abc", "risky": True}
+        self.assertEqual(AV.attachment_status(att, None)[::2], ("Potentially risky extension", AV.CAT_RISKY_EXT))
+        self.assertEqual(AV.summarize_categories([AV.attachment_status(att, None)[2]])["risky_extension"], 1)
+        # skipped keeps its own reason ahead of the empty rule
+        s, d, c = AV.attachment_status({"filename": "b.exe", "size": 0, "data": b"", "risky": True,
+                                        "skipped": "decode_error"}, None)
+        self.assertIn("could not be decoded", d)
+
     def test_genuine_results_unchanged_and_counted(self):
         real = {"filename": "a.pdf", "size": 5, "data": b"hello", "risky": False}
         self.assertEqual(AV.attachment_status(real, self.CLEAN)[::2], ("Clean", AV.CAT_CLEAN))
