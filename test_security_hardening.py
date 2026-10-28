@@ -718,6 +718,162 @@ class SignatureBudgetBypass(unittest.TestCase):
         self.assertIsNone(AV.inspect_zip(b"MZ" + self.DECOY * 70 + self.GOOD))
 
 
+def _records(blob):
+    """(position, lho) of every central-directory record of a plain (non-ZIP64) archive without a prefix."""
+    e = blob.rindex(b"PK\x05\x06")
+    _, _, _, _, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", blob[e:e + 22])
+    out, pos = [], co
+    for _ in range(nt):
+        n, m, k = _st.unpack("<HHH", blob[pos + 28:pos + 34])
+        out.append((pos, _st.unpack("<I", blob[pos + 42:pos + 46])[0]))
+        pos += 46 + n + m + k
+    return out
+
+
+def _insert_bytes(blob, at, payload):
+    """Insert `payload` at archive offset `at` (between entries) and fix directory offsets so the ZIP stays valid."""
+    recs = _records(blob)
+    e = blob.rindex(b"PK\x05\x06")
+    _, _, _, _, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", blob[e:e + 22])
+    b = bytearray(blob)
+    for pos, lho in recs:
+        if lho >= at:
+            b[pos + 42:pos + 46] = _st.pack("<I", lho + len(payload))
+    b[e + 16:e + 20] = _st.pack("<I", co + len(payload))
+    return bytes(b[:at]) + payload + bytes(b[at:])
+
+
+class HiddenZipStructures(unittest.TestCase):
+    HIDDEN = _zip([("hidden.bin", b"\0" * (20 * 1024 * 1024))])            # 20 MiB of zeros, highly compressible
+    GOOD = _zip([("a.txt", b"hello" * 50), ("b.txt", b"world" * 50), ("c.txt", b"x" * 99)])
+    EMPTY_EOCD = _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 0, 0, 0, 0, 0)
+
+    def assert_blocked(self, blob, expect=None):
+        reason = AV.inspect_zip(blob)
+        self.assertIsNotNone(reason)
+        if expect:
+            self.assertIn(expect, reason)
+        with mock.patch.object(AV, "resolve_backend", side_effect=AssertionError("must not scan")), \
+             mock.patch.object(AV, "_scan_bytes_clamd", side_effect=AssertionError("must not scan")), \
+             mock.patch.object(AV, "_scan_bytes_virustotal", side_effect=AssertionError("must not scan")):
+            out = AV.scan_bytes(blob)
+        self.assertIs(out["ok"], False)
+        self.assertIsNone(AV._verdict(out))
+        att = {"filename": "x.zip", "size": len(blob), "data": blob}
+        self.assertNotEqual(AV.attachment_status(att, out)[0], "Clean")
+        res = AV.scan_attachments({"attachments": [att]})[0]
+        self.assertFalse(res["scanned"]); self.assertFalse(res["infected"])
+
+    def test_the_reported_bypass_compressible_zip_plus_empty_end_record(self):
+        import zipfile as _z, io as _io
+        blob = self.HIDDEN + self.EMPTY_EOCD
+        self.assertEqual(len(_z.ZipFile(_io.BytesIO(blob)).infolist()), 0)   # the fake end record wins in zipfile
+        self.assert_blocked(blob, "hidden ZIP content")
+        self.assertIsNotNone(AV._blocked_reason(blob))
+        self.assertIsNotNone(AV.inspect_zip(self.HIDDEN))                  # the bare archive trips the ratio limit
+
+    def test_fake_end_record_declaring_zero_entries_in_every_variant(self):
+        n = len(self.GOOD)
+        for fake in (self.EMPTY_EOCD,
+                     _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 0, 0, 0, n, 0),        # offset points at the real data
+                     _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 0, 0, 0, 0, 5) + b"hello"):   # with a comment
+            self.assert_blocked(self.GOOD + fake)
+            self.assert_blocked(b"MZ" + b"\x90" * 200 + self.GOOD + fake)
+
+    def test_fake_directory_after_a_real_archive(self):
+        small = _zip([("s.txt", b"x")])
+        self.assert_blocked(self.GOOD + small, "hidden ZIP content")      # real archive sits in the prefix of `small`
+
+    def test_hidden_archive_in_gap_between_entries_and_before_directory_and_after_end(self):
+        second = [lho for _, lho in _records(self.GOOD)][1]
+        hidden = _zip([("h.bin", b"\0" * 4096)])
+        self.assertIsNone(AV.inspect_zip(_insert_bytes(self.GOOD, second, b"\x00" * 40)))     # plain zeros are harmless padding?
+        self.assert_blocked(_insert_bytes(self.GOOD, second, hidden), "hidden ZIP content")
+        e = self.GOOD.rindex(b"PK\x05\x06")
+        cd = _records(self.GOOD)[0][0]
+        self.assert_blocked(_insert_bytes(self.GOOD, cd, hidden), "hidden ZIP content")
+        self.assert_blocked(self.GOOD + hidden[:-22], "hidden ZIP content")                  # truncated archive after the end record
+
+    def test_overlapping_and_misdirected_entries_rejected(self):
+        recs = _records(self.GOOD)
+        b = bytearray(self.GOOD)
+        b[recs[1][0] + 42:recs[1][0] + 46] = _st.pack("<I", recs[0][1])          # entry 2 reuses entry 1's data
+        self.assert_blocked(bytes(b), "overlapping")
+        b = bytearray(self.GOOD)
+        b[recs[0][0] + 42:recs[0][0] + 46] = _st.pack("<I", recs[0][1] + 3)      # not a local header
+        self.assert_blocked(bytes(b))
+
+    def test_valid_ordinary_prefixed_and_zip64_archives_still_pass(self):
+        stub = b"MZ" + b"\x90" * 3000 + b"stub mentions PK\x03\x04 and PK\x05\x06 as text " * 3
+        for name, blob in (("plain", self.GOOD), ("prefixed", stub + self.GOOD),
+                           ("zip64", _to_zip64(self.GOOD)), ("prefixed zip64", stub + _to_zip64(self.GOOD)),
+                           ("empty archive", self.EMPTY_EOCD), ("with comment", _patch_eocd(self.GOOD, cl=0))):
+            self.assertIsNone(AV.inspect_zip(blob), name)
+
+    def test_streamed_and_stored_archives_with_data_descriptors_pass(self):
+        import io as _io, zipfile as _z
+        class NS(_io.RawIOBase):
+            def __init__(s): s.b = bytearray()
+            def writable(s): return True
+            def write(s, x): s.b += x; return len(x)
+        ns = NS()
+        with _z.ZipFile(ns, "w", _z.ZIP_DEFLATED) as z:
+            with z.open("s.txt", "w") as f:
+                f.write(b"streamed" * 500)
+            z.writestr("t.txt", "x")
+        self.assertIsNone(AV.inspect_zip(bytes(ns.b)))
+        buf = _io.BytesIO()
+        with _z.ZipFile(buf, "w", _z.ZIP_STORED) as z:
+            z.writestr("n.bin", b"abc"); z.comment = b"a comment"
+        self.assertIsNone(AV.inspect_zip(buf.getvalue()))
+
+    def test_office_document_passes(self):
+        try:
+            import docx
+        except ImportError:
+            self.skipTest("python-docx not installed")
+        import io as _io
+        d = docx.Document(); d.add_paragraph("hello " * 100); b = _io.BytesIO(); d.save(b)
+        self.assertIsNone(AV.inspect_zip(b.getvalue()))
+
+    def test_zip64_entry_values_are_honoured(self):
+        g = self.GOOD
+        pos, lho = _records(g)[0]
+        n, m, k = _st.unpack("<HHH", g[pos + 28:pos + 34])
+        csize, usize = _st.unpack("<II", g[pos + 20:pos + 28])
+        extra = _st.pack("<HHQQQ", 1, 24, usize, csize, lho)
+        rec = bytearray(g[pos:pos + 46 + n + m + k])
+        rec[20:28] = _st.pack("<II", 0xFFFFFFFF, 0xFFFFFFFF); rec[42:46] = _st.pack("<I", 0xFFFFFFFF)
+        rec[30:32] = _st.pack("<H", m + len(extra))
+        rec = bytes(rec[:46 + n + m]) + extra + bytes(rec[46 + n + m:])
+        e = g.rindex(b"PK\x05\x06")
+        _, _, _, _, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", g[e:e + 22])
+        new = g[:pos] + rec + g[pos + 46 + n + m + k:e]
+        new += _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, nt, nt, cs + len(extra), co, 0)
+        import zipfile as _z, io as _io
+        self.assertEqual(len(_z.ZipFile(_io.BytesIO(new)).infolist()), 3)
+        self.assertIsNone(AV.inspect_zip(new))
+        bad = new.replace(extra, _st.pack("<HHQQQ", 1, 24, usize, csize, lho + 7), 1)   # wrong offset in the ZIP64 extra
+        self.assertIsNotNone(AV.inspect_zip(bad))
+        self.assertEqual(AV._zip64_values(extra), [usize, csize, lho])
+        self.assertEqual(AV._zip64_values(b""), [])
+
+    def test_ordinary_files_with_incidental_signatures_still_scanned(self):
+        blobs = [b"plain text " + (b"PK\x03\x04" + b"\xff" * 26) * 60,
+                 b"PK\x03", b"x PK\x01\x02 y", b"%PDF-1.7 PK\x03\x04\x14\x00\x00\x00\x63\x00" + b"z" * 50,
+                 b"MZ" + b"\x00" * 500 + b"PK\x03\x04" + b"\x14\x00\x00\x00\x63\x00" + b"\x00" * 16 + b"\xff\xff" + b"q" * 30]
+        for blob in blobs:
+            self.assertIsNone(AV.inspect_zip(blob), blob[:16])
+        with mock.patch.object(AV, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(AV, "_scan_bytes_clamd", return_value={"ok": True, "infected": False}) as c:
+            AV.scan_bytes(blobs[0])
+        self.assertEqual(c.call_count, 1)
+
+    def test_preflight_entry_limit_still_runs_before_parser(self):
+        with _NoParser():
+            self.assertIn("too many entries", AV.inspect_zip(ZipPreflight.BIG))
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):

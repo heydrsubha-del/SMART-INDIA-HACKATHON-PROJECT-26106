@@ -80,7 +80,7 @@ def _plausible_lfh(data, i):
     if int.from_bytes(data[i + 8:i + 10], "little") not in _ZIP_METHODS:
         return False
     n = int.from_bytes(data[i + 26:i + 28], "little")
-    if n < 1 or n > 4096 or len(data) < i + 30 + n:
+    if n > 4096 or len(data) < i + 30 + n:
         return False
     return all(b >= 0x20 and b != 0x7F for b in data[i + 30:i + 30 + n])
 
@@ -118,6 +118,84 @@ def _find_eocd(data):
     return None if i == -1 else i
 
 
+def _zip64_values(extra):
+    """u64 values of the ZIP64 extended-information extra field (id 0x0001), in order; [] if absent."""
+    i = 0
+    while i + 4 <= len(extra):
+        tag = int.from_bytes(extra[i:i + 2], "little")
+        size = int.from_bytes(extra[i + 2:i + 4], "little")
+        body = extra[i + 4:i + 4 + size]
+        if tag == 1:
+            return [int.from_bytes(body[j:j + 8], "little") for j in range(0, len(body) - len(body) % 8, 8)]
+        i += 4 + size
+    return []
+
+
+def _hidden_zip_reason(region, where):
+    """Reject archive content hidden in bytes the selected end record would otherwise let us ignore."""
+    reason = _truncated_zip_reason(region) if region else None
+    if reason is None:
+        return None
+    if reason.startswith("too many"):
+        return reason
+    return "hidden ZIP content in %s (ambiguous structure)" % where
+
+
+def _layout_reason(data, recs, concat, cd_start, eocd):
+    """Validate the relation between end record, central directory and local file headers, and refuse any
+    archive structure hidden in the prefix, gaps between entries, the tail before the directory, or after the
+    end record. Every directory entry must point at a real local header, entries may not overlap, and the
+    regions the directory does not account for must contain no plausible ZIP local header. Bounded by the
+    entry limit already enforced by the caller."""
+    extents = []
+    for pos, name_len, extra_len in recs:
+        flags = int.from_bytes(data[pos + 8:pos + 10], "little")
+        csize = int.from_bytes(data[pos + 20:pos + 24], "little")
+        usize = int.from_bytes(data[pos + 24:pos + 28], "little")
+        lho = int.from_bytes(data[pos + 42:pos + 46], "little")
+        if 0xFFFFFFFF in (csize, usize, lho):
+            vals = _zip64_values(data[pos + _CDH_LEN + name_len:pos + _CDH_LEN + name_len + extra_len])
+            k = 0
+            try:
+                if usize == 0xFFFFFFFF:
+                    k += 1
+                if csize == 0xFFFFFFFF:
+                    csize = vals[k]
+                    k += 1
+                if lho == 0xFFFFFFFF:
+                    lho = vals[k]
+            except IndexError:
+                return "malformed ZIP structure (missing ZIP64 entry values)"
+        phys = lho + concat
+        if phys + 30 > cd_start or data[phys:phys + 4] != _LFH:
+            return "malformed ZIP structure (directory entry does not point at a local file header)"
+        local_name = int.from_bytes(data[phys + 26:phys + 28], "little")
+        local_extra = int.from_bytes(data[phys + 28:phys + 30], "little")
+        end = phys + 30 + local_name + local_extra + csize
+        if end > cd_start:
+            return "malformed ZIP structure (entry data overruns the central directory)"
+        extents.append((phys, end, 24 if flags & 8 else 0))      # bit 3: a data descriptor may follow
+    extents.sort()
+    first = extents[0][0] if extents else cd_start
+    reason = _hidden_zip_reason(data[:first], "the prefix")
+    if reason:
+        return reason
+    for (_, prev_end, allow), (phys, _, _) in zip(extents, extents[1:]):
+        if phys < prev_end:
+            return "malformed ZIP structure (overlapping entries)"
+        if phys > prev_end + allow:
+            reason = _hidden_zip_reason(data[prev_end + allow:phys], "a gap between entries")
+            if reason:
+                return reason
+    if extents:
+        _, last_end, last_allow = max(extents, key=lambda e: e[1])
+        reason = _hidden_zip_reason(data[min(last_end + last_allow, cd_start):cd_start],
+                                    "the data before the central directory")
+        if reason:
+            return reason
+    return _hidden_zip_reason(data[eocd + 22:], "the end record comment or trailing data")
+
+
 def _cd_preflight(data, eocd):
     """Bounded central-directory check BEFORE zipfile.ZipFile is constructed. Reads only fixed-size records,
     never extracts, never trusts the declared entry count: it walks the real records and stops as soon as the
@@ -144,7 +222,7 @@ def _cd_preflight(data, eocd):
     concat = cd_start - cd_off                    # bytes prepended before the archive (0 for a plain ZIP)
     if concat < 0:
         return "malformed ZIP structure (central directory offset out of range)"
-    pos, count = cd_start, 0
+    pos, count, recs = cd_start, 0, []
     while pos < cd_end:
         if pos + _CDH_LEN > cd_end or data[pos:pos + 4] != b"PK\x01\x02":
             return "malformed ZIP structure (bad central directory record)"
@@ -160,10 +238,11 @@ def _cd_preflight(data, eocd):
         count += 1
         if count > ZIP_MAX_ENTRIES:
             return "ZIP has too many entries (%d+)" % count
+        recs.append((pos, name_len, extra_len))
         pos = nxt
     if count != n_total:
         return "malformed ZIP structure (declared entry count does not match records)"
-    return None
+    return _layout_reason(data, recs, concat, cd_start, eocd)
 
 
 def inspect_zip(data):
