@@ -176,12 +176,14 @@ def _attachments(msg):
             out.append({"filename": "(additional attachments omitted)", "size": 0, "risky": False,
                         "data": b"", "skipped": "attachment_count_limit"})
             break
+        skipped = ""
         try:
             payload = part.get_payload(decode=True) or b""
         except Exception:
-            payload = b""
-        skipped = ""
-        if len(payload) > MAX_ATTACHMENT_BYTES:
+            payload, skipped = b"", "decode_error"      # undecodable content must not look like an empty (clean) file
+        if skipped:
+            pass
+        elif len(payload) > MAX_ATTACHMENT_BYTES:
             skipped = "attachment_too_large"
         elif total + len(payload) > MAX_TOTAL_ATTACHMENT_BYTES:
             skipped = "aggregate_size_limit"

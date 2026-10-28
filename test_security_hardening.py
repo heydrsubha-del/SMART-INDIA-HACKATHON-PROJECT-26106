@@ -72,6 +72,15 @@ class ParserLimits(unittest.TestCase):
         r = EP.parse_eml(b"From: a@b.c\nContent-Type: multipart/mixed\n\n--nope\ngarbage\xff\xfe")
         self.assertIsInstance(r["attachments"], list)
 
+    def test_undecodable_attachment_is_skipped_not_empty(self):
+        orig = EP.message_from_bytes(_eml(_att(b"x.bin", b"abc")), policy=EP.policy.default)
+        for part in orig.walk():
+            if part.get_filename():
+                def boom(*a, **k): raise RuntimeError("boom")
+                part.get_payload = boom
+        atts = EP._attachments(orig)
+        self.assertTrue(atts and all(a.get("skipped") == "decode_error" for a in atts))
+
     def test_normal_attachment_unchanged(self):
         r = EP.parse_eml(_eml(_att(b"ok.pdf", b"%PDF-1")))
         self.assertEqual(r["attachments"][0]["data"], b"%PDF-1")
