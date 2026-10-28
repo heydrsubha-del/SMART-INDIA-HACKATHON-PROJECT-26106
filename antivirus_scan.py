@@ -141,23 +141,46 @@ def _hidden_zip_reason(region, where):
     return "hidden ZIP content in %s (ambiguous structure)" % where
 
 
+_DD_SIG = b"PK\x07\x08"
+
+
+def _descriptor_length(data, at, crc, csize, usize):
+    """Exact length of the data descriptor at `at`, or None. Candidates (signed/unsigned x 32/64-bit) are accepted
+    only if their CRC and BOTH sizes equal the central-directory values; zero or several matches of different
+    lengths are ambiguous/malformed and are never guessed."""
+    cands = (
+        (16, _DD_SIG + crc.to_bytes(4, "little") + csize.to_bytes(4, "little") + usize.to_bytes(4, "little"), csize < 2**32 and usize < 2**32),
+        (12, crc.to_bytes(4, "little") + csize.to_bytes(4, "little") + usize.to_bytes(4, "little"), csize < 2**32 and usize < 2**32),
+        (24, _DD_SIG + crc.to_bytes(4, "little") + csize.to_bytes(8, "little") + usize.to_bytes(8, "little"), True),
+        (20, crc.to_bytes(4, "little") + csize.to_bytes(8, "little") + usize.to_bytes(8, "little"), True),
+    )
+    hits = {n for n, expected, ok in cands if ok and data[at:at + n] == expected}
+    return hits.pop() if len(hits) == 1 else None
+
+
 def _layout_reason(data, recs, concat, cd_start, eocd):
     """Validate the relation between end record, central directory and local file headers, and refuse any
     archive structure hidden in the prefix, gaps between entries, the tail before the directory, or after the
-    end record. Every directory entry must point at a real local header, entries may not overlap, and the
-    regions the directory does not account for must contain no plausible ZIP local header. Bounded by the
-    entry limit already enforced by the caller."""
+    end record. Every directory entry must point at a real local header whose flags, method and sizes agree
+    with the directory; entries with a data descriptor must have an exact, directory-matching descriptor (no
+    blind allowance: its length is determined, never guessed); entries may not overlap; every byte the
+    directory does not account for must contain no plausible ZIP local header. Bounded by the entry limit
+    already enforced by the caller. Nothing is extracted or decompressed."""
     extents = []
     for pos, name_len, extra_len in recs:
         flags = int.from_bytes(data[pos + 8:pos + 10], "little")
+        method = int.from_bytes(data[pos + 10:pos + 12], "little")
+        crc = int.from_bytes(data[pos + 16:pos + 20], "little")
         csize = int.from_bytes(data[pos + 20:pos + 24], "little")
         usize = int.from_bytes(data[pos + 24:pos + 28], "little")
         lho = int.from_bytes(data[pos + 42:pos + 46], "little")
+        cd_sentinel = 0xFFFFFFFF in (csize, usize)
         if 0xFFFFFFFF in (csize, usize, lho):
             vals = _zip64_values(data[pos + _CDH_LEN + name_len:pos + _CDH_LEN + name_len + extra_len])
             k = 0
             try:
                 if usize == 0xFFFFFFFF:
+                    usize = vals[k]
                     k += 1
                 if csize == 0xFFFFFFFF:
                     csize = vals[k]
@@ -169,28 +192,43 @@ def _layout_reason(data, recs, concat, cd_start, eocd):
         phys = lho + concat
         if phys + 30 > cd_start or data[phys:phys + 4] != _LFH:
             return "malformed ZIP structure (directory entry does not point at a local file header)"
+        l_flags = int.from_bytes(data[phys + 6:phys + 8], "little")
+        l_method = int.from_bytes(data[phys + 8:phys + 10], "little")
+        if (l_flags ^ flags) & 0x08 or l_method != method:
+            return "malformed ZIP structure (local header and directory disagree on flags or method)"
         local_name = int.from_bytes(data[phys + 26:phys + 28], "little")
         local_extra = int.from_bytes(data[phys + 28:phys + 30], "little")
         end = phys + 30 + local_name + local_extra + csize
         if end > cd_start:
             return "malformed ZIP structure (entry data overruns the central directory)"
-        extents.append((phys, end, 24 if flags & 8 else 0))      # bit 3: a data descriptor may follow
+        if flags & 0x08:                                      # sizes live in a data descriptor after the data
+            n = _descriptor_length(data, end, crc, csize, usize)
+            if n is None or end + n > cd_start:
+                return "malformed ZIP structure (data descriptor missing, ambiguous or inconsistent with the directory)"
+            end += n
+        else:                                                 # no descriptor: local header must agree with the directory
+            l_crc = int.from_bytes(data[phys + 14:phys + 18], "little")
+            l_csize = int.from_bytes(data[phys + 18:phys + 22], "little")
+            l_usize = int.from_bytes(data[phys + 22:phys + 26], "little")
+            if l_crc != crc or (0xFFFFFFFF not in (l_csize, l_usize) and not cd_sentinel
+                                and (l_csize != csize or l_usize != usize)):
+                return "malformed ZIP structure (local header and directory disagree on CRC or sizes)"
+        extents.append((phys, end))
     extents.sort()
     first = extents[0][0] if extents else cd_start
     reason = _hidden_zip_reason(data[:first], "the prefix")
     if reason:
         return reason
-    for (_, prev_end, allow), (phys, _, _) in zip(extents, extents[1:]):
+    for (_, prev_end), (phys, _) in zip(extents, extents[1:]):
         if phys < prev_end:
             return "malformed ZIP structure (overlapping entries)"
-        if phys > prev_end + allow:
-            reason = _hidden_zip_reason(data[prev_end + allow:phys], "a gap between entries")
+        if phys > prev_end:
+            reason = _hidden_zip_reason(data[prev_end:phys], "a gap between entries")
             if reason:
                 return reason
     if extents:
-        _, last_end, last_allow = max(extents, key=lambda e: e[1])
-        reason = _hidden_zip_reason(data[min(last_end + last_allow, cd_start):cd_start],
-                                    "the data before the central directory")
+        last_end = max(e[1] for e in extents)
+        reason = _hidden_zip_reason(data[last_end:cd_start], "the data before the central directory")
         if reason:
             return reason
     return _hidden_zip_reason(data[eocd + 22:], "the end record comment or trailing data")

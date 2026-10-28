@@ -798,6 +798,11 @@ class HiddenZipStructures(unittest.TestCase):
         recs = _records(self.GOOD)
         b = bytearray(self.GOOD)
         b[recs[1][0] + 42:recs[1][0] + 46] = _st.pack("<I", recs[0][1])          # entry 2 reuses entry 1's data
+        self.assert_blocked(bytes(b))                                             # (CRC/size mismatch is caught first)
+        same = _zip([("a.txt", b"same" * 10), ("b.txt", b"same" * 10)])           # identical content: pure overlap
+        r2 = _records(same)
+        b = bytearray(same)
+        b[r2[1][0] + 42:r2[1][0] + 46] = _st.pack("<I", r2[0][1])
         self.assert_blocked(bytes(b), "overlapping")
         b = bytearray(self.GOOD)
         b[recs[0][0] + 42:recs[0][0] + 46] = _st.pack("<I", recs[0][1] + 3)      # not a local header
@@ -872,6 +877,154 @@ class HiddenZipStructures(unittest.TestCase):
     def test_preflight_entry_limit_still_runs_before_parser(self):
         with _NoParser():
             self.assertIn("too many entries", AV.inspect_zip(ZipPreflight.BIG))
+
+
+def _stream_zip(entries=(("s.txt", b"streamed data " * 400),), **kw):
+    """ZIP written to an unseekable stream: bit 3 set, sizes/CRC only in the data descriptors (as Python writes them)."""
+    import io as _io, zipfile as _z
+
+    class NS(_io.RawIOBase):
+        def __init__(s): s.b = bytearray()
+        def writable(s): return True
+        def write(s, x): s.b += x; return len(x)
+    ns = NS()
+    with _z.ZipFile(ns, "w", _z.ZIP_DEFLATED) as z:
+        for name, body in entries:
+            with z.open(name, "w", **kw) as f:
+                f.write(body)
+    return bytes(ns.b)
+
+
+def _replace_range(blob, start, end, payload):
+    """Replace blob[start:end] with payload and shift the directory offsets (plain archive, no prefix)."""
+    delta = len(payload) - (end - start)
+    b = bytearray(blob)
+    e = blob.rindex(b"PK\x05\x06")
+    _, _, _, _, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", blob[e:e + 22])
+    for pos, lho in _records(blob):
+        if lho >= end:
+            b[pos + 42:pos + 46] = _st.pack("<I", lho + delta)
+    b[e + 16:e + 20] = _st.pack("<I", co + delta)
+    return bytes(b[:start]) + payload + bytes(b[end:])
+
+
+def _descriptor_span(blob, index=0):
+    """(start, crc, csize, usize) of the signed 16-byte descriptor of entry `index` (read from the directory)."""
+    pos, lho = _records(blob)[index]
+    n, m = _st.unpack("<HH", blob[pos + 28:pos + 32])
+    crc, cs, us = _st.unpack("<III", blob[pos + 16:pos + 28])
+    ln, le = _st.unpack("<HH", blob[lho + 26:lho + 30])
+    start = lho + 30 + ln + le + cs
+    assert blob[start:start + 4] == b"PK\x07\x08", "expected a signed descriptor"
+    return start, crc, cs, us
+
+
+class DataDescriptors(unittest.TestCase):
+    assert_blocked = HiddenZipStructures.assert_blocked
+    HIDDEN = _zip([("hidden.bin", b"\0" * (20 * 1024 * 1024))])
+    SMALL_HIDDEN = _zip([("h.bin", b"\0" * 4096)])
+
+    def forms(self, blob):
+        """The same archive with its first descriptor rewritten in each legal form."""
+        start, crc, cs, us = _descriptor_span(blob)
+        c, s_, u = _st.pack("<I", crc), _st.pack("<I", cs), _st.pack("<I", us)
+        sig = b"PK\x07\x08"
+        return {"signed32": (sig + c + s_ + u), "unsigned32": (c + s_ + u),
+                "signed64": (sig + c + _st.pack("<QQ", cs, us)), "unsigned64": (c + _st.pack("<QQ", cs, us))}
+
+    def test_genuine_streaming_archives_pass(self):
+        import zipfile as _z, io as _io
+        for blob in (_stream_zip(), _stream_zip((("a.txt", b"A" * 5000), ("b.txt", b"B" * 7000), ("c.txt", b"C"))),
+                     b"MZ" + b"\x90" * 500 + _stream_zip()):
+            self.assertIsNone(AV.inspect_zip(blob))
+        self.assertIsNone(AV.inspect_zip(_stream_zip(force_zip64=True)))
+        z = _stream_zip()
+        self.assertTrue(_z.ZipFile(_io.BytesIO(z)).infolist()[0].flag_bits & 0x08)      # really a bit-3 archive
+
+    def test_every_legal_descriptor_form_passes(self):
+        base = _stream_zip()
+        start, *_ = _descriptor_span(base)
+        for name, desc in self.forms(base).items():
+            blob = _replace_range(base, start, start + 16, desc)
+            self.assertIsNone(AV.inspect_zip(blob), name)
+
+    def test_reported_reproduction_hidden_zip_after_descriptor(self):
+        base = _stream_zip()
+        start, *_ = _descriptor_span(base)
+        blob = _insert_bytes(base, start + 16, self.SMALL_HIDDEN)           # just after the 16-byte descriptor
+        import zipfile as _z, io as _io
+        self.assertEqual([i.filename for i in _z.ZipFile(_io.BytesIO(blob)).infolist()], ["s.txt"])
+        self.assert_blocked(blob, "hidden ZIP content")
+        self.assert_blocked(_insert_bytes(base, start + 16, self.HIDDEN[:-22]), "hidden ZIP content")
+
+    def test_hidden_zip_after_every_descriptor_form_and_inside_the_old_allowance(self):
+        base = _stream_zip()
+        start, *_ = _descriptor_span(base)
+        for name, desc in self.forms(base).items():
+            blob = _replace_range(base, start, start + 16, desc)
+            self.assert_blocked(_insert_bytes(blob, start + len(desc), self.SMALL_HIDDEN), "hidden ZIP content")
+        # hidden archive placed in the bytes the old 24-byte allowance would have skipped (after a 12-byte descriptor)
+        unsigned = _replace_range(base, start, start + 16, self.forms(base)["unsigned32"])
+        self.assert_blocked(_insert_bytes(unsigned, start + 12, self.SMALL_HIDDEN), "hidden ZIP content")
+
+    def test_hidden_zip_between_two_streamed_entries(self):
+        base = _stream_zip((("a.txt", b"A" * 3000), ("b.txt", b"B" * 3000)))
+        start, *_ = _descriptor_span(base, 0)
+        self.assert_blocked(_insert_bytes(base, start + 16, self.SMALL_HIDDEN), "hidden ZIP content")
+
+    def test_malformed_or_inconsistent_descriptors_rejected(self):
+        base = _stream_zip()
+        start, crc, cs, us = _descriptor_span(base)
+        sig = b"PK\x07\x08"
+        bad = {
+            "wrong crc": sig + _st.pack("<III", crc ^ 1, cs, us),
+            "wrong csize": sig + _st.pack("<III", crc, cs + 1, us),
+            "wrong usize": sig + _st.pack("<III", crc, cs, us + 1),
+            "garbage": b"\xaa" * 16,
+            "zeros": b"\x00" * 16,
+            "signature only": sig + b"\x00" * 12,
+            "swapped sizes": sig + _st.pack("<III", crc, us, cs) if us != cs else b"\x01" * 16,
+        }
+        for name, desc in bad.items():
+            blob = _replace_range(base, start, start + 16, desc)
+            self.assertIsNotNone(AV.inspect_zip(blob), name)
+        self.assertIn("data descriptor", AV.inspect_zip(_replace_range(base, start, start + 16, b"\xaa" * 16)))
+        # descriptor truncated by the directory
+        self.assertIsNotNone(AV.inspect_zip(_replace_range(base, start, start + 16, sig)))
+
+    def test_local_and_directory_flags_sizes_must_agree(self):
+        base = _stream_zip()
+        pos, lho = _records(base)[0]
+        b = bytearray(base)
+        b[lho + 6:lho + 8] = _st.pack("<H", _st.unpack("<H", base[lho + 6:lho + 8])[0] & ~0x08)   # local says: no descriptor
+        self.assertIn("flags", AV.inspect_zip(bytes(b)))
+        b = bytearray(base)
+        b[pos + 8:pos + 10] = _st.pack("<H", _st.unpack("<H", base[pos + 8:pos + 10])[0] & ~0x08)  # directory says: no descriptor
+        self.assertIsNotNone(AV.inspect_zip(bytes(b)))
+        b = bytearray(base)
+        b[lho + 8:lho + 10] = _st.pack("<H", 0)                                  # method mismatch
+        self.assertIn("flags or method", AV.inspect_zip(bytes(b)))
+        plain = _zip([("a.txt", b"hello" * 40)])
+        pos, lho = _records(plain)[0]
+        b = bytearray(plain)
+        b[lho + 18:lho + 22] = _st.pack("<I", 5)                                 # local compressed size lies
+        self.assertIn("CRC or sizes", AV.inspect_zip(bytes(b)))
+        b = bytearray(plain)
+        b[lho + 14:lho + 18] = _st.pack("<I", 1)                                 # local CRC lies
+        self.assertIn("CRC or sizes", AV.inspect_zip(bytes(b)))
+
+    def test_no_blind_allowance_remains(self):
+        import inspect as _i
+        src = _i.getsource(AV._layout_reason)
+        self.assertNotIn("24 if", src)
+        self.assertIsNone(re.search(r"\ballow\b", src))
+
+    def test_existing_limits_still_apply_to_streamed_archives(self):
+        two = _stream_zip((("a", b"1"), ("b", b"2")))
+        with _NoParser(), mock.patch.object(AV, "ZIP_MAX_ENTRIES", 1):
+            self.assertIn("too many entries", AV.inspect_zip(two))
+        with mock.patch.object(AV, "ZIP_MAX_ENTRY_BYTES", 10):
+            self.assertIn("oversized entry", AV.inspect_zip(_stream_zip()))
 
 
 class MalformedInputs(unittest.TestCase):
