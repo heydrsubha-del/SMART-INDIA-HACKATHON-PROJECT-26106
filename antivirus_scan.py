@@ -158,6 +158,35 @@ def _descriptor_length(data, at, crc, csize, usize):
     return hits.pop() if len(hits) == 1 else None
 
 
+def _plausible_eocd(region, i):
+    """Does an end-of-central-directory-looking record at region[i] have sane single-disk fields?"""
+    if len(region) < i + 22:
+        return False
+    disk, cdd, nd, nt, _cs, _co, clen = struct.unpack("<HHHHIIH", region[i + 4:i + 22])
+    return disk == 0 and cdd == 0 and nd == nt and clen <= len(region) - i - 22
+
+
+def _metadata_reason(region, where):
+    """Scan an opaque metadata region (file name, extra field, file comment) for an embedded ZIP: a plausible
+    local file header (or one at offset 0) or a plausible end record. Bounded by the signature budget; exhausting
+    it fails closed. Ordinary metadata (timestamps, uid/gid, Unicode names, NTFS/AES/jar fields) never contains
+    ZIP signatures, so nothing legitimate is rejected merely for having an extra field."""
+    if not region:
+        return None
+    reason = _hidden_zip_reason(region, where)
+    if reason:
+        return reason
+    i, examined = region.find(_EOCD), 0
+    while i != -1:
+        if _plausible_eocd(region, i):
+            return "hidden ZIP content in %s (ambiguous structure)" % where
+        examined += 1
+        if examined >= LFH_SIGNATURE_BUDGET:
+            return "too many ZIP signatures to verify safely"
+        i = region.find(_EOCD, i + 1)
+    return None
+
+
 def _layout_reason(data, recs, concat, cd_start, eocd):
     """Validate the relation between end record, central directory and local file headers, and refuse any
     archive structure hidden in the prefix, gaps between entries, the tail before the directory, or after the
@@ -189,6 +218,11 @@ def _layout_reason(data, recs, concat, cd_start, eocd):
                     lho = vals[k]
             except IndexError:
                 return "malformed ZIP structure (missing ZIP64 entry values)"
+        comment_len = int.from_bytes(data[pos + 32:pos + 34], "little")
+        reason = _metadata_reason(data[pos + _CDH_LEN:pos + _CDH_LEN + name_len + extra_len + comment_len],
+                                  "a central-directory name, extra field or comment")
+        if reason:
+            return reason
         phys = lho + concat
         if phys + 30 > cd_start or data[phys:phys + 4] != _LFH:
             return "malformed ZIP structure (directory entry does not point at a local file header)"
@@ -198,6 +232,10 @@ def _layout_reason(data, recs, concat, cd_start, eocd):
             return "malformed ZIP structure (local header and directory disagree on flags or method)"
         local_name = int.from_bytes(data[phys + 26:phys + 28], "little")
         local_extra = int.from_bytes(data[phys + 28:phys + 30], "little")
+        reason = _metadata_reason(data[phys + 30:phys + 30 + local_name + local_extra],
+                                  "a local-header name or extra field")
+        if reason:
+            return reason
         end = phys + 30 + local_name + local_extra + csize
         if end > cd_start:
             return "malformed ZIP structure (entry data overruns the central directory)"

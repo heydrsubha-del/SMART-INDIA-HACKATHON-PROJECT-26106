@@ -1027,6 +1027,118 @@ class DataDescriptors(unittest.TestCase):
             self.assertIn("oversized entry", AV.inspect_zip(_stream_zip()))
 
 
+import zlib as _zlib
+
+
+def _hand_zip(entries, cd_comment=b"", zip_comment=b""):
+    """Hand-built STORED archive. entries: (name_bytes, data, local_extra, cd_extra[, flags]) -> full control over metadata."""
+    out, cd = bytearray(), bytearray()
+    for ent in entries:
+        name, data, lextra, cextra = ent[:4]
+        flags = ent[4] if len(ent) > 4 else 0
+        crc = _zlib.crc32(data) & 0xFFFFFFFF
+        lho = len(out)
+        out += _st.pack("<4sHHHHHIIIHH", b"PK\x03\x04", 20, flags, 0, 0, 0x21, crc, len(data), len(data), len(name), len(lextra))
+        out += name + lextra + data
+        cd += _st.pack("<4sHHHHHHIIIHHHHHII", b"PK\x01\x02", 20, 20, flags, 0, 0, 0x21, crc, len(data), len(data),
+                       len(name), len(cextra), len(cd_comment), 0, 0, 0, lho)
+        cd += name + cextra + cd_comment
+    co = len(out)
+    out += cd
+    out += _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, len(entries), len(entries), len(cd), co, len(zip_comment)) + zip_comment
+    return bytes(out)
+
+
+def _bomb_zip(total=20 * 1024 * 1024):
+    """Highly compressible ZIP (~20 KB) built WITHOUT allocating the uncompressed size: deflate streamed in 1 MiB steps."""
+    c = _zlib.compressobj(9, _zlib.DEFLATED, -15)
+    chunk, crc, comp = b"\0" * (1024 * 1024), 0, bytearray()
+    for _ in range(total // len(chunk)):
+        crc = _zlib.crc32(chunk, crc); comp += c.compress(chunk)
+    comp += c.flush()
+    name = b"bomb.bin"
+    lh = _st.pack("<4sHHHHHIIIHH", b"PK\x03\x04", 20, 0, 8, 0, 0x21, crc, len(comp), total, len(name), 0) + name
+    cd = _st.pack("<4sHHHHHHIIIHHHHHII", b"PK\x01\x02", 20, 20, 0, 8, 0, 0x21, crc, len(comp), total, len(name), 0, 0, 0, 0, 0, 0) + name
+    return lh + bytes(comp) + cd + _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 1, 1, len(cd), len(lh) + len(comp), 0)
+
+
+def _field(tag, body):
+    return _st.pack("<HH", tag, len(body)) + body
+
+
+class MetadataHiddenZip(unittest.TestCase):
+    assert_blocked = HiddenZipStructures.assert_blocked
+    BOMB = _bomb_zip()
+
+    def test_inner_bomb_is_small_and_flagged_on_its_own(self):
+        self.assertLess(len(self.BOMB), 64 * 1024)
+        self.assertIn("compression ratio", AV.inspect_zip(self.BOMB))
+
+    def test_bomb_in_local_header_extra_field(self):
+        blob = _hand_zip([(b"outer.txt", b"hi", _field(0xCAFE, self.BOMB), b"")])
+        import zipfile as _z, io as _io
+        self.assertEqual([i.filename for i in _z.ZipFile(_io.BytesIO(blob)).infolist()], ["outer.txt"])
+        self.assert_blocked(blob, "hidden ZIP content")
+        self.assertIsNotNone(AV._blocked_reason(blob))
+
+    def test_bomb_in_central_directory_extra_field(self):
+        blob = _hand_zip([(b"outer.txt", b"hi", b"", _field(0xCAFE, self.BOMB))])
+        self.assert_blocked(blob, "hidden ZIP content")
+
+    def test_bomb_in_both_extra_fields_name_and_comments(self):
+        self.assert_blocked(_hand_zip([(b"o.txt", b"hi", _field(0xCAFE, self.BOMB), _field(0xCAFE, self.BOMB))]))
+        self.assert_blocked(_hand_zip([(b"n" + self.BOMB, b"hi", b"", b"")]))
+        self.assert_blocked(_hand_zip([(b"o.txt", b"hi", b"", b"")], cd_comment=self.BOMB))
+        self.assert_blocked(_hand_zip([(b"o.txt", b"hi", b"", b"")], zip_comment=self.BOMB))
+
+    def test_misleading_size_declarations_do_not_hide_the_inner_zip(self):
+        for lie in (_st.pack("<HH", 0xCAFE, 0) + self.BOMB,                 # declares an empty field, bytes follow
+                    _st.pack("<HH", 0xCAFE, 4) + self.BOMB,                 # declares 4 bytes
+                    _st.pack("<HH", 0xCAFE, 0xFFFF) + self.BOMB,            # declares more than present
+                    _field(0x0001, b"\x01" * 3) + self.BOMB,               # truncated ZIP64-looking field, then bytes
+                    b"\xff" * 7 + self.BOMB):                              # not even a TLV
+            self.assert_blocked(_hand_zip([(b"o.txt", b"hi", lie, b"")]))
+            self.assert_blocked(_hand_zip([(b"o.txt", b"hi", b"", lie)]))
+
+    def test_inner_end_record_alone_and_truncated_inner_zip_are_flagged(self):
+        eocd = _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 0, 0, 0, 0, 0)
+        self.assert_blocked(_hand_zip([(b"o.txt", b"hi", _field(0xCAFE, eocd), b"")]), "hidden ZIP content")
+        self.assert_blocked(_hand_zip([(b"o.txt", b"hi", _field(0xCAFE, self.BOMB[:-22]), b"")]), "hidden ZIP content")
+
+    def test_ordinary_extra_fields_names_and_comments_pass(self):
+        ut = _field(0x5455, b"\x03" + _st.pack("<II", 1700000000, 1700000000))
+        ux = _field(0x7875, b"\x01\x04" + _st.pack("<I", 1000) + b"\x04" + _st.pack("<I", 1000))
+        ntfs = _field(0x000A, b"\x00" * 4 + _st.pack("<HHQQQ", 1, 24, 1, 2, 3))
+        uni = _field(0x7075, b"\x01" + _st.pack("<I", _zlib.crc32("héllo ✓.txt".encode())) + "héllo ✓.txt".encode())
+        jar = _field(0xCAFE, b"")
+        aes = _field(0x9901, b"\x02\x00AE\x03\x08\x00")
+        name = "héllo ✓.txt".encode()
+        blob = _hand_zip([(name, b"payload" * 20, ut + ux + ntfs + jar, ut + ux + uni + aes + jar, 0x800),
+                          (b"plain.txt", b"x", b"", b"")], cd_comment=b"created by a friendly tool, PK is not a signature")
+        self.assertIsNone(AV.inspect_zip(blob))
+        self.assertIsNone(AV.inspect_zip(_hand_zip([(b"a", b"b", b"", b"")], zip_comment=b"archive comment")))
+        import zipfile as _z, io as _io
+        zi = _z.ZipInfo("t.txt"); zi.extra = ut + ux; zi.compress_type = _z.ZIP_DEFLATED
+        buf = _io.BytesIO()
+        with _z.ZipFile(buf, "w") as z:
+            z.writestr(zi, "data" * 100)
+            z.writestr("é.txt", "x")
+        self.assertIsNone(AV.inspect_zip(buf.getvalue()))
+
+    def test_valid_plain_prefixed_zip64_and_streaming_archives_still_pass(self):
+        good = _hand_zip([(b"a.txt", b"hello", _field(0x5455, b"\x01" + _st.pack("<I", 1)), b"")])
+        stub = b"MZ" + b"\x90" * 400
+        for name, blob in (("hand", good), ("prefixed", stub + good), ("zip64", _to_zip64(good)),
+                           ("prefixed zip64", stub + _to_zip64(good)), ("streaming", _stream_zip()),
+                           ("streaming prefixed", stub + _stream_zip()), ("bomb-free docx-like", _zip([("a", b"x")]))):
+            self.assertIsNone(AV.inspect_zip(blob), name)
+
+    def test_existing_protections_unchanged(self):
+        with _NoParser():
+            self.assertIn("too many entries", AV.inspect_zip(ZipPreflight.BIG))
+        self.assertIn("hidden ZIP content", AV.inspect_zip(HiddenZipStructures.HIDDEN + HiddenZipStructures.EMPTY_EOCD))
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):
