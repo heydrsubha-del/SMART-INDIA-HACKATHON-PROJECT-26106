@@ -94,8 +94,13 @@ class FakeSupabase:
 
     def rpc(self, fn, body, me):
         if fn == "submit_indicators":
-            if not me:
-                return DENY()
+    if not me:
+        return DENY()
+    if me.get("anon"):
+        return Resp(403, {
+            "code": "42501",
+            "message": "auth_required"
+        })
             out = {"accepted": 0, "duplicates": 0, "rejected": 0}
             for it in body["p_items"]:
                 s = IS.sanitize_indicator(it["value_norm"], it["indicator_type"])
