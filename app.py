@@ -494,6 +494,7 @@ def _ensure_live_cases_from_prefetch(max_new=10):
             _corr_cases.pop(next(iter(_corr_cases)))
 
 
+import antivirus_scan as _av_mod
 from antivirus_scan import clamd_version, scan_bytes, antivirus_usable, antivirus_backend
 
 # ALGORITHMISTIC brand mark, embedded as a base64 PNG so the app stays a
@@ -14567,11 +14568,16 @@ if active_panel == "Antivirus":
 
         cases = list(_corr_cases.values()) + [result]
         total_files, threats_found, rows = 0, 0, []
+        _scan_bytes_used = 0
         for r in cases:
             for att in (r.get("parsed", {}) or {}).get("attachments", []) or []:
                 total_files += 1
                 if av_up:
-                    outcome = _scan_bytes_cached(att.get("data") or b"")
+                    _scan_bytes_used += len(att.get("data") or b"")
+                    if att.get("skipped") or total_files > _av_mod.MAX_SCAN_FILES * 4 or _scan_bytes_used > _av_mod.MAX_SCAN_TOTAL_BYTES * 4:
+                        outcome = {"ok": False, "error": "Not scanned: resource limit reached."}
+                    else:
+                        outcome = _scan_bytes_cached(att.get("data") or b"")
                     infected = bool(outcome.get("infected"))
                     status = "INFECTED" if infected else ("Scan error" if not outcome.get("ok") else "Clean")
                     detail = outcome.get("signature") or ("-" if outcome.get("ok") else outcome.get("error"))

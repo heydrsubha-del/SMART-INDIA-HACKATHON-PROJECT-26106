@@ -120,3 +120,33 @@ Manual procedure (TEST project only; production is `qozfyuiloitutpfthuwn` and mu
 3. In a shell (never in git): `SIH26106_SUPABASE_URL`, `SIH26106_SUPABASE_ANON_KEY` (publishable key only), `SIH26106_E2E_PROJECT_REF`, `SIH26106_E2E_CONFIRM=TEST-PROJECT-ONLY:<ref>`, `SIH26106_E2E_PROD_REFS=qozfyuiloitutpfthuwn`, reviewer email/password.
 4. `python e2e_phase4.py check`, then `python e2e_phase4.py enroll-mfa` (export the printed TOTP secret), then `python e2e_phase4.py run`. Exit code 0 means nothing failed or was skipped.
 5. Paste `supabase/tests/004_self_review.sql` and `005_followup_and_scan_expiry.sql` into the TEST project's SQL editor; expect "31 of 31 passed" and "17 of 17 passed". Each rolls back its data. Never run `004` or `005` against production.
+
+
+## 9. Security hardening pass (2026-10-28, local working tree on `main`)
+
+**Scope/limits.** The supplied ZIP has **no `.git` directory**: Git history, branch and `git status` could not be inspected, and nothing was pushed. Live Supabase, Streamlit Cloud, Google/Microsoft consoles and CI were not accessed; no live testing or deployment is claimed. `bandit`/`pip-audit` could not be installed (no package access), so only `compileall`, the test suite and pattern greps were run.
+
+**Findings and fixes (code)**
+| # | Finding | Fix |
+|---|---|---|
+| 4 | `parse_eml` had no size/part/attachment limits; deep MIME nesting raised `RecursionError`; attachments of any size were decoded and later sent to the scanner | `email_parser.py`: 25 MB message cap (`EmailTooLargeError`), 25 attachments, 15 MB each, 40 MB aggregate (excess kept as metadata with `skipped`, never scanned or treated as clean), 200 MIME parts, 100 Received hops (oldest/origin side kept), 1M body chars, 500 links, nesting -> clean `ValueError`. Env overrides: `SIH26106_MAX_*` |
+| 4/6 | Scanner had no size, count, aggregate, archive-bomb or wall-clock limits | `antivirus_scan.py`: per-file 25 MB, 25 files, 40 MB total, ZIP central-directory inspection (entries, declared size, ratio, nested archives; nothing extracted), 60 s clamd stream deadline. Blocked items return `ok: False` (never "clean"). `app.py` Antivirus panel applies a bounded budget and honours `skipped` |
+| 5 | `fetch_verified(max_rows, timeout)` unclamped; page could overshoot; no response-size check | `shared_intel_client.py`: rows clamped to [0, 50000], timeout to (0, 30] s, `limit` never exceeds remaining rows, page truncated to requested size, `Content-Length` > 2 MB refused |
+| 7 | No `.streamlit/config.toml` (default 200 MB upload, error details shown) | Added: XSRF on, static serving off, `maxUploadSize=25`, `showErrorDetails="none"`, viewer toolbar |
+
+**Verified, no change needed**
+- HTML injection fix is present in `app.py` (`fix_html_injection.py --check`: 0 edits pending). Regression test added; remaining `unsafe_allow_html` uses were not individually re-audited beyond that.
+- Admin check = `app_metadata.role='admin'` + `aal2`, enforced inside every SECURITY DEFINER RPC; `user_metadata` unused; anon denied; `scans` RLS owner-scoped on all verbs; no client write grants on contribution tables. Static regression tests added; the SQL itself was not executed here.
+- Tracebacks only render when `SIH26106_DEBUG=1`; ensure it is unset in production.
+- Scan-expiry migration `20261028000001`, job `purge-expired-scans` (`17 3 * * *`): reviewed in code only; execution evidence is still the owner-reported item in section 5. Check `cron.job_run_details` and an `audit_log` row with `action='purge_expired_scans'` after the first run. No purge function was invoked.
+
+**Files changed:** `email_parser.py`, `antivirus_scan.py`, `shared_intel_client.py`, `app.py` (Antivirus loop + import only), `.streamlit/config.toml` (new), `test_security_hardening.py` (new, 23 tests), `MANIFEST.sha256` (hash refreshed), `REVIEW.md`.
+
+**Tests:** full `pytest` in the workspace: 595 passed, 0 failed (includes 23 new). `python -m compileall`: OK. Corpus-dependent modules ran with whatever local fixtures were in the ZIP.
+
+**Unresolved / manual**
+1. **Secret history not reviewed** (no `.git`). The ZIP contains `client_secret_462580216432-...apps.googleusercontent.com.json` and `client_secret_yandex.json` with live-looking client secrets (git-ignored, but present in the archive you shared). Treat both as exposed. Run locally: `git log --all --oneline -- 'client_secret*' '*.apps.googleusercontent.com.json'` and `git log -S'sb_secret_' --all --oneline` (and `-S'GOCSPX-'`); if hits exist, rotate and consider `git filter-repo` (not done here).
+2. **Rotate** (you do this): Google Cloud Console > APIs & Services > Credentials > the OAuth client > add new secret, update Streamlit secrets, disable old. Microsoft Entra > App registrations > Certificates & secrets > new secret, delete old. Yandex OAuth app > regenerate secret. Supabase > Project Settings > API Keys: create new secret key, delete the leaked one (`sb_secret_...`); if legacy JWT keys were exposed, rotate the JWT secret. Update `.streamlit/secrets.toml`/Streamlit Cloud secrets only; never commit.
+3. **Dashboard settings to check:** Supabase Auth: CAPTCHA (Turnstile/hCaptcha) for sign-up/sign-in, email-signup off if Google-only, anonymous sign-ins off, rate limits (sign-in, OTP, token refresh) at defaults or lower, minimum password length >= 12, leaked-password protection (Pro), MFA TOTP enabled, redirect URL allowlist exact-match. Streamlit Cloud: app visibility, `SIH26106_DEBUG` unset, secrets only in the Secrets panel.
+4. Streamlit `maxUploadSize=25` must match `SIH26106_MAX_MESSAGE_BYTES`; the app has no per-user rate limit on analysis (platform-level only).
+5. CI/CodeQL for these changes is unconfirmed.

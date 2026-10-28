@@ -1,24 +1,10 @@
 [server]
-headless = true
-maxUploadSize = 50
+enableXsrfProtection = true
+enableCORS = true
+enableStaticServing = false
+maxUploadSize = 25
+maxMessageSize = 50
 
-[browser]
-gatherUsageStats = false
-
-[theme]
-# This is the fix for the red dots/marks showing up all over the app.
-# Streamlit's default primaryColor is #FF4B4B (a coral red), and it drives
-# every native widget's "selected/checked/active" accent -- radio dots,
-# checkbox ticks, slider handles, toggle switches, progress bars -- via
-# Streamlit's own generated styles, not ordinary page CSS. Setting the
-# real theme here changes it at the source for every widget in the app,
-# in one place.
-primaryColor = "#2fb68e"
-
-# Matches the dark palette already used throughout app.py (--bg, --panel,
-# --panel-2 custom-CSS variables) so Streamlit's own chrome agrees with
-# the custom-styled content instead of clashing with it.
-backgroundColor = "#0a0d12"
-secondaryBackgroundColor = "#131922"
-textColor = "#dde3ea"
-font = "sans serif"
+[client]
+showErrorDetails = "none"
+toolbarMode = "viewer"

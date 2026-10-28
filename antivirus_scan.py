@@ -15,9 +15,11 @@ the rest of the app - the UI falls back to the existing risky-extension
 heuristic when this is unavailable.
 """
 import hashlib
+import io
 import os
 import socket
 import time
+import zipfile
 
 import requests
 
@@ -36,6 +38,58 @@ VT_TIMEOUT = 30
 # "clean") so the caller's existing fallback-of-a-fallback still applies.
 VT_POLL_INTERVAL = 3
 VT_POLL_MAX_ATTEMPTS = 20
+
+
+def _env_int(name, default):
+    try:
+        return max(1, int(os.getenv(name, default)))
+    except (TypeError, ValueError):
+        return default
+
+
+# Scanning limits (clamd's own StreamMaxLength defaults to 25 MB; VirusTotal's direct upload limit is 32 MB).
+MAX_SCAN_BYTES = _env_int("SIH26106_MAX_SCAN_BYTES", 25 * 1024 * 1024)
+MAX_SCAN_FILES = _env_int("SIH26106_MAX_SCAN_FILES", 25)
+MAX_SCAN_TOTAL_BYTES = _env_int("SIH26106_MAX_SCAN_TOTAL_BYTES", 40 * 1024 * 1024)
+CLAMD_TOTAL_DEADLINE = 60                    # wall-clock cap for one clamd stream
+# ZIP-bomb guards (central directory is inspected only; nothing is ever extracted).
+ZIP_MAX_ENTRIES = 1000
+ZIP_MAX_UNCOMPRESSED = 1024 * 1024 * 1024    # 1 GiB declared
+ZIP_MAX_RATIO = 200                          # declared uncompressed / compressed
+
+
+def inspect_zip(data):
+    """Return a reason string if `data` is a ZIP that looks like a bomb, else None. Metadata only; never raises."""
+    if not data or data[:2] != b"PK":
+        return None
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            infos = zf.infolist()
+            if len(infos) > ZIP_MAX_ENTRIES:
+                return "ZIP has too many entries (%d)" % len(infos)
+            total = sum(i.file_size for i in infos)
+            packed = max(sum(i.compress_size for i in infos), 1)
+            if total > ZIP_MAX_UNCOMPRESSED:
+                return "ZIP declares an excessive uncompressed size"
+            if total / packed > ZIP_MAX_RATIO and total > 10 * 1024 * 1024:
+                return "ZIP compression ratio is suspiciously high"
+            for i in infos:                  # nested archives are the classic recursive bomb
+                if i.filename.lower().endswith((".zip", ".7z", ".rar", ".gz", ".bz2", ".xz")) and i.file_size > 10 * 1024 * 1024:
+                    return "ZIP contains a large nested archive"
+    except (zipfile.BadZipFile, RuntimeError, ValueError, NotImplementedError, OSError):
+        return None                          # not a readable ZIP: let the scanner decide
+    except Exception:
+        return None
+    return None
+
+
+def _blocked_reason(data):
+    if len(data) > MAX_SCAN_BYTES:
+        return "File exceeds the %d MB scan limit; not scanned." % (MAX_SCAN_BYTES // (1024 * 1024))
+    bomb = inspect_zip(data)
+    if bomb:
+        return "Not scanned (possible archive bomb): %s." % bomb
+    return None
 
 
 def _connect(timeout=CLAMD_TIMEOUT):
@@ -109,6 +163,10 @@ def scan_bytes(data, timeout=CLAMD_TIMEOUT):
     if not data:
         return {"ok": True, "infected": False, "signature": None, "raw": "empty"}
 
+    blocked = _blocked_reason(data)
+    if blocked:                               # ok False -> never reported as "clean"
+        return {"ok": False, "error": blocked}
+
     try:
         backend, api_key = resolve_backend(
             local_available=clamd_available(),
@@ -132,7 +190,11 @@ def _scan_bytes_clamd(data, timeout=CLAMD_TIMEOUT):
         # clamd wants <4-byte big-endian length><chunk> frames, ending with
         # a zero-length frame.
         chunk_size = 8192
+        deadline = time.monotonic() + CLAMD_TOTAL_DEADLINE
         for offset in range(0, len(data), chunk_size):
+            if time.monotonic() > deadline:
+                sock.close()
+                return {"ok": False, "error": "ClamAV scan timed out."}
             chunk = data[offset:offset + chunk_size]
             sock.sendall(len(chunk).to_bytes(4, "big") + chunk)
         sock.sendall((0).to_bytes(4, "big"))
@@ -263,9 +325,17 @@ def scan_attachments(parsed):
     fails on one attachment but not another.
     """
     results = []
+    count, total = 0, 0
     for att in (parsed.get("attachments") or []):
         data = att.get("data") or b""
-        outcome = scan_bytes(data)
+        count += 1
+        total += len(data)
+        if att.get("skipped"):
+            outcome = {"ok": False, "error": "Not scanned: %s." % att["skipped"]}
+        elif count > MAX_SCAN_FILES or total > MAX_SCAN_TOTAL_BYTES:
+            outcome = {"ok": False, "error": "Not scanned: per-message scan limit reached."}
+        else:
+            outcome = scan_bytes(data)
         results.append({
             "filename": att.get("filename", "-"),
             "size": att.get("size", 0),

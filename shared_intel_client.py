@@ -16,6 +16,8 @@ from indicator_sanitizer import sanitize_indicator
 
 URL_ENV, KEY_ENV = "SIH26106_SUPABASE_URL", "SIH26106_SUPABASE_ANON_KEY"
 _PAGE, _MAX_ROWS = 1000, 50000
+_MAX_TIMEOUT, _DEFAULT_TIMEOUT = 30.0, 15.0
+_MAX_RESPONSE_BYTES = 2 * 1024 * 1024        # per page (1000 rows is ~100 KB in practice)
 _COLUMNS = "indicator_type,value_norm,verdict,confidence"
 _VERDICTS = {"malicious", "suspicious"}
 
@@ -51,7 +53,23 @@ def _fail(msg):
     return {"ok": False, "rows": [], "rejected": 0, "error": msg}
 
 
-def fetch_verified(max_rows=_MAX_ROWS, timeout=15, session=None):
+def _clamp_rows(max_rows):
+    try:
+        n = int(max_rows)
+    except (TypeError, ValueError, OverflowError):
+        return _MAX_ROWS
+    return min(max(n, 0), _MAX_ROWS)
+
+
+def _clamp_timeout(timeout):
+    try:
+        t = float(timeout)
+    except (TypeError, ValueError, OverflowError):
+        return _DEFAULT_TIMEOUT
+    return t if 0 < t <= _MAX_TIMEOUT else (_MAX_TIMEOUT if t > _MAX_TIMEOUT else _DEFAULT_TIMEOUT)
+
+
+def fetch_verified(max_rows=_MAX_ROWS, timeout=_DEFAULT_TIMEOUT, session=None):
     """Return {"ok", "rows": [{"indicator","type","verdict","confidence","source":"community"}], "rejected", "error"}."""
     url, key = os.environ.get(URL_ENV, "").strip(), os.environ.get(KEY_ENV, "").strip()
     if not url or not key:
@@ -63,6 +81,7 @@ def fetch_verified(max_rows=_MAX_ROWS, timeout=15, session=None):
     if problem:
         return _fail(problem)
 
+    max_rows, timeout = _clamp_rows(max_rows), _clamp_timeout(timeout)
     http = session or requests
     headers = {"apikey": key, "Accept": "application/json"}
     if not key.startswith("sb_"):                 # new-style publishable keys are not JWTs: apikey header only
@@ -72,20 +91,26 @@ def fetch_verified(max_rows=_MAX_ROWS, timeout=15, session=None):
         while offset < max_rows:
             resp = http.get(base + "/rest/v1/shared_indicators", headers=headers, timeout=timeout, allow_redirects=False,
                             params={"select": _COLUMNS, "status": "eq.verified", "order": "updated_at.asc",
-                                    "limit": str(_PAGE), "offset": str(offset)})
+                                    "limit": str(min(_PAGE, max_rows - offset)), "offset": str(offset)})
             resp.raise_for_status()
+            clen = str((getattr(resp, "headers", None) or {}).get("Content-Length", "") or "")
+            if clen.isdigit() and int(clen) > _MAX_RESPONSE_BYTES:
+                return _fail("Unexpected response from the shared-intelligence service.")
             page = resp.json()
             if not isinstance(page, list):
                 return _fail("Unexpected response from the shared-intelligence service.")
+            want = min(_PAGE, max_rows - offset)
+            full = len(page) >= want
+            page = page[:want]                    # never accept more rows than requested
             for item in page:
                 row = _clean_row(item)
                 if row:
                     rows.append(row)
                 else:
                     rejected += 1
-            if len(page) < _PAGE:
+            if not full:
                 break
-            offset += _PAGE
+            offset += len(page)
     except Exception:
         return _fail("Could not read shared intelligence (network or service error).")   # never echo the key or URL
     return {"ok": True, "rows": rows, "rejected": rejected, "error": ""}

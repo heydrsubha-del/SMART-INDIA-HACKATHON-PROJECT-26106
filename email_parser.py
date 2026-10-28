@@ -11,9 +11,32 @@ Standalone:  python email_parser.py samples/phishing_credential.eml
 """
 import html
 import ipaddress
+import os
 import re
 from email import message_from_bytes, policy
 from email.utils import getaddresses, parseaddr
+
+# Resource limits (override via env). Oversized input is rejected; excess parts/attachments/hops are skipped.
+def _env_int(name, default):
+    try:
+        return max(1, int(os.environ.get(name, default)))
+    except (TypeError, ValueError):
+        return default
+
+
+MAX_MESSAGE_BYTES = _env_int("SIH26106_MAX_MESSAGE_BYTES", 25 * 1024 * 1024)
+MAX_ATTACHMENTS = _env_int("SIH26106_MAX_ATTACHMENTS", 25)
+MAX_ATTACHMENT_BYTES = _env_int("SIH26106_MAX_ATTACHMENT_BYTES", 15 * 1024 * 1024)
+MAX_TOTAL_ATTACHMENT_BYTES = _env_int("SIH26106_MAX_TOTAL_ATTACHMENT_BYTES", 40 * 1024 * 1024)
+MAX_MIME_PARTS = _env_int("SIH26106_MAX_MIME_PARTS", 200)
+MAX_RECEIVED_HOPS = 100
+MAX_BODY_CHARS = 1_000_000
+MAX_HTML_LINKS = 500
+
+
+class EmailTooLargeError(ValueError):
+    """Raised when raw input exceeds MAX_MESSAGE_BYTES."""
+
 
 IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 TAG_RE = re.compile(r"<[^>]+>")
@@ -50,6 +73,7 @@ def _extract_body(msg):
         part = msg.get_body(preferencelist=("plain", "html"))
         if part is not None:
             content = part.get_content()
+            content = content[:MAX_BODY_CHARS]
             if part.get_content_subtype() == "html":
                 return _html_to_text(content)
             return content
@@ -58,7 +82,9 @@ def _extract_body(msg):
 
     # Fallback for malformed messages the modern API refuses to walk.
     chunks = []
-    for part in msg.walk() if msg.is_multipart() else [msg]:
+    for n, part in enumerate(_walk_limited(msg)):
+        if n >= MAX_MIME_PARTS or sum(map(len, chunks)) > MAX_BODY_CHARS:
+            break
         if part.get_content_maintype() != "text":
             continue
         try:
@@ -70,7 +96,18 @@ def _extract_body(msg):
                           if part.get_content_subtype() == "html" else text)
         except Exception:
             continue
-    return "\n".join(chunks)
+    return "\n".join(chunks)[:MAX_BODY_CHARS]
+
+
+def _walk_limited(msg):
+    """msg.walk() capped at MAX_MIME_PARTS; never raises (deep nesting / malformed MIME)."""
+    try:
+        for n, part in enumerate(msg.walk()):
+            if n >= MAX_MIME_PARTS:
+                return
+            yield part
+    except Exception:
+        return
 
 
 _A_HREF_RE = re.compile(
@@ -83,10 +120,12 @@ def _html_links(msg):
     of an 'Unsubscribe' / 'Click here' link is never seen. Never raises."""
     out, seen = [], set()
     try:
-        parts = list(msg.walk()) if msg.is_multipart() else [msg]
+        parts = list(_walk_limited(msg)) if msg.is_multipart() else [msg]
     except Exception:
         return out
     for part in parts:
+        if len(out) >= MAX_HTML_LINKS:
+            break
         try:
             if part.get_content_type() != "text/html":
                 continue
@@ -95,7 +134,9 @@ def _html_links(msg):
             except Exception:
                 payload = part.get_payload(decode=True) or b""
                 content = payload.decode(part.get_content_charset() or "utf-8", errors="replace")
-            for m in _A_HREF_RE.finditer(content):
+            for m in _A_HREF_RE.finditer(content[:MAX_BODY_CHARS]):
+                if len(out) >= MAX_HTML_LINKS:
+                    break
                 href = html.unescape((m.group(1) or m.group(2) or m.group(3) or "")).strip()
                 text = re.sub(r"\s+", " ", html.unescape(TAG_RE.sub(" ", m.group(4) or ""))).strip()
                 if href and (href, text) not in seen:
@@ -118,20 +159,42 @@ def _attachments(msg):
     out = []
     if not msg.is_multipart():
         return out
-    for part in msg.walk():
-        name = part.get_filename()
+    total = 0
+    for part in _walk_limited(msg):
+        try:
+            name = part.get_filename()
+        except Exception:
+            continue
         if not name:
             continue
+        name = str(name)[:255]
+        if len(out) >= MAX_ATTACHMENTS:
+            out.append({"filename": "(additional attachments omitted)", "size": 0, "risky": False,
+                        "data": b"", "skipped": "attachment_count_limit"})
+            break
         try:
             payload = part.get_payload(decode=True) or b""
         except Exception:
             payload = b""
-        out.append({
+        skipped = ""
+        if len(payload) > MAX_ATTACHMENT_BYTES:
+            skipped = "attachment_too_large"
+        elif total + len(payload) > MAX_TOTAL_ATTACHMENT_BYTES:
+            skipped = "aggregate_size_limit"
+        size = len(payload)
+        if skipped:
+            payload = b""               # keep metadata only; never scan or retain oversized content
+        else:
+            total += size
+        entry = {
             "filename": name,
-            "size": len(payload),
+            "size": size,
             "risky": name.lower().endswith(risky),
             "data": payload,
-        })
+        }
+        if skipped:
+            entry["skipped"] = skipped
+        out.append(entry)
     return out
 
 
@@ -139,7 +202,12 @@ def parse_eml(data):
     """Parse raw .eml bytes/str into a dict of forensic fields."""
     if isinstance(data, str):
         data = data.encode("utf-8", errors="replace")
-    msg = message_from_bytes(data, policy=policy.default)
+    if len(data) > MAX_MESSAGE_BYTES:
+        raise EmailTooLargeError("Message exceeds the %d MB limit." % (MAX_MESSAGE_BYTES // (1024 * 1024)))
+    try:
+        msg = message_from_bytes(data, policy=policy.default)
+    except RecursionError as exc:          # pathologically nested MIME
+        raise ValueError("Malformed message: MIME nesting too deep.") from exc
 
     def head(name):
         try:
@@ -157,6 +225,7 @@ def parse_eml(data):
         received = [str(v).strip() for v in msg.get_all("Received", [])]
     except Exception:
         received = []
+    received = received[-MAX_RECEIVED_HOPS:]   # keep the OLDEST hops (origin side)
     received_oldest_first = list(reversed(received))
 
     hops = []
