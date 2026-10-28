@@ -19,6 +19,7 @@ import io
 import json
 import os
 import socket
+import struct
 import time
 import zipfile
 
@@ -66,14 +67,6 @@ _ARCHIVE_EXT = (".zip", ".jar", ".apk", ".7z", ".rar", ".gz", ".tgz", ".bz2", ".
 _EOCD = b"PK\x05\x06"
 
 
-def _looks_like_zip(data):
-    """True if a ZIP signature appears at the start, a local header appears early (prefixed/self-extracting
-    archives), or an end-of-central-directory record sits in the tail (where zipfile itself looks)."""
-    return (data[:4] in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
-            or b"PK\x03\x04" in data[:1024 * 1024]
-            or _EOCD in data[-(65535 + 22):])
-
-
 _LFH = b"PK\x03\x04"
 _ZIP_METHODS = {0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 14, 18, 19, 93, 95, 96, 97, 98, 99}
 
@@ -92,18 +85,85 @@ def _plausible_lfh(data, i):
     return all(b >= 0x20 and b != 0x7F for b in data[i + 30:i + 30 + n])
 
 
-def _zip_candidate(data):
-    """Does this non-parseable blob claim to be a ZIP? Yes if it BEGINS with a local-file-header signature, or a
-    plausible local file header occurs within the first 1 MiB (prefixed / self-extracting archive)."""
+LFH_SIGNATURE_BUDGET = 4096        # candidate local-header signatures examined before failing closed
+_ECD = "<4sHHHHIIH"                 # end of central directory record (22 bytes)
+_ECD64 = "<4sQHHIIQQQQ"             # ZIP64 end of central directory record (56 bytes, no extensible data)
+_CDH_LEN = 46
+
+
+def _truncated_zip_reason(data):
+    """Called only when no end-of-central-directory record exists. Returns a rejection reason if the blob
+    claims to be a ZIP (starts with a local-file-header signature, or contains a plausible local header
+    ANYWHERE, e.g. a prefixed/self-extracting archive that was truncated), else None. Exhausting the
+    signature budget never proves 'not a ZIP': it fails closed."""
     if data[:4] == _LFH:
-        return True
-    head = data[:1024 * 1024]
-    i, tries = head.find(_LFH, 1), 0
-    while i != -1 and tries < 64:
+        return "truncated or malformed ZIP (no valid central directory)"
+    examined = 0
+    i = data.find(_LFH, 1)
+    while i != -1:
         if _plausible_lfh(data, i):
-            return True
-        i, tries = head.find(_LFH, i + 1), tries + 1
-    return False
+            return "truncated or malformed ZIP (no valid central directory)"
+        examined += 1
+        if examined >= LFH_SIGNATURE_BUDGET:
+            return "too many ZIP signatures to verify safely"
+        i = data.find(_LFH, i + 1)
+    return None
+
+
+def _find_eocd(data):
+    """Offset of the end-of-central-directory record, searched the way zipfile does, else None."""
+    if len(data) >= 22 and data[-22:-18] == _EOCD:
+        return len(data) - 22
+    i = data.rfind(_EOCD, max(len(data) - (65535 + 22), 0))
+    return None if i == -1 else i
+
+
+def _cd_preflight(data, eocd):
+    """Bounded central-directory check BEFORE zipfile.ZipFile is constructed. Reads only fixed-size records,
+    never extracts, never trusts the declared entry count: it walks the real records and stops as soon as the
+    limit is exceeded. Handles prefixed archives (physical offsets) and ZIP64. Returns a reason or None."""
+    rec = data[eocd:eocd + 22]
+    if len(rec) < 22:
+        return "malformed ZIP structure (short end record)"
+    _, disk, cd_disk, n_disk, n_total, cd_size, cd_off, _clen = struct.unpack(_ECD, rec)
+    cd_end = eocd
+    loc = eocd - 20
+    if loc >= 0 and data[loc:loc + 4] == b"PK\x06\x07":              # ZIP64 locator
+        pos64 = loc - 56
+        if pos64 < 0 or data[pos64:pos64 + 4] != b"PK\x06\x06" or len(data) < pos64 + 56:
+            return "malformed ZIP structure (bad ZIP64 record)"
+        (_, _, _, _, disk, cd_disk, n_disk, n_total, cd_size, cd_off) = struct.unpack(_ECD64, data[pos64:pos64 + 56])
+        cd_end = pos64
+    if disk or cd_disk or n_disk != n_total:
+        return "malformed ZIP structure (multi-disk or inconsistent counts)"
+    if n_total > ZIP_MAX_ENTRIES:
+        return "ZIP has too many entries (declared %d)" % n_total
+    if cd_size > cd_end:
+        return "malformed ZIP structure (central directory size out of range)"
+    cd_start = cd_end - cd_size
+    concat = cd_start - cd_off                    # bytes prepended before the archive (0 for a plain ZIP)
+    if concat < 0:
+        return "malformed ZIP structure (central directory offset out of range)"
+    pos, count = cd_start, 0
+    while pos < cd_end:
+        if pos + _CDH_LEN > cd_end or data[pos:pos + 4] != b"PK\x01\x02":
+            return "malformed ZIP structure (bad central directory record)"
+        name_len = int.from_bytes(data[pos + 28:pos + 30], "little")
+        extra_len = int.from_bytes(data[pos + 30:pos + 32], "little")
+        comment_len = int.from_bytes(data[pos + 32:pos + 34], "little")
+        lho = int.from_bytes(data[pos + 42:pos + 46], "little")
+        nxt = pos + _CDH_LEN + name_len + extra_len + comment_len
+        if nxt > cd_end:
+            return "malformed ZIP structure (central directory record overruns)"
+        if lho != 0xFFFFFFFF and lho + concat + 30 > cd_start:
+            return "malformed ZIP structure (local header offset out of range)"
+        count += 1
+        if count > ZIP_MAX_ENTRIES:
+            return "ZIP has too many entries (%d+)" % count
+        pos = nxt
+    if count != n_total:
+        return "malformed ZIP structure (declared entry count does not match records)"
+    return None
 
 
 def inspect_zip(data):
@@ -113,16 +173,16 @@ def inspect_zip(data):
     if not data:
         return None
     try:
-        if not _looks_like_zip(data):
-            return None
+        eocd = _find_eocd(data)
+        if eocd is None:
+            return _truncated_zip_reason(data)           # None for ordinary files with stray 'PK' bytes
+        reason = _cd_preflight(data, eocd)               # bounded; runs before the full parser
+        if reason:
+            return reason
         try:
             zf = zipfile.ZipFile(io.BytesIO(data))      # tolerates data prepended to the archive
         except zipfile.BadZipFile:
-            if _EOCD in data[-(65535 + 22):]:
-                return "malformed ZIP structure"
-            if _zip_candidate(data):                      # truncated / damaged archive: cannot be inspected safely
-                return "truncated or malformed ZIP (no valid central directory)"
-            return None                                   # stray 'PK' bytes in a non-ZIP file
+            return "malformed ZIP structure"
         with zf:
             infos = zf.infolist()
             if len(infos) > ZIP_MAX_ENTRIES:

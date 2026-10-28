@@ -562,6 +562,162 @@ class TruncatedZip(unittest.TestCase):
         self.assertEqual(c.call_count, 1); self.assertTrue(out["ok"])
 
 
+import struct as _st
+
+
+def _to_zip64(blob):
+    """Rewrite a plain ZIP's end record as ZIP64 (zip64 EOCD + locator + sentinel EOCD). Contents unchanged."""
+    e = blob.rindex(b"PK\x05\x06")
+    _, _, _, nd, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", blob[e:e + 22])
+    rec = _st.pack("<4sQHHIIQQQQ", b"PK\x06\x06", 44, 45, 45, 0, 0, nd, nt, cs, co)
+    loc = _st.pack("<4sIQI", b"PK\x06\x07", 0, e, 1)
+    end = _st.pack("<4sHHHHIIH", b"PK\x05\x06", 0, 0, 0xFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+    return blob[:e] + rec + loc + end
+
+
+def _patch_eocd(blob, **kw):
+    e = blob.rindex(b"PK\x05\x06")
+    f = dict(zip(("sig", "disk", "cdd", "nd", "nt", "cs", "co", "cl"), _st.unpack("<4sHHHHIIH", blob[e:e + 22])))
+    f.update(kw)
+    return blob[:e] + _st.pack("<4sHHHHIIH", f["sig"], f["disk"], f["cdd"], f["nd"], f["nt"], f["cs"], f["co"], f["cl"])
+
+
+class _NoParser:
+    """Context: fail the test if the full zipfile.ZipFile parser is ever constructed."""
+    def __enter__(self):
+        self.p = mock.patch.object(AV.zipfile, "ZipFile", side_effect=AssertionError("ZipFile must not be constructed"))
+        self.p.start(); return self
+    def __exit__(self, *a): self.p.stop()
+
+
+class ZipPreflight(unittest.TestCase):
+    GOOD = _zip([("a.txt", b"hello" * 50), ("b.txt", b"world" * 50), ("c.txt", b"x" * 99)])
+    BIG = _zip([("f%d" % i, b"x") for i in range(1200)])        # 1200 > ZIP_MAX_ENTRIES (1000)
+
+    def test_oversized_entry_count_rejected_before_parser(self):
+        with _NoParser():
+            self.assertIn("too many entries", AV.inspect_zip(self.BIG))
+            # EOCD lies low (claims 3) but the directory really holds 1200 records: the walk stops at the limit
+            self.assertIn("too many entries", AV.inspect_zip(_patch_eocd(self.BIG, nd=3, nt=3)))
+            # EOCD declares an enormous count (also the 0xFFFF sentinel) with few real records
+            self.assertIn("too many entries", AV.inspect_zip(_patch_eocd(self.GOOD, nd=65535, nt=65535)))
+            self.assertIn("too many entries", AV.inspect_zip(_patch_eocd(self.GOOD, nd=40000, nt=40000)))
+        with _NoParser(), mock.patch.object(AV, "ZIP_MAX_ENTRIES", 2):
+            self.assertIn("too many entries", AV.inspect_zip(self.GOOD))
+
+    def test_entries_exactly_at_limit_pass(self):
+        self.assertIsNone(AV.inspect_zip(_zip([("f%d" % i, b"x") for i in range(AV.ZIP_MAX_ENTRIES)])))
+
+    def test_inconsistent_or_malformed_directory_fails_closed_before_parser(self):
+        g = self.GOOD
+        e = g.rindex(b"PK\x05\x06")
+        _, _, _, _, nt, cs, co, _ = _st.unpack("<4sHHHHIIH", g[e:e + 22])
+        bad = {
+            "count mismatch (too few declared)": _patch_eocd(g, nd=2, nt=2),
+            "count mismatch (too many declared)": _patch_eocd(g, nd=4, nt=4),
+            "multi-disk": _patch_eocd(g, disk=1),
+            "disk counts differ": _patch_eocd(g, nd=2),
+            "cd offset out of range": _patch_eocd(g, co=co + 10**6),
+            "cd offset sentinel": _patch_eocd(g, co=0xFFFFFFFF),
+            "cd size out of range": _patch_eocd(g, cs=len(g) * 2),
+            "cd size too small (record overruns)": _patch_eocd(g, cs=cs - 10),
+            "cd size too large (garbage record)": _patch_eocd(g, cs=cs + 10, co=co - 10),
+            "bad record signature": g.replace(b"PK\x01\x02", b"PK\x01\x09", 1),
+        }
+        for name, blob in bad.items():
+            with _NoParser():
+                self.assertIsNotNone(AV.inspect_zip(blob), name)
+        # local header offset beyond the central directory
+        first = g.index(b"PK\x01\x02")
+        evil = g[:first + 42] + _st.pack("<I", 10**6) + g[first + 46:]
+        with _NoParser():
+            self.assertIn("local header offset", AV.inspect_zip(evil))
+
+    def test_truncated_central_directory_rejected(self):
+        g = self.GOOD
+        first = g.index(b"PK\x01\x02")
+        cut = g[:first + 20] + g[g.rindex(b"PK\x05\x06"):]       # directory chopped mid-record, EOCD intact
+        with _NoParser():
+            self.assertIsNotNone(AV.inspect_zip(cut))
+
+    def test_valid_plain_prefixed_and_zip64_pass_through_the_parser(self):
+        for name, blob in (("plain", self.GOOD), ("prefixed", b"MZ" + b"\x90" * 777 + self.GOOD),
+                           ("zip64", _to_zip64(self.GOOD)), ("prefixed zip64", b"#!/bin/sh\n" * 40 + _to_zip64(self.GOOD))):
+            self.assertIsNone(AV.inspect_zip(blob), name)
+            import zipfile as _z, io as _io
+            self.assertEqual(len(_z.ZipFile(_io.BytesIO(blob)).infolist()), 3, name)    # sanity: really openable
+
+    def test_zip64_limits_and_malformed_records(self):
+        z = _to_zip64(self.BIG)
+        with _NoParser():
+            self.assertIn("too many entries", AV.inspect_zip(z))
+        e = self.GOOD.rindex(b"PK\x05\x06")
+        no_rec = self.GOOD[:e] + _st.pack("<4sIQI", b"PK\x06\x07", 0, e, 1) + self.GOOD[e:]       # locator, no record
+        with _NoParser():
+            self.assertIn("ZIP64", AV.inspect_zip(no_rec))
+        z64 = _to_zip64(self.GOOD)
+        r = z64.index(b"PK\x06\x06")
+        count_lie = z64[:r + 24] + _st.pack("<Q", 2) + z64[r + 32:]          # zip64 entries-this-disk 2 vs total 3
+        with _NoParser():
+            self.assertIsNotNone(AV.inspect_zip(count_lie))
+        huge = z64[:r + 24] + _st.pack("<QQ", 2**40, 2**40) + z64[r + 40:]
+        with _NoParser():
+            self.assertIn("too many entries", AV.inspect_zip(huge))
+
+    def test_existing_resource_limits_still_enforced(self):
+        self.assertIsNotNone(AV.inspect_zip(_zip([("a.bin", b"\0" * (60 * 1024 * 1024))])))
+        with mock.patch.object(AV, "ZIP_MAX_ENTRY_BYTES", 10):
+            self.assertIn("oversized entry", AV.inspect_zip(_zip([("big", b"x" * 100)])))
+        self.assertIn("nested", AV.inspect_zip(_zip([("n%d.zip" % i, b"x") for i in range(AV.ZIP_MAX_NESTED + 1)])))
+
+
+class SignatureBudgetBypass(unittest.TestCase):
+    GOOD = _zip([("doc.txt", b"hello world " * 200), ("b.bin", b"\x01" * 500)])
+    DECOY = b"PK\x03\x04" + b"\xff" * 26                      # signature with an implausible header
+
+    def cut(self):
+        return self.GOOD[:self.GOOD.rindex(b"PK\x05\x06")]
+
+    def assert_blocked(self, blob):
+        self.assertIsNotNone(AV.inspect_zip(blob))
+        with mock.patch.object(AV, "resolve_backend", side_effect=AssertionError("must not scan")), \
+             mock.patch.object(AV, "_scan_bytes_clamd", side_effect=AssertionError("must not scan")), \
+             mock.patch.object(AV, "_scan_bytes_virustotal", side_effect=AssertionError("must not scan")):
+            out = AV.scan_bytes(blob)
+        self.assertIs(out["ok"], False)
+        self.assertIsNone(AV._verdict(out))
+        att = {"filename": "x.zip", "size": len(blob), "data": blob}
+        self.assertNotEqual(AV.attachment_status(att, out)[0], "Clean")
+        res = AV.scan_attachments({"attachments": [att]})[0]
+        self.assertFalse(res["scanned"]); self.assertFalse(res["infected"])
+
+    def test_exact_64_decoy_attack(self):
+        blob = b"MZ" + self.DECOY * 64 + self.cut()
+        self.assertIn("truncated or malformed", AV.inspect_zip(blob))
+        self.assert_blocked(blob)
+
+    def test_more_decoys_than_before_and_beyond_budget_fail_closed(self):
+        for n in (65, 1000, AV.LFH_SIGNATURE_BUDGET + 10):
+            self.assert_blocked(b"junk" + self.DECOY * n + self.cut())
+        self.assertIn("too many ZIP signatures", AV.inspect_zip(b"x" + self.DECOY * (AV.LFH_SIGNATURE_BUDGET + 10)))
+
+    def test_valid_header_far_into_the_file_is_still_found(self):
+        self.assert_blocked(b"A" * (2 * 1024 * 1024) + self.cut())
+
+    def test_ordinary_files_with_few_stray_signatures_still_scanned(self):
+        for n in (1, 10, 64, 200):
+            blob = b"plain text " + self.DECOY * n
+            self.assertIsNone(AV.inspect_zip(blob), n)
+        with mock.patch.object(AV, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(AV, "_scan_bytes_clamd", return_value={"ok": True, "infected": False}) as c:
+            AV.scan_bytes(b"text " + self.DECOY * 64)
+        self.assertEqual(c.call_count, 1)
+
+    def test_valid_zips_unaffected(self):
+        self.assertIsNone(AV.inspect_zip(self.GOOD))
+        self.assertIsNone(AV.inspect_zip(b"MZ" + self.DECOY * 70 + self.GOOD))
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):
