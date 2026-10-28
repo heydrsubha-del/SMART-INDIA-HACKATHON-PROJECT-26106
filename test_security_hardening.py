@@ -207,6 +207,68 @@ class ZipAndScannerHardening(unittest.TestCase):
             self.assertTrue(out["ok"]); self.assertEqual(out["infected"], infected)
 
 
+class AttachmentStatusUI(unittest.TestCase):
+    ok_clean = {"ok": True, "infected": False, "signature": None}
+
+    def st(self, att, outcome=None):
+        return AV.attachment_status(att, outcome)
+
+    def test_scanner_unavailable_benign_is_not_scanned(self):
+        s, d, c = self.st({"filename": "a.pdf", "risky": False, "data": b"x"})
+        self.assertEqual((s, c), ("Not scanned", AV.CAT_NOT_SCANNED))
+        self.assertNotEqual(s, "Clean")
+
+    def test_scanner_unavailable_risky_is_heuristic_only(self):
+        s, d, c = self.st({"filename": "a.exe", "risky": True, "data": b"x"})
+        self.assertEqual(s, "Potentially risky extension")
+        self.assertEqual(c, AV.CAT_RISKY_EXT)
+        self.assertNotEqual(c, AV.CAT_DETECTED)
+        self.assertIn("not a malware verdict", d)
+        self.assertNotIn("INFECTED", s)
+
+    def test_skipped_is_not_scanned_with_reason_regardless_of_scanner(self):
+        for risky in (False, True):
+            for outcome in (None, self.ok_clean, {"ok": True, "infected": True, "signature": "X"}):
+                s, d, c = self.st({"filename": "b", "risky": risky, "skipped": "attachment_too_large"}, outcome)
+                self.assertEqual((s, c), ("Not scanned", AV.CAT_NOT_SCANNED))
+                self.assertIn("per-file size limit", d)
+
+    def test_decode_failure_is_not_scanned_end_to_end(self):
+        msg = EP.message_from_bytes(_eml(_att(b"x.bin", b"abc")), policy=EP.policy.default)
+        for part in msg.walk():
+            if part.get_filename():
+                def boom(*a, **k): raise RuntimeError("boom")
+                part.get_payload = boom
+        att = EP._attachments(msg)[0]
+        for outcome in (None, self.ok_clean):
+            s, d, c = self.st(att, outcome)
+            self.assertEqual(s, "Not scanned"); self.assertIn("could not be decoded", d)
+
+    def test_scanner_available_results(self):
+        self.assertEqual(self.st({"filename": "a"}, self.ok_clean)[::2], ("Clean", AV.CAT_CLEAN))
+        s, d, c = self.st({"filename": "a"}, {"ok": True, "infected": True, "signature": "Eicar"})
+        self.assertEqual((s, d, c), ("INFECTED", "Eicar", AV.CAT_DETECTED))
+        self.assertEqual(self.st({"filename": "a"}, {"ok": False, "error": "timed out"})[::2], ("Scan error", AV.CAT_ERROR))
+        self.assertEqual(self.st({"filename": "a"}, {"ok": False, "error": "Not scanned: limit"})[2], AV.CAT_NOT_SCANNED)
+        for bad in ({}, "junk", {"ok": False}):
+            self.assertNotEqual(self.st({"filename": "a"}, bad)[0], "Clean")
+        self.assertNotEqual(self.st(None)[0], "Clean")
+
+    def test_only_successful_scans_are_clean(self):
+        outs = [None, {"ok": False, "error": "x"}, {"ok": True, "infected": True}, {"ok": True, "infected": False}]
+        cats = [self.st({"filename": "f"}, o)[2] for o in outs]
+        self.assertEqual(cats.count(AV.CAT_CLEAN), 1)
+
+    def test_app_uses_helper_and_separate_metrics(self):
+        src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
+        self.assertIn("_av_mod.attachment_status(att, outcome)", src)
+        self.assertIn('"Risky extension (heuristic)"', src)
+        self.assertIn('"Detections (antivirus)"', src)
+        self.assertIn('"Clean (scanned)"', src)
+        self.assertNotIn('"Risky extension" if infected else "Clean"', src)
+        self.assertNotIn('"Threats Found"', src)
+
+
 class MalformedInputs(unittest.TestCase):
     def test_wrong_types_rejected_cleanly(self):
         for bad in (None, 5, [], {"a": 1}):
@@ -233,7 +295,7 @@ class MalformedInputs(unittest.TestCase):
     def test_app_wires_rejection_and_scan_status(self):
         src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
         self.assertIn("except EmailRejectedError", src)
-        self.assertIn('"Not scanned"', src)
+        self.assertIn("attachment_status", src)
         self.assertNotIn('m3.metric("Clean", total_files - threats_found)', src)
 
 

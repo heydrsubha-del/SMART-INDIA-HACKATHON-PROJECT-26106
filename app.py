@@ -14572,28 +14572,20 @@ if active_panel == "Antivirus":
             )
 
         cases = list(_corr_cases.values()) + [result]
-        total_files, threats_found, rows = 0, 0, []
+        total_files, rows, _cats = 0, [], []
         _scan_bytes_used = 0
         for r in cases:
             for att in (r.get("parsed", {}) or {}).get("attachments", []) or []:
                 total_files += 1
-                if av_up:
+                outcome = None                      # None = no antivirus backend available
+                if av_up and not att.get("skipped"):
                     _scan_bytes_used += len(att.get("data") or b"")
-                    if att.get("skipped") or total_files > _av_mod.MAX_SCAN_FILES * 4 or _scan_bytes_used > _av_mod.MAX_SCAN_TOTAL_BYTES * 4:
+                    if total_files > _av_mod.MAX_SCAN_FILES * 4 or _scan_bytes_used > _av_mod.MAX_SCAN_TOTAL_BYTES * 4:
                         outcome = {"ok": False, "error": "Not scanned: resource limit reached."}
                     else:
                         outcome = _scan_bytes_cached(att.get("data") or b"")
-                    infected = bool(outcome.get("infected"))
-                    status = "INFECTED" if infected else ("Scan error" if not outcome.get("ok") else "Clean")
-                    detail = outcome.get("signature") or ("-" if outcome.get("ok") else outcome.get("error"))
-                else:
-                    infected = bool(att.get("risky"))
-                    status = "Risky extension" if infected else "Clean"
-                    detail = "-"
-                    if att.get("skipped") and not infected:
-                        status, detail = "Not scanned", "Skipped by resource limit (%s)" % att.get("skipped")
-                if infected:
-                    threats_found += 1
+                status, detail, _cat = _av_mod.attachment_status(att, outcome)
+                _cats.append(_cat)
                 rows.append({
                     "Case": r.get("name", "-"),
                     "Filename": att.get("filename", "-"),
@@ -14602,12 +14594,12 @@ if active_panel == "Antivirus":
                     "Detail": detail,
                 })
 
-        _clean_n = sum(1 for _r in rows if _r["Status"] == "Clean")
-        m1, m2, m3, m4 = st.columns(4)
+        m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Files Found", total_files)
-        m2.metric("Threats Found", threats_found)
-        m3.metric("Clean", _clean_n)
-        m4.metric("Not scanned / error", total_files - threats_found - _clean_n)
+        m2.metric("Detections (antivirus)", _cats.count(_av_mod.CAT_DETECTED))
+        m3.metric("Clean (scanned)", _cats.count(_av_mod.CAT_CLEAN))
+        m4.metric("Risky extension (heuristic)", _cats.count(_av_mod.CAT_RISKY_EXT))
+        m5.metric("Not scanned / error", _cats.count(_av_mod.CAT_NOT_SCANNED) + _cats.count(_av_mod.CAT_ERROR))
 
         if rows:
             _render_polished_table(pd.DataFrame(rows))

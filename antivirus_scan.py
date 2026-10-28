@@ -408,3 +408,42 @@ def scan_attachments(parsed):
             "error": None if outcome.get("ok") else outcome.get("error"),
         })
     return results
+
+
+_SKIP_REASONS = {
+    "attachment_too_large": "attachment exceeds the per-file size limit",
+    "aggregate_size_limit": "message attachment total exceeds the size limit",
+    "attachment_count_limit": "too many attachments in the message",
+    "decode_error": "attachment content could not be decoded",
+}
+
+# Row categories used by the UI metrics.
+CAT_DETECTED, CAT_CLEAN, CAT_RISKY_EXT, CAT_NOT_SCANNED, CAT_ERROR = (
+    "detected", "clean", "risky_extension", "not_scanned", "scan_error")
+
+
+def attachment_status(att, outcome=None):
+    """Display status for one attachment -> (status, detail, category). Pure; never raises.
+
+    `outcome` is a scan_bytes()-style dict, or None when no antivirus backend is available.
+    "Clean" is returned ONLY for a successful scan that found nothing. An extension match is a heuristic
+    ("Potentially risky extension"), never a detection."""
+    att = att if isinstance(att, dict) else {}
+    risky = bool(att.get("risky"))
+    skipped = att.get("skipped")
+    if skipped:
+        reason = _SKIP_REASONS.get(str(skipped), str(skipped))
+        note = "; extension is potentially risky" if risky else ""
+        return "Not scanned", "Skipped: %s%s" % (reason, note), CAT_NOT_SCANNED
+    if outcome is None:
+        if risky:
+            return ("Potentially risky extension",
+                    "Heuristic only (file type by name); not scanned, not a malware verdict", CAT_RISKY_EXT)
+        return "Not scanned", "No antivirus backend available", CAT_NOT_SCANNED
+    if not isinstance(outcome, dict) or not outcome.get("ok"):
+        err = str((outcome or {}).get("error") or "scan failed") if isinstance(outcome, dict) else "scan failed"
+        cat = CAT_NOT_SCANNED if err.startswith("Not scanned") else CAT_ERROR
+        return ("Not scanned" if cat == CAT_NOT_SCANNED else "Scan error"), err, cat
+    if outcome.get("infected"):
+        return "INFECTED", outcome.get("signature") or "-", CAT_DETECTED
+    return "Clean", "-", CAT_CLEAN
