@@ -1,8 +1,9 @@
 -- READ-ONLY: one SELECT statement, no DDL/DML, nothing is created, changed or executed except catalog reads and
 -- guarded dynamic SELECTs (query_to_xml) on optional objects. Safe on any project, including production.
 -- Run as the postgres role in the SQL editor. PASS criteria: every schema row (1-18) and every scheduler row (21-24) must show
--- PASS, and summary rows 90 and 91 must show PASS. Summary row 92 (BEHAVIOUR) deliberately stays UNVERIFIED: this script cannot
--- establish behaviour, so it only clears after supabase/tests/005_followup_and_scan_expiry.sql passes on a separate TEST project.
+-- PASS, and summary rows 90 and 91 must show PASS. Summary row 92 (BEHAVIOUR) is a constant: it is ALWAYS UNVERIFIED in this
+-- script and this script never clears it. Behaviour is proven only by running supabase/tests/005_followup_and_scan_expiry.sql on a
+-- separate TEST project; record that result separately (REVIEW.md / test log), not through this verifier.
 --   checks 1-18   SCHEMA verification: did 20261028000001_scan_expiry_cleanup.sql take effect? (structure/pattern checks)
 --   checks 21-24  SCHEDULER verification: is automated deletion actually running? (pg_cron job, last run, heartbeat)
 -- A function existing does NOT mean cleanup is automated: read the "SCHEDULED CLEANUP" summary row separately.
@@ -104,14 +105,13 @@ checks(n, section, check_name, expected, actual, ok) as (
          coalesce((select 'lock-pos=' || position('pg_advisory_xact_lock' in body)::text || ' delete-pos=' || position('delete from' in body)::text from fcap),
                   'MISSING: function private.scans_cap()'),
          coalesce((select position('pg_advisory_xact_lock' in body) > 0 and position('pg_advisory_xact_lock' in body) < position('delete from' in body) from fcap), false)
-  union all select 11, 'schema', 'trigger scans_cap_trg: enabled BEFORE INSERT FOR EACH ROW calling scans_cap()', 'before/insert/row, state O or A (enabled for ordinary application inserts), right function',
+  union all select 11, 'schema', 'trigger scans_cap_trg: enabled, exactly BEFORE INSERT FOR EACH ROW (tgtype = 7), calling scans_cap()', 'tgtype = 7, state O or A (enabled for ordinary application inserts), right function',
          coalesce((select 'tgtype=' || tgtype::text || ' state=' || tgenabled::text ||
                           ' enabled-for-app-inserts=' || (tgenabled in ('O', 'A'))::text ||
-                          ' before-insert-row=' || ((tgtype & 1) = 1 and (tgtype & 2) = 2 and (tgtype & 4) = 4 and (tgtype & 64) = 0)::text ||
+                          ' exact-before-insert-row=' || (tgtype = 7)::text ||
                           ' calls-scans_cap=' || (tgfoid = (select oid from fcap))::text from trg),
                   'MISSING: trigger scans_cap_trg on public.scans'),
-         coalesce((select (tgtype & 1) = 1 and (tgtype & 2) = 2 and (tgtype & 4) = 4 and (tgtype & 64) = 0
-                      and tgenabled in ('O', 'A') and tgfoid = (select oid from fcap) from trg), false)
+         coalesce((select tgtype = 7 and tgenabled in ('O', 'A') and tgfoid = (select oid from fcap) from trg), false)
   union all select 12, 'schema', 'authenticated cannot set user_id or expires_at (column INSERT/UPDATE privileges)', 'false/false/false/false',
          case when (select oid from sc) is null then 'MISSING: table public.scans'
               else has_column_privilege('authenticated', (select oid from sc)::oid, 'user_id', 'INSERT')::text || '/' ||
@@ -204,6 +204,6 @@ select 91, 'summary', 'SCHEDULED CLEANUP (checks 21-24): is automated deletion o
        case when count(*) filter (where ok is distinct from true) = 0 then 'PASS' else 'FAIL' end
   from checks where section = 'scheduler'
 union all
-select 92, 'summary', 'BEHAVIOUR (what the schema checks cannot prove)', 'tested on a TEST project',
-       'not established by this script: run supabase/tests/005_followup_and_scan_expiry.sql on a TEST project', 'UNVERIFIED'
+select 92, 'summary', 'BEHAVIOUR (what the schema checks cannot prove)', 'always UNVERIFIED here (never cleared by this script)',
+       'not established by this script: run supabase/tests/005_followup_and_scan_expiry.sql on a TEST project and record that result separately', 'UNVERIFIED'
 order by n;

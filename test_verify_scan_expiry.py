@@ -195,12 +195,12 @@ class TriggerStateCheck(unittest.TestCase):
     def test_normal_enabled_O_passes(self):
         a, ok = self._eval(self._row("O"))
         self.assertTrue(ok)
-        self.assertRegex(a, r"state=O enabled-for-app-inserts=(1|true)")
+        self.assertRegex(a, r"tgtype=7 state=O enabled-for-app-inserts=(1|true) exact-before-insert-row=(1|true) calls-scans_cap=(1|true)")
 
     def test_always_enabled_A_passes(self):
         a, ok = self._eval(self._row("A"))
         self.assertTrue(ok)
-        self.assertRegex(a, r"state=A enabled-for-app-inserts=(1|true)")
+        self.assertRegex(a, r"tgtype=7 state=A enabled-for-app-inserts=(1|true) exact-before-insert-row=(1|true)")
 
     def test_disabled_D_fails(self):
         a, ok = self._eval(self._row("D"))
@@ -217,6 +217,14 @@ class TriggerStateCheck(unittest.TestCase):
         self.assertFalse(ok)  # FAIL, not NULL/UNVERIFIED: coalesce(..., false)
         self.assertEqual(a, "MISSING: trigger scans_cap_trg on public.scans")
 
+    def test_extra_events_fail_even_when_enabled(self):  # tgtype must be exactly 7: BEFORE INSERT OR UPDATE etc. are NOT acceptable
+        for label, tgtype in (("BEFORE INSERT OR UPDATE row", BEFORE_INSERT_ROW | 16), ("BEFORE INSERT OR DELETE row", BEFORE_INSERT_ROW | 8),
+                              ("BEFORE INSERT OR UPDATE OR DELETE row", BEFORE_INSERT_ROW | 16 | 8)):
+            for state in ("O", "A"):
+                a, ok = self._eval(self._row(state, tgtype))
+                self.assertFalse(ok, "%s state %s" % (label, state))
+                self.assertRegex(a, r"exact-before-insert-row=(0|false)", label)
+
     def test_wrong_timing_event_level_or_function_fails_even_when_enabled(self):
         for label, tgtype, foid in (("AFTER INSERT row", 1 | 4, None), ("BEFORE UPDATE row", 1 | 2 | 16, None),
                                     ("BEFORE INSERT statement-level", 2 | 4, None), ("INSTEAD OF", BEFORE_INSERT_ROW | 64, None),
@@ -232,11 +240,29 @@ class TriggerStateCheck(unittest.TestCase):
         self.assertTrue(self._eval(self._row("R"), weak)[1])      # the old condition lets R through
         self.assertFalse(self._eval(self._row("R"))[1])           # the current one does not
 
+    def test_old_bitmask_would_wrongly_pass_insert_or_update(self):  # proves these tests catch a regression to the loose bitmask
+        _, _, ok = _check11()
+        self.assertIn("tgtype = 7", ok)
+        loose = ok.replace("tgtype = 7", "(tgtype & 1) = 1 and (tgtype & 2) = 2 and (tgtype & 4) = 4 and (tgtype & 64) = 0")
+        self.assertNotEqual(loose, ok)
+        self.assertTrue(self._eval(self._row("O", BEFORE_INSERT_ROW | 16), loose)[1])   # loose condition lets INSERT OR UPDATE through
+        self.assertFalse(self._eval(self._row("O", BEFORE_INSERT_ROW | 16))[1])        # current one rejects it
+        self.assertTrue(self._eval(self._row("O", 7))[1])                              # and still accepts the intended trigger
+
     def test_header_states_row_92_stays_unverified(self):
         head = _read(VERIFY).split("with\npat", 1)[0]
         self.assertIn("92", head)
-        self.assertIn("UNVERIFIED", head)
+        self.assertIn("ALWAYS UNVERIFIED", head)
+        self.assertIn("never clears it", head)
         self.assertNotIn("Every row must show status = PASS", head)
+
+    def test_row_92_is_a_constant_unverified(self):  # the verifier cannot clear it: last column is the literal, not an expression
+        sql = _read(VERIFY)
+        block = sql.split("select 92, 'summary',", 1)[1].split("order by n", 1)[0].strip()
+        parts = _split_top("'summary'," + block)
+        self.assertEqual(parts[-1], "'UNVERIFIED'")
+        self.assertNotRegex(block, r"(?i)\bcase\b|\bfrom\b|\bcount\(")
+        self.assertEqual(sql.count("select 92, 'summary'"), 1)
 
 
 if __name__ == "__main__":
