@@ -110,7 +110,6 @@ class ScannerLimits(unittest.TestCase):
 
     def test_benign_zip_and_garbage_pass_inspection(self):
         self.assertIsNone(AV.inspect_zip(_zip([("a.txt", b"hello")])))
-        self.assertIsNone(AV.inspect_zip(b"PK\x03\x04garbage"))
         self.assertIsNone(AV.inspect_zip(b"plain"))
 
     def test_oversize_not_scanned(self):
@@ -506,6 +505,61 @@ class ZeroByteAttachments(unittest.TestCase):
         src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
         self.assertIn("_av_mod.summarize_categories(_cats)", src)
         self.assertIn('m3.metric("Clean (scanned)", _sum["clean"])', src)
+
+
+class TruncatedZip(unittest.TestCase):
+    GOOD = _zip([("doc.txt", b"hello world " * 200), ("b.bin", b"\x01" * 500)])
+
+    def eocd_cut(self, blob):
+        return blob[:blob.rindex(b"PK\x05\x06")]           # drop the end-of-central-directory record
+
+    def test_truncated_zip_starting_with_local_header_rejected(self):
+        for blob in (self.GOOD[:60], self.GOOD[:30], b"PK\x03\x04", b"PK\x03\x04garbage", self.GOOD[:len(self.GOOD) // 2]):
+            reason = AV.inspect_zip(blob)
+            self.assertIsNotNone(reason, blob[:12])
+            self.assertIn("ZIP", reason)
+
+    def test_valid_zip_missing_eocd_rejected(self):
+        cut = self.eocd_cut(self.GOOD)
+        self.assertNotIn(b"PK\x05\x06", cut)
+        self.assertIn("truncated or malformed", AV.inspect_zip(cut))
+
+    def test_prefixed_zip_missing_eocd_rejected(self):
+        for prefix in (b"MZ" + b"\x90" * 300, b"#!/bin/sh\n" * 50, b"\x00" * 4096):
+            self.assertIsNotNone(AV.inspect_zip(prefix + self.eocd_cut(self.GOOD)), prefix[:4])
+
+    def test_valid_benign_and_prefixed_zips_still_pass(self):
+        self.assertIsNone(AV.inspect_zip(self.GOOD))
+        self.assertIsNone(AV.inspect_zip(b"MZ" + b"\x90" * 300 + self.GOOD))
+
+    def test_stray_pk_bytes_in_ordinary_content_not_a_zip(self):
+        for blob in (b"PK", b"PK\x03", b"hello PK\x03\x04 world " * 10, b"x" * 100 + b"PK\x03\x04" + b"\xff" * 40,
+                     b"%PDF-1.7 PK\x03\x04\x14\x00\x00\x00\x63\x00" + b"z" * 50, b"plain text PK\x01\x02 only"):
+            self.assertIsNone(AV.inspect_zip(blob), blob[:20])
+
+    def test_rejection_blocks_scanner_and_is_never_clean(self):
+        blobs = [self.GOOD[:60], self.eocd_cut(self.GOOD), b"MZ" * 100 + self.eocd_cut(self.GOOD)]
+        for blob in blobs:
+            with mock.patch.object(AV, "resolve_backend", side_effect=AssertionError("must not scan")), \
+                 mock.patch.object(AV, "_scan_bytes_clamd", side_effect=AssertionError("must not scan")), \
+                 mock.patch.object(AV, "_scan_bytes_virustotal", side_effect=AssertionError("must not scan")):
+                out = AV.scan_bytes(blob)
+            self.assertIs(out["ok"], False)
+            self.assertIn("archive bomb", out["error"])
+            self.assertIsNone(AV._verdict(out))
+            att = {"filename": "t.zip", "size": len(blob), "data": blob}
+            s, d, c = AV.attachment_status(att, out)
+            self.assertNotEqual(s, "Clean")
+            self.assertIn(c, (AV.CAT_ERROR, AV.CAT_NOT_SCANNED))
+            res = AV.scan_attachments({"attachments": [att]})[0]
+            self.assertFalse(res["scanned"]); self.assertFalse(res["infected"])
+
+    def test_ordinary_file_with_stray_pk_still_reaches_scanner(self):
+        blob = b"just text PK\x03\x04 junk " * 20
+        with mock.patch.object(AV, "resolve_backend", return_value=("local", None)), \
+             mock.patch.object(AV, "_scan_bytes_clamd", return_value={"ok": True, "infected": False}) as c:
+            out = AV.scan_bytes(blob)
+        self.assertEqual(c.call_count, 1); self.assertTrue(out["ok"])
 
 
 class MalformedInputs(unittest.TestCase):

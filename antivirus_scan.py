@@ -74,6 +74,38 @@ def _looks_like_zip(data):
             or _EOCD in data[-(65535 + 22):])
 
 
+_LFH = b"PK\x03\x04"
+_ZIP_METHODS = {0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 14, 18, 19, 93, 95, 96, 97, 98, 99}
+
+
+def _plausible_lfh(data, i):
+    """True if a ZIP local-file-header at offset i has sane fields (rules out stray 'PK\\x03\\x04' bytes)."""
+    if len(data) < i + 30:
+        return False
+    if data[i + 4] > 100:                                   # version needed (low byte)
+        return False
+    if int.from_bytes(data[i + 8:i + 10], "little") not in _ZIP_METHODS:
+        return False
+    n = int.from_bytes(data[i + 26:i + 28], "little")
+    if n < 1 or n > 4096 or len(data) < i + 30 + n:
+        return False
+    return all(b >= 0x20 and b != 0x7F for b in data[i + 30:i + 30 + n])
+
+
+def _zip_candidate(data):
+    """Does this non-parseable blob claim to be a ZIP? Yes if it BEGINS with a local-file-header signature, or a
+    plausible local file header occurs within the first 1 MiB (prefixed / self-extracting archive)."""
+    if data[:4] == _LFH:
+        return True
+    head = data[:1024 * 1024]
+    i, tries = head.find(_LFH, 1), 0
+    while i != -1 and tries < 64:
+        if _plausible_lfh(data, i):
+            return True
+        i, tries = head.find(_LFH, i + 1), tries + 1
+    return False
+
+
 def inspect_zip(data):
     """Return a reason string if `data` is (or hides) a ZIP that is unsafe to scan, else None.
     Reads the central directory only, never extracts. Fails CLOSED: an unreadable ZIP structure or any
@@ -88,6 +120,8 @@ def inspect_zip(data):
         except zipfile.BadZipFile:
             if _EOCD in data[-(65535 + 22):]:
                 return "malformed ZIP structure"
+            if _zip_candidate(data):                      # truncated / damaged archive: cannot be inspected safely
+                return "truncated or malformed ZIP (no valid central directory)"
             return None                                   # stray 'PK' bytes in a non-ZIP file
         with zf:
             infos = zf.infolist()
