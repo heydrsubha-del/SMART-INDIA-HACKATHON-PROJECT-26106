@@ -328,7 +328,35 @@ def _actions(result):
     iocs = result["iocs"]
     geo = result["geo"]
     origin_ip = (geo.get("origin") or {}).get("ip")
+    extortion = result.get("extortion") or {}
     actions = []
+
+    # A detected extortion/sextortion finding - even a needs_review one -
+    # must never be reported as "no action required" / "legitimate mail".
+    # This check runs BEFORE the normal level-based branches and returns
+    # immediately so a Low/Medium weighted score can never mask it.
+    if extortion.get("detected") and extortion.get("needs_review"):
+        actions.append("**Manual review required.** This message matches the "
+                       "extortion/sextortion pattern, but the matched threat "
+                       "language appears quoted or attributed (e.g. inside "
+                       "quotation marks or introduced as an example) rather "
+                       "than stated directly, so it was not auto-escalated. "
+                       "Do not close this out as legitimate mail without an "
+                       "analyst confirming whether it is a live threat, a "
+                       "forwarded threat, or genuine advisory content.")
+        actions.append("Do not advise the recipient to pay or reply until "
+                       "that review is complete.")
+        actions.append("Preserve the original `.eml` with its hash for the "
+                       "incident record before any remediation.")
+        return actions
+
+    # Defensive: a detected (non-needs_review) extortion finding is expected
+    # to always carry risk.py's High/Critical override, but if some future
+    # change ever left it at Medium/Low, it must still never be reported as
+    # requiring no action - treat it like a High-level case rather than
+    # falling through to the "legitimate mail" branch below.
+    if extortion.get("detected") and not extortion.get("needs_review") and level not in ("Critical", "High"):
+        level = "High"
 
     if level in ("Critical", "High"):
         actions.append("**Quarantine** this message and search the mail store "
