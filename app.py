@@ -13364,6 +13364,21 @@ if active_panel == "Classification":
     def _classification():
         _banner("CLASSIFICATION", "Threat Classification",
                 "How the risk score was built and why the model flagged this email", "SELECTED EMAIL", "rose")
+        _ext = result.get("extortion") or {}
+        if _ext.get("detected"):
+            _ext_head = "Suspected sextortion" if _ext.get("category") == "suspected_sextortion" else "Suspected extortion"
+            if _ext.get("needs_review"):
+                st.warning("**{} - manual review required.** {}".format(_ext_head, _ext.get("recommended_action", "")))
+            else:
+                st.error("**{} ({} severity).** {}".format(_ext_head, _ext.get("severity", "unknown"), _ext.get("recommended_action", "")))
+            with st.expander("Extortion evidence and pattern IDs", expanded=False):
+                for _cat, _phrases in (_ext.get("evidence") or {}).items():
+                    st.write("**{}**: {}".format(str(_cat).replace("_", " "), ", ".join(
+                        "`{}`".format(str(_p).replace("`", "'")) for _p in (_phrases or []))))
+                st.caption("Pattern IDs: " + "; ".join(
+                    "{}: {}".format(_c, ", ".join(_i)) for _c, _i in (_ext.get("pattern_ids") or {}).items()))
+        elif _ext.get("error"):
+            st.warning("The extortion detector could not run on this message, so there is no extortion assessment. This is not a clean result - review the message manually.")
         left, right = st.columns([1, 1])
         with left:
             _sec("Risk score composition", tone="rose")
@@ -13392,6 +13407,8 @@ if active_panel == "Classification":
         with right:
             _sec("Why the model flagged this", tone="rose")
             st.metric("Phishing probability", "{:.1%}".format(result["ml"]["prob"]), result["ml"]["label"])
+            if (result.get("extortion") or {}).get("detected"):
+                st.caption("The phishing-language model is not an extortion detector. Its probability is shown unchanged; the extortion finding above governs the verdict.")
             if result["ml"]["top_terms"]:
                 terms = result["ml"]["top_terms"]
                 fig_t = go.Figure(go.Bar(

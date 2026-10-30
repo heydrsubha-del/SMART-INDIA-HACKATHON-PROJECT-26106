@@ -138,36 +138,58 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         add("- Contains no links or attachments to scan: {}".format(
             "yes" if bec["no_links"] else "no"))
         add("")
+        add("> BEC carries no malicious payload, so signature and URL scanning "
+            "cannot see it. Detection depends on identity and intent, which is "
+            "why authentication passing does not clear a message.")
+        add("")
 
     extortion = result.get("extortion") or {}
     if extortion.get("detected"):
         add("### Extortion / sextortion assessment (deterministic, independent of the ML score)")
         add("")
-        add("**{}** - severity **{}**, rule confidence **{:.0%}**.{}".format(
-            "Suspected sextortion" if extortion["category"] == "suspected_sextortion"
+        _review_note = ""
+        if extortion.get("needs_review"):
+            _review_note = (" *(flagged for human review - no explicit payment demand was matched)*"
+                            if extortion.get("review_reason") == "no_explicit_payment_demand"
+                            else " *(flagged for human review - also contains advisory/educational phrasing)*")
+        try:
+            _conf = "{:.0%}".format(float(extortion.get("confidence") or 0.0))
+        except (TypeError, ValueError):
+            _conf = "n/a"
+        add("**{}** - severity **{}**, rule confidence **{}**.{}".format(
+            "Suspected sextortion" if extortion.get("category") == "suspected_sextortion"
             else "Suspected extortion",
-            extortion["severity"], extortion["confidence"],
-            " *(flagged for human review - also contains advisory/educational phrasing)*"
-            if extortion.get("needs_review") else ""))
+            extortion.get("severity", "unknown"), _conf, _review_note))
         add("")
-        add(extortion["explanation"])
+        add(str(extortion.get("explanation", "")))
         add("")
         add("Evidence phrases found in the message (exact text, not interpreted):")
         add("")
-        for cat, phrases in extortion.get("evidence", {}).items():
-            label = cat.replace("_", " ")
-            add("- **{}**: {}".format(label, ", ".join("`{}`".format(p) for p in phrases)))
+        for cat, phrases in (extortion.get("evidence") or {}).items():
+            label = str(cat).replace("_", " ")
+            add("- **{}**: {}".format(label, ", ".join(
+                "`{}`".format(str(p).replace("`", "'").replace("\n", " ")) for p in (phrases or []))))
+        _pids = extortion.get("pattern_ids") or {}
+        if _pids:
+            add("")
+            add("Matched pattern IDs: " + "; ".join("{}: {}".format(
+                str(_c).replace("_", " "), ", ".join("`{}`".format(str(_i)) for _i in (_ids or [])))
+                for _c, _ids in _pids.items()))
         add("")
         add("> This finding describes what the message text claims and threatens. It "
             "does NOT confirm the sender actually possesses any material - that cannot "
             "be established from the email alone.")
         add("")
         if extortion.get("recommended_action"):
-            add("**Recommended action:** {}".format(extortion["recommended_action"]))
+            add("**Recommended action:** {}".format(extortion.get("recommended_action")))
             add("")
-        add("> BEC carries no malicious payload, so signature and URL scanning "
-            "cannot see it. Detection depends on identity and intent, which is "
-            "why authentication passing does not clear a message.")
+    elif extortion.get("error"):
+        # The detector failed internally: say so. An absent finding here is NOT a clean result.
+        add("### Extortion / sextortion assessment")
+        add("")
+        add("The extortion detector could not complete on this message (`{}`), so no extortion "
+            "assessment is available. This is NOT a clean result - review the message manually."
+            .format(str(extortion.get("error"))[:80]))
         add("")
 
     # --- 4. Routing ---------------------------------------------------------
@@ -336,14 +358,21 @@ def _actions(result):
     # This check runs BEFORE the normal level-based branches and returns
     # immediately so a Low/Medium weighted score can never mask it.
     if extortion.get("detected") and extortion.get("needs_review"):
-        actions.append("**Manual review required.** This message matches the "
-                       "extortion/sextortion pattern, but the matched threat "
-                       "language appears quoted or attributed (e.g. inside "
-                       "quotation marks or introduced as an example) rather "
-                       "than stated directly, so it was not auto-escalated. "
-                       "Do not close this out as legitimate mail without an "
-                       "analyst confirming whether it is a live threat, a "
-                       "forwarded threat, or genuine advisory content.")
+        if extortion.get("review_reason") == "no_explicit_payment_demand":
+            actions.append("**Manual review required.** This message pairs a claim to "
+                           "possess private material with a threat to distribute it, but "
+                           "no explicit payment demand was matched, so it was not "
+                           "auto-escalated. Do not close this out as legitimate mail "
+                           "without an analyst confirming whether it is a live threat.")
+        else:
+            actions.append("**Manual review required.** This message matches the "
+                           "extortion/sextortion pattern, but the matched threat "
+                           "language appears quoted or attributed (e.g. inside "
+                           "quotation marks or introduced as an example) rather "
+                           "than stated directly, so it was not auto-escalated. "
+                           "Do not close this out as legitimate mail without an "
+                           "analyst confirming whether it is a live threat, a "
+                           "forwarded threat, or genuine advisory content.")
         actions.append("Do not advise the recipient to pay or reply until "
                        "that review is complete.")
         actions.append("Preserve the original `.eml` with its hash for the "

@@ -49,6 +49,8 @@ def analyze_email(raw, name="uploaded", pipe=None):
     headers = header_analysis.analyze(parsed)
     iocs = ioc_extract.extract(parsed)
     extortion = extortion_detection.analyze(parsed.get("full_text", ""))
+    if not isinstance(extortion, dict):   # malformed detector output must never break the pipeline
+        extortion = {}
 
     # ------------------------------------------------------------------
     # Local threat-intelligence memory
@@ -152,8 +154,9 @@ def analyze_email(raw, name="uploaded", pipe=None):
         url_risk=memory_url_risk,
         origin_risk=geo["origin_risk"],
         bec_score=headers["bec"]["score"],
-        extortion_score=extortion["strength"],
-        extortion_confidence=extortion["confidence"],
+        extortion_score=extortion.get("strength", 0.0),
+        extortion_confidence=extortion.get("confidence", 0.0),
+        extortion_review=bool(extortion.get("detected") and extortion.get("needs_review")),
     )
 
     # Community intelligence (feature-flagged, OFF by default): contextual only, looked up AFTER scoring, never affects it.

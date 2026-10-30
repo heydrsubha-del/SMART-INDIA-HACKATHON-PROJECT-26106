@@ -37,7 +37,9 @@ demand ("pay ... in bitcoin", "send 0.5 BTC"), never as a bare mention ("we acce
 
 Standalone:  python extortion_detection.py samples/sextortion.eml
 """
+import html
 import re
+import unicodedata
 
 # --- Possession claims --------------------------------------------------
 # Each entry bundles its compiled pattern together with whether it is
@@ -85,6 +87,14 @@ _POSSESSION_DEFS = [
                 r"explicit)?\s*(?:pics|pictures|photos|footage|clips?|videos?)\s+"
                 r"(?:of\s+you\s+)?from\s+your\s+(?:camera|webcam|phone|computer)",
      "imagery": True},
+    {"id": "poss_have_recorded_you", "pattern": r"i(?:'ve|\s+have)\s+(?:been\s+)?(?:recorded|recording|filmed|filming|captured|capturing)\s+you",
+     "imagery": True},
+    {"id": "poss_video_of_you", "pattern": r"(?:i\s+)?(?:have|got|obtained)\s+(?:an?|some)\s+(?:(?:private|personal|intimate|compromising|explicit|embarrassing|nude)\s+)?"
+                r"(?:video|videos|footage|photo|photos|picture|pictures|recording|recordings|clip|clips)\s+of\s+you",
+     "imagery": True},
+    {"id": "poss_hacked_device", "pattern": r"i\s+(?:have\s+)?(?:hacked|compromised|infected|took\s+over|gained\s+control\s+of)\s+your\s+"
+                r"(?:device|computer|phone|pc|laptop|account|system)",
+     "imagery": False},
 ]
 for _d in _POSSESSION_DEFS:
     _d["regex"] = re.compile(_d["pattern"], re.I)
@@ -132,7 +142,18 @@ DISTRIBUTION_THREAT_PATTERNS = [d["pattern"] for d in _DISTRIBUTION_DEFS]   # ke
 # never counts. "send" is deliberately NOT in the generic payment-verb list: it is only a payment verb when
 # its object is money ("send $3,000", "send 0.5 BTC", "send the payment"). Content-distribution objects
 # directly after any payment verb (e.g. "transfer them to your contacts") are excluded by _NOT_CONTENT.
-_AMOUNT = r"(?:\$\s?[\d,]+(?:\.\d+)?|(?:usd|eur|gbp|inr|rs\.?)\s?[\d,]+(?:\.\d+)?|[\d,]+(?:\.\d+)?\s?(?:usd|dollars|euros|rupees))"
+# Written amounts ("three thousand dollars", "five hundred euros"): number words are only accepted when
+# followed by an explicit currency word, so "three days" / "five photos" never count as money. Every repetition
+# is BOUNDED ({0,N}) so hostile input such as "1,1,1,..." or "one-one-one-..." cannot cause quadratic scans.
+_NUMWORD = (r"(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|"
+            r"sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|"
+            r"hundred|thousand|million|lakhs?|crores?)")
+_WRITTEN_AMOUNT = (r"\b(?:an?\s+)?" + _NUMWORD + r"(?:[\s-]+(?:and\s+)?" + _NUMWORD + r"){0,6}"
+                   r"\s+(?:us\s+|u\.s\.\s+)?(?:dollars|euros|pounds|rupees|bucks)\b")
+_AMOUNT = (r"(?:" + _WRITTEN_AMOUNT
+           + r"|[$\u20ac\u00a3\u20b9]\s?\d[\d,]{0,15}(?:\.\d+)?"
+           + r"|\b(?:usd|eur|gbp|inr|rs\.?)\s?\d[\d,]{0,15}(?:\.\d+)?"
+           + r"|\d[\d,]{0,15}(?:\.\d+)?\s?(?:usd|dollars|euros|rupees|pounds|gbp|eur|inr|bucks))")
 _CRYPTO = r"(?:bitcoins?|btc|crypto(?:currency)?|ethereum|eth|monero|xmr|usdt)"
 _NOT_CONTENT = (r"(?!\s+(?:a\s+copy\s+of\s+)?(?:it|them|this|these|those|copies|"
                 r"the\s+(?:photos?|pictures?|videos?|footage|files?|content|images?|material))\b)")
@@ -178,7 +199,103 @@ _COERCION_DEFS = _defs("coer", [
     ("keep_quiet", r"keep\s+this\s+(?:between\s+us|quiet|private)"),
     ("no_negotiation", r"\bno\s+negotiations?\b"),
 ])
+# Plain deadlines are NOT coercion on their own ("wire $3,000 within 7 days to renew the contract"). They only
+# count alongside a genuine threat: a strong coercion pattern or a distribution threat (see analyze()).
+_WEAK_COERCION_IDS = {"coer_within_n", "coer_you_have_n", "coer_you_have_until", "coer_next_n"}
 COERCION_PATTERNS = [d["pattern"] for d in _COERCION_DEFS]   # kept for backward compatibility
+
+# Payment demands WITHOUT an explicit amount ("if you do not pay me ..."). These never establish a payment
+# demand on their own; they only support the REVIEW tier (possession + framed distribution threat).
+_PAY_NOAMOUNT_DEFS = _defs("pay", [
+    ("pay_me", r"\b(?:pay|paying)\s+(?:me|us)\b"),
+    ("unless_you_pay", r"\b(?:unless\s+you\s+pay|if\s+you\s+(?:do\s+not|don'?t|fail\s+to|refuse\s+to|won'?t)\s+pay)\b"),
+])
+
+# Distribution patterns that read the same as an ORDINARY instruction ("send them to all your contacts if you
+# like") only count as a THREAT when the clause is threat-framed (I will / going to / will be sent / otherwise ...).
+# Patterns that are inherently threatening (expose you, ruin your life, your boss will see ...) need no framing.
+_DIST_NEEDS_FRAMING = {
+    "dist_send_to_contacts", "dist_send_to_people", "dist_forward_to_everyone", "dist_share_with",
+    "dist_post_online", "dist_release_media", "dist_release_publicly", "dist_make_public",
+    "dist_everyone_you_know", "dist_all_your_contacts", "dist_friends_family_list",
+}
+_THREAT_CUE_RE = re.compile(
+    r"\b(?:i|we|they|he|she)\s*(?:will|'ll|shall|gonna|would|could|can|may|might|must|have\s+to|"
+    r"(?:am|are|is)\s+going\s+to|'m\s+going\s+to|'re\s+going\s+to)\b"
+    r"|\b(?:will|shall|going\s+to)\s+be\b|\bgo(?:es)?\s+(?:out\s+)?to\b"
+    r"|\bgets?\s+(?:sent|posted|shared|released|forwarded|published|leaked)\b"
+    r"|\b(?:otherwise|unless)\b|\bor\s+(?:else|they|it|this|everyone|all|your|the|these|those)\b", re.I)
+_THREAT_SUFFIX_RE = re.compile(r"\s*(?:will|'ll|shall|gonna|(?:are|is)\s+going\s+to)\b", re.I)
+_PREFIX_WINDOW = 160
+
+# Possession claims that are generic ("I have your photos") are weak: with no payment+distribution threat
+# around them they must not be enough on their own (a photographer chasing a balance, a print shop ...).
+_WEAK_POSSESSION_IDS = {"poss_have_media", "poss_video_of_you"}
+_SENSITIVE_ADJ_RE = re.compile(
+    r"\b(?:private|personal|intimate|compromising|explicit|embarrassing|nude|naked|confidential|sensitive)\b", re.I)
+
+# --- Input limits and normalisation -------------------------------------------------------------------
+# Bounded work per message: very long bodies are scanned as head + tail (a threat is usually at the start or end;
+# padding the middle cannot push it out of view). The result carries truncated=True when this happened.
+MAX_SCAN_CHARS = 100000
+_HEAD_CHARS, _TAIL_CHARS = 60000, 40000
+_TAG_RE = re.compile(r"<[^<>]{0,300}>")
+_ZERO_WIDTH_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad]")
+_CONTRACTION_RE = re.compile(r"(?<=\w)[\u2019\u02bc](?=\w)")
+_HSPACE_RE = re.compile(r"[ \t\f\v\r]+")
+_EVIDENCE_STRIP_RE = re.compile(r"[`\x00-\x1f\x7f]+")
+
+
+def _prepare(text):
+    """Coerce to str, bound the size, strip HTML tags/entities, NFKC-normalise, drop zero-width characters,
+    fold contraction apostrophes and collapse horizontal whitespace. Returns (text, truncated)."""
+    if text is None:
+        text = ""
+    elif isinstance(text, (bytes, bytearray)):
+        text = bytes(text).decode("utf-8", "replace")
+    elif not isinstance(text, str):
+        text = str(text)
+    truncated = len(text) > MAX_SCAN_CHARS
+    if truncated:
+        text = text[:_HEAD_CHARS] + "\n" + text[-_TAIL_CHARS:]
+    if "<" in text:
+        text = _TAG_RE.sub(" ", text)
+    if "&" in text:
+        text = html.unescape(text)
+    text = unicodedata.normalize("NFKC", text)
+    text = _ZERO_WIDTH_RE.sub("", text)
+    text = _CONTRACTION_RE.sub("'", text)
+    return _HSPACE_RE.sub(" ", text), truncated
+
+
+def _clean_phrase(phrase):
+    """Evidence phrases are shown in markdown code spans and tables: strip backticks and control characters."""
+    return re.sub(r"\s+", " ", _EVIDENCE_STRIP_RE.sub(" ", phrase)).strip()[:200]
+
+
+def _threat_framed(text, start, end):
+    s = max(text.rfind(".", 0, start), text.rfind("?", 0, start), text.rfind("!", 0, start), text.rfind("\n", 0, start))
+    prefix = text[max(s + 1, start - _PREFIX_WINDOW):end]   # clause so far, including the match ("or everyone ...")
+    return bool(_THREAT_CUE_RE.search(prefix) or _THREAT_SUFFIX_RE.match(text[end:end + 40]))
+
+
+def _framed_distribution(text, hits):
+    """Drop instruction-like distribution hits that are not threat-framed; keep inherently threatening ones."""
+    out = []
+    for h in hits:
+        ids = [i for i in h[4] if i not in _DIST_NEEDS_FRAMING or _threat_framed(text, h[1], h[2])]
+        if ids:
+            out.append((h[0], h[1], h[2], h[3], ids))
+    return out
+
+
+def _strong_possession(possession):
+    for h in possession:
+        if all(i in _WEAK_POSSESSION_IDS for i in h[5]) and not _SENSITIVE_ADJ_RE.search(h[0]):
+            continue
+        return True
+    return False
+
 
 _CATEGORY_DEFS = {
     "distribution_threat": _DISTRIBUTION_DEFS,
@@ -273,8 +390,19 @@ def _unique(seq):
     return out
 
 
+_NO_FINDING = ("No combination of possession claim, a contextual payment demand, and a "
+               "distribution/coercion threat was found.")
+
+
+def _empty_result(truncated=False, error=""):
+    return {"detected": False, "category": "none", "severity": "none", "confidence": 0.0, "strength": 0.0,
+            "evidence": {}, "pattern_ids": {}, "categories_hit": [], "explanation": _NO_FINDING,
+            "recommended_action": "", "needs_review": False, "quoted_context": False,
+            "review_reason": "", "truncated": truncated, "error": error}
+
+
 def analyze(text):
-    """Scan message text for the sextortion/extortion threat pattern.
+    """Scan message text for the sextortion/extortion threat pattern. Never raises.
 
     Returns a dict:
       detected (bool), category, severity ("critical"|"high"|"medium"|"low"|"none"),
@@ -282,27 +410,66 @@ def analyze(text):
       the value fed into risk.score), evidence (per-category sanitized phrases),
       pattern_ids (per-category IDs of every pattern that matched; reported only when detected),
       explanation (str), recommended_action (str), needs_review (bool),
-      quoted_context (bool).
+      quoted_context (bool),
+      review_reason ("quoted_context" | "no_explicit_payment_demand" | ""),
+      truncated (bool: input exceeded MAX_SCAN_CHARS and was scanned as head + tail),
+      error (str: exception class name if the detector failed internally, else "" - a failed scan is
+      reported as an error, never as a clean result the caller could mistake for "safe").
+
+    Tiers: CORE = possession + payment demand (+ a threat-framed distribution threat, or - without a
+    distribution threat - strong coercion and a non-generic possession claim). REVIEW = non-generic
+    possession + a threat-framed distribution threat + (strong coercion or a payment demand without an
+    amount), no explicit amount: always needs_review, medium severity, never auto-escalated.
     """
-    text = text or ""
+    try:
+        return _analyze(text)
+    except Exception as exc:  # fail safe: a detector fault must never interrupt the analysis pipeline
+        return _empty_result(error=type(exc).__name__)
+
+
+def _analyze(text):
+    text, truncated = _prepare(text)
 
     possession = _possession_findings(text)
     found = {"possession_claim": possession}
-    ids_by_cat = {"possession_claim": [i for h in possession for i in h[5]]}
     for cat, defs in _CATEGORY_DEFS.items():
         found[cat] = _findings(text, defs)
-        ids_by_cat[cat] = [i for h in found[cat] for i in h[4]]
 
-    categories_hit = [cat for cat, hits in found.items() if hits]
-    n_categories = len(categories_hit)
+    found["distribution_threat"] = _framed_distribution(text, found["distribution_threat"])
+
+    # Independence: when the payment finding exists ONLY because of "<amount>, or I will ...", that text is the
+    # same evidence as the "or I will" coercion hit - do not count it as two categories.
+    pay, coer = found["payment_demand"], found["coercive_pressure"]
+    if pay and all(set(h[4]) <= {"pay_amount_or_threat"} for h in pay):
+        spans = [(h[1], h[2]) for h in pay]
+        coer = [h for h in coer if not any(h[1] < e and s < h[2] for s, e in spans)]
+    # A plain deadline is not coercion: weak (deadline-only) hits need a distribution threat beside them.
+    if not found["distribution_threat"] and all(set(h[4]) <= _WEAK_COERCION_IDS for h in coer):
+        coer = []
+    found["coercive_pressure"] = coer
 
     has_possession = bool(possession)
+    has_strong_possession = _strong_possession(possession)
     has_distribution = bool(found["distribution_threat"])
     has_payment = bool(found["payment_demand"])
     has_coercion = bool(found["coercive_pressure"])
 
-    core_hit = has_possession and has_payment and (has_distribution or has_coercion)
-    detected = core_hit
+    core_hit = has_payment and ((has_possession and has_distribution) or (has_strong_possession and has_coercion))
+    review_hit = False
+    if not core_hit and has_strong_possession and has_distribution:
+        noamount = _findings(text, _PAY_NOAMOUNT_DEFS)
+        if has_coercion or noamount:
+            review_hit = True
+            if noamount and not has_payment:
+                found["payment_demand"] = noamount
+                has_payment = True
+    detected = core_hit or review_hit
+
+    ids_by_cat = {"possession_claim": [i for h in possession for i in h[5]]}
+    for cat in _CATEGORY_DEFS:
+        ids_by_cat[cat] = [i for h in found[cat] for i in h[4]]
+    categories_hit = [cat for cat, hits in found.items() if hits]
+    n_categories = len(categories_hit)
 
     # A finding is "quoted" only if EVERY possession hit, EVERY payment hit and every hit of whichever of
     # distribution/coercion fired are inside a quoted/attributed span - i.e. the whole threat is reproduced
@@ -312,7 +479,7 @@ def analyze(text):
     if detected:
         possession_imagery = any(h[4] for h in possession)
         possession_all_quoted = all(h[3] for h in possession)
-        payment_all_quoted = all(h[3] for h in found["payment_demand"])
+        payment_all_quoted = all(h[3] for h in found["payment_demand"]) if found["payment_demand"] else True
         closing_hits = found["distribution_threat"] if has_distribution else found["coercive_pressure"]
         closing_all_quoted = all(h[3] for h in closing_hits) if closing_hits else False
         quoted_context = possession_all_quoted and payment_all_quoted and closing_all_quoted
@@ -321,8 +488,12 @@ def analyze(text):
     if detected:
         category = "suspected_sextortion" if possession_imagery else "suspected_extortion"
 
+    review_reason = ""
     if not detected:
         severity, confidence, strength = "none", 0.0, 0.0
+    elif review_hit:
+        severity, confidence, strength = "medium", 0.5, 0.5
+        review_reason = "quoted_context" if quoted_context else "no_explicit_payment_demand"
     elif n_categories >= 4:
         severity, confidence, strength = "critical", 0.95, 1.0
     elif n_categories == 3:
@@ -330,33 +501,38 @@ def analyze(text):
     else:  # defensive; core_hit's requirements make this unreachable in practice
         severity, confidence, strength = "medium", 0.6, 0.6
 
-    needs_review = detected and quoted_context
+    needs_review = detected and (quoted_context or review_hit)
     if needs_review:
-        # The threat text itself is quoted/attributed (an advisory quoting a sample, or a forwarded threat) -
-        # do not silently drop the finding, but do not assert it with full confidence either.
+        # The threat text is quoted/attributed, or there is no explicit payment demand: do not silently drop
+        # the finding, but do not assert it with full confidence either.
         confidence = min(confidence, 0.5)
         strength = min(strength, 0.5)
+        if not review_reason:
+            review_reason = "quoted_context"
 
-    evidence = {cat: _unique([h[0] for h in found[cat]]) for cat in categories_hit} if detected else {}
+    evidence = {cat: _unique([_clean_phrase(h[0]) for h in found[cat]]) for cat in categories_hit} if detected else {}
     pattern_ids = {cat: _unique(ids_by_cat[cat]) for cat in categories_hit} if detected else {}
 
     if detected:
         explanation = (
-            "The message combines a claim to possess compromising material, a "
-            "contextual monetary demand, and {} - the structural pattern of a "
-            "sextortion / extortion attempt. This finding describes what the "
-            "TEXT threatens; it does not and cannot confirm that the sender "
-            "actually holds any material.".format(
-                "an explicit threat to distribute it" if has_distribution
-                else "coercive pressure to pay quickly"
-            )
+            "The message combines a claim to possess compromising material, {}, and {} - the "
+            "structural pattern of a sextortion / extortion attempt. This finding describes what the "
+            "TEXT threatens; it does not and cannot confirm that the sender actually holds any "
+            "material.".format(
+                "a contextual monetary demand" if core_hit else "a payment/compliance demand with no explicit amount",
+                "an explicit threat to distribute it" if has_distribution else "coercive pressure to pay quickly")
         )
-        if needs_review:
+        if review_reason == "quoted_context":
             explanation += (
                 " The matched threat language appears quoted or attributed "
                 "(e.g. inside quotation marks, or introduced as an example) "
                 "rather than stated directly by this message, so this has "
                 "been routed to human review instead of asserted outright."
+            )
+        elif review_hit:
+            explanation += (
+                " No explicit amount or payment method was matched, so this has been routed "
+                "to human review instead of asserted outright."
             )
         recommended_action = (
             "Do not pay or reply. Preserve the original message and headers. "
@@ -364,7 +540,7 @@ def analyze(text):
             "threat references and to local law enforcement / a cybercrime "
             "reporting authority. Treat any purported evidence as unverified."
         )
-        if needs_review:
+        if review_reason == "quoted_context":
             recommended_action = (
                 "Route to an analyst for manual review before acting: the "
                 "message matches the extortion/sextortion pattern, but the "
@@ -373,9 +549,15 @@ def analyze(text):
                 "conclusive. Do not close this out as legitimate without a "
                 "human check."
             )
+        elif review_hit:
+            recommended_action = (
+                "Route to an analyst for manual review before acting: the message pairs a claim to "
+                "possess private material with a threat to distribute it, but no explicit payment "
+                "demand was matched. Do not reply or engage, preserve the message and headers, and "
+                "do not close this out as legitimate without a human check."
+            )
     else:
-        explanation = ("No combination of possession claim, a contextual payment demand, and a "
-                       "distribution/coercion threat was found.")
+        explanation = _NO_FINDING
         recommended_action = ""
 
     return {
@@ -391,6 +573,9 @@ def analyze(text):
         "recommended_action": recommended_action,
         "needs_review": needs_review,
         "quoted_context": quoted_context,
+        "review_reason": review_reason,
+        "truncated": truncated,
+        "error": "",
     }
 
 

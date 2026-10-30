@@ -24,8 +24,19 @@ def _level_rank(name):
     return _LEVEL_RANK.get(name, len(C.RISK_LEVELS) - 1)
 
 
+def _unit(value):
+    """Coerce to a finite float in 0..1; anything malformed (None, text, NaN, inf) becomes 0.0."""
+    try:
+        v = float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+    if v != v or v in (float("inf"), float("-inf")):
+        return 0.0
+    return max(0.0, min(1.0, v))
+
+
 def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
-          extortion_score=0.0, extortion_confidence=0.0):
+          extortion_score=0.0, extortion_confidence=0.0, extortion_review=False):
     """Combine the seven signals. Returns a dict with score, level and reasons.
 
     extortion_score / extortion_confidence come from extortion_detection.analyze()
@@ -43,7 +54,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
         "suspicious_url": max(0.0, min(1.0, float(url_risk or 0.0))),
         "origin_risk": max(0.0, min(1.0, float(origin_risk or 0.0))),
         "bec_pattern": max(0.0, min(1.0, float(bec_score or 0.0))),
-        "extortion_pattern": max(0.0, min(1.0, float(extortion_score or 0.0))),
+        "extortion_pattern": _unit(extortion_score),
     }
     labels = {
         "ml_phish": "ML phishing-language model",
@@ -72,7 +83,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
     # A high-confidence extortion finding cannot be out-voted by a low ML
     # score, clean auth, or the absence of a URL. It can only ever RAISE the
     # verdict, never lower one a stronger weighted score already produced.
-    extortion_confidence = max(0.0, min(1.0, float(extortion_confidence or 0.0)))
+    extortion_confidence = _unit(extortion_confidence)
     override_applied = False
     floor = getattr(C, "EXTORTION_OVERRIDE_LEVEL", "High")
     min_conf = getattr(C, "EXTORTION_OVERRIDE_MIN_CONFIDENCE", 0.80)
@@ -80,6 +91,15 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
         name = floor
         colour = next((c for t, n, c in C.RISK_LEVELS if n == floor), colour)
         override_applied = True
+
+    # A detected-but-uncertain finding (extortion_review) floors the verdict at Medium so it is never shown as
+    # Low next to a "manual review required" action. Like the override, it can only RAISE the verdict.
+    review_applied = False
+    review_floor = getattr(C, "EXTORTION_REVIEW_LEVEL", "Medium")
+    if extortion_review and not override_applied and _level_rank(review_floor) < _level_rank(name):
+        name = review_floor
+        colour = next((c for t, n, c in C.RISK_LEVELS if n == review_floor), colour)
+        review_applied = True
 
     contributions.sort(key=lambda c: c["points"], reverse=True)
 
@@ -91,6 +111,10 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
                           "finding ({:.0%} rule confidence) raised the verdict to {} "
                           "regardless of the weighted score.".format(extortion_confidence, floor))
 
+    if review_applied:
+        reasons.insert(0, "Review floor: an uncertain extortion/sextortion finding (quoted threat or no "
+                          "explicit payment demand) raised the verdict to {} pending analyst review.".format(review_floor))
+
     return {
         "score": total,
         "level": name,
@@ -100,6 +124,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
         "reasons": reasons or ["No detector fired above the reporting threshold."],
         "top_driver": contributions[0]["label"] if contributions else "",
         "override_applied": override_applied,
+        "review_floor_applied": review_applied,
     }
 
 

@@ -123,6 +123,9 @@ WEIGHTS = {
 # (e.g. extortion AND auth failure AND malicious links together).
 EXTORTION_OVERRIDE_MIN_CONFIDENCE = 0.80
 EXTORTION_OVERRIDE_LEVEL = "High"
+# A detected-but-uncertain finding (needs_review: quoted/attributed threat, or no explicit payment demand) is not
+# asserted (confidence < override threshold) but must never read as Low risk next to a "manual review" action.
+EXTORTION_REVIEW_LEVEL = "Medium"
 
 # Verdict bands, checked high-to-low; the first threshold met wins.
 RISK_LEVELS = [
