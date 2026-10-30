@@ -138,6 +138,33 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         add("- Contains no links or attachments to scan: {}".format(
             "yes" if bec["no_links"] else "no"))
         add("")
+
+    extortion = result.get("extortion") or {}
+    if extortion.get("detected"):
+        add("### Extortion / sextortion assessment (deterministic, independent of the ML score)")
+        add("")
+        add("**{}** - severity **{}**, rule confidence **{:.0%}**.{}".format(
+            "Suspected sextortion" if extortion["category"] == "suspected_sextortion"
+            else "Suspected extortion",
+            extortion["severity"], extortion["confidence"],
+            " *(flagged for human review - also contains advisory/educational phrasing)*"
+            if extortion.get("needs_review") else ""))
+        add("")
+        add(extortion["explanation"])
+        add("")
+        add("Evidence phrases found in the message (exact text, not interpreted):")
+        add("")
+        for cat, phrases in extortion.get("evidence", {}).items():
+            label = cat.replace("_", " ")
+            add("- **{}**: {}".format(label, ", ".join("`{}`".format(p) for p in phrases)))
+        add("")
+        add("> This finding describes what the message text claims and threatens. It "
+            "does NOT confirm the sender actually possesses any material - that cannot "
+            "be established from the email alone.")
+        add("")
+        if extortion.get("recommended_action"):
+            add("**Recommended action:** {}".format(extortion["recommended_action"]))
+            add("")
         add("> BEC carries no malicious payload, so signature and URL scanning "
             "cannot see it. Detection depends on identity and intent, which is "
             "why authentication passing does not clear a message.")
@@ -315,12 +342,18 @@ def _actions(result):
                            "other traffic from it.".format(origin_ip))
         actions.append("Identify all recipients and check whether any "
                        "interacted with the message.")
+        if (result.get("extortion") or {}).get("detected"):
+            actions.append("**Do not pay or reply.** This message matches the "
+                           "sextortion/extortion pattern; advise the recipient "
+                           "not to engage, preserve the evidence, and report it "
+                           "to the referenced platform and to law enforcement / "
+                           "a cybercrime reporting authority.")
         if result["headers"]["bec"]["is_bec"]:
             actions.append("**Contact the impersonated executive out of band** "
                            "(phone, not email) and freeze any payment already "
                            "initiated. Verify beneficiary changes against "
                            "records held outside email.")
-        else:
+        if not result["headers"]["bec"]["is_bec"] and not (result.get("extortion") or {}).get("detected"):
             actions.append("Force a password reset for any recipient who "
                            "opened the link, and check for new mail-forwarding "
                            "rules on their mailbox.")

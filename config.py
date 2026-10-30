@@ -93,14 +93,36 @@ EXEC_WORDS = ["ceo", "cfo", "director", "president", "chairman", "managing direc
 
 # --- Risk scoring -----------------------------------------------------------
 # Each signal is a 0..1 factor multiplied by its weight; the weights sum to 100.
+#
+# "extortion_pattern" was added for sextortion/extortion detection (deterministic,
+# see extortion_detection.py). Rationale for the rebalance: extortion content is
+# every bit as dangerous as a classic phishing link, so it gets a weight close to
+# ml_phish itself (35 vs 38) - but it is NOT the largest single weight, because a
+# weighted-average alone is the wrong mechanism for "this is dangerous regardless
+# of what else is present." That job belongs to the override in risk.score(): a
+# high-confidence extortion finding floors the verdict at High even if its 35
+# points alone would not cross that band. The other five weights were scaled down
+# proportionally (by a 65/82 factor) from their previous values so the total stays
+# at exactly 100 and no existing signal lost its relative ranking.
 WEIGHTS = {
-    "ml_phish": 38,        # ML phishing probability
-    "auth_fail": 15,       # SPF/DKIM/DMARC failures
-    "header_anomaly": 12,  # domain mismatches, display-name spoof
-    "suspicious_url": 12,  # shorteners, IP-literal hosts, look-alikes
-    "origin_risk": 5,      # Tor / VPN / proxy / hosting origin
-    "bec_pattern": 18,     # Business-Email-Compromise impersonation
+    "ml_phish": 30,            # ML phishing probability            (was 38)
+    "auth_fail": 12,           # SPF/DKIM/DMARC failures            (was 15)
+    "header_anomaly": 10,      # domain mismatches, display-name spoof (was 12)
+    "suspicious_url": 10,      # shorteners, IP-literal hosts, look-alikes (was 12)
+    "origin_risk": 4,          # Tor / VPN / proxy / hosting origin (was 5)
+    "bec_pattern": 14,         # Business-Email-Compromise impersonation (was 18)
+    "extortion_pattern": 20,   # deterministic sextortion/extortion detector (new)
 }
+
+# A detected extortion/sextortion pattern at or above this rule confidence
+# forces the overall verdict to at least this level, regardless of the
+# weighted score, ml probability, or auth results. This is what lets a
+# $3,000 private-photo threat with a 48.6% ML score still come out "High" -
+# see risk.score()'s override step. The floor is "High", not "Critical":
+# Critical is reserved for cases where the weighted score itself is severe
+# (e.g. extortion AND auth failure AND malicious links together).
+EXTORTION_OVERRIDE_MIN_CONFIDENCE = 0.80
+EXTORTION_OVERRIDE_LEVEL = "High"
 
 # Verdict bands, checked high-to-low; the first threshold met wins.
 RISK_LEVELS = [
