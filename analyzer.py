@@ -18,6 +18,7 @@ from the command line without Streamlit.
 import os
 
 import config as C
+import extortion_detection
 import geolocate
 import header_analysis
 import ioc_extract
@@ -47,6 +48,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
     ml_prob, ml_label, top_terms = predict(pipe, parsed["full_text"])
     headers = header_analysis.analyze(parsed)
     iocs = ioc_extract.extract(parsed)
+    extortion = extortion_detection.analyze(parsed.get("full_text", ""))
 
     # ------------------------------------------------------------------
     # Local threat-intelligence memory
@@ -150,6 +152,8 @@ def analyze_email(raw, name="uploaded", pipe=None):
         url_risk=memory_url_risk,
         origin_risk=geo["origin_risk"],
         bec_score=headers["bec"]["score"],
+        extortion_score=extortion["strength"],
+        extortion_confidence=extortion["confidence"],
     )
 
     # Community intelligence (feature-flagged, OFF by default): contextual only, looked up AFTER scoring, never affects it.
@@ -167,6 +171,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
             "top_terms": top_terms,
         },
         "headers": headers,
+        "extortion": extortion,
         "iocs": iocs,
         "geo": geo,
         "origin_intel": origin_assessment,

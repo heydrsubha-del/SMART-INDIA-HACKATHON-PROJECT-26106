@@ -17,8 +17,25 @@ def level_for(score):
     return C.RISK_LEVELS[-1][1], C.RISK_LEVELS[-1][2]
 
 
-def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score):
-    """Combine the six signals. Returns a dict with score, level and reasons."""
+_LEVEL_RANK = {name: i for i, (_, name, _) in enumerate(C.RISK_LEVELS)}  # 0 = most severe
+
+
+def _level_rank(name):
+    return _LEVEL_RANK.get(name, len(C.RISK_LEVELS) - 1)
+
+
+def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
+          extortion_score=0.0, extortion_confidence=0.0):
+    """Combine the seven signals. Returns a dict with score, level and reasons.
+
+    extortion_score / extortion_confidence come from extortion_detection.analyze()
+    (strength / confidence). They are kept separate on purpose: extortion_score is
+    the 0..1 strength fed into the weighted average like any other signal, while
+    extortion_confidence is ONLY used for the override below. A weighted average
+    can be dragged down by other low signals (clean auth, no links, moderate ML
+    score) exactly the way the reported false negative was - so a confident
+    extortion finding also floors the verdict directly, independent of the sum.
+    """
     signals = {
         "ml_phish": max(0.0, min(1.0, float(ml_prob or 0.0))),
         "auth_fail": max(0.0, min(1.0, float(auth_fail or 0.0))),
@@ -26,6 +43,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score):
         "suspicious_url": max(0.0, min(1.0, float(url_risk or 0.0))),
         "origin_risk": max(0.0, min(1.0, float(origin_risk or 0.0))),
         "bec_pattern": max(0.0, min(1.0, float(bec_score or 0.0))),
+        "extortion_pattern": max(0.0, min(1.0, float(extortion_score or 0.0))),
     }
     labels = {
         "ml_phish": "ML phishing-language model",
@@ -34,6 +52,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score):
         "suspicious_url": "Malicious link indicators",
         "origin_risk": "Origin infrastructure reputation",
         "bec_pattern": "Business Email Compromise pattern",
+        "extortion_pattern": "Sextortion / extortion pattern (deterministic)",
     }
 
     contributions, total = [], 0.0
@@ -48,11 +67,29 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score):
 
     total = max(0.0, min(100.0, total))
     name, colour = level_for(total)
+
+    # --- Behavioral-finding override ---------------------------------------
+    # A high-confidence extortion finding cannot be out-voted by a low ML
+    # score, clean auth, or the absence of a URL. It can only ever RAISE the
+    # verdict, never lower one a stronger weighted score already produced.
+    extortion_confidence = max(0.0, min(1.0, float(extortion_confidence or 0.0)))
+    override_applied = False
+    floor = getattr(C, "EXTORTION_OVERRIDE_LEVEL", "High")
+    min_conf = getattr(C, "EXTORTION_OVERRIDE_MIN_CONFIDENCE", 0.80)
+    if extortion_confidence >= min_conf and _level_rank(floor) < _level_rank(name):
+        name = floor
+        colour = next((c for t, n, c in C.RISK_LEVELS if n == floor), colour)
+        override_applied = True
+
     contributions.sort(key=lambda c: c["points"], reverse=True)
 
     reasons = ["{}: {:.0f}/{} points ({:.0%} strength)".format(
         c["label"], c["points"], c["weight"], c["strength"])
         for c in contributions if c["points"] >= 0.5]
+    if override_applied:
+        reasons.insert(0, "Behavioral override: a high-confidence extortion/sextortion "
+                          "finding ({:.0%} rule confidence) raised the verdict to {} "
+                          "regardless of the weighted score.".format(extortion_confidence, floor))
 
     return {
         "score": total,
@@ -62,6 +99,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score):
         "contributions": contributions,
         "reasons": reasons or ["No detector fired above the reporting threshold."],
         "top_driver": contributions[0]["label"] if contributions else "",
+        "override_applied": override_applied,
     }
 
 
