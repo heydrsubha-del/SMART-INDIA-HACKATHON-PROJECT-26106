@@ -38,6 +38,7 @@ demand ("pay ... in bitcoin", "send 0.5 BTC"), never as a bare mention ("we acce
 Standalone:  python extortion_detection.py samples/sextortion.eml
 """
 import html
+import math
 import re
 import unicodedata
 
@@ -401,6 +402,132 @@ def _empty_result(truncated=False, error=""):
             "review_reason": "", "truncated": truncated, "error": error}
 
 
+def failure_result(error):
+    """Explicit non-clean result for a detector failure or malformed detector output (never a 'no finding')."""
+    return _empty_result(error=str(error)[:80] or "UnknownError")
+
+
+# --- Result schema and validation ----------------------------------------------------------------------
+# One shared definition of a VALID detector result, used by analyzer.py (on fresh output) and report.py / app.py
+# (on stored results), so no consumer keeps its own looser check.
+#   required: detected(bool) category(str) severity(str) confidence(number, finite, 0..1) strength(same)
+#             evidence(dict[str, list[str]]) pattern_ids(dict[str, list[str]]) categories_hit(list[str])
+#             explanation(str) recommended_action(str) needs_review(bool) quoted_context(bool)
+#   optional (absent in results written before they existed): review_reason(str) truncated(bool) error(str)
+#   consistency:
+#     detected=False -> confidence == strength == 0; evidence, pattern_ids, categories_hit empty; needs_review and
+#       quoted_context False; category and severity "none"; review_reason empty. A non-empty error is therefore always
+#       a detected=False failure result.
+#     detected=True  -> category in the two "suspected_*" values, severity != "none", confidence and strength > 0,
+#       evidence / pattern_ids / categories_hit all non-empty and naming the SAME valid categories, every evidence
+#       phrase and pattern ID a non-empty string, no error. quoted_context -> needs_review. needs_review ->
+#       confidence and strength <= 0.5 AND a PRESENT review_reason that is "quoted_context" (iff quoted_context is
+#       True) or "no_explicit_payment_demand"; a missing/empty/unknown reason is invalid - it is never inferred.
+#       Without needs_review, review_reason is absent or empty.
+_RESULT_CATEGORIES = {"none", "suspected_sextortion", "suspected_extortion"}
+_RESULT_SEVERITIES = {"none", "low", "medium", "high", "critical"}
+_REVIEW_REASONS = {"", "quoted_context", "no_explicit_payment_demand"}
+_REQUIRED_RESULT_KEYS = ("detected", "category", "severity", "confidence", "strength", "evidence", "pattern_ids",
+                         "categories_hit", "explanation", "recommended_action", "needs_review", "quoted_context")
+
+
+def _unit_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and 0.0 <= v <= 1.0
+
+
+def _str_list(v):
+    return isinstance(v, list) and all(isinstance(i, str) for i in v)
+
+
+def _str_list_map(v):
+    return isinstance(v, dict) and all(isinstance(k, str) and _str_list(x) for k, x in v.items())
+
+
+def validate_result(result):
+    """Return (True, "") for a schema-valid detector result, else (False, reason). Never raises."""
+    try:
+        if not isinstance(result, dict):
+            return False, "not a dict"
+        for key in _REQUIRED_RESULT_KEYS:
+            if key not in result:
+                return False, "missing " + key
+        if not (isinstance(result["detected"], bool) and isinstance(result["needs_review"], bool)
+                and isinstance(result["quoted_context"], bool)):
+            return False, "flag is not a bool"
+        if result["category"] not in _RESULT_CATEGORIES or result["severity"] not in _RESULT_SEVERITIES:
+            return False, "unknown category/severity"
+        if not (_unit_number(result["confidence"]) and _unit_number(result["strength"])):
+            return False, "confidence/strength not a finite number in 0..1"
+        if not (_str_list_map(result["evidence"]) and _str_list_map(result["pattern_ids"])
+                and _str_list(result["categories_hit"])):
+            return False, "malformed evidence / pattern_ids / categories_hit"
+        if not (isinstance(result["explanation"], str) and isinstance(result["recommended_action"], str)):
+            return False, "explanation/recommended_action not a string"
+        if "review_reason" in result and not (isinstance(result["review_reason"], str)
+                                              and result["review_reason"] in _REVIEW_REASONS):
+            return False, "unknown review_reason"
+        if "truncated" in result and not isinstance(result["truncated"], bool):
+            return False, "truncated is not a bool"
+        if "error" in result and not isinstance(result["error"], str):
+            return False, "error is not a string"
+        reason = result.get("review_reason", "")
+        evidence, pattern_ids, hit = result["evidence"], result["pattern_ids"], result["categories_hit"]
+        if not result["detected"]:
+            if result["confidence"] != 0 or result["strength"] != 0:
+                return False, "non-detected result carries confidence/strength"
+            if evidence or pattern_ids or hit:
+                return False, "non-detected result carries evidence/pattern_ids/categories_hit"
+            if result["needs_review"] or result["quoted_context"] or reason:
+                return False, "non-detected result carries review state"
+            if result["category"] != "none" or result["severity"] != "none":
+                return False, "non-detected result has a category/severity"
+            return True, ""
+        if result.get("error"):
+            return False, "detected result carries an error"
+        if result["category"] == "none" or result["severity"] == "none":
+            return False, "detected result has no category/severity"
+        if not (result["confidence"] > 0 and result["strength"] > 0):
+            return False, "detected result needs positive confidence and strength"
+        valid_categories = {"possession_claim"} | set(_CATEGORY_DEFS)
+        if not (evidence and pattern_ids and hit):
+            return False, "detected result has empty evidence/pattern_ids/categories_hit"
+        if len(set(hit)) != len(hit) or not set(hit) <= valid_categories:
+            return False, "invalid categories_hit"
+        if set(evidence) != set(hit) or set(pattern_ids) != set(hit):
+            return False, "evidence/pattern_ids/categories_hit disagree"
+        for mapping in (evidence, pattern_ids):
+            for items in mapping.values():
+                if not items or not all(i.strip() for i in items):
+                    return False, "empty evidence phrase or pattern id"
+        if result["quoted_context"] and not result["needs_review"]:
+            return False, "quoted_context without needs_review"
+        if result["needs_review"]:
+            if result["confidence"] > 0.5 or result["strength"] > 0.5:
+                return False, "needs_review result above the 0.5 confidence cap"
+            if reason not in _REVIEW_REASONS - {""}:
+                return False, "needs_review without a valid review_reason"   # also when the key is missing
+            if (reason == "quoted_context") != result["quoted_context"]:
+                return False, "review_reason disagrees with quoted_context"
+        elif reason:
+            return False, "review_reason without needs_review"
+        return True, ""
+    except Exception:
+        return False, "validation failed"
+
+
+def checked(result):
+    """The result if schema-valid, else the explicit InvalidDetectorOutput failure result (never a clean one)."""
+    return result if validate_result(result)[0] else failure_result("InvalidDetectorOutput")
+
+
+def from_result(analysis):
+    """The extortion block of a stored analysis result. A genuinely ABSENT key is a legacy result ({}); a key that is
+    present but None, empty or malformed is an InvalidDetectorOutput failure that requires manual review."""
+    if not isinstance(analysis, dict) or "extortion" not in analysis:
+        return {}
+    return checked(analysis["extortion"])
+
+
 def analyze(text):
     """Scan message text for the sextortion/extortion threat pattern. Never raises.
 
@@ -468,8 +595,9 @@ def _analyze(text):
     ids_by_cat = {"possession_claim": [i for h in possession for i in h[5]]}
     for cat in _CATEGORY_DEFS:
         ids_by_cat[cat] = [i for h in found[cat] for i in h[4]]
-    categories_hit = [cat for cat, hits in found.items() if hits]
-    n_categories = len(categories_hit)
+    hit_categories = [cat for cat, hits in found.items() if hits]
+    n_categories = len(hit_categories)
+    categories_hit = hit_categories if detected else []   # a non-finding reports no partial category hits
 
     # A finding is "quoted" only if EVERY possession hit, EVERY payment hit and every hit of whichever of
     # distribution/coercion fired are inside a quoted/attributed span - i.e. the whole threat is reproduced
@@ -510,8 +638,8 @@ def _analyze(text):
         if not review_reason:
             review_reason = "quoted_context"
 
-    evidence = {cat: _unique([_clean_phrase(h[0]) for h in found[cat]]) for cat in categories_hit} if detected else {}
-    pattern_ids = {cat: _unique(ids_by_cat[cat]) for cat in categories_hit} if detected else {}
+    evidence = {cat: _unique([_clean_phrase(h[0]) for h in found[cat]]) for cat in categories_hit}
+    pattern_ids = {cat: _unique(ids_by_cat[cat]) for cat in categories_hit}
 
     if detected:
         explanation = (

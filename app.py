@@ -315,7 +315,7 @@ try:
     FETCH_VPN_RANGES_AVAILABLE = True
 except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
-from report import build_report, evidence_hash
+from report import build_report, evidence_hash, extortion_status, extortion_block, partial_scan_note
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
 
 
@@ -13364,7 +13364,7 @@ if active_panel == "Classification":
     def _classification():
         _banner("CLASSIFICATION", "Threat Classification",
                 "How the risk score was built and why the model flagged this email", "SELECTED EMAIL", "rose")
-        _ext = result.get("extortion") or {}
+        _ext = extortion_block(result)   # absent key -> {} (legacy); None / {} / malformed -> error result
         if _ext.get("detected"):
             _ext_head = "Suspected sextortion" if _ext.get("category") == "suspected_sextortion" else "Suspected extortion"
             if _ext.get("needs_review"):
@@ -13378,7 +13378,13 @@ if active_panel == "Classification":
                 st.caption("Pattern IDs: " + "; ".join(
                     "{}: {}".format(_c, ", ".join(_i)) for _c, _i in (_ext.get("pattern_ids") or {}).items()))
         elif _ext.get("error"):
-            st.warning("The extortion detector could not run on this message, so there is no extortion assessment. This is not a clean result - review the message manually.")
+            st.warning("**Manual review required.** The extortion detector could not run on this message, so there is no extortion assessment. This is not a clean result.")
+        if _ext.get("truncated"):
+            st.warning("**Partial scan.** " + partial_scan_note())
+        _bad_inputs = (result.get("verdict") or {}).get("malformed_inputs")
+        if _bad_inputs:
+            st.warning("**Manual review required.** Risk-input validation failed for: {}. These signals were treated as 0 and are not evidence that the message is safe.".format(
+                ", ".join("{} ({})".format(_b.get("input"), _b.get("problem")) for _b in _bad_inputs if isinstance(_b, dict))))
         left, right = st.columns([1, 1])
         with left:
             _sec("Risk score composition", tone="rose")
@@ -13407,7 +13413,7 @@ if active_panel == "Classification":
         with right:
             _sec("Why the model flagged this", tone="rose")
             st.metric("Phishing probability", "{:.1%}".format(result["ml"]["prob"]), result["ml"]["label"])
-            if (result.get("extortion") or {}).get("detected"):
+            if _ext.get("detected"):
                 st.caption("The phishing-language model is not an extortion detector. Its probability is shown unchanged; the extortion finding above governs the verdict.")
             if result["ml"]["top_terms"]:
                 terms = result["ml"]["top_terms"]
@@ -14901,6 +14907,7 @@ if active_panel == "Forensic Report":
                 "Risk Score": f"{sel_score:.1f}/100",
                 "Verdict": sel_lvl,
                 "Primary Driver": sel_res.get('verdict', {}).get('top_driver', 'None'),
+                "Extortion Assessment": extortion_status(sel_res),
                 "ML Phishing Probability": f"{float(sel_m.get('prob', 0)):.1%}",
                 "ML Label": str(sel_m.get("label", "unknown")).upper()
             }]))
@@ -15048,6 +15055,7 @@ if active_panel == "Forensic Report":
 | **Verdict** | {sel_lvl} |
 | **Threat Score** | {sel_score:.1f}/100 |
 | **Primary Driver** | {sel_res.get('verdict', {}).get('top_driver', 'None')} |
+| **Extortion Assessment** | {md_cell(extortion_status(sel_res))} |
 | **ML Phishing Prob** | {float(sel_m.get('prob', 0)):.1%} |
 
 ## 3. MESSAGE HEADERS & CONTENT

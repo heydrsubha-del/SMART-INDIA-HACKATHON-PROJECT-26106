@@ -48,14 +48,20 @@ def analyze_email(raw, name="uploaded", pipe=None):
     ml_prob, ml_label, top_terms = predict(pipe, parsed["full_text"])
     headers = header_analysis.analyze(parsed)
     iocs = ioc_extract.extract(parsed)
-    extortion = extortion_detection.analyze(parsed.get("full_text", ""))
-    if not isinstance(extortion, dict):   # malformed detector output must never break the pipeline
-        extortion = {}
+    # A detector fault or malformed output is an explicit ERROR result (-> manual review), never a clean one.
+    try:
+        extortion = extortion_detection.analyze(parsed.get("full_text", ""))
+    except Exception as exc:
+        extortion = extortion_detection.failure_result(type(exc).__name__)
+    extortion = extortion_detection.checked(extortion)   # strict schema check; invalid -> InvalidDetectorOutput
 
     # ------------------------------------------------------------------
     # Local threat-intelligence memory
     # ------------------------------------------------------------------
-    memory_url_risk = float(iocs.get("url_score", 0.0) or 0.0)
+    # A malformed URL score contributes 0 and is RECORDED (risk.score flags it and holds the verdict at Medium);
+    # it must neither crash the analysis nor read as "no malicious links".
+    memory_url_risk, _url_problem = risk.inspect_signal(iocs.get("url_score", 0.0))
+    upstream_malformed = [{"input": "suspicious_url", "problem": _url_problem}] if _url_problem else []
     recorded = []   # (type, value) observations THIS analysis actually wrote to threat memory
 
     def _record(indicator, kind, reputation, category, source, score_version=None):
@@ -71,21 +77,36 @@ def analyze_email(raw, name="uploaded", pipe=None):
 
     # Remember URLs and reuse previous URL reputation.
     try:
-        for url_info in iocs.get("urls", []):
+        url_entries = list(iocs.get("urls", []))
+    except Exception:
+        url_entries = []
+    for entry_index, url_info in enumerate(url_entries):
+        # Each entry is processed independently: one malformed entry must not stop the rest, and threat memory
+        # must never break email analysis.
+        try:
             if not isinstance(url_info, dict):
                 continue
 
+            # An entry without a usable URL is skipped silently: there is nothing to score or remember, and its
+            # "risk" must not raise irrelevant malformed-input warnings.
             indicator = url_info.get("url", "")
-            current_risk = float(
-                url_info.get("risk", 0.0) or 0.0
-            )
-
-            if not indicator:
+            if not isinstance(indicator, str) or not indicator.strip():
                 continue
 
-            # Save this URL in local memory.
-            _record(indicator, "url", current_risk, "observed", "local_analysis",
-                    ioc_extract.URL_SCORE_VERSION)
+            # A URL is present, so its risk must be a valid 0..1 number. An ABSENT "risk" key is passed on as None
+            # and is recorded as "missing" - it is never defaulted to a clean 0.0.
+            current_risk, entry_problem = risk.inspect_signal(url_info.get("risk"))
+            if entry_problem:
+                # A malformed per-URL risk is RECORDED for review (it contributes nothing to the score) and is never
+                # written to threat memory (storing 0.0 would plant a false "clean" reputation). Its previous
+                # stored reputation, if any, is still consulted below.
+                upstream_malformed.append({"input": "suspicious_url_entry[{}]".format(entry_index),
+                                           "problem": entry_problem})
+
+            # Save this URL in local memory (valid scores only).
+            if not entry_problem:
+                _record(indicator, "url", current_risk, "observed", "local_analysis",
+                        ioc_extract.URL_SCORE_VERSION)
 
             # Check whether this URL was previously seen.
             previous = lookup_indicator(indicator, "url")
@@ -104,10 +125,8 @@ def analyze_email(raw, name="uploaded", pipe=None):
                         memory_url_risk,
                         previous_reputation
                     )
-
-    except Exception:
-        # Threat memory must never break email analysis.
-        pass
+        except Exception:
+            continue
 
     # ------------------------------------------------------------------
     # Remember IPs and domains
@@ -154,9 +173,11 @@ def analyze_email(raw, name="uploaded", pipe=None):
         url_risk=memory_url_risk,
         origin_risk=geo["origin_risk"],
         bec_score=headers["bec"]["score"],
-        extortion_score=extortion.get("strength", 0.0),
-        extortion_confidence=extortion.get("confidence", 0.0),
-        extortion_review=bool(extortion.get("detected") and extortion.get("needs_review")),
+        # Defence in depth (checked() already guarantees this): a non-detected result can never feed the override.
+        extortion_score=extortion.get("strength", 0.0) if extortion.get("detected") is True else 0.0,
+        extortion_confidence=extortion.get("confidence", 0.0) if extortion.get("detected") is True else 0.0,
+        extortion_review=bool(extortion.get("error") or (extortion.get("detected") and extortion.get("needs_review"))),
+        upstream_malformed=upstream_malformed,
     )
 
     # Community intelligence (feature-flagged, OFF by default): contextual only, looked up AFTER scoring, never affects it.

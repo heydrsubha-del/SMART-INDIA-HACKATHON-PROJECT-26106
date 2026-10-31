@@ -24,19 +24,41 @@ def _level_rank(name):
     return _LEVEL_RANK.get(name, len(C.RISK_LEVELS) - 1)
 
 
-def _unit(value):
-    """Coerce to a finite float in 0..1; anything malformed (None, text, NaN, inf) becomes 0.0."""
+_RANGE_TOLERANCE = 1e-9   # float rounding at the 0 / 1 edges is not a malformed input
+
+
+def _inspect(value):
+    """(validated 0..1 float, problem). problem is "" for a valid input, else "missing" / "not numeric" /
+    "not finite" / "out of range". POLICY: a malformed input (including an out-of-range one such as 1.7 or -0.5)
+    contributes ZERO to the weighted score - it is never bounded into a value that still scores - and the problem is
+    RECORDED by score(), which holds the verdict at the review floor, because a broken security signal is not
+    evidence that a message is safe. Only float rounding within 1e-9 of 0 / 1 is tolerated and snapped to the bound."""
+    if value is None:
+        return 0.0, "missing"
+    if isinstance(value, (bool, str, bytes, bytearray)):
+        return 0.0, "not numeric"
     try:
-        v = float(value or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
+        v = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0, "not numeric"
     if v != v or v in (float("inf"), float("-inf")):
-        return 0.0
-    return max(0.0, min(1.0, v))
+        return 0.0, "not finite"
+    if v < -_RANGE_TOLERANCE or v > 1.0 + _RANGE_TOLERANCE:
+        return 0.0, "out of range"
+    return max(0.0, min(1.0, v)), ""
+
+
+inspect_signal = _inspect   # public name: upstream callers validate a raw signal with the same rules as score()
+
+
+def _unit(value):
+    """Validated 0..1 float (malformed, including out of range -> 0.0). Use _inspect() to record the problem."""
+    return _inspect(value)[0]
 
 
 def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
-          extortion_score=0.0, extortion_confidence=0.0, extortion_review=False):
+          extortion_score=0.0, extortion_confidence=0.0, extortion_review=False,
+          upstream_malformed=None):
     """Combine the seven signals. Returns a dict with score, level and reasons.
 
     extortion_score / extortion_confidence come from extortion_detection.analyze()
@@ -47,15 +69,18 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
     score) exactly the way the reported false negative was - so a confident
     extortion finding also floors the verdict directly, independent of the sum.
     """
-    signals = {
-        "ml_phish": max(0.0, min(1.0, float(ml_prob or 0.0))),
-        "auth_fail": max(0.0, min(1.0, float(auth_fail or 0.0))),
-        "header_anomaly": max(0.0, min(1.0, float(header_anomaly or 0.0))),
-        "suspicious_url": max(0.0, min(1.0, float(url_risk or 0.0))),
-        "origin_risk": max(0.0, min(1.0, float(origin_risk or 0.0))),
-        "bec_pattern": max(0.0, min(1.0, float(bec_score or 0.0))),
-        "extortion_pattern": _unit(extortion_score),
+    raw_inputs = {
+        "ml_phish": ml_prob, "auth_fail": auth_fail, "header_anomaly": header_anomaly,
+        "suspicious_url": url_risk, "origin_risk": origin_risk, "bec_pattern": bec_score,
+        "extortion_pattern": extortion_score, "extortion_confidence": extortion_confidence,
     }
+    inspected = {k: _inspect(v) for k, v in raw_inputs.items()}
+    malformed = [{"input": k, "problem": p} for k, (_, p) in inspected.items() if p]
+    # Inputs a caller already found invalid (and zeroed) before calling score(), e.g. a malformed URL score.
+    for _m in (upstream_malformed or []):
+        if isinstance(_m, dict) and _m.get("input") and not any(x["input"] == _m["input"] for x in malformed):
+            malformed.append({"input": str(_m["input"]), "problem": str(_m.get("problem") or "invalid")})
+    signals = {k: inspected[k][0] for k in raw_inputs if k != "extortion_confidence"}
     labels = {
         "ml_phish": "ML phishing-language model",
         "auth_fail": "SPF / DKIM / DMARC authentication",
@@ -83,7 +108,7 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
     # A high-confidence extortion finding cannot be out-voted by a low ML
     # score, clean auth, or the absence of a URL. It can only ever RAISE the
     # verdict, never lower one a stronger weighted score already produced.
-    extortion_confidence = _unit(extortion_confidence)
+    extortion_confidence = inspected["extortion_confidence"][0]
     override_applied = False
     floor = getattr(C, "EXTORTION_OVERRIDE_LEVEL", "High")
     min_conf = getattr(C, "EXTORTION_OVERRIDE_MIN_CONFIDENCE", 0.80)
@@ -94,9 +119,11 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
 
     # A detected-but-uncertain finding (extortion_review) floors the verdict at Medium so it is never shown as
     # Low next to a "manual review required" action. Like the override, it can only RAISE the verdict.
+    # The same floor applies when ANY risk input was malformed: a broken signal contributes 0 to the weighted
+    # score (which is otherwise left exactly as computed), but that must not read as safe, so the verdict is held at Medium.
     review_applied = False
     review_floor = getattr(C, "EXTORTION_REVIEW_LEVEL", "Medium")
-    if extortion_review and not override_applied and _level_rank(review_floor) < _level_rank(name):
+    if (extortion_review or malformed) and not override_applied and _level_rank(review_floor) < _level_rank(name):
         name = review_floor
         colour = next((c for t, n, c in C.RISK_LEVELS if n == review_floor), colour)
         review_applied = True
@@ -111,9 +138,16 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
                           "finding ({:.0%} rule confidence) raised the verdict to {} "
                           "regardless of the weighted score.".format(extortion_confidence, floor))
 
-    if review_applied:
-        reasons.insert(0, "Review floor: an uncertain extortion/sextortion finding (quoted threat or no "
-                          "explicit payment demand) raised the verdict to {} pending analyst review.".format(review_floor))
+    if review_applied and extortion_review:
+        reasons.insert(0, "Review floor: the extortion assessment is uncertain or unavailable (quoted threat, "
+                          "no explicit payment demand, or detector failure); verdict raised to {} pending "
+                          "analyst review.".format(review_floor))
+    if malformed:
+        reasons.insert(0, "Input validation: malformed risk input(s) {} were treated as 0, which is NOT evidence "
+                          "that the message is safe; {}.".format(
+                              ", ".join("{} ({})".format(m["input"], m["problem"]) for m in malformed),
+                              "verdict raised to {} pending analyst review".format(review_floor) if review_applied
+                              else "analyst review required"))
 
     return {
         "score": total,
@@ -125,6 +159,8 @@ def score(ml_prob, auth_fail, header_anomaly, url_risk, origin_risk, bec_score,
         "top_driver": contributions[0]["label"] if contributions else "",
         "override_applied": override_applied,
         "review_floor_applied": review_applied,
+        "malformed_inputs": malformed,
+        "input_validation_failed": bool(malformed),
     }
 
 

@@ -13,6 +13,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from md_export import md_cell, group_urls
+import extortion_detection as _ED
 
 SEVERITY_MARK = {"high": "[HIGH]", "medium": "[MED] ", "low": "[LOW] ",
                  "info": "[INFO]"}
@@ -23,6 +24,41 @@ def evidence_hash(raw):
     if isinstance(raw, str):
         raw = raw.encode("utf-8", errors="replace")
     return hashlib.sha256(raw).hexdigest()
+
+
+def extortion_block(result):
+    """The validated extortion block of a result. Key genuinely absent -> {} (legacy result). Key present but None,
+    empty or malformed -> an InvalidDetectorOutput error result (manual review), never a clean outcome."""
+    return _ED.from_result(result)
+
+
+_extortion = extortion_block
+
+
+def partial_scan_note():
+    """Disclosure shown wherever a truncated extortion scan is reported."""
+    return ("Only part of this message was scanned for extortion language (the first {:,} and last {:,} "
+            "characters; the middle was skipped because the message exceeded {:,} characters). "
+            "The result is NOT a complete assessment of the whole message.".format(
+                _ED._HEAD_CHARS, _ED._TAIL_CHARS, _ED.MAX_SCAN_CHARS))
+
+
+def extortion_status(result):
+    """One-line extortion status for tables/exports. Never reads as clean when the scan failed or was partial."""
+    ext = _extortion(result)
+    if not ext:
+        return "Not recorded in this result"
+    partial = " [PARTIAL SCAN - only part of the message was scanned]" if ext.get("truncated") else ""
+    if ext.get("error") and not ext.get("detected"):
+        return "Detector failed ({}) - manual review required; NOT a clean result".format(str(ext.get("error"))[:60])
+    if ext.get("detected"):
+        head = "Suspected sextortion" if ext.get("category") == "suspected_sextortion" else "Suspected extortion"
+        if ext.get("needs_review"):
+            return "{} - manual review required{}".format(head, partial)
+        return "{} detected ({} severity){}".format(head, ext.get("severity", "unknown"), partial)
+    if ext.get("truncated"):
+        return "No finding in the scanned portion - PARTIAL SCAN; not a complete assessment"
+    return "No extortion pattern found"
 
 
 def build_report(result, raw=None, analyst="SIH26106 automated triage"):
@@ -68,6 +104,12 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
             md_cell(c["label"]), c["strength"], c["weight"], c["points"]))
     add("| | | **Total** | **{:.1f}** |".format(result["score"]))
     add("")
+    if verdict.get("malformed_inputs"):
+        add("> **Input validation:** malformed risk input(s) were treated as 0, which is NOT evidence that the "
+            "message is safe: {}. Manual review required.".format(
+                ", ".join("{} ({})".format(b.get("input"), b.get("problem"))
+                          for b in verdict["malformed_inputs"] if isinstance(b, dict))))
+        add("")
 
     # --- 2. Message identity ------------------------------------------------
     add("## 2. Message identity")
@@ -143,15 +185,19 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
             "why authentication passing does not clear a message.")
         add("")
 
-    extortion = result.get("extortion") or {}
+    extortion = extortion_block(result)
     if extortion.get("detected"):
         add("### Extortion / sextortion assessment (deterministic, independent of the ML score)")
         add("")
         _review_note = ""
         if extortion.get("needs_review"):
-            _review_note = (" *(flagged for human review - no explicit payment demand was matched)*"
-                            if extortion.get("review_reason") == "no_explicit_payment_demand"
-                            else " *(flagged for human review - also contains advisory/educational phrasing)*")
+            _reason = extortion.get("review_reason")
+            if _reason == "no_explicit_payment_demand":
+                _review_note = " *(flagged for human review - no explicit payment demand was matched)*"
+            elif _reason == "quoted_context":
+                _review_note = " *(flagged for human review - also contains advisory/educational phrasing)*"
+            else:   # reason missing/unknown: say nothing about WHY rather than guess
+                _review_note = " *(flagged for human review)*"
         try:
             _conf = "{:.0%}".format(float(extortion.get("confidence") or 0.0))
         except (TypeError, ValueError):
@@ -183,13 +229,22 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         if extortion.get("recommended_action"):
             add("**Recommended action:** {}".format(extortion.get("recommended_action")))
             add("")
+        if extortion.get("truncated"):
+            add("> **Partial scan.** " + partial_scan_note())
+            add("")
     elif extortion.get("error"):
         # The detector failed internally: say so. An absent finding here is NOT a clean result.
         add("### Extortion / sextortion assessment")
         add("")
         add("The extortion detector could not complete on this message (`{}`), so no extortion "
-            "assessment is available. This is NOT a clean result - review the message manually."
+            "assessment is available. This is NOT a clean result - **manual review required**."
             .format(str(extortion.get("error"))[:80]))
+        add("")
+    elif extortion.get("truncated"):
+        add("### Extortion / sextortion assessment")
+        add("")
+        add("No extortion pattern was found in the scanned portion. **Partial scan.** " + partial_scan_note()
+            + " Review the unscanned middle of the message manually.")
         add("")
 
     # --- 4. Routing ---------------------------------------------------------
@@ -345,12 +400,32 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
 
 
 def _actions(result):
+    """Verdict-appropriate steps, plus explicit notes when the extortion scan failed or was partial."""
+    ext = _extortion(result)
+    notes = []
+    if ext.get("error") and not ext.get("detected"):
+        notes.append("**Manual review required.** The extortion detector failed on this message (`{}`), so "
+                     "there is no extortion assessment. Do not treat this message as legitimate until an "
+                     "analyst has reviewed it.".format(str(ext.get("error"))[:80]))
+    _verdict = result.get("verdict") if isinstance(result, dict) else None
+    _bad = (_verdict or {}).get("malformed_inputs") if isinstance(_verdict, dict) else None
+    if _bad:
+        notes.append("**Manual review required.** Risk-input validation failed for: {}. These signals were "
+                     "treated as 0 and are NOT evidence that the message is safe.".format(
+                         ", ".join("{} ({})".format(b.get("input"), b.get("problem")) for b in _bad if isinstance(b, dict))))
+    if ext.get("truncated"):
+        notes.append("**Partial extortion scan.** " + partial_scan_note()
+                     + (" Review the unscanned part manually." if not ext.get("detected") else ""))
+    return notes + _actions_core(result, uncertain=bool(notes and not ext.get("detected")))
+
+
+def _actions_core(result, uncertain=False):
     """Verdict-appropriate response steps."""
     level = result["level"]
     iocs = result["iocs"]
     geo = result["geo"]
     origin_ip = (geo.get("origin") or {}).get("ip")
-    extortion = result.get("extortion") or {}
+    extortion = _extortion(result)
     actions = []
 
     # A detected extortion/sextortion finding - even a needs_review one -
@@ -358,13 +433,14 @@ def _actions(result):
     # This check runs BEFORE the normal level-based branches and returns
     # immediately so a Low/Medium weighted score can never mask it.
     if extortion.get("detected") and extortion.get("needs_review"):
-        if extortion.get("review_reason") == "no_explicit_payment_demand":
+        _reason = extortion.get("review_reason")
+        if _reason == "no_explicit_payment_demand":
             actions.append("**Manual review required.** This message pairs a claim to "
                            "possess private material with a threat to distribute it, but "
                            "no explicit payment demand was matched, so it was not "
                            "auto-escalated. Do not close this out as legitimate mail "
                            "without an analyst confirming whether it is a live threat.")
-        else:
+        elif _reason == "quoted_context":
             actions.append("**Manual review required.** This message matches the "
                            "extortion/sextortion pattern, but the matched threat "
                            "language appears quoted or attributed (e.g. inside "
@@ -373,6 +449,12 @@ def _actions(result):
                            "Do not close this out as legitimate mail without an "
                            "analyst confirming whether it is a live threat, a "
                            "forwarded threat, or genuine advisory content.")
+        else:   # reason missing/unknown: never guess "quoted"
+            actions.append("**Manual review required.** This message was flagged for "
+                           "human review as a possible extortion/sextortion threat, but "
+                           "the reason was not recorded, so it was not auto-escalated. "
+                           "Do not close this out as legitimate mail without an analyst "
+                           "confirming whether it is a live threat.")
         actions.append("Do not advise the recipient to pay or reply until "
                        "that review is complete.")
         actions.append("Preserve the original `.eml` with its hash for the "
@@ -399,7 +481,7 @@ def _actions(result):
                            "other traffic from it.".format(origin_ip))
         actions.append("Identify all recipients and check whether any "
                        "interacted with the message.")
-        if (result.get("extortion") or {}).get("detected"):
+        if extortion.get("detected"):
             actions.append("**Do not pay or reply.** This message matches the "
                            "sextortion/extortion pattern; advise the recipient "
                            "not to engage, preserve the evidence, and report it "
@@ -410,7 +492,7 @@ def _actions(result):
                            "(phone, not email) and freeze any payment already "
                            "initiated. Verify beneficiary changes against "
                            "records held outside email.")
-        if not result["headers"]["bec"]["is_bec"] and not (result.get("extortion") or {}).get("detected"):
+        if not result["headers"]["bec"]["is_bec"] and not extortion.get("detected"):
             actions.append("Force a password reset for any recipient who "
                            "opened the link, and check for new mail-forwarding "
                            "rules on their mailbox.")
@@ -422,6 +504,10 @@ def _actions(result):
                        "instructions until the sender is verified out of band.")
         actions.append("Re-check the sending domain's reputation before "
                        "releasing the message.")
+    elif uncertain:
+        actions.append("Hold for analyst review: the extortion assessment is unavailable or incomplete, so "
+                       "this message cannot be recorded as legitimate yet.")
+        actions.append("Preserve the original `.eml` with its hash for the incident record.")
     else:
         actions.append("No action required. Indicators are consistent with "
                        "legitimate mail.")
