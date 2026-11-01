@@ -5,12 +5,354 @@ No network calls, no ClamAV/VirusTotal/Supabase/Ollama - only synthetic,
 non-sensitive messages. The classifier model is trained once (cached to
 data/model.joblib) the first time this process imports classifier.
 """
+import ipaddress
+import os
+import socket
+import ssl
+import stat
+import sys
+import tempfile
+import traceback
 import unittest
+from unittest import mock
+
+# --------------------------------------------------------------------------
+# Strict offline guard. Every non-loopback DNS lookup, socket connect and UDP
+# send made while it is installed is RECORDED (with the test method that caused
+# it) and refused. Production code swallows network errors, so refusing alone
+# would hide an attempt: tearDownModule fails the run if any attempt was
+# recorded and not explicitly claimed as expected by a guard self-test.
+#
+# Scope, stated plainly:
+#  * The socket guard is installed BEFORE the project modules below are imported, so import-time network
+#    activity is covered, but ONLY when this module is the first to import them in the process. If another
+#    test module already imported them, their import code does not run again and is NOT covered here;
+#    IMPORT_TIME_GUARDED records which case applies and a test pins it.
+#  * The guard is removed again right after those imports and re-installed by setUpModule, so it never leaks
+#    into other test modules that are loaded or run in the same process.
+#  * Covered: socket.getaddrinfo, socket.create_connection, socket.socket.connect / connect_ex / sendto /
+#    sendmsg, and send / sendall on an ALREADY-CONNECTED socket (its peer is checked with getpeername(), so
+#    sockets connected before the guard existed cannot transmit). socket.sendfile() and makefile().write()
+#    are covered through send / os.sendfile. ssl.SSLSocket.send / sendall / write are covered the same way
+#    (OpenSSL writes to the descriptor itself, so socket.send is never reached). os.write / os.writev /
+#    os.sendfile are covered when the descriptor is a socket with a non-loopback peer.
+#    TRANSMIT_METHODS_REVIEWED pins every socket.socket send* method, so a new one fails a test.
+#    Not covered: sockets opened by C extensions on their own, subprocesses, or raw-fd I/O such as
+#    ctypes/mmap tricks; AF_ALG kernel-crypto sockets (sendmsg_afalg) never leave the machine.
+#  * Live-network coverage is opt-in: RUN_LIVE_NETWORK_TESTS=1 (LiveNetworkIntegrationTests).
+# --------------------------------------------------------------------------
+_PROJECT_MODULES = ("analyzer", "community_intel", "extortion_detection", "geolocate", "report", "risk",
+                    "shared_intel_client", "tor_check", "tracker")
+_PRELOADED = tuple(m for m in _PROJECT_MODULES if m in sys.modules)
+IMPORT_TIME_GUARDED = not _PRELOADED
+
+# Every public send* method of socket.socket and how the guard treats it (see test_every_send_method_is_reviewed).
+TRANSMIT_METHODS_REVIEWED = {
+    "send": "guarded: peer checked", "sendall": "guarded: peer checked",
+    "sendto": "guarded: address checked", "sendmsg": "guarded: address / peer checked",
+    "sendfile": "delegates to send (guarded) or os.sendfile (guarded)",
+    "sendmsg_afalg": "AF_ALG kernel-crypto socket: never leaves the machine",
+}
+
+_ATTEMPTS = []
+_STATE = {"guard": False}
+_REAL = {"getaddrinfo": socket.getaddrinfo, "connect": socket.socket.connect,
+         "connect_ex": socket.socket.connect_ex, "create_connection": socket.create_connection,
+         "sendto": socket.socket.sendto, "sendmsg": getattr(socket.socket, "sendmsg", None),
+         "send": socket.socket.send, "sendall": socket.socket.sendall,
+         "ssl_send": ssl.SSLSocket.send, "ssl_sendall": ssl.SSLSocket.sendall, "ssl_write": ssl.SSLSocket.write,
+         "os_write": os.write, "os_writev": getattr(os, "writev", None), "os_sendfile": getattr(os, "sendfile", None)}
+
+
+class NetworkAttempt(AssertionError):
+    """Raised (and recorded) when code under test tries to leave the machine."""
+
+
+def _record(kind, dest):
+    frames = traceback.extract_stack()[:-2]
+    test = next((f"{os.path.basename(f.filename)}:{f.lineno} {f.name}" for f in reversed(frames)
+                 if f.name.startswith("test_") or f.name in ("setUp", "setUpClass")), "<outside a test>")
+    chain = " > ".join(f"{os.path.basename(f.filename)}:{f.lineno} {f.name}" for f in frames
+                       if os.path.dirname(f.filename) == os.path.dirname(os.path.abspath(__file__)))
+    _ATTEMPTS.append({"kind": kind, "dest": str(dest), "test": test, "stack": chain, "expected": False})
+    raise NetworkAttempt("unexpected outbound network attempt ({} {}) from {}".format(kind, dest, test))
+
+
+def _is_local_host(host):
+    """True only for 'localhost' or a genuine loopback IP. str and bytes hosts are decoded and parsed with
+    ipaddress; anything undecodable, non-IP or of another type is NOT local (fail closed)."""
+    if isinstance(host, (bytes, bytearray)):
+        try:
+            host = bytes(host).decode("ascii")
+        except UnicodeDecodeError:
+            return False
+    if not isinstance(host, str):
+        return False
+    host = host.split("%", 1)[0].strip()
+    if host.lower() == "localhost":
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return (getattr(ip, "ipv4_mapped", None) or ip).is_loopback
+
+
+def _is_local(addr, family=None):
+    """addr is a socket address: (host, port, ...) or a bare host. AF_UNIX sockets never leave the machine."""
+    if family == getattr(socket, "AF_UNIX", object()):
+        return True
+    host = addr[0] if isinstance(addr, tuple) and addr else addr
+    return _is_local_host(host)
+
+
+def _remote_peer(sock):
+    """The non-loopback peer an already-connected socket would transmit to, or None when it is local, an
+    AF_UNIX socket, or not connected (then nothing can be transmitted; the real call reports the error)."""
+    if sock.family == getattr(socket, "AF_UNIX", object()):
+        return None
+    try:
+        peer = sock.getpeername()
+    except OSError:
+        return None
+    return None if _is_local(peer, sock.family) else peer
+
+
+def _fd_remote_peer(fd):
+    """Same check for a raw descriptor (os.write / os.writev / os.sendfile): only sockets are examined."""
+    try:
+        if not stat.S_ISSOCK(os.fstat(fd).st_mode):
+            return None
+        probe = socket.socket(fileno=os.dup(fd))       # closing the probe closes only the duplicate
+    except (OSError, TypeError, ValueError):
+        return None
+    try:
+        return _remote_peer(probe)
+    finally:
+        probe.close()
+
+
+def _g_getaddrinfo(host, *a, **k):
+    if _STATE["guard"] and host is not None and not _is_local_host(host):
+        _record("DNS", host)
+    return _REAL["getaddrinfo"](host, *a, **k)
+
+
+def _g_connect(self, addr, *a):
+    if _STATE["guard"] and not _is_local(addr, self.family):
+        _record("CONNECT", addr)
+    return _REAL["connect"](self, addr, *a)
+
+
+def _g_connect_ex(self, addr, *a):
+    if _STATE["guard"] and not _is_local(addr, self.family):
+        _record("CONNECT", addr)
+    return _REAL["connect_ex"](self, addr, *a)
+
+
+def _g_create_connection(address, *a, **k):
+    if _STATE["guard"] and not _is_local(address):
+        _record("CONNECT", address)
+    return _REAL["create_connection"](address, *a, **k)
+
+
+def _g_sendto(self, data, *args):
+    # sendto(data, address) or sendto(data, flags, address): the address is always last.
+    if _STATE["guard"] and args and not _is_local(args[-1], self.family):
+        _record("SENDTO", args[-1])
+    return _REAL["sendto"](self, data, *args)
+
+
+def _g_sendmsg(self, buffers, *args, **kw):
+    # sendmsg(buffers[, ancdata[, flags[, address]]]): an address is optional (connected sockets omit it).
+    address = args[2] if len(args) > 2 else kw.get("address")
+    if _STATE["guard"]:
+        if address is not None:
+            if not _is_local(address, self.family):
+                _record("SENDTO", address)
+        else:                                   # no explicit destination: it goes to the connected peer
+            peer = _remote_peer(self)
+            if peer is not None:
+                _record("SEND", peer)
+    return _REAL["sendmsg"](self, buffers, *args, **kw)
+
+
+def _g_send(self, *args, **kw):
+    peer = _remote_peer(self) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SEND", peer)
+    return _REAL["send"](self, *args, **kw)
+
+
+def _g_sendall(self, *args, **kw):
+    peer = _remote_peer(self) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SEND", peer)
+    return _REAL["sendall"](self, *args, **kw)
+
+
+def _g_ssl_send(self, *args, **kw):
+    peer = _remote_peer(self) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SEND", peer)
+    return _REAL["ssl_send"](self, *args, **kw)
+
+
+def _g_ssl_sendall(self, *args, **kw):
+    peer = _remote_peer(self) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SEND", peer)
+    return _REAL["ssl_sendall"](self, *args, **kw)
+
+
+def _g_ssl_write(self, *args, **kw):
+    peer = _remote_peer(self) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SEND", peer)
+    return _REAL["ssl_write"](self, *args, **kw)
+
+
+def _g_os_write(fd, *args, **kw):
+    peer = _fd_remote_peer(fd) if _STATE["guard"] else None
+    if peer is not None:
+        _record("FDWRITE", peer)
+    return _REAL["os_write"](fd, *args, **kw)
+
+
+def _g_os_writev(fd, *args, **kw):
+    peer = _fd_remote_peer(fd) if _STATE["guard"] else None
+    if peer is not None:
+        _record("FDWRITE", peer)
+    return _REAL["os_writev"](fd, *args, **kw)
+
+
+def _g_os_sendfile(out_fd, *args, **kw):
+    peer = _fd_remote_peer(out_fd) if _STATE["guard"] else None
+    if peer is not None:
+        _record("SENDFILE", peer)
+    return _REAL["os_sendfile"](out_fd, *args, **kw)
+
+
+_PATCH_TARGETS = (        # (owner, attribute, guard, key in _REAL)
+    (socket, "getaddrinfo", _g_getaddrinfo, "getaddrinfo"), (socket.socket, "connect", _g_connect, "connect"),
+    (socket.socket, "connect_ex", _g_connect_ex, "connect_ex"), (socket, "create_connection", _g_create_connection, "create_connection"),
+    (socket.socket, "sendto", _g_sendto, "sendto"), (socket.socket, "sendmsg", _g_sendmsg, "sendmsg"),
+    (socket.socket, "send", _g_send, "send"), (socket.socket, "sendall", _g_sendall, "sendall"),
+    (ssl.SSLSocket, "send", _g_ssl_send, "ssl_send"), (ssl.SSLSocket, "sendall", _g_ssl_sendall, "ssl_sendall"),
+    (ssl.SSLSocket, "write", _g_ssl_write, "ssl_write"),
+    (os, "write", _g_os_write, "os_write"), (os, "writev", _g_os_writev, "os_writev"),
+    (os, "sendfile", _g_os_sendfile, "os_sendfile"),
+)
+
+
+def _install_socket_guard():
+    _STATE["guard"] = True
+    for owner, attr, guard, key in _PATCH_TARGETS:
+        if _REAL[key] is not None:
+            setattr(owner, attr, guard)
+
+
+def _remove_socket_guard():
+    for owner, attr, _guard, key in _PATCH_TARGETS:
+        if _REAL[key] is not None:
+            setattr(owner, attr, _REAL[key])
+    _STATE["guard"] = False
+
+
+_install_socket_guard()          # BEFORE the project imports below: import-time network use is recorded/refused
 
 import analyzer
+import community_intel
 import extortion_detection as ED
+import geolocate
 import report
 import risk
+import shared_intel_client
+import tor_check
+import tracker
+
+_REAL_MAYBE_UPDATE_TOR = tor_check.maybe_update_tor_list
+_PATCHERS = []
+
+_remove_socket_guard()           # do not leak into other test modules; setUpModule re-installs it
+
+
+class _FakeHttpResponse:
+    """Deterministic stand-in for an unreachable HTTP service (no data)."""
+    status_code = 503
+    text = ""
+
+    def json(self):
+        return {}
+
+    def raise_for_status(self):
+        raise RuntimeError("503 (deterministic offline stub)")
+
+
+def _fake_geo_http():
+    session = mock.MagicMock(name="offline_geo_http")
+    session.get.return_value = _FakeHttpResponse()
+    return session
+
+
+def _start_offline():
+    """Install the guard and the deterministic stubs for every external lookup."""
+    _install_socket_guard()
+    for p in (
+        # analyzer -> geolocate.trace -> tor_check.maybe_update_tor_list (Tor exit lists)
+        mock.patch.object(tor_check, "maybe_update_tor_list", return_value=False),
+        # geolocate.geolocate -> ip-api.com (falls through to the offline cache / GeoLite2)
+        mock.patch.object(geolocate, "_geo_http", _fake_geo_http()),
+        # analyzer -> community_intel.lookup -> shared_intel_client.fetch_verified
+        mock.patch.object(shared_intel_client, "fetch_verified", return_value={"ok": False, "rows": []}),
+    ):
+        p.start()
+        _PATCHERS.append(p)
+    geolocate.geolocate.cache_clear()
+
+
+def _stop_offline():
+    while _PATCHERS:
+        _PATCHERS.pop().stop()
+    _remove_socket_guard()
+    geolocate.geolocate.cache_clear()
+
+
+def _unexpected():
+    """Every recorded attempt nobody explicitly claimed as expected."""
+    return [a for a in _ATTEMPTS if not a["expected"]]
+
+
+class _AttemptScope(unittest.TestCase):
+    """For the guard's own self-tests ONLY. _ATTEMPTS is append-only: nothing here ever removes or rewrites an
+    earlier record. A test sees just the attempts made since its own setUp (a start index) and can mark exactly
+    the ones it provokes on purpose as expected; everything else stays unexpected until tearDownModule."""
+
+    def setUp(self):
+        self._start = len(_ATTEMPTS)
+
+    def made_here(self):
+        return _ATTEMPTS[self._start:]
+
+    def expect_exactly(self, *pairs):
+        """Assert this test made exactly these (kind, dest) attempts, in order, and mark ONLY those as expected."""
+        mine = self.made_here()
+        self.assertEqual([(a["kind"], a["dest"]) for a in mine], list(pairs))
+        for a in mine:
+            a["expected"] = True
+        return mine
+
+
+def setUpModule():
+    _start_offline()
+
+
+def tearDownModule():
+    attempts = _unexpected()
+    _stop_offline()
+    if attempts:
+        raise AssertionError("{} unexpected outbound network attempt(s):\n{}".format(
+            len(attempts), "\n".join("  {kind} {dest}  <- {test}\n      {stack}".format(**a) for a in attempts)))
 
 
 def eml(subject, body, frm="anon123@gmail.com"):
@@ -2477,6 +2819,370 @@ class CombinedSafetyRegressionTests(unittest.TestCase):
         for needle in ("**Partial scan.**", "NOT a complete assessment", "first 60,000 and last 40,000 characters"):
             self.assertIn(needle, big_md)
         self.assertNotIn("No action required", big_md)
+
+
+class OfflineGuardTests(_AttemptScope):
+    """The guard itself: it must detect, record and refuse outbound attempts, and allow loopback."""
+
+    def test_dns_lookup_is_recorded_and_refused(self):
+        with self.assertRaises(NetworkAttempt):
+            socket.getaddrinfo("check.torproject.org", 443)
+        got = self.expect_exactly(("DNS", "check.torproject.org"))
+        self.assertIn("test_dns_lookup_is_recorded_and_refused", got[0]["test"])
+
+    def test_socket_connect_is_recorded_and_refused(self):
+        with socket.socket() as s, self.assertRaises(NetworkAttempt):
+            s.connect(("203.0.113.9", 80))
+        self.expect_exactly(("CONNECT", "('203.0.113.9', 80)"))
+
+    def test_requests_get_is_caught_at_the_socket_layer(self):
+        import requests
+        with self.assertRaises(Exception):
+            requests.get("http://ip-api.com/json/8.8.8.8", timeout=2)
+        self.expect_exactly(("DNS", "ip-api.com"))
+
+    def test_loopback_is_allowed(self):
+        self.assertTrue(socket.getaddrinfo("localhost", 80))
+        self.assertEqual(self.made_here(), [])
+
+    def test_is_local_decodes_and_validates_bytes_hosts(self):
+        for addr in ((b"8.8.8.8", 53), b"8.8.8.8", (bytearray(b"203.0.113.9"), 80), (b"\xff\xfe", 1), (b"", 1),
+                     ("127.0.0.1.evil.example", 80), ("0.0.0.0", 80), ("::ffff:8.8.8.8", 80), (b"::ffff:8.8.8.8", 80),
+                     ("", 80), (None, 80), ((), 0), (12345, 80)):
+            with self.subTest(addr=addr):
+                self.assertFalse(_is_local(addr))
+        for addr in ((b"127.0.0.1", 80), b"::1", ("localhost", 80), (b"LOCALHOST", 80), ("127.8.9.10", 1),
+                     ("::ffff:127.0.0.1", 80), ("::1%lo", 80, 0, 0)):
+            with self.subTest(addr=addr):
+                self.assertTrue(_is_local(addr))
+
+    def test_non_loopback_bytes_addresses_cannot_bypass_connect_or_dns(self):
+        with socket.socket() as s, self.assertRaises(NetworkAttempt):
+            s.connect((b"203.0.113.9", 80))
+        with socket.socket() as s, self.assertRaises(NetworkAttempt):
+            s.connect_ex((bytearray(b"203.0.113.9"), 80))
+        with self.assertRaises(NetworkAttempt):
+            socket.getaddrinfo(b"203.0.113.9", 80)
+        with self.assertRaises(NetworkAttempt):
+            socket.create_connection((b"203.0.113.9", 80), timeout=1)
+        self.expect_exactly(("CONNECT", "(b'203.0.113.9', 80)"), ("CONNECT", "(bytearray(b'203.0.113.9'), 80)"),
+                            ("DNS", "b'203.0.113.9'"), ("CONNECT", "(b'203.0.113.9', 80)"))
+
+    def test_udp_sendto_and_sendmsg_to_non_loopback_are_recorded_and_refused(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            for call in (lambda: s.sendto(b"q", ("203.0.113.9", 53)),
+                         lambda: s.sendto(b"q", 0, ("203.0.113.9", 53)),
+                         lambda: s.sendto(b"q", (b"203.0.113.9", 53)),
+                         lambda: s.sendmsg([b"q"], [], 0, ("203.0.113.9", 53)),
+                         lambda: s.connect(("203.0.113.9", 53))):
+                with self.assertRaises(NetworkAttempt):
+                    call()
+        self.expect_exactly(("SENDTO", "('203.0.113.9', 53)"), ("SENDTO", "('203.0.113.9', 53)"),
+                            ("SENDTO", "(b'203.0.113.9', 53)"), ("SENDTO", "('203.0.113.9', 53)"),
+                            ("CONNECT", "('203.0.113.9', 53)"))
+
+    def test_udp_ipv6_non_loopback_is_refused(self):
+        try:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        except OSError:
+            self.skipTest("IPv6 sockets unavailable in this environment")
+        with s, self.assertRaises(NetworkAttempt):
+            s.sendto(b"q", ("2001:db8::1", 53, 0, 0))
+        self.expect_exactly(("SENDTO", "('2001:db8::1', 53, 0, 0)"))
+
+    def test_loopback_udp_and_unix_sockets_still_work(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as rx, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as tx:
+            rx.bind(("127.0.0.1", 0))
+            rx.settimeout(2)
+            tx.sendto(b"ping", rx.getsockname())
+            self.assertEqual(rx.recv(16), b"ping")
+            tx.sendmsg([b"pong"], [], 0, rx.getsockname())
+            self.assertEqual(rx.recv(16), b"pong")
+        if hasattr(socket, "AF_UNIX"):
+            with tempfile.TemporaryDirectory() as d, socket.socket(socket.AF_UNIX) as srv, socket.socket(socket.AF_UNIX) as cli:
+                path = os.path.join(d, "g.sock")
+                srv.bind(path)
+                srv.listen(1)
+                cli.connect(path)
+        self.assertEqual(self.made_here(), [])
+
+    def test_guard_is_installed_during_this_modules_tests_and_removed_afterwards_is_not_assumed(self):
+        self.assertTrue(_STATE["guard"])
+        self.assertIs(socket.socket.sendto, _g_sendto)
+        self.assertIs(socket.getaddrinfo, _g_getaddrinfo)
+
+    def test_import_time_coverage_claim_matches_reality(self):
+        """IMPORT_TIME_GUARDED may only be True if no project module was already imported by something else."""
+        self.assertEqual(IMPORT_TIME_GUARDED, not _PRELOADED)
+        self.assertTrue(set(_PRELOADED) <= set(_PROJECT_MODULES))
+
+    # --- already-connected sockets: no connect() call happens under the guard, so the PEER is checked ---------
+    REMOTE = ("203.0.113.9", 80)
+
+    def _loopback_pair(self):
+        srv = socket.socket()
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(1)
+        cli = socket.socket()
+        cli.connect(srv.getsockname())
+        cli.settimeout(2)                                # a missing guard must fail fast, never hang
+        conn, _ = srv.accept()
+        conn.settimeout(0.3)
+        for sock in (srv, cli, conn):
+            self.addCleanup(sock.close)
+        return cli, conn
+
+    @staticmethod
+    def _pretend_peer(peer):
+        """The socket really is connected to loopback; getpeername() reports a remote peer, which is exactly what
+        the guard sees for a socket that was connected to a remote host before it was installed."""
+        return mock.patch.object(socket.socket, "getpeername", return_value=peer)
+
+    def test_send_and_sendall_on_an_already_connected_remote_socket_are_refused(self):
+        cli, conn = self._loopback_pair()
+        for peer in (self.REMOTE, (b"203.0.113.9", 80)):
+            with self._pretend_peer(peer):
+                with self.assertRaises(NetworkAttempt):
+                    cli.send(b"leak")
+                with self.assertRaises(NetworkAttempt):
+                    cli.sendall(b"leak")
+        with self.assertRaises(socket.timeout):          # and nothing was actually transmitted
+            conn.recv(16)
+        self.expect_exactly(*[("SEND", str(peer)) for peer in (self.REMOTE, self.REMOTE, (b"203.0.113.9", 80), (b"203.0.113.9", 80))])
+
+    def test_sendmsg_without_an_address_checks_the_connected_peer(self):
+        cli, conn = self._loopback_pair()                      # connected TCP
+        u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)   # connected UDP (pre-connected, guard bypassed)
+        self.addCleanup(u.close)
+        try:
+            _REAL["connect"](u, self.REMOTE)
+            udp_real = True
+        except OSError:
+            udp_real = False
+        with self._pretend_peer(self.REMOTE):
+            with self.assertRaises(NetworkAttempt):
+                cli.sendmsg([b"leak"])
+            with self.assertRaises(NetworkAttempt):
+                cli.sendmsg([b"leak"], [], 0, None)
+            if not udp_real:
+                u2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.addCleanup(u2.close)
+                with self.assertRaises(NetworkAttempt):
+                    u2.sendmsg([b"leak"])
+        if udp_real:
+            with self.assertRaises(NetworkAttempt):
+                u.sendmsg([b"leak"])
+        with self.assertRaises(socket.timeout):
+            conn.recv(16)
+        self.expect_exactly(*[("SEND", str(self.REMOTE))] * 3)
+
+    def test_sendmsg_loopback_without_an_address_still_works(self):
+        cli, conn = self._loopback_pair()
+        conn.settimeout(2)
+        cli.sendmsg([b"tc", b"p"])
+        self.assertEqual(conn.recv(8), b"tcp")
+        rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(rx.close)
+        self.addCleanup(tx.close)
+        rx.bind(("127.0.0.1", 0))
+        rx.settimeout(2)
+        tx.connect(rx.getsockname())
+        tx.sendmsg([b"udp"])
+        self.assertEqual(rx.recv(8), b"udp")
+        tx.sendmsg([b"udp2"], [], 0, rx.getsockname())
+        self.assertEqual(rx.recv(8), b"udp2")
+        self.assertEqual(self.made_here(), [])
+
+    def test_connected_udp_socket_cannot_send_to_a_remote_peer(self):
+        u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(u.close)
+        try:
+            _REAL["connect"](u, self.REMOTE)             # bypass the guard: a UDP connect sends nothing
+        except OSError:
+            self.skipTest("no route to pre-connect a UDP socket to a remote peer in this environment")
+        with self.assertRaises(NetworkAttempt):
+            u.send(b"q")
+        self.expect_exactly(("SEND", str(self.REMOTE)))
+
+    def test_sendfile_makefile_and_fd_level_writes_to_a_remote_peer_are_refused(self):
+        cli, conn = self._loopback_pair()
+        with tempfile.TemporaryFile() as f:
+            f.write(b"leak-data")
+            f.flush()
+            with self._pretend_peer(self.REMOTE):
+                with self.assertRaises(NetworkAttempt):
+                    cli.sendfile(f)                       # -> os.sendfile
+                with self.assertRaises(NetworkAttempt):
+                    os.sendfile(cli.fileno(), f.fileno(), 0, 4)
+                with self.assertRaises(NetworkAttempt):
+                    os.write(cli.fileno(), b"leak")
+                with self.assertRaises(NetworkAttempt):
+                    os.writev(cli.fileno(), [b"leak"])
+                with cli.makefile("wb", buffering=0) as w, self.assertRaises(NetworkAttempt):
+                    w.write(b"leak")                      # SocketIO.write -> socket.send
+        with self.assertRaises(socket.timeout):
+            conn.recv(16)
+        peer = str(self.REMOTE)
+        self.expect_exactly(("SENDFILE", peer), ("SENDFILE", peer), ("FDWRITE", peer), ("FDWRITE", peer), ("SEND", peer))
+
+    def test_ssl_socket_writes_on_a_remote_peer_are_refused(self):
+        cli, conn = self._loopback_pair()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE
+        with self._pretend_peer(self.REMOTE):
+            tls = ctx.wrap_socket(cli, do_handshake_on_connect=False)
+            self.addCleanup(tls.close)
+            for call in (lambda: tls.send(b"leak"), lambda: tls.sendall(b"leak"), lambda: tls.write(b"leak")):
+                with self.assertRaises(NetworkAttempt):
+                    call()
+        with self.assertRaises(socket.timeout):
+            conn.recv(16)
+        self.expect_exactly(*[("SEND", str(self.REMOTE))] * 3)
+
+    def test_loopback_communication_still_works_for_every_transmit_path(self):
+        cli, conn = self._loopback_pair()
+        conn.settimeout(2)
+        cli.send(b"a")
+        cli.sendall(b"b")
+        os.write(cli.fileno(), b"c")
+        os.writev(cli.fileno(), [b"d"])
+        with cli.makefile("wb", buffering=0) as w:
+            w.write(b"e")
+        with tempfile.TemporaryFile() as f:
+            f.write(b"fg")
+            f.flush()
+            cli.sendfile(f)
+            os.sendfile(cli.fileno(), f.fileno(), 0, 1)
+        got = b""
+        while len(got) < 8:
+            got += conn.recv(16)
+        self.assertEqual(sorted(got), sorted(b"abcdefgf"))
+        rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(rx.close)
+        self.addCleanup(tx.close)
+        rx.bind(("127.0.0.1", 0))
+        rx.settimeout(2)
+        tx.connect(rx.getsockname())
+        tx.send(b"udp")
+        self.assertEqual(rx.recv(8), b"udp")
+        a, b = socket.socketpair()                       # AF_UNIX
+        self.addCleanup(a.close)
+        self.addCleanup(b.close)
+        a.sendall(b"u")
+        os.write(a.fileno(), b"x")
+        self.assertEqual(b.recv(2), b"ux")
+        with socket.socket() as unconnected, self.assertRaises(OSError) as ctx:
+            unconnected.send(b"x")                       # the real error, not a guard error
+        self.assertNotIsInstance(ctx.exception, NetworkAttempt)
+        self.assertEqual(self.made_here(), [])
+
+    def test_every_send_method_is_reviewed(self):
+        """A new socket.socket send* method fails this test until it is reviewed and guarded (or justified)."""
+        names = {n for n in dir(socket.socket) if n.startswith("send")}
+        self.assertEqual(names - set(TRANSMIT_METHODS_REVIEWED), set())
+        self.assertEqual(set(TRANSMIT_METHODS_REVIEWED) - names - {"sendmsg_afalg"}, set())
+        for owner, attr, guard, _ in _PATCH_TARGETS:
+            if owner is socket.socket and attr.startswith("send"):
+                self.assertIs(getattr(owner, attr), guard)
+
+    def test_earlier_tests_attempts_cannot_be_erased_by_a_later_test(self):
+        """Regression: a record from an earlier test survives later tests' setUp/cleanup and stays unexpected."""
+        with self.assertRaises(NetworkAttempt):      # stands in for an earlier test's UNEXPECTED attempt
+            socket.getaddrinfo("earlier-test.invalid", 443)
+        earlier = self.made_here()[0]
+        self.assertFalse(earlier["expected"])
+
+        class Later(_AttemptScope):                  # a later guard self-test, run to completion
+            def test_later(self):
+                with self.assertRaises(NetworkAttempt):
+                    socket.getaddrinfo("later-test.invalid", 443)
+                self.expect_exactly(("DNS", "later-test.invalid"))
+        outcome = unittest.TestResult()              # TestCase.run directly: a suite runner would re-run the module fixtures
+        Later("test_later").run(outcome)
+        self.assertTrue(outcome.wasSuccessful(), outcome.failures + outcome.errors)
+
+        self.assertIn(earlier, _ATTEMPTS)            # still recorded, same object
+        self.assertFalse(earlier["expected"])        # the later test did not claim or clear it
+        self.assertIn(earlier, _unexpected())        # so tearDownModule would still fail on it
+        self.expect_exactly(("DNS", "earlier-test.invalid"), ("DNS", "later-test.invalid"))   # now claim, deliberately
+        self.assertNotIn(earlier, _unexpected())
+
+    def test_the_module_level_check_fails_on_any_unclaimed_attempt(self):
+        with self.assertRaises(NetworkAttempt):
+            socket.getaddrinfo("unclaimed.invalid", 443)
+        rec = self.made_here()[0]
+        self.assertIn(rec, _unexpected())
+        self.expect_exactly(("DNS", "unclaimed.invalid"))
+
+
+class OfflineStubsTests(_AttemptScope):
+    """Deterministic replacements for every external lookup reachable from analyzer.analyze_email."""
+
+    def test_tor_list_refresh_is_stubbed_and_never_reaches_the_network(self):
+        self.assertIs(geolocate.tor_check.maybe_update_tor_list(), False)
+        self.assertEqual(self.made_here(), [])
+
+    def test_public_ip_hop_is_resolved_without_ip_api(self):
+        geolocate.geolocate.cache_clear()
+        rec = geolocate.geolocate("8.8.8.8")
+        self.assertNotEqual(rec.get("source"), "Live API")
+        self.assertEqual(self.made_here(), [])
+        self.assertTrue(geolocate._geo_http.get.call_args[0][0].startswith("http://ip-api.com/json/8.8.8.8?"))
+
+    def test_analyze_email_with_public_received_hop_makes_no_outbound_attempt(self):
+        raw = eml("Hello", "plain body").replace(
+            b"Subject:", b"Received: from mail.example.org ([8.8.8.8]) by mx.example.com; Mon, 01 Jan 2024 00:00:00 +0000\r\nSubject:", 1)
+        res = analyzer.analyze_email(raw, "t.eml")
+        self.assertIn("score", res)
+        self.assertEqual(self.made_here(), [])
+
+    def test_community_feed_is_stubbed_even_if_the_flag_is_on(self):
+        with mock.patch.dict(os.environ, {community_intel.FLAG_ENV: "1"}):
+            community_intel.reset_cache()
+            res = analyzer.analyze_email(eml("Hello", "plain body"), "t.eml")
+            community_intel.reset_cache()
+        self.assertEqual(res["community_intel"]["status"], "unavailable")
+        self.assertEqual(self.made_here(), [])
+
+
+class TorRefreshOfflineIntegrationTests(unittest.TestCase):
+    """Integration coverage kept offline: the REAL tor_check refresh + exit-node lookup against a temp DB and a mocked HTTP layer."""
+
+    LIST = "198.51.100.7\n198.51.100.8\n"
+
+    def test_real_refresh_stores_mocked_lists_and_geolocate_annotates_the_exit(self):
+        resp = mock.Mock(text=self.LIST)
+        resp.raise_for_status.return_value = None
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(tracker, "DB_FILE", os.path.join(d, "t.db")), \
+                mock.patch.object(tracker, "MULTIUSER", False), \
+                mock.patch.object(tor_check.requests, "get", return_value=resp) as get:
+            tracker._SCHEMA_DONE.clear()
+            self.assertTrue(_REAL_MAYBE_UPDATE_TOR())
+            self.assertEqual({c[0][0] for c in get.call_args_list}, {u for u, _ in tor_check.SOURCES.values()})
+            self.assertTrue(tor_check.tor_exit_sources("198.51.100.7"))
+            self.assertEqual(tor_check.tor_exit_sources("192.0.2.1"), [])
+            rec = geolocate._annotate_tor_exit({"ip": "198.51.100.8"})
+            self.assertTrue(rec["tor_exit_confirmed"])
+            tracker._SCHEMA_DONE.clear()
+        self.assertEqual(_unexpected(), [])
+
+
+@unittest.skipUnless(os.environ.get("RUN_LIVE_NETWORK_TESTS") == "1",
+                     "live network integration: set RUN_LIVE_NETWORK_TESTS=1 to run")
+class LiveNetworkIntegrationTests(unittest.TestCase):
+    """Opt-in end-to-end run with the real Tor lists and ip-api.com (guard and stubs suspended)."""
+
+    def test_live_pipeline_against_real_services(self):
+        _stop_offline()
+        self.addCleanup(_start_offline)
+        raw = eml("Hello", "plain body").replace(
+            b"Subject:", b"Received: from mail.example.org ([8.8.8.8]) by mx.example.com; Mon, 01 Jan 2024 00:00:00 +0000\r\nSubject:", 1)
+        res = analyzer.analyze_email(raw, "live.eml")
+        self.assertIn(res["level"], ("Low", "Medium", "High", "Critical"))
+        self.assertTrue(res["geo"]["hops"])
 
 
 if __name__ == "__main__":
