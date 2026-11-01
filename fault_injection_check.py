@@ -281,8 +281,8 @@ def main(argv=None):
     m = load_repo(args.repo)
     secrets = os.path.join(m["repo"], ".streamlit", "secrets.toml")
     if os.path.exists(secrets):
-        print("NOTE: %s exists. This tool never reads it and blocks network access, but prefer a copy of the repo "
-              "without live credentials." % secrets)
+        print("NOTE: a local Streamlit secrets file exists. This tool never reads it and blocks network access, "
+              "but prefer a copy of the repo without live credentials.")
     app = parse_app(m["repo"])
     before = snapshot(m["repo"])
     ok = True

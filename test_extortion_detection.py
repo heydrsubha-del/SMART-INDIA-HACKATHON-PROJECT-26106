@@ -3057,6 +3057,7 @@ class OfflineGuardTests(_AttemptScope):
     def test_ssl_socket_writes_on_a_remote_peer_are_refused(self):
         cli, conn = self._loopback_pair()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2     # no legacy protocol versions (no handshake happens here)
         ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE
         with self._pretend_peer(self.REMOTE):
             tls = ctx.wrap_socket(cli, do_handshake_on_connect=False)
