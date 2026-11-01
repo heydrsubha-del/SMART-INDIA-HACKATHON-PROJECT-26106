@@ -64,6 +64,13 @@ _REAL = {"getaddrinfo": socket.getaddrinfo, "connect": socket.socket.connect,
          "os_write": os.write, "os_writev": getattr(os, "writev", None), "os_sendfile": getattr(os, "sendfile", None)}
 
 
+HAS_SENDMSG = _REAL["sendmsg"] is not None            # absent on Windows
+HAS_OS_SENDFILE = _REAL["os_sendfile"] is not None    # absent on Windows
+HAS_OS_WRITEV = _REAL["os_writev"] is not None
+FD_SOCKETS = os.name == "posix"                       # os.write()/os.writev() on a socket fd is POSIX-only
+needs_sendmsg = unittest.skipUnless(HAS_SENDMSG, "socket.sendmsg is unavailable on this platform")
+
+
 class NetworkAttempt(AssertionError):
     """Raised (and recorded) when code under test tries to leave the machine."""
 
@@ -303,6 +310,10 @@ def _start_offline():
         mock.patch.object(tor_check, "maybe_update_tor_list", return_value=False),
         # geolocate.geolocate -> ip-api.com (falls through to the offline cache / GeoLite2)
         mock.patch.object(geolocate, "_geo_http", _fake_geo_http()),
+        # ...which must NOT see this machine's data/geo_cache.json or GeoLite2 .mmdb files: they are untracked, differ per
+        # machine, and turn "unknown" origins (risk 0.35) into hosting/VPN/Tor (0.6/0.8/1.0), shifting the golden scores.
+        mock.patch.object(geolocate, "_cache", {}),
+        mock.patch.object(geolocate, "_geolite_reader", return_value=None),
         # analyzer -> community_intel.lookup -> shared_intel_client.fetch_verified
         mock.patch.object(shared_intel_client, "fetch_verified", return_value={"ok": False, "rows": []}),
     ):
@@ -2869,17 +2880,21 @@ class OfflineGuardTests(_AttemptScope):
                             ("DNS", "b'203.0.113.9'"), ("CONNECT", "(b'203.0.113.9', 80)"))
 
     def test_udp_sendto_and_sendmsg_to_non_loopback_are_recorded_and_refused(self):
+        calls = [lambda: s.sendto(b"q", ("203.0.113.9", 53)),
+                 lambda: s.sendto(b"q", 0, ("203.0.113.9", 53)),
+                 lambda: s.sendto(b"q", (b"203.0.113.9", 53))]
+        expected = [("SENDTO", "('203.0.113.9', 53)"), ("SENDTO", "('203.0.113.9', 53)"),
+                    ("SENDTO", "(b'203.0.113.9', 53)")]
+        if HAS_SENDMSG:
+            calls.append(lambda: s.sendmsg([b"q"], [], 0, ("203.0.113.9", 53)))
+            expected.append(("SENDTO", "('203.0.113.9', 53)"))
+        calls.append(lambda: s.connect(("203.0.113.9", 53)))
+        expected.append(("CONNECT", "('203.0.113.9', 53)"))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            for call in (lambda: s.sendto(b"q", ("203.0.113.9", 53)),
-                         lambda: s.sendto(b"q", 0, ("203.0.113.9", 53)),
-                         lambda: s.sendto(b"q", (b"203.0.113.9", 53)),
-                         lambda: s.sendmsg([b"q"], [], 0, ("203.0.113.9", 53)),
-                         lambda: s.connect(("203.0.113.9", 53))):
+            for call in calls:
                 with self.assertRaises(NetworkAttempt):
                     call()
-        self.expect_exactly(("SENDTO", "('203.0.113.9', 53)"), ("SENDTO", "('203.0.113.9', 53)"),
-                            ("SENDTO", "(b'203.0.113.9', 53)"), ("SENDTO", "('203.0.113.9', 53)"),
-                            ("CONNECT", "('203.0.113.9', 53)"))
+        self.expect_exactly(*expected)
 
     def test_udp_ipv6_non_loopback_is_refused(self):
         try:
@@ -2896,8 +2911,9 @@ class OfflineGuardTests(_AttemptScope):
             rx.settimeout(2)
             tx.sendto(b"ping", rx.getsockname())
             self.assertEqual(rx.recv(16), b"ping")
-            tx.sendmsg([b"pong"], [], 0, rx.getsockname())
-            self.assertEqual(rx.recv(16), b"pong")
+            if HAS_SENDMSG:
+                tx.sendmsg([b"pong"], [], 0, rx.getsockname())
+                self.assertEqual(rx.recv(16), b"pong")
         if hasattr(socket, "AF_UNIX"):
             with tempfile.TemporaryDirectory() as d, socket.socket(socket.AF_UNIX) as srv, socket.socket(socket.AF_UNIX) as cli:
                 path = os.path.join(d, "g.sock")
@@ -2950,6 +2966,7 @@ class OfflineGuardTests(_AttemptScope):
             conn.recv(16)
         self.expect_exactly(*[("SEND", str(peer)) for peer in (self.REMOTE, self.REMOTE, (b"203.0.113.9", 80), (b"203.0.113.9", 80))])
 
+    @needs_sendmsg
     def test_sendmsg_without_an_address_checks_the_connected_peer(self):
         cli, conn = self._loopback_pair()                      # connected TCP
         u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)   # connected UDP (pre-connected, guard bypassed)
@@ -2976,6 +2993,7 @@ class OfflineGuardTests(_AttemptScope):
             conn.recv(16)
         self.expect_exactly(*[("SEND", str(self.REMOTE))] * 3)
 
+    @needs_sendmsg
     def test_sendmsg_loopback_without_an_address_still_works(self):
         cli, conn = self._loopback_pair()
         conn.settimeout(2)
@@ -3007,24 +3025,34 @@ class OfflineGuardTests(_AttemptScope):
 
     def test_sendfile_makefile_and_fd_level_writes_to_a_remote_peer_are_refused(self):
         cli, conn = self._loopback_pair()
+        peer = str(self.REMOTE)
+        expected = []
         with tempfile.TemporaryFile() as f:
             f.write(b"leak-data")
             f.flush()
+            f.seek(0)                                 # socket.sendfile() fallback sends from the current position
             with self._pretend_peer(self.REMOTE):
                 with self.assertRaises(NetworkAttempt):
-                    cli.sendfile(f)                       # -> os.sendfile
-                with self.assertRaises(NetworkAttempt):
-                    os.sendfile(cli.fileno(), f.fileno(), 0, 4)
-                with self.assertRaises(NetworkAttempt):
-                    os.write(cli.fileno(), b"leak")
-                with self.assertRaises(NetworkAttempt):
-                    os.writev(cli.fileno(), [b"leak"])
+                    cli.sendfile(f)                       # -> os.sendfile, or socket.send where os.sendfile is absent
+                expected.append(("SENDFILE" if HAS_OS_SENDFILE else "SEND", peer))
+                if HAS_OS_SENDFILE:
+                    with self.assertRaises(NetworkAttempt):
+                        os.sendfile(cli.fileno(), f.fileno(), 0, 4)
+                    expected.append(("SENDFILE", peer))
+                if FD_SOCKETS:                            # a Windows socket handle is not a C-runtime fd
+                    with self.assertRaises(NetworkAttempt):
+                        os.write(cli.fileno(), b"leak")
+                    expected.append(("FDWRITE", peer))
+                    if HAS_OS_WRITEV:
+                        with self.assertRaises(NetworkAttempt):
+                            os.writev(cli.fileno(), [b"leak"])
+                        expected.append(("FDWRITE", peer))
                 with cli.makefile("wb", buffering=0) as w, self.assertRaises(NetworkAttempt):
                     w.write(b"leak")                      # SocketIO.write -> socket.send
+                expected.append(("SEND", peer))
         with self.assertRaises(socket.timeout):
             conn.recv(16)
-        peer = str(self.REMOTE)
-        self.expect_exactly(("SENDFILE", peer), ("SENDFILE", peer), ("FDWRITE", peer), ("FDWRITE", peer), ("SEND", peer))
+        self.expect_exactly(*expected)
 
     def test_ssl_socket_writes_on_a_remote_peer_are_refused(self):
         cli, conn = self._loopback_pair()
@@ -3045,19 +3073,29 @@ class OfflineGuardTests(_AttemptScope):
         conn.settimeout(2)
         cli.send(b"a")
         cli.sendall(b"b")
-        os.write(cli.fileno(), b"c")
-        os.writev(cli.fileno(), [b"d"])
+        sent = b"ab"
+        if FD_SOCKETS:
+            os.write(cli.fileno(), b"c")
+            sent += b"c"
+            if HAS_OS_WRITEV:
+                os.writev(cli.fileno(), [b"d"])
+                sent += b"d"
         with cli.makefile("wb", buffering=0) as w:
             w.write(b"e")
+        sent += b"e"
         with tempfile.TemporaryFile() as f:
             f.write(b"fg")
             f.flush()
+            f.seek(0)
             cli.sendfile(f)
-            os.sendfile(cli.fileno(), f.fileno(), 0, 1)
+            sent += b"fg"
+            if HAS_OS_SENDFILE:
+                os.sendfile(cli.fileno(), f.fileno(), 0, 1)
+                sent += b"f"
         got = b""
-        while len(got) < 8:
+        while len(got) < len(sent):
             got += conn.recv(16)
-        self.assertEqual(sorted(got), sorted(b"abcdefgf"))
+        self.assertEqual(sorted(got), sorted(sent))
         rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(rx.close)
@@ -3071,8 +3109,11 @@ class OfflineGuardTests(_AttemptScope):
         self.addCleanup(a.close)
         self.addCleanup(b.close)
         a.sendall(b"u")
-        os.write(a.fileno(), b"x")
-        self.assertEqual(b.recv(2), b"ux")
+        if FD_SOCKETS:
+            os.write(a.fileno(), b"x")
+            self.assertEqual(b.recv(2), b"ux")
+        else:
+            self.assertEqual(b.recv(2), b"u")
         with socket.socket() as unconnected, self.assertRaises(OSError) as ctx:
             unconnected.send(b"x")                       # the real error, not a guard error
         self.assertNotIsInstance(ctx.exception, NetworkAttempt)
@@ -3082,9 +3123,10 @@ class OfflineGuardTests(_AttemptScope):
         """A new socket.socket send* method fails this test until it is reviewed and guarded (or justified)."""
         names = {n for n in dir(socket.socket) if n.startswith("send")}
         self.assertEqual(names - set(TRANSMIT_METHODS_REVIEWED), set())
-        self.assertEqual(set(TRANSMIT_METHODS_REVIEWED) - names - {"sendmsg_afalg"}, set())
-        for owner, attr, guard, _ in _PATCH_TARGETS:
-            if owner is socket.socket and attr.startswith("send"):
+        optional = {"sendmsg_afalg"} | (set() if HAS_SENDMSG else {"sendmsg"})
+        self.assertEqual(set(TRANSMIT_METHODS_REVIEWED) - names - optional, set())
+        for owner, attr, guard, key in _PATCH_TARGETS:
+            if owner is socket.socket and attr.startswith("send") and _REAL[key] is not None:
                 self.assertIs(getattr(owner, attr), guard)
 
     def test_earlier_tests_attempts_cannot_be_erased_by_a_later_test(self):
@@ -3124,6 +3166,16 @@ class OfflineStubsTests(_AttemptScope):
         self.assertIs(geolocate.tor_check.maybe_update_tor_list(), False)
         self.assertEqual(self.made_here(), [])
 
+    def test_geolocation_ignores_machine_local_cache_and_geolite_files(self):
+        """Regression: golden scores must not depend on an untracked data/geo_cache.json or GeoLite2 database."""
+        self.assertEqual(geolocate._load_cache(), {})
+        self.assertIsNone(geolocate._geolite_reader("GeoLite2-City.mmdb"))
+        self.assertIsNone(geolocate._geolite_reader("GeoLite2-ASN.mmdb"))
+        geolocate.geolocate.cache_clear()
+        rec = geolocate.geolocate("103.21.58.14")
+        self.assertEqual((rec["infra"], rec["source"]), ("unknown", "unresolved_cache"))
+        self.assertEqual(self.made_here(), [])
+
     def test_public_ip_hop_is_resolved_without_ip_api(self):
         geolocate.geolocate.cache_clear()
         rec = geolocate.geolocate("8.8.8.8")
@@ -3153,6 +3205,7 @@ class TorRefreshOfflineIntegrationTests(unittest.TestCase):
     LIST = "198.51.100.7\n198.51.100.8\n"
 
     def test_real_refresh_stores_mocked_lists_and_geolocate_annotates_the_exit(self):
+        start = len(_ATTEMPTS)
         resp = mock.Mock(text=self.LIST)
         resp.raise_for_status.return_value = None
         with tempfile.TemporaryDirectory() as d, \
@@ -3167,7 +3220,9 @@ class TorRefreshOfflineIntegrationTests(unittest.TestCase):
             rec = geolocate._annotate_tor_exit({"ip": "198.51.100.8"})
             self.assertTrue(rec["tor_exit_confirmed"])
             tracker._SCHEMA_DONE.clear()
-        self.assertEqual(_unexpected(), [])
+        # THIS test must make zero attempts of its own (an earlier test's unclaimed record is reported by the
+        # module-level check, not blamed on this one).
+        self.assertEqual(_ATTEMPTS[start:], [])
 
 
 @unittest.skipUnless(os.environ.get("RUN_LIVE_NETWORK_TESTS") == "1",
