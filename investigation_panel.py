@@ -495,8 +495,38 @@ def _pills(inv):
                 unsafe_allow_html=True)
 
 
+def _id_chips(f, org):
+    """Visible evidence IDs, finding ID, verification status and the provenance of the cited evidence."""
+    why = "; ".join(dict.fromkeys(org.get(e, "unknown evidence") for e in f.get("evidence_ids", [])))
+    chip = f'<span class="ev-n" title="{_h(why, 200)}">{_h(", ".join(f.get("evidence_ids", [])), 40)}</span><span>{_h(why, 80)}</span>'
+    if f.get("finding_id"):
+        chip += f'<span class="ev-n">{_h(f["finding_id"], 8)} \u00b7 {_h(f.get("verification", "-"), 20)}</span>'
+    return chip
+
+
+def _register(inv):
+    """Every evidence record of this investigation: ID, type, source, provenance and status, expandable to its observations."""
+    ev_ = inv.get("evidence") or []
+    if not ev_:
+        return
+    rows = []
+    for e in ev_:
+        meta = "".join(f'<div class="ev-f"><span>{_h(k, 30)}</span><b>{_h(v, 300)}</b></div>' for k, v in (
+            ("Type", e.get("type")), ("Source", e.get("source")), ("Origin", ia.ORIGIN_LABEL.get(e.get("origin"), "origin not recorded")),
+            ("Status", e.get("status")), ("Source reference", e.get("source_reference")), ("Observed", e.get("observed_utc"))) if v)
+        obs = "".join(f'<div class="ev-why">{_h(x, 300)}</div>' for x in list(e.get("facts") or []) + list(e.get("signals") or [])
+                      + ["(gap) " + m for m in e.get("missing") or []])
+        rows.append(f'<details class="rs-grp" style="--c:#38bdf8"><summary><i></i><span class="t"><span class="ev-n">{_h(e.get("id"), 8)}</span> '
+                    f'{_h(e.get("type", ""), 30)}</span><em>{_h(e.get("status", ""), 12)}</em>'
+                    f'<span class="d">{_h(ia.ORIGIN_LABEL.get(e.get("origin"), ""), 80)}</span></summary><div class="ev-g">{meta}</div>{obs}</details>')
+    st.markdown('<div class="rs-card" style="--t:#38bdf8"><div class="rs-hd"><div class="hd-l"><b>Evidence register</b>'
+                '<span>Findings cite these IDs; scan ' + _h(inv.get("scan_id") or "not recorded", 40) + '</span></div></div>' + "".join(rows) + '</div>',
+                unsafe_allow_html=True)
+
+
 def _findings(inv):
     src = _src(inv)
+    org = ia.origin_labels(inv.get("evidence", []))
     parts = ['<div class="rs-card" style="--t:#a78bfa"><div class="rs-hd"><div class="hd-l"><b>Findings</b><span>Source = the tool that produced each finding</span></div></div>']
     for kind, title, color, desc in _KINDS:
         items = [f for f in inv["findings"] if f["kind"] == kind]
@@ -506,9 +536,19 @@ def _findings(inv):
         for f in items:
             names = list(dict.fromkeys(src.get(e, e) for e in f["evidence_ids"]))
             ev = "".join(f'<span title="Evidence {_h(",".join(f["evidence_ids"]), 60)}">{_h(n, 40)}</span>' for n in names)
+            ev += _id_chips(f, org)
             parts.append(f'<div class="rs-row"><div>{_h(f["statement"], 600)}</div><div class="rs-ev">{ev}</div></div>')
         if not items:
             parts.append('<div class="rs-none">None recorded.</div>')
+        parts.append("</details>")
+    ai = inv.get("narrative_findings") or []
+    if ai:      # AI-proposed findings are secondary: shown separately, labelled, never mixed with machine findings
+        parts.append(f'<details class="rs-grp" style="--c:#94a3b8"><summary><i></i><span class="t">AI-proposed (secondary)</span><em>{len(ai)}</em>'
+                     '<span class="d">Not machine-verified: the validator checks that cited IDs exist and that wording overlaps the cited '
+                     'evidence; it does not prove the claim.</span></summary>')
+        for f in ai:
+            tag = "" if f.get("supported", True) else '<span class="rs-b" style="--c:#fbbf24">unverified AI claim</span> '
+            parts.append(f'<div class="rs-row"><div>{tag}{_h(f["statement"], 600)}</div><div class="rs-ev">{_id_chips(f, org)}</div></div>')
         parts.append("</details>")
     parts.append("</div>")
     st.markdown("".join(parts), unsafe_allow_html=True)
@@ -604,8 +644,15 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
         except Exception:
             pass
     inv = store.get(key)
+    if inv and ia.check_scan_binding(inv, result) == "mismatch":      # stale result from another email: never show it here
+        store.pop(key, None)
+        st.session_state.get("agent_reports", {}).pop(key, None)
+        st.warning("A stored investigation belonged to a different scan and was discarded. Run the investigation again for this message.")
+        inv = None
     if not inv:
         return
+    if ia.check_scan_binding(inv, result) == "unbound":
+        st.caption("This investigation is not bound to a scan identity (it predates scan IDs), so its link to this message cannot be confirmed.")
 
     if inv.get("mode_note"):
         st.warning(_t(inv["mode_note"]))
@@ -618,6 +665,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     with t2:
         _actions(inv)
     with t3:
+        _register(inv)
         _evidence(inv)
 
     # Download lives in the app's "Download AI Threat Report" section; hand the report over via session state.

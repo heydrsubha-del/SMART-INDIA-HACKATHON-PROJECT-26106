@@ -814,8 +814,11 @@ def validate_narrative(obj, evidence, result):
                 "uncertain": [x for e in cev for x in e["missing"]]}[kind]
         w = _words(st)
         supported = bool(w) and len(w & _words(" ".join(pool))) / len(w) >= 0.5
+        # verification: the validator checks that the cited IDs exist, that indicators/numbers appear in the cited evidence and
+        # that wording overlaps it (word overlap) - it does NOT prove logical entailment, so even "keyword_grounded" stays secondary.
         findings.append({"statement": clean(st, 300), "evidence_ids": cited, "origin": "ai", "supported": supported,
-                         "kind": kind if supported else "uncertain"})
+                         "kind": kind if supported else "uncertain", "finding_id": "AF%d" % (len(findings) + 1),
+                         "verification": "keyword_grounded" if supported else "unverified"})
     # Free-form model summaries are never accepted (a claim like "all clear" could slip through): any provided
     # summary is discarded and counted; the report summary is built from deterministic findings (build_summary).
     if obj.get("summary"):
@@ -847,6 +850,600 @@ def _narrative(llm, evidence, result, timeout):
         "untrusted_evidence": _evidence_view(evidence, cap=20),
     }, ensure_ascii=True)
     return validate_narrative(_extract_json(llm(SYSTEM, user, timeout)), evidence, result)
+
+
+# ---------------------------------------------------------------------------
+# Evidence contract (Phase 1: universal evidence integration). ONE vocabulary for the scanner register (S#, built by
+# build_scan_evidence) and the investigation register (E#, built by investigate). Nothing below changes a score or verdict.
+# ---------------------------------------------------------------------------
+ORIGINS = ("direct_machine", "trusted_external", "untrusted_claim", "historical", "inference")
+ORIGIN_LABEL = {
+    "direct_machine": "machine observation",
+    "trusted_external": "external result (not sender-controlled; not cryptographically authenticated)",
+    "untrusted_claim": "unverified claim (sender-controlled)",
+    "historical": "historical sighting (seen before; not proof)",
+    "inference": "inference (derived or approximate)"}
+# ok = the check completed; partial = completed with incomplete coverage; missing = the expected output is absent (cause unknown);
+# unavailable = the component/feed that would produce it is not available; skipped = deliberately not run; failed = it ran and
+# errored or returned malformed output; error = an investigation tool error.
+EVIDENCE_STATUSES = ("ok", "partial", "missing", "unavailable", "skipped", "failed", "error")
+_FINDING_KINDS = ("verified", "suspicious", "uncertain")
+_SCAN_FIELDS = ("id", "scan_id", "type", "source", "origin", "observation", "status", "source_reference")
+
+
+def scan_id_for(raw):
+    """'SC-' + 32 hex (128 bits) of the SHA-256 of the original bytes: an identifier for the scan, not a copy of any content.
+    Identical bytes give the identical id. '' when there are no bytes (a missing identity is never replaced by a shared constant)."""
+    if isinstance(raw, str):
+        raw = raw.encode("utf-8", "replace")
+    if not isinstance(raw, (bytes, bytearray)) or not raw:
+        return ""
+    import hashlib
+    return "SC-" + hashlib.sha256(bytes(raw)).hexdigest()[:32]
+
+
+def qualified_id(scan_id, evidence_id):
+    """Globally unambiguous reference, e.g. 'SC-<32 hex>/E3' (scanner IDs are S#, investigation IDs are E#)."""
+    return "%s/%s" % (scan_id or "unbound", evidence_id)
+
+
+def check_scan_binding(inv, result):
+    """'match' | 'mismatch' | 'unbound' (only one side carries a scan_id) | 'legacy' (neither does)."""
+    a, b = (inv or {}).get("scan_id") or "", (result or {}).get("scan_id") or ""
+    if a and b:
+        return "match" if a == b else "mismatch"
+    return "unbound" if (a or b) else "legacy"
+
+
+# tool -> (evidence type, source module/tool, provenance origin, source reference). References name real result fields or
+# lookups; message content is never copied.
+_TOOL_META = {
+    "scan_content_for_injection": ("content", "investigation_agent.t_scan_content", "direct_machine",
+                                   "result.parsed.subject / body_text (content not copied)"),
+    "review_authentication": ("authentication", "header_analysis", "untrusted_claim", "result.headers.auth_evidence"),
+    "review_sender_identity": ("header", "email_parser / header_analysis", "untrusted_claim",
+                               "result.parsed.from_addr / reply_to_domain / return_path_domain"),
+    "review_urls": ("URL", "ioc_extract", "direct_machine", "result.iocs.urls"),
+    "review_origin": ("GeoIP", "geolocate / tor_check", "inference", "result.geo.origin"),
+    "lookup_threat_memory": ("threat intelligence", "tracker", "historical", "tracker.lookup_indicator"),
+    "retro_hunt_indicator": ("Retro-Hunt", "retro_hunt", "historical", "retro_hunt (read-only threat-memory tables and cases)"),
+    "lookup_domain_dns_rdap": ("domain", "public DNS/RDAP", "trusted_external", "public DNS/RDAP lookup"),
+}
+
+
+def evidence_contract(tool, args, result, observed_utc, scan_id):
+    """The Phase 1 fields added to one investigation evidence record (E#). Existing fields are untouched."""
+    typ, src, origin, ref = _TOOL_META.get(tool, ("other", clean(tool, 60), "inference", "Not available"))
+    meta = {}
+    if tool == "review_authentication":          # trusted only when EVERY mechanism is verified; otherwise an unverified claim
+        ae = ((result or {}).get("headers") or {}).get("auth_evidence")
+        ae = ae if isinstance(ae, dict) else {}
+        prov = {m: clean((ae.get(m) or {}).get("provenance", "unknown") if isinstance(ae.get(m), dict) else "unknown", 20)
+                for m in ("spf", "dkim", "dmarc")}
+        meta["provenance"] = prov
+        if all(v == "verified" for v in prov.values()):
+            origin = "trusted_external"
+    if tool == "review_origin":
+        meta.update(approximate=True, note="GeoIP/ASN data is approximate; it is not a precise location")
+    ind = (args or {}).get("indicator") if isinstance(args, dict) else None
+    if ind:
+        ref = "%s; indicator=%s" % (ref, clean(ind, 80))
+        meta["indicator"] = clean(ind, 80)
+    return {"scan_id": scan_id, "type": typ, "source": src, "origin": origin, "source_reference": ref,
+            "observed_utc": observed_utc, "metadata": meta}
+
+
+def _unit(v):
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) and 0.0 <= float(v) <= 1.0 else None
+
+
+# --- payload contracts of the optional intelligence modules (validated before anything is recorded as evidence) -----------------
+_COMMUNITY_STATUSES = ("ok", "unavailable")                 # community_intel.lookup() emits exactly these
+_COMMUNITY_TYPES = ("domain", "ip", "url")
+_BANDS = ("High", "Medium", "Low", "None")                  # origin_intel._band(); "None" when there is no candidate IP
+_FLAG_SEVERITIES = ("high", "medium", "low", "info")
+
+
+def _count(v):
+    return isinstance(v, int) and not isinstance(v, bool) and v >= 0
+
+
+def _non_negative_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and v not in (float("inf"), float("-inf")) and v >= 0
+
+
+def _nonblank(v):
+    return isinstance(v, str) and bool(v.strip())
+
+
+def valid_community_match(m):
+    """One community match as community_intel.lookup() builds it: indicator/type/match/verdict strings, a numeric confidence
+    and, when present, found_in as a list of strings."""
+    return (isinstance(m, dict) and _nonblank(m.get("indicator")) and isinstance(m.get("type"), str) and m["type"] in _COMMUNITY_TYPES
+            and _nonblank(m.get("match")) and _nonblank(m.get("verdict")) and _non_negative_number(m.get("confidence"))
+            and (m.get("found_in") is None or (isinstance(m["found_in"], list) and all(isinstance(x, str) for x in m["found_in"]))))
+
+
+def origin_field_problems(oi):
+    """Names of the malformed/missing fields of an origin_intel.assess_origin() mapping ([] = valid). selected_ip: a valid IP
+    string, or None / "None" when there is no candidate; confidence: a finite number 0..100; band: High|Medium|Low|None;
+    flags: a list of mappings with a severity (high|medium|low|info) and a non-blank title."""
+    import ipaddress
+    bad = []
+    if "selected_ip" not in oi:
+        bad.append("selected_ip")
+    else:
+        ip = oi["selected_ip"]
+        if not (ip is None or ip == "None"):
+            try:
+                if not isinstance(ip, str):
+                    raise ValueError
+                ipaddress.ip_address(ip)
+            except ValueError:
+                bad.append("selected_ip")
+    c = oi.get("confidence", _MISSING)
+    if not (isinstance(c, (int, float)) and not isinstance(c, bool) and c == c and 0 <= c <= 100):
+        bad.append("confidence")
+    b = oi.get("band", _MISSING)
+    if not (isinstance(b, str) and b in _BANDS):
+        bad.append("band")
+    fl = oi.get("flags", _MISSING)
+    if not (isinstance(fl, list) and all(isinstance(f, dict) and isinstance(f.get("severity"), str) and f["severity"] in _FLAG_SEVERITIES
+                                         and _nonblank(f.get("title")) and (f.get("code") is None or isinstance(f["code"], str))
+                                         and (f.get("hops") is None or isinstance(f["hops"], list)) for f in fl)):
+        bad.append("flags")
+    return bad
+
+
+_MISSING = object()
+
+
+def build_scan_evidence(result):
+    """Scanner observations -> (evidence register S#, machine findings SF#). PURE: never mutates `result`, never raises,
+    never changes a score. Only what a detector actually reported becomes evidence; a missing/failed/malformed check
+    becomes evidence with status missing/failed and an 'uncertain' finding - never a clean result. Header values stay
+    'untrusted_claim' unless the scanner itself marked them verified; GeoIP is an 'inference' flagged approximate; no email
+    body text, full address or URL path is copied (masked values, domains, hosts and counts only)."""
+    r = result if isinstance(result, dict) else {}
+    sid = r.get("scan_id") if isinstance(r.get("scan_id"), str) else ""
+    reg, fnd = [], []
+
+    def ev(typ, source, origin, observation, status="ok", ref="Not available", confidence=None, meta=None):
+        e = {"id": "S%d" % (len(reg) + 1), "scan_id": sid, "type": typ, "source": source, "origin": origin,
+             "observation": clean(observation, 300), "status": status, "source_reference": ref}
+        if confidence is not None:
+            e["confidence"] = confidence
+        if meta:
+            e["metadata"] = meta
+        reg.append(e)
+        return e["id"]
+
+    def fi(statement, kind, ids, severity=None):
+        f = {"id": "SF%d" % (len(fnd) + 1), "scan_id": sid, "statement": clean(statement, 300), "kind": kind,
+             "origin": "machine", "evidence_ids": list(ids),
+             "support": "machine_detector" if kind != "uncertain" else "gap_or_unverified"}
+        if severity:
+            f["severity"] = clean(severity, 12)
+        fnd.append(f)
+
+    def section(name, fn):
+        try:
+            fn()
+        except Exception as exc:
+            i = ev("validation", "investigation_agent.build_scan_evidence", "direct_machine",
+                   "Evidence for '%s' could not be built (%s)" % (name, type(exc).__name__), "failed")
+            fi("Evidence for '%s' is unavailable; this part of the scan is not covered by the register" % name, "uncertain", [i])
+
+    h = r.get("headers") if isinstance(r.get("headers"), dict) else {}
+    p = r.get("parsed") if isinstance(r.get("parsed"), dict) else {}
+
+    def s_ml():
+        ml = r.get("ml")
+        pr = _unit(ml.get("prob")) if isinstance(ml, dict) else None
+        if pr is None:
+            i = ev("ML", "classifier", "direct_machine", "ML classification is missing or malformed", "missing", "result.ml")
+            fi("ML classification result is missing or malformed", "uncertain", [i])
+            return
+        terms = [clean(t[0], 30) for t in (ml.get("top_terms") or [])[:5] if isinstance(t, (list, tuple)) and t]
+        i = ev("ML", "classifier", "direct_machine",
+               "Model label=%s, phishing probability=%.1f%% (model output, not a verdict)" % (clean(ml.get("label"), 20), pr * 100),
+               "ok", "result.ml", meta={"prob": round(pr, 4), "label": clean(ml.get("label"), 20), "top_terms": terms})
+        if pr >= 0.5:
+            fi("ML classifier assigned %.0f%% phishing probability (a detector output, not a verdict)" % (pr * 100), "suspicious", [i])
+
+    def s_auth():
+        ae = h.get("auth_evidence") if isinstance(h.get("auth_evidence"), dict) else {}
+        unverified, absent = [], []
+        for m in ("spf", "dkim", "dmarc"):
+            e = ae.get(m)
+            if not isinstance(e, dict):
+                absent.append(ev("authentication", "header_analysis", "untrusted_claim", "%s result is unavailable" % m.upper(),
+                                 "missing", "result.headers.auth_evidence.%s" % m))
+                continue
+            res, prov = clean(e.get("result", "unknown"), 30), clean(e.get("provenance", "unknown"), 20)
+            missing = res.lower() in ("", "none", "unknown")
+            conf = e.get("confidence")
+            i = ev("authentication", "header_analysis", "trusted_external" if prov == "verified" else "untrusted_claim",
+                   "%s=%s (provenance: %s)%s" % (m.upper(), res, prov, "; " + clean(e.get("note"), 80) if e.get("note") else ""),
+                   "missing" if missing else "ok", "result.headers.auth_evidence.%s" % m,
+                   confidence=clean(conf, 20) if conf not in (None, "", "none") else None, meta={"provenance": prov})
+            (absent if missing else unverified if prov != "verified" else []).append(i)
+        if unverified:
+            fi("SPF/DKIM/DMARC values are unverified claims from the message headers (no trusted authserv-id verified them)",
+               "uncertain", unverified)
+        if absent:
+            fi("One or more authentication results are absent from the message headers", "uncertain", absent)
+
+    def s_identity():
+        fd, rd, pd = p.get("from_domain"), p.get("reply_to_domain"), p.get("return_path_domain")
+        if not fd:
+            i = ev("header", "email_parser", "untrusted_claim", "No From domain could be parsed", "missing", "result.parsed.from_domain")
+            fi("The From domain could not be parsed", "uncertain", [i])
+            return
+        i = ev("header", "email_parser", "untrusted_claim",
+               "Header claims: From domain %s; Reply-To domain %s; Return-Path domain %s" % (
+                   clean(fd, 80), clean(rd or "-", 80), clean(pd or "-", 80)),
+               "ok", "result.parsed.from_domain / reply_to_domain / return_path_domain",
+               meta={"from_domain": clean(fd, 80), "reply_to_domain": clean(rd or "", 80), "return_path_domain": clean(pd or "", 80)})
+        import header_analysis
+        for label, d in (("Reply-To", rd), ("Return-Path", pd)):
+            if d and not header_analysis.same_org(fd, d):
+                fi("%s domain differs from the From domain (claimed values: %s vs %s)" % (label, clean(d, 60), clean(fd, 60)), "suspicious", [i])
+
+    def s_anomalies():
+        for n, a in enumerate([x for x in (h.get("anomalies") or []) if isinstance(x, dict)][:12]):
+            sev, title = clean(a.get("severity", "?"), 10), clean(a.get("title", ""), 100)
+            i = ev("BEC" if "business email compromise" in title.lower() else "header", "header_analysis", "direct_machine",
+                   "[%s] %s: %s" % (sev, title, clean(a.get("detail", ""), 160)), "ok", "result.headers.anomalies[%d]" % n)
+            if sev in ("high", "medium"):
+                fi("Header analysis reported: [%s] %s" % (sev, title), "suspicious", [i], severity=sev)
+        bec = h.get("bec")
+        if isinstance(bec, dict) and _unit(bec.get("score")) is not None:
+            ev("BEC", "header_analysis.bec", "direct_machine", "BEC detector: is_bec=%s, score=%.2f" % (bool(bec.get("is_bec")), float(bec["score"])),
+               "ok", "result.headers.bec", meta={"is_bec": bool(bec.get("is_bec")), "score": round(float(bec["score"]), 3)})
+
+    def s_extortion():
+        if "extortion" not in r:
+            return
+        import extortion_detection as ED
+        x = ED.from_result(r)             # validated: None / {} / malformed output becomes an InvalidDetectorOutput failure
+        if x.get("error") and not x.get("detected"):
+            i = ev("extortion", "extortion_detection", "direct_machine", "Extortion detector failed (%s); there is no extortion assessment" % clean(x["error"], 40),
+                   "failed", "result.extortion")
+            fi("The extortion check could not complete; the absence of a finding is not a clean result", "uncertain", [i])
+        elif x.get("detected"):
+            i = ev("extortion", "extortion_detection", "direct_machine",
+                   "Detector: %s, severity %s; categories matched: %s%s" % (
+                       clean(x.get("category"), 30), clean(x.get("severity"), 12), ", ".join(clean(c, 30) for c in x.get("categories_hit") or []),
+                       "; flagged for manual review (%s)" % clean(x.get("review_reason"), 40) if x.get("needs_review") else ""),
+                   "partial" if x.get("truncated") else "ok", "result.extortion", confidence=round(float(x["confidence"]), 3),
+                   meta={"pattern_ids": x.get("pattern_ids"), "rule_confidence": round(float(x["confidence"]), 3),
+                         "needs_review": bool(x.get("needs_review")), "truncated": bool(x.get("truncated"))})
+            fi("The extortion detector flagged this message (%s)" % clean(x.get("category"), 30), "suspicious", [i], severity=x.get("severity"))
+        else:
+            i = ev("extortion", "extortion_detection", "direct_machine", "No extortion pattern matched by the rule-based detector",
+                   "partial" if x.get("truncated") else "ok", "result.extortion", meta={"truncated": bool(x.get("truncated"))})
+            if x.get("truncated"):
+                fi("Only part of the message was scanned for extortion language; the result is not a complete assessment", "uncertain", [i])
+
+    _ABSENT = object()
+
+    def s_urls():
+        if "iocs" not in r:
+            i = ev("URL", "ioc_extract", "direct_machine", "No IOC extraction output is present in this scan", "missing", "result.iocs")
+            fi("IOC extraction output is absent, so URLs, domains and IPs were not assessed", "uncertain", [i])
+            return
+        io = r["iocs"]
+        if not isinstance(io, dict):
+            i = ev("URL", "ioc_extract", "direct_machine", "IOC extraction output is malformed (%s, expected a mapping)" % type(io).__name__,
+                   "failed", "result.iocs")
+            fi("IOC extraction output is malformed, so URLs, domains and IPs were not assessed", "uncertain", [i])
+            return
+        urls_v = io.get("urls", _ABSENT)
+        if not isinstance(urls_v, list):          # an unusable output is a gap, never "0 URLs extracted successfully"
+            st = "missing" if urls_v is _ABSENT else "failed"
+            i = ev("URL", "ioc_extract", "direct_machine", "URL extraction output is %s" % (
+                "absent" if st == "missing" else "malformed (%s, expected a list)" % type(urls_v).__name__), st, "result.iocs.urls")
+            fi("URL extraction output is %s; URLs were not assessed" % ("absent" if st == "missing" else "malformed"), "uncertain", [i])
+        else:
+            urls = [u for u in urls_v if isinstance(u, dict)]
+            bad = len(urls_v) - len(urls)
+            flagged = [(n, u) for n, u in enumerate(urls_v) if isinstance(u, dict) and u.get("suspicious")]
+            i = ev("URL", "ioc_extract", "direct_machine", "%d URL(s) extracted; %d flagged by the URL heuristics%s" % (
+                len(urls), len(flagged), "; %d malformed entr%s ignored" % (bad, "y" if bad == 1 else "ies") if bad else ""),
+                "partial" if bad else "ok", "result.iocs.urls", meta={"count": len(urls), "flagged": len(flagged), "malformed_entries": bad})
+            if bad:
+                fi("%d URL entr%s malformed and ignored; the URL assessment is incomplete" % (bad, "y was" if bad == 1 else "ies were"), "uncertain", [i])
+            for n, u in flagged[:8]:
+                risk_v = _unit(u.get("risk"))
+                j = ev("URL", "ioc_extract", "direct_machine", "URL host %s flagged by URL heuristics (risk %s): %s" % (
+                    clean(u.get("host", ""), 80), "%.2f" % risk_v if risk_v is not None else "n/a", clean("; ".join(map(str, u.get("flags") or [])), 160)),
+                    "ok", "result.iocs.urls[%d]" % n, meta={"host": clean(u.get("host", ""), 80), "risk": risk_v})
+                fi("URL host %s was flagged by the URL heuristics" % clean(u.get("host", ""), 80), "suspicious", [j])
+        doms, ips = io.get("domains", _ABSENT), io.get("ips", _ABSENT)
+        bad_lists = [(n, v) for n, v in (("domains", doms), ("ips", ips)) if not isinstance(v, list)]
+        if bad_lists:
+            st = "failed" if any(v is not _ABSENT for _, v in bad_lists) else "missing"
+            i = ev("domain", "ioc_extract", "direct_machine", "Domain/IP extraction output is %s for: %s" % (
+                "malformed" if st == "failed" else "absent", ", ".join(n for n, _ in bad_lists)), st, "result.iocs.domains / ips")
+            fi("Domain/IP extraction output is incomplete; the absence of indicators here is not a clean result", "uncertain", [i])
+        else:
+            ev("domain", "ioc_extract", "direct_machine", "%d domain(s) and %d IP(s) extracted from the message" % (len(doms), len(ips)), "ok",
+               "result.iocs.domains / ips", meta={"domains": len(doms), "ips": len(ips)})
+
+    def s_geo():
+        if "geo" not in r:
+            i = ev("GeoIP", "geolocate", "inference", "No geolocation result is present in this scan", "missing", "result.geo")
+            fi("No geolocation result is present, so the origin was not located", "uncertain", [i])
+            return
+        g = r["geo"]
+        if not isinstance(g, dict):
+            i = ev("GeoIP", "geolocate", "inference", "Geolocation output is malformed (%s, expected a mapping)" % type(g).__name__, "failed", "result.geo")
+            fi("Geolocation output is malformed, so the origin was not located", "uncertain", [i])
+            return
+        o = g.get("origin")
+        if o is not None and not isinstance(o, dict):
+            i = ev("GeoIP", "geolocate", "inference", "Geolocation origin is malformed (%s, expected a mapping)" % type(o).__name__, "failed", "result.geo.origin")
+            fi("Geolocation origin is malformed, so the origin was not located", "uncertain", [i])
+            return
+        o = o or {}
+        if not o.get("ip"):
+            i = ev("GeoIP", "geolocate", "inference", "No origin IP could be determined from the Received chain", "missing", "result.geo.origin")
+            fi("No origin IP could be determined from the Received chain", "uncertain", [i])
+            return
+        unresolved = str(o.get("country", "Unknown")) == "Unknown"
+        i = ev("GeoIP", "geolocate", "inference", "Origin IP %s: country=%s, ASN=%s, infra=%s (source: %s; approximate)" % (
+            clean(o["ip"], 45), clean(o.get("country", "Unknown"), 40), clean(o.get("asn") or "n/a", 40), clean(o.get("infra", "unknown"), 30),
+            clean(o.get("source", "?"), 30)), "partial" if unresolved else "ok", "result.geo.origin",
+            meta={"approximate": True, "country": clean(o.get("country", "Unknown"), 40), "source": clean(o.get("source", "?"), 30)})
+        if unresolved:
+            fi("Geolocation of the origin IP is unresolved", "uncertain", [i])
+        if g.get("anonymised"):
+            fi("The route was flagged as anonymised infrastructure by the geolocation module", "suspicious", [i])
+
+    def s_origin_intel():
+        # analyzer records WHY the assessment is None in result["origin_intel_status"] ({"state": ok|unavailable|failed|skipped}).
+        stv = r.get("origin_intel_status") if isinstance(r.get("origin_intel_status"), dict) else {}
+        state, err = clean(stv.get("state", ""), 12), clean(stv.get("error", ""), 40)
+        oi = r.get("origin_intel", _ABSENT)
+        if isinstance(oi, dict):
+            bad = origin_field_problems(oi)
+            if bad:        # malformed output is never evidence: no confidence, no flags, no suspicious finding
+                i = ev("infrastructure", "origin_intel", "inference", "The origin-confidence output has malformed or missing field(s): %s" % ", ".join(bad),
+                       "failed", "result.origin_intel", meta={"state": state or "not recorded", "malformed_fields": bad})
+                fi("The origin-confidence output is malformed (%s); origin conclusions carry no machine confidence" % ", ".join(bad), "uncertain", [i])
+                return
+            sel = None if oi["selected_ip"] in (None, "None") else oi["selected_ip"]
+            i = ev("infrastructure", "origin_intel", "inference", "Origin-confidence engine: selected IP %s, band %s, confidence %s" % (
+                clean(sel or "none", 45), clean(oi["band"], 30), clean(oi["confidence"], 20)),
+                "ok" if sel else "missing", "result.origin_intel",
+                meta={"band": clean(oi["band"], 30), "approximate": True, "disclaimer": clean(oi.get("location_disclaimer", ""), 160)})
+            if not sel:
+                fi("The origin-confidence engine found no candidate origin IP, so there is no origin confidence", "uncertain", [i])
+            for fl in oi["flags"][:5]:
+                if fl["severity"] in ("high", "medium"):
+                    fi("Origin intelligence reported: [%s] %s" % (clean(fl["severity"], 10), clean(fl["title"], 100)), "suspicious", [i],
+                       severity=fl["severity"])
+            return
+        if oi is _ABSENT:
+            st, text = "missing", "No origin-confidence assessment is recorded in this scan"
+        elif oi is None and state == "unavailable":
+            st, text = "unavailable", "The optional origin-confidence engine is not available, so no origin assessment was made"
+        elif oi is None and state == "failed":
+            st, text = "failed", "The origin-confidence assessment failed (%s); no origin confidence is available" % (err or "error")
+        elif oi is None and state == "skipped":
+            st, text = "skipped", "The origin-confidence assessment was skipped; no origin confidence is available"
+        elif oi is None:
+            st, text = "missing", "The origin-confidence assessment is absent (the cause was not recorded)"
+        else:
+            st, text = "failed", "The origin-confidence output is malformed (%s, expected a mapping)" % type(oi).__name__
+        i = ev("infrastructure", "origin_intel", "inference", text, st, "result.origin_intel", meta={"state": state or "not recorded"})
+        fi("Origin-confidence assessment is %s; origin conclusions carry no machine confidence" % st, "uncertain", [i])
+
+    def s_inputs():
+        bad = [m for m in ((r.get("verdict") or {}).get("malformed_inputs") or []) if isinstance(m, dict)] if isinstance(r.get("verdict"), dict) else []
+        ids = [ev("validation", "risk", "direct_machine", "Risk input %s was malformed (%s); it contributed 0 and is not evidence of safety" % (
+            clean(m.get("input"), 40), clean(m.get("problem"), 30)), "failed", "result.verdict.malformed_inputs[%d]" % n)
+            for n, m in enumerate(bad[:10])]
+        if ids:
+            fi("One or more risk inputs were malformed; they were treated as 0, which is not evidence that the message is safe", "uncertain", ids)
+
+    def s_community():
+        if "community_intel" not in r:        # the feature is OFF by default (key exists only when enabled): not a failure, no evidence
+            return
+        ci = r["community_intel"]
+        if not isinstance(ci, dict):
+            i = ev("threat intelligence", "community_intel", "historical", "Community-intelligence output is malformed (%s)" % type(ci).__name__,
+                   "failed", "result.community_intel")
+            fi("Community-intelligence output is malformed; no community context is included", "uncertain", [i])
+            return
+        bad = [k for k, ok in (("enabled", "enabled" not in ci or isinstance(ci["enabled"], bool)),
+                               ("checked", "checked" not in ci or _count(ci["checked"])),
+                               ("feed_size", "feed_size" not in ci or _count(ci["feed_size"]))) if not ok]
+        if not bad and ci.get("enabled") is False:      # deliberately disabled: skipped, never a failure, no finding
+            ev("threat intelligence", "community_intel", "historical", "Community intelligence is disabled by configuration", "skipped",
+               "result.community_intel")
+            return
+        meta = {"checked": ci["checked"] if _count(ci.get("checked")) else None, "feed_size": ci["feed_size"] if _count(ci.get("feed_size")) else None}
+        mv, st = ci.get("matches", _ABSENT), ci.get("status", _ABSENT)
+        valid = []
+        if bad:
+            status, text = "failed", "Community-intelligence output has malformed field(s): %s" % ", ".join(bad)
+        elif st is _ABSENT:
+            status, text = "missing", "Community-intelligence output has no status"
+        elif not isinstance(st, str) or st not in _COMMUNITY_STATUSES:        # an unrecognised status is never treated as success
+            status, text = "failed", "Community-intelligence status %s is not recognised" % _repr(st)
+        elif not isinstance(mv, list):
+            status, text = "failed", "Community-intelligence matches are %s" % ("absent" if mv is _ABSENT else "malformed (%s, expected a list)" % type(mv).__name__)
+        elif st == "unavailable":
+            status, text = ("unavailable", "The community feed is unavailable; no community reports were checked") if not mv else \
+                           ("failed", "Community-intelligence output reports 'unavailable' but also lists matches")
+        else:
+            valid = [m for m in mv if valid_community_match(m)]
+            invalid = len(mv) - len(valid)
+            if invalid == 0:
+                status, text = "ok", "Community feed status ok; %s indicator(s) checked; %d community report(s) (contextual, not confirmed malicious)" % (
+                    meta["checked"] if meta["checked"] is not None else "?", len(valid))
+            else:
+                status = "partial" if valid else "failed"
+                text = "Community-intelligence output has %d malformed match entr%s out of %d; %d valid report(s) kept (contextual, not confirmed malicious)" % (
+                    invalid, "y" if invalid == 1 else "ies", len(mv), len(valid))
+                if not valid:
+                    text = "Community-intelligence output has only malformed match entries (%d)" % len(mv)
+        i = ev("threat intelligence", "community_intel", "historical", text, status, "result.community_intel",
+               meta=dict(meta, status=clean(st, 20) if isinstance(st, str) else None, malformed_fields=bad or None))
+        if status != "ok":
+            fi("Community intelligence is %s; no complete community context is included" % status, "uncertain", [i])
+        if status in ("ok", "partial"):             # historical reports are contextual evidence only: never a finding of malice
+            for n, m in enumerate(valid[:5]):
+                ev("threat intelligence", "community_intel", "historical", "Community report for indicator %s (%s match), verdict %s" % (
+                    clean(m["indicator"], 80), clean(m["match"], 20), clean(m["verdict"], 30)), "ok",
+                   "result.community_intel.matches[%d]" % n, confidence=clean(m["confidence"], 20))
+
+    for name, fn in (("ML", s_ml), ("authentication", s_auth), ("sender identity", s_identity), ("header anomalies", s_anomalies),
+                     ("extortion", s_extortion), ("URLs and indicators", s_urls), ("geolocation", s_geo),
+                     ("origin intelligence", s_origin_intel), ("community intelligence", s_community), ("risk inputs", s_inputs)):
+        section(name, fn)
+    return reg, fnd
+
+
+SCAN_ID_RE = re.compile(r"^SC-[0-9a-f]{32}$")          # 'SC-' + 128 bits of SHA-256 as hex
+_EVIDENCE_ID_RE = re.compile(r"^S[0-9]{1,6}$")
+_FINDING_ID_RE = re.compile(r"^SF[0-9]{1,6}$")
+
+
+def _repr(v, n=40):
+    return clean(repr(v), n)
+
+
+def validate_scan_register(result):
+    """Problems in a scanner register ([] = valid; legacy results without one are valid). NEVER raises: every value is
+    type-checked before it is used as a key or compared. Checks structure and formats (evidence ids S#, finding ids SF#,
+    scan ids SC-<32 hex> or '' for an unidentified scan), unique ids, one scan identity, that every finding cites
+    existing evidence of this scan, and that a 'suspicious' finding never cites missing/failed/unavailable evidence."""
+    try:
+        return _validate_scan_register(result)
+    except Exception as exc:                                   # belt and braces: a register must never break a report
+        return ["the register could not be validated (%s)" % type(exc).__name__]
+
+
+def _validate_scan_register(result):
+    r = result if isinstance(result, dict) else {}
+    if "evidence_register" not in r:
+        return []
+    reg, fnd, sid = r.get("evidence_register"), r.get("scan_findings"), r.get("scan_id")
+    problems = []
+    if not isinstance(reg, list) or not isinstance(fnd, list):
+        return ["evidence_register/scan_findings are not lists"]
+    sid_ok = isinstance(sid, str) and (sid == "" or bool(SCAN_ID_RE.match(sid)))
+    if not sid_ok:
+        problems.append("scan_id %s is malformed" % _repr(sid))
+    ids = {}
+    for n, e in enumerate(reg):
+        if not isinstance(e, dict):
+            problems.append("evidence item %d is not a mapping" % n)
+            continue
+        if any(k not in e for k in _SCAN_FIELDS):
+            problems.append("evidence item %d is missing required fields" % n)
+            continue
+        eid = e["id"]
+        if not isinstance(eid, str) or not _EVIDENCE_ID_RE.match(eid):
+            problems.append("evidence item %d has a malformed id %s" % (n, _repr(eid)))
+        elif eid in ids:
+            problems.append("duplicate evidence id %s" % eid)
+        else:
+            ids[eid] = e
+        label = eid if isinstance(eid, str) and _EVIDENCE_ID_RE.match(eid) else "item %d" % n
+        if not (isinstance(e["origin"], str) and e["origin"] in ORIGINS) or not (isinstance(e["status"], str) and e["status"] in EVIDENCE_STATUSES):
+            problems.append("%s has an unknown origin/status" % label)
+        es = e["scan_id"]
+        if not isinstance(es, str) or not (es == "" or SCAN_ID_RE.match(es)):
+            problems.append("%s has a malformed scan_id %s" % (label, _repr(es)))
+        elif sid_ok and es != sid:
+            problems.append("%s belongs to scan %r, not %r" % (label, es, sid))
+    seen_f = set()
+    for n, f in enumerate(fnd):
+        if not isinstance(f, dict):
+            problems.append("finding %d is not a mapping" % n)
+            continue
+        fid = f.get("id")
+        fl = fid if isinstance(fid, str) and _FINDING_ID_RE.match(fid) else "%d" % n
+        if fl != fid:
+            problems.append("finding %d has a malformed id %s" % (n, _repr(fid)))
+        elif fid in seen_f:
+            problems.append("duplicate finding id %s" % fid)
+        else:
+            seen_f.add(fid)
+        cited = f.get("evidence_ids")
+        if not isinstance(cited, list) or not cited or not (isinstance(f.get("kind"), str) and f["kind"] in _FINDING_KINDS):
+            problems.append("malformed finding %s" % fl)
+            continue
+        fs = f.get("scan_id")
+        if not isinstance(fs, str) or not (fs == "" or SCAN_ID_RE.match(fs)):
+            problems.append("finding %s has a malformed scan_id %s" % (fl, _repr(fs)))
+        elif sid_ok and fs != sid:
+            problems.append("finding %s belongs to a different scan" % fl)
+        for c in cited:
+            if not isinstance(c, str):
+                problems.append("finding %s cites a non-string evidence reference (%s)" % (fl, type(c).__name__))
+            elif not _EVIDENCE_ID_RE.match(c):
+                problems.append("finding %s cites a malformed evidence reference %s" % (fl, _repr(c)))
+            elif c not in ids:
+                problems.append("finding %s cites unknown evidence %s" % (fl, c))
+            elif f["kind"] == "suspicious" and ids[c]["status"] in ("missing", "failed", "skipped", "unavailable", "error"):
+                problems.append("suspicious finding %s cites %s evidence %s" % (fl, ids[c]["status"], c))
+    return problems
+
+
+def _origin_of(evidence):
+    # origin is looked up only when it is a string: a list/dict origin is unhashable and must not break rendering
+    return {e["id"]: ORIGIN_LABEL.get(e.get("origin"), "origin not recorded") if isinstance(e.get("origin"), str) else "origin not recorded"
+            for e in (evidence if isinstance(evidence, list) else []) if isinstance(e, dict) and isinstance(e.get("id"), str)}
+
+
+origin_labels = _origin_of          # public alias for the UI
+
+
+def evidence_summary(e, n=160):
+    """One line describing an evidence item (scanner S# or investigation E#)."""
+    if e.get("observation"):
+        return clean(e["observation"], n)
+    parts = list(e.get("facts") or []) + list(e.get("signals") or []) + ["(gap) " + m for m in e.get("missing") or []]
+    return clean("; ".join(parts) or "No observation recorded", n)
+
+
+def evidence_table_md(evidence):
+    """Markdown evidence register table. Each ID appears once; sections elsewhere only reference it. Safe on malformed input
+    (non-mapping items are skipped; the validator reports them)."""
+    rows = ["| ID | Type | Source | Origin | Status | Source reference | Observation |", "| --- | --- | --- | --- | --- | --- | --- |"]
+    for e in evidence if isinstance(evidence, list) else []:
+        if not isinstance(e, dict):
+            continue
+        rows.append("| %s | %s | %s | %s | %s | %s | %s |" % tuple(
+            _c(x) for x in (e.get("id"), e.get("type", "Not available"), e.get("source", "Not available"), e.get("origin", "Not available"),
+                            e.get("status"), e.get("source_reference", "Not available"), evidence_summary(e))))
+    return rows
+
+
+def findings_table_md(findings, evidence):
+    org = _origin_of(evidence)
+    rows = ["| Finding | Statement | Kind | Evidence IDs | Origin of evidence | Support |", "| --- | --- | --- | --- | --- | --- |"]
+    for f in findings if isinstance(findings, list) else []:
+        if not isinstance(f, dict):
+            continue
+        cited = [c for c in f.get("evidence_ids") if isinstance(c, str)] if isinstance(f.get("evidence_ids"), list) else []
+        rows.append("| %s | %s | %s | %s | %s | %s |" % tuple(_c(x) for x in (
+            f.get("id") or f.get("finding_id") or "-", f.get("statement"), f.get("kind"), ", ".join(cited),
+            "; ".join(dict.fromkeys(org.get(c, "unknown evidence") for c in cited)),
+            f.get("support") or f.get("verification") or "-")))
+    return rows
+
+
+EVIDENCE_LEGEND = ("_Origins: machine observation = observed by a scanner module; unverified claim = a value stated by the sender "
+                   "(headers) that was not verified; external result = returned by a service the platform queried (not "
+                   "sender-controlled, not cryptographically authenticated); historical sighting = seen before, which is not "
+                   "proof of malicious activity; inference = derived or approximate (e.g. GeoIP). A missing or failed check is an "
+                   "evidence gap, not a clean result._")
 
 
 # ---------------------------------------------------------------------------
@@ -930,7 +1527,8 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
     ctx = Ctx(result, cases, conns_factory, allow_network, fetch, limits.max_network_lookups)
     inv = {"status": "running", "stop_reason": "", "mode": "deterministic", "mode_note": "", "limits": limits.as_dict(),
            "steps": [], "evidence": [], "findings": [], "narrative": "", "rejected_model_outputs": 0,
-           "network_allowed": ctx.allow_network, "score_snapshot": {"score": result.get("score"), "level": result.get("level")},
+           "network_allowed": ctx.allow_network, "scan_id": (result.get("scan_id") or "") if isinstance(result, dict) else "",
+           "score_snapshot": {"score": result.get("score"), "level": result.get("level")},
            "started_utc": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())}
     if use_ai:
         if llm is None:
@@ -999,6 +1597,7 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
             status = "partial" if (status == "ok" and degraded) else status
             ev = {"id": "E%d" % (len(inv["evidence"]) + 1), "tool": action["tool"], "args": action["args"], "status": status,
                   "facts": facts, "signals": signals, "missing": missing, "records": records, "seconds": round(time.monotonic() - s0, 2)}
+            ev.update(evidence_contract(action["tool"], action["args"], result, time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()), inv["scan_id"]))
             inv["evidence"].append(ev)
             step.update(status=status, evidence_id=ev["id"], seconds=ev["seconds"])
             inv["steps"].append(step)
@@ -1008,7 +1607,9 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
             for kind, key in (("verified", "facts"), ("suspicious", "signals"), ("uncertain", "missing")):
                 for s in e[key]:
                     if e["status"] in ("ok", "partial") or kind == "uncertain":
-                        inv["findings"].append({"statement": s, "evidence_ids": [e["id"]], "kind": kind, "origin": "tool"})
+                        inv["findings"].append({"statement": s, "evidence_ids": [e["id"]], "kind": kind, "origin": "tool",
+                                                "finding_id": "IF%d" % (len(inv["findings"]) + 1),
+                                                "verification": "tool_output" if kind != "uncertain" else "gap"})
         if inv["mode"] == "ai" and inv["stop_reason"] != "provider_failed" and inv["evidence"] and elapsed() < limits.max_seconds:
             try:
                 summ, extra, dropped = _narrative(llm, inv["evidence"], result, min(limits.model_timeout, max(1.0, limits.max_seconds - elapsed())))
@@ -1038,6 +1639,14 @@ def investigate(result, cases=None, conns_factory=None, allow_network=False, use
 # ---------------------------------------------------------------------------
 def _c(v):
     return clean(v, 300).replace("|", "\\|")
+
+
+def _ref_suffix(f, org):
+    """' (IF3 · tool_output · origin of the cited evidence)' - empty for findings from before finding IDs existed."""
+    if not f.get("finding_id"):
+        return ""
+    return " (%s \u00b7 %s \u00b7 %s)" % (f["finding_id"], f.get("verification", "-"),
+                                          "; ".join(dict.fromkeys(org.get(c, "unknown evidence") for c in f.get("evidence_ids", []))))
 
 
 def _all_records(inv):
@@ -1092,6 +1701,12 @@ def render_report(inv, result=None, raw=None, include_base=True):
     if include_base and result is not None:
         from report import build_report
         lines += [build_report(result, raw, analyst="ALGORITHMISTIC agentic investigation"), "", "---", ""]
+    binding = check_scan_binding(inv, result) if result is not None else "legacy"
+    if binding == "mismatch":            # a stale investigation from another email must never be presented as this scan's
+        return "\n".join(lines + ["## Agentic Investigation", "", "> **Investigation not included:** it belongs to a different scan "
+                                   "(investigation %s, this scan %s). Evidence from different scans is never mixed; re-run the "
+                                   "investigation for this message." % (_c(inv.get("scan_id")), _c(result.get("scan_id")))])
+    org = _origin_of(inv.get("evidence", []))
     sc = inv.get("score_snapshot") or {}
     lines += ["## Agentic Investigation", "",
               "_Read-only investigation using existing scanner tools. The risk score and verdict above are the "
@@ -1102,23 +1717,27 @@ def render_report(inv, result=None, raw=None, include_base=True):
               "| Scanner score at start | %s / 100 (%s) |" % (_c(sc.get("score")), _c(sc.get("level"))),
               "| Tool calls | %d of %s |" % (len(inv.get("evidence", [])), (inv.get("limits") or {}).get("max_tool_calls")),
               "| Public DNS/RDAP lookups permitted | %s |" % ("yes" if inv.get("network_allowed") else "no"),
-              "| Rejected model outputs | %s |" % inv.get("rejected_model_outputs", 0)]
+              "| Rejected model outputs | %s |" % inv.get("rejected_model_outputs", 0),
+              "| Scan ID | %s (binding: %s) |" % (_c(inv.get("scan_id") or "not recorded"), binding)]
     if inv.get("mode_note"):
         lines.append("| Note | %s |" % _c(inv["mode_note"]))
     lines += ["", "### Action log", "", "| # | Tool | Argument | Chosen by | Result | Evidence |", "| --- | --- | --- | --- | --- | --- |"]
     for s in inv.get("steps", []):
         lines.append("| %s | `%s` | %s | %s | %s | %s |" % (s["n"], s["tool"], _c(s["args"].get("indicator", "-")), s.get("source"), s.get("status"), s.get("evidence_id", "-")))
+    lines += ["", "### Evidence register (investigation)", "",
+              "_Each evidence ID is defined once here; the findings below cite these IDs. Scanner evidence (S#) is in the scanner "
+              "report's evidence register._", ""] + evidence_table_md(inv.get("evidence")) + ["", EVIDENCE_LEGEND]
     groups = (("verified", "Verified facts"), ("suspicious", "Suspicious signals (heuristic, not proof)"), ("uncertain", "Missing evidence and uncertainty"))
     for kind, title in groups:
         lines += ["", "### " + title, ""]
         items = [f for f in inv.get("findings", []) if f["kind"] == kind]
-        lines += ["- %s  `[%s]`" % (_c(f["statement"]), ",".join(f["evidence_ids"])) for f in items] or ["- None recorded."]
+        lines += ["- %s  `[%s]`%s" % (_c(f["statement"]), ",".join(f["evidence_ids"]), _ref_suffix(f, org)) for f in items] or ["- None recorded."]
     lines += _records_section(inv) + _recommendation_section(inv)
     if inv.get("narrative"):
         lines += ["", "### Summary (generated from the deterministic tool findings above)", "", _c(inv["narrative"])]
         if inv.get("narrative_findings"):
             lines += ["", "### AI-proposed findings (secondary; tool findings above are authoritative)"]
         for f in inv.get("narrative_findings", []):
-            lines.append("- *%s%s*: %s `[%s]`" % ("" if f.get("supported", True) else "unverified AI claim, ", f["kind"], _c(f["statement"]), ",".join(f["evidence_ids"])))
+            lines.append("- *%s%s*: %s `[%s]`%s" % ("" if f.get("supported", True) else "unverified AI claim, ", f["kind"], _c(f["statement"]), ",".join(f["evidence_ids"]), _ref_suffix(f, org)))
     lines += ["", "_Generated by a bounded read-only agent; every finding above is attributed to the tool output that produced it._"]
     return "\n".join(lines)

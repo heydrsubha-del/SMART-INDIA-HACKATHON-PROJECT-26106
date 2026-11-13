@@ -315,7 +315,8 @@ try:
     FETCH_VPN_RANGES_AVAILABLE = True
 except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
-from report import build_report, evidence_hash, extortion_status, extortion_block, partial_scan_note
+from report import (build_report, evidence_hash, extortion_status, extortion_block, partial_scan_note,
+                    scan_validation_status, validation_issues, scan_evidence_md)
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
 
 
@@ -13385,6 +13386,10 @@ if active_panel == "Classification":
         if _bad_inputs:
             st.warning("**Manual review required.** Risk-input validation failed for: {}. These signals were treated as 0 and are not evidence that the message is safe.".format(
                 ", ".join("{} ({})".format(_b.get("input"), _b.get("problem")) for _b in _bad_inputs if isinstance(_b, dict))))
+        _reg_md = scan_evidence_md(result)
+        if _reg_md:
+            with st.expander("Evidence register (scanner): IDs cited by the machine findings", expanded=False):
+                st.markdown("\n".join(_reg_md))
         left, right = st.columns([1, 1])
         with left:
             _sec("Risk score composition", tone="rose")
@@ -14903,11 +14908,15 @@ if active_panel == "Forensic Report":
         
         with st.container(border=True):
             _num_head(1, "Threat & Classification Telemetry", "#f59e0b", "Classification \u00b7 score, verdict and classifier output")
+            if validation_issues(sel_res):
+                st.warning("**Scan validation incomplete - manual review required.** " + "; ".join(validation_issues(sel_res))
+                           + ". This is not a clean result.")
             _render_polished_table(tone="#f59e0b", df=pd.DataFrame([{
                 "Risk Score": f"{sel_score:.1f}/100",
                 "Verdict": sel_lvl,
                 "Primary Driver": sel_res.get('verdict', {}).get('top_driver', 'None'),
                 "Extortion Assessment": extortion_status(sel_res),
+                "Scan Validation": scan_validation_status(sel_res),
                 "ML Phishing Probability": f"{float(sel_m.get('prob', 0)):.1%}",
                 "ML Label": str(sel_m.get("label", "unknown")).upper()
             }]))
@@ -15056,6 +15065,7 @@ if active_panel == "Forensic Report":
 | **Threat Score** | {sel_score:.1f}/100 |
 | **Primary Driver** | {sel_res.get('verdict', {}).get('top_driver', 'None')} |
 | **Extortion Assessment** | {md_cell(extortion_status(sel_res))} |
+| **Scan Validation** | {md_cell(scan_validation_status(sel_res))} |
 | **ML Phishing Prob** | {float(sel_m.get('prob', 0)):.1%} |
 
 ## 3. MESSAGE HEADERS & CONTENT
@@ -15159,6 +15169,12 @@ if active_panel == "Forensic Report":
 
 {ai_markdown_body if ai_markdown_body else "_No AI report has been generated for this email yet._"}
 """
+
+        # Phase 1: the scanner evidence register is part of the machine report, and therefore of the combined report too.
+        # (The AI narrative above is free text and does not cite evidence IDs; that limitation is documented in REVIEW.md.)
+        _evidence_tail = scan_evidence_md(sel_res)
+        if _evidence_tail:
+            machine_md = machine_md + "\n" + "\n".join(_evidence_tail)
 
         combined_md = machine_md + "\n\n---\n\n" + ai_md
 

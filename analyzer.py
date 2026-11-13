@@ -25,6 +25,7 @@ import ioc_extract
 import community_intel
 import risk
 
+import investigation_agent                       # evidence vocabulary + scanner evidence builder (stdlib-only module)
 from classifier import load_or_train, predict
 from email_parser import parse_eml
 from tracker import (remember_indicator, lookup_indicator, stored_reputation,
@@ -157,11 +158,14 @@ def analyze_email(raw, name="uploaded", pipe=None):
     # Origin panel and the AI assessment both read this object, so they cannot report different numbers
     # for the same metric. (Never affects the score.)
     origin_assessment = None
+    origin_status = {"state": "unavailable", "error": ""}       # additive record of WHY there may be no assessment (never scored)
     if origin_intel is not None:
         try:
             origin_assessment = origin_intel.assess_origin(parsed, geo, raw=raw)
-        except Exception:
+            origin_status = {"state": "ok", "error": ""}
+        except Exception as exc:
             origin_assessment = None
+            origin_status = {"state": "failed", "error": type(exc).__name__}
 
     # ------------------------------------------------------------------
     # Final weighted risk score
@@ -199,6 +203,7 @@ def analyze_email(raw, name="uploaded", pipe=None):
         "iocs": iocs,
         "geo": geo,
         "origin_intel": origin_assessment,
+        "origin_intel_status": origin_status,
         "recorded_indicators": recorded,
         "score": verdict["score"],
         "level": verdict["level"],
@@ -207,6 +212,14 @@ def analyze_email(raw, name="uploaded", pipe=None):
     }
     if community is not None:               # key exists only when the feature is enabled
         result["community_intel"] = community
+    # Phase 1: additive, traceable evidence. Never alters a score or verdict and never breaks the scan.
+    try:
+        result["scan_id"] = investigation_agent.scan_id_for(raw)
+        result["evidence_register"], result["scan_findings"] = investigation_agent.build_scan_evidence(result)
+    except Exception as exc:
+        result.setdefault("scan_id", "")
+        result["evidence_register"], result["scan_findings"] = [], []
+        result["evidence_error"] = type(exc).__name__
     return result
 
 

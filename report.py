@@ -43,6 +43,43 @@ def partial_scan_note():
                 _ED._HEAD_CHARS, _ED._TAIL_CHARS, _ED.MAX_SCAN_CHARS))
 
 
+def _risk_input_issue(result):
+    """Why the risk-input validation record is NOT clean ("" when it is). Never raises on a malformed verdict."""
+    verdict = result.get("verdict") if isinstance(result, dict) else None
+    if not isinstance(verdict, dict):
+        return ""
+    bad = verdict.get("malformed_inputs")
+    if isinstance(bad, list) and bad:
+        names = ", ".join("{} ({})".format(b.get("input"), b.get("problem")) for b in bad if isinstance(b, dict))
+        return "invalid risk input(s) treated as 0: " + (names or "details not recorded")
+    if bad or verdict.get("input_validation_failed"):      # truthy but not a usable list: fail safe, say so
+        return "invalid risk input(s) recorded (validation record unreadable)"
+    return ""
+
+
+def validation_issues(result):
+    """Reasons this scan is NOT a complete, fully validated assessment. An empty list means complete."""
+    issues = []
+    ext = extortion_block(result)
+    if ext.get("error") and not ext.get("detected"):
+        issues.append("extortion detector failed ({})".format(str(ext.get("error"))[:60]))
+    if ext.get("truncated"):
+        issues.append("partial scan (only the first {:,} and last {:,} characters were scanned)".format(
+            _ED._HEAD_CHARS, _ED._TAIL_CHARS))
+    risk_issue = _risk_input_issue(result)
+    if risk_issue:
+        issues.append(risk_issue)
+    return issues
+
+
+def scan_validation_status(result):
+    """One-line scan-integrity status for tables/exports, kept SEPARATE from the extortion finding."""
+    issues = validation_issues(result)
+    if not issues:
+        return "Complete - no validation problems recorded"
+    return "INCOMPLETE - " + "; ".join(issues) + ". Manual review required; NOT a clean result"
+
+
 def extortion_status(result):
     """One-line extortion status for tables/exports. Never reads as clean when the scan failed or was partial."""
     ext = _extortion(result)
@@ -58,7 +95,37 @@ def extortion_status(result):
         return "{} detected ({} severity){}".format(head, ext.get("severity", "unknown"), partial)
     if ext.get("truncated"):
         return "No finding in the scanned portion - PARTIAL SCAN; not a complete assessment"
+    if _risk_input_issue(result):
+        # The detector itself found nothing, but the scan had invalid inputs: say so instead of reading as clean.
+        return ("No extortion pattern matched, but the scan had invalid risk inputs (see Scan Validation) "
+                "- NOT a clean result; manual review required")
     return "No extortion pattern found"
+
+
+def scan_evidence_md(result):
+    """Markdown lines for the scanner evidence register and machine findings ([] for a result without a register).
+    Evidence is defined once here; other sections reference IDs. NEVER raises: a malformed register is reported as such and
+    rendered from its well-formed parts only, so a bad register cannot break (or hide) the rest of a report."""
+    if not isinstance(result, dict) or "evidence_register" not in result:
+        return []
+    head = ["## 9. Evidence register (scanner)", ""]
+    try:
+        import investigation_agent as ia
+        reg, fnd = result.get("evidence_register"), result.get("scan_findings")
+        reg, fnd = (reg if isinstance(reg, list) else []), (fnd if isinstance(fnd, list) else [])
+        out = head + ["_Scan ID `%s`. Machine findings cite the evidence IDs below; the register is generated from detector output only "
+                      "and never changes the score or verdict._" % md_cell(result.get("scan_id") if isinstance(result.get("scan_id"), str) else "not recorded"), ""]
+        if result.get("evidence_error"):
+            out += ["> **Evidence register unavailable** (%s). The scan itself is unaffected; absence of evidence here is not a clean result." %
+                    md_cell(result["evidence_error"]), ""]
+        problems = ia.validate_scan_register(result)
+        if problems:
+            out += ["> **Evidence register failed validation:** %s. Treat these references as unverified." % md_cell("; ".join(problems[:5])), ""]
+        out += ["### Machine findings", ""] + (ia.findings_table_md(fnd, reg) if fnd else ["_No structured machine findings were recorded._"])
+        out += ["", "### Evidence", ""] + (ia.evidence_table_md(reg) if reg else ["_No evidence was recorded for this scan._"])
+        return out + ["", ia.EVIDENCE_LEGEND, ""]
+    except Exception as exc:
+        return head + ["> **Evidence register could not be rendered** (%s). It is unverified; scores and verdicts are unaffected." % type(exc).__name__, ""]
 
 
 def build_report(result, raw=None, analyst="SIH26106 automated triage"):
@@ -94,6 +161,9 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     add("| Classification | **{}** |".format(result["level"]))
     add("| Primary driver | {} |".format(md_cell(verdict.get("top_driver", "-"))))
     add("| ML phishing probability | {:.1%} |".format(result["ml"]["prob"]))
+    _scan_issues = validation_issues(result)
+    if _scan_issues:      # only when something is wrong: valid reports keep their existing wording
+        add("| Scan validation | **INCOMPLETE** - {} |".format(md_cell("; ".join(_scan_issues))))
     add("")
     add("### How the score was reached")
     add("")
@@ -390,6 +460,11 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     add("- Analysis was performed offline on a stored copy; the original "
         "message was not modified. The SHA-256 above lets any reviewer confirm "
         "the exhibit is unaltered.")
+    add("")
+    add("---")
+    add("")
+    for _ln in scan_evidence_md(result):        # section 9; absent for results from before the register existed
+        add(_ln)
     add("")
     add("---")
     add("")
