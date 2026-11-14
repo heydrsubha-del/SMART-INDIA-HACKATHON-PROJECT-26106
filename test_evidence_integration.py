@@ -138,7 +138,13 @@ def install_offline(case):
     case.unexpected, case.served = [], []
 
     def record(mechanism, detail=""):
-        entry = ("%s %s" % (mechanism, str(detail)[:100])).strip()
+        # 100 chars silently truncated the exact-contract ip-api.com URLs used by the strict validation tests
+        # below (host + the full real query string alone runs past 100 chars), so a rejected request's own
+        # assertions ("the full URL is in the diagnostic") failed even though the guard correctly blocked it.
+        # 500 is comfortably above every URL/command this guard ever records, while still bounding the entry
+        # so a pathological caller can't grow this list without limit; it does not change WHAT gets blocked,
+        # only how much of the detail shows up in the diagnostic for something already rejected and never sent.
+        entry = ("%s %s" % (mechanism, str(detail)[:500])).strip()
         case.unexpected.append(entry)                          # appended first; raising happens after
         return entry
 
@@ -171,6 +177,14 @@ def install_offline(case):
                 mock.patch("tor_check.maybe_update_tor_list"),
                 mock.patch("tor_check.tor_exit_sources", return_value=[]),
                 mock.patch("tracker.lookup_indicator", return_value=None),
+                # geolocate() falls back to data/geo_cache.json and, if the optional maxminddb package and
+                # GeoLite2 files happen to be present, to a local MaxMind lookup -- both are external, mutable
+                # inputs (the cache file is shared with the live product and can gain entries; maxminddb's
+                # presence varies by environment). Neither is part of the "offline fixture" this guard promises,
+                # so both are pinned to "no data available" here, exactly like the blocked live API call, so
+                # origin_risk is deterministic and isolated from whatever happens to be on disk.
+                mock.patch.object(geolocate, "_load_cache", return_value={}),
+                mock.patch.object(geolocate, "_geolite_reader", return_value=None),
                 mock.patch("requests.sessions.Session.request", new=fake_request)]
     for name, pos, dns in _GUARDED:
         owner, _, attr = name.rpartition(".")
