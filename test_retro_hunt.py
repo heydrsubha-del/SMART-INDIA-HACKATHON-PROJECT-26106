@@ -58,6 +58,26 @@ class T(unittest.TestCase):
         who = {(r["Where"].split(" (")[0], r["Match"]) for r in rows}
         self.assertEqual(who, {("c1", "subdomain"), ("c2", "exact"), ("c3", "exact"), ("c4", "exact")})
 
+    def test_same_filename_different_hash_is_not_treated_as_self(self):
+        mk = lambda h, **kw: dict({"name": "invoice.eml", "_evidence_hash": h, "level": "phishing", "score": 90,
+                                    "parsed": {}, "iocs": {}, "geo": {}}, **kw)
+        other = mk("hash-B", parsed={"from_addr": "a@evil-example.com"})
+        rows = rh.hunt_cases([("domain", "evil-example.com")], [other], current_name="invoice.eml", current_hash="hash-A")
+        self.assertEqual([r["Where"].split(" (")[0] for r in rows], ["invoice.eml"])    # different hash -> not self
+
+    def test_same_hash_is_still_excluded_as_self_even_with_different_filename(self):
+        mk = lambda n, h, **kw: dict({"name": n, "_evidence_hash": h, "level": "phishing", "score": 90,
+                                       "parsed": {}, "iocs": {}, "geo": {}}, **kw)
+        renamed_copy = mk("renamed.eml", "hash-A", parsed={"from_addr": "a@evil-example.com"})
+        rows = rh.hunt_cases([("domain", "evil-example.com")], [renamed_copy], current_name="invoice.eml", current_hash="hash-A")
+        self.assertEqual(rows, [])     # same hash -> this is the current scan, excluded regardless of filename
+
+    def test_legacy_records_without_a_hash_fall_back_to_filename_matching(self):
+        legacy_self = {"name": "invoice.eml", "level": "phishing", "score": 90, "parsed": {"from_addr": "a@evil-example.com"},
+                        "iocs": {}, "geo": {}}                      # no "_evidence_hash" key at all (pre-hash record)
+        rows = rh.hunt_cases([("domain", "evil-example.com")], [legacy_self], current_name="invoice.eml", current_hash="hash-A")
+        self.assertEqual(rows, [])     # record has no hash to compare -> falls back to filename, which matches -> excluded
+
     def test_summary_and_markdown(self):
         z = rh.summary([], 3)
         for part in ("Hunted 3", "0 email(s)", "threat-memory indicator records: 0", "Scored-email log entries: 0", "No earlier sighting"):

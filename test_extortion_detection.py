@@ -279,6 +279,7 @@ import tor_check
 import tracker
 
 _REAL_MAYBE_UPDATE_TOR = tor_check.maybe_update_tor_list
+_REAL_TOR_EXIT_SOURCES = tor_check.tor_exit_sources
 _PATCHERS = []
 
 _remove_socket_guard()           # do not leak into other test modules; setUpModule re-installs it
@@ -308,6 +309,12 @@ def _start_offline():
     for p in (
         # analyzer -> geolocate.trace -> tor_check.maybe_update_tor_list (Tor exit lists)
         mock.patch.object(tor_check, "maybe_update_tor_list", return_value=False),
+        # geolocate.trace -> geolocate._annotate_tor_exit -> tor_check.tor_exit_sources, called for every hop/origin
+        # IP in every analyze_email() run in this file. tor_exit_sources() -- not maybe_update_tor_list() -- is what
+        # actually calls tracker.init_db()/get_connection(), which would silently create and write to the real,
+        # on-disk threat_memory.db as a side effect of routine tests. TorRefreshOfflineIntegrationTests below
+        # deliberately restores the real function for its own isolated (temp-DB) test of this exact code path.
+        mock.patch.object(tor_check, "tor_exit_sources", return_value=[]),
         # geolocate.geolocate -> ip-api.com (falls through to the offline cache / GeoLite2)
         mock.patch.object(geolocate, "_geo_http", _fake_geo_http()),
         # ...which must NOT see this machine's data/geo_cache.json or GeoLite2 .mmdb files: they are untracked, differ per
@@ -3212,6 +3219,7 @@ class TorRefreshOfflineIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(tracker, "DB_FILE", os.path.join(d, "t.db")), \
                 mock.patch.object(tracker, "MULTIUSER", False), \
+                mock.patch.object(tor_check, "tor_exit_sources", _REAL_TOR_EXIT_SOURCES), \
                 mock.patch.object(tor_check.requests, "get", return_value=resp) as get:
             tracker._SCHEMA_DONE.clear()
             self.assertTrue(_REAL_MAYBE_UPDATE_TOR())

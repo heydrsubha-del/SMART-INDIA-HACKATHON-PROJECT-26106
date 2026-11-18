@@ -1300,9 +1300,59 @@ def build_scan_evidence(result):
                     clean(m["indicator"], 80), clean(m["match"], 20), clean(m["verdict"], 30)), "ok",
                    "result.community_intel.matches[%d]" % n, confidence=clean(m["confidence"], 20))
 
+    def s_campaign_dna():
+        """Phase 2: reads the two precomputed fields analyzer.py attached (attack_dna.find_matches()
+        ran before build_scan_evidence was called) -- no database access happens here, keeping this
+        function exactly as pure as every other section. A match is reported as a structural/tactical
+        resemblance only; it is never phrased as the same attacker, and it never affects the score."""
+        fp = r.get("campaign_fingerprint")
+        cm = r.get("campaign_matches")
+        if not isinstance(fp, dict) or not isinstance(cm, dict):
+            i = ev("campaign fingerprint", "attack_dna", "direct_machine",
+                   "No campaign-fingerprint data is available for this scan", "missing", "result.campaign_fingerprint")
+            fi("Campaign-fingerprint evidence is unavailable for this scan", "uncertain", [i])
+            return
+
+        status = cm.get("status")
+        matches = cm.get("matches") if isinstance(cm.get("matches"), list) else []
+        families = fp.get("families") if isinstance(fp.get("families"), dict) else {}
+        present = sorted(k for k, v in families.items() if v)
+        i = ev("campaign fingerprint", "attack_dna", "direct_machine",
+               "Fingerprint computed from %d feature famil%s (%s); history status: %s" % (
+                   len(present), "y" if len(present) == 1 else "ies", ", ".join(present) or "none", clean(status, 20)),
+               "ok" if status == "ok" else "partial", "result.campaign_fingerprint")
+
+        if status != "ok":
+            fi("Campaign-fingerprint history could not be checked (%s); only this scan's own features were computed" %
+               clean(status, 30), "uncertain", [i])
+            return
+
+        strong = [m for m in matches if isinstance(m, dict) and m.get("classification") == "strong"]
+        weak = [m for m in matches if isinstance(m, dict) and m.get("classification") == "weak"]
+        for m in strong[:3]:
+            j = ev("campaign fingerprint", "attack_dna", "historical",
+                   "Strong structural similarity to a previously analysed email (scan %s); matched families: %s" % (
+                       clean(m.get("scan_id"), 40), ", ".join(sorted((m.get("matched_families") or {}).keys()))),
+                   "ok", "result.campaign_matches", confidence=round(float(m.get("score") or 0), 2),
+                   meta={"classification": "strong", "qualifying_families": m.get("qualifying_families")})
+            fi("This email's structure (which checks it fails, how its URLs are built, how its sender/reply-to/return-path "
+               "disagree) resembles a previously analysed email. This indicates shared tactics, not confirmed common "
+               "authorship.", "suspicious", [i, j])
+        for m in weak[:3]:
+            j = ev("campaign fingerprint", "attack_dna", "historical",
+                   "Weak structural similarity to a previously analysed email (scan %s); matched families: %s" % (
+                       clean(m.get("scan_id"), 40), ", ".join(sorted((m.get("matched_families") or {}).keys()))),
+                   "ok", "result.campaign_matches", confidence=round(float(m.get("score") or 0), 2),
+                   meta={"classification": "weak"})
+            fi("A weak structural similarity to a previously analysed email was found; on its own this is not sufficient "
+               "to suggest a shared campaign.", "uncertain", [i, j])
+        if not matches:
+            fi("No campaign-fingerprint similarity was found against prior analysed emails", "uncertain", [i])
+
     for name, fn in (("ML", s_ml), ("authentication", s_auth), ("sender identity", s_identity), ("header anomalies", s_anomalies),
                      ("extortion", s_extortion), ("URLs and indicators", s_urls), ("geolocation", s_geo),
-                     ("origin intelligence", s_origin_intel), ("community intelligence", s_community), ("risk inputs", s_inputs)):
+                     ("origin intelligence", s_origin_intel), ("community intelligence", s_community), ("risk inputs", s_inputs),
+                     ("campaign fingerprint", s_campaign_dna)):
         section(name, fn)
     return reg, fnd
 

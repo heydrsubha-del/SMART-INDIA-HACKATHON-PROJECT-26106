@@ -13048,10 +13048,29 @@ if active_panel == "AI Threat Analysis":
                     _batch_machine_body = "\n\n---\n\n".join(_batch_machine_sections) or \
                         "_No per-email machine results available for this batch._"
 
+                    # Each email's own scanner evidence register (S# ids), kept separate per email -- never merged or
+                    # mixed across scans -- and appended as the AI campaign summary's evidence references, so the
+                    # batch AI assessment (like the single-email one above) is traceable to genuine, non-invented
+                    # evidence rather than citing nothing at all.
+                    _ai_evidence_refs = []
+                    for _bi in _batch_items_for_dl:
+                        _bi_result = _bi.get("result")
+                        if not _bi_result or "error" in _bi_result:
+                            continue
+                        _bi_tail = scan_evidence_md(_bi_result)
+                        if _bi_tail:
+                            _ai_evidence_refs.append(
+                                f"### Email #{_bi.get('position')} (CSV Row {_bi.get('row')})\n\n" + "\n".join(_bi_tail)
+                            )
+                    _ai_evidence_refs_md = (
+                        "\n\n## Evidence References (per email; never merged across emails)\n\n"
+                        + "\n\n---\n\n".join(_ai_evidence_refs)
+                    ) if _ai_evidence_refs else ""
+
                     ai_only_batch_md = (
                         f"# ALGORITHMISTIC - MULTI-EMAIL CAMPAIGN ASSESSMENT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
-                        f"## AI Campaign Summary\n\n{cleaned_summary}"
+                        f"## AI Campaign Summary\n\n{cleaned_summary}{_ai_evidence_refs_md}"
                     )
                     machine_only_batch_md = (
                         f"# ALGORITHMISTIC - MULTI-EMAIL MACHINE FORENSIC REPORT\n\n"
@@ -13061,7 +13080,7 @@ if active_panel == "AI Threat Analysis":
                     combined_batch_md = (
                         f"# ALGORITHMISTIC - MULTI-EMAIL COMBINED FORENSIC + AI REPORT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
-                        f"## AI Campaign Summary\n\n{cleaned_summary}\n\n---\n\n"
+                        f"## AI Campaign Summary\n\n{cleaned_summary}{_ai_evidence_refs_md}\n\n---\n\n"
                         f"## Per-Email Machine Forensic Reports\n\n{_batch_machine_body}"
                     )
 
@@ -15019,6 +15038,38 @@ if active_panel == "Forensic Report":
                 st.caption("Semantic origin comparison unavailable — Ollama / nomic-embed-text isn't reachable right now.")
             st.caption(_SEM_METHOD_NOTE)
 
+            _num_head(7, "Attack DNA — Campaign Fingerprinting", "#f472b6",
+                      "Attack DNA \u00b7 structural/tactical resemblance, independent of shared indicators")
+            # Phase 2: reads the two fields analyzer.py already attached to this result (computed once,
+            # before the evidence register was built). No database call happens here -- this panel is a
+            # pure, read-only display of the fingerprint/match data the analyzer already computed, the
+            # same precomputed data the evidence register's own "campaign fingerprint" section cites.
+            _dna_fp = sel_res.get("campaign_fingerprint")
+            _dna_cm = sel_res.get("campaign_matches") if isinstance(sel_res.get("campaign_matches"), dict) else {}
+            if not isinstance(_dna_fp, dict):
+                st.caption("No campaign-fingerprint data is available for this scan.")
+            elif _dna_cm.get("status") != "ok":
+                st.caption("Campaign-fingerprint history could not be checked (%s)." % _dna_cm.get("status", "unknown"))
+            else:
+                _dna_matches = [m for m in (_dna_cm.get("matches") or []) if isinstance(m, dict)]
+                if not _dna_matches:
+                    st.caption("No structural similarity to any other previously analysed email was found.")
+                else:
+                    st.caption(
+                        "Overlapping observed tactics only (which auth checks fail, how URLs are built, sender/"
+                        "reply-to/return-path alignment) — shared hosting, ASN or a single generic authentication "
+                        "failure alone is never enough to reach \"strong\" here. A match does not mean these emails "
+                        "were built identically or sent by the same attacker; it means some of the same tactics "
+                        "were observed in both."
+                    )
+                    _render_polished_table(tone="#f472b6", df=pd.DataFrame([{
+                        "Classification": m.get("classification", "-").capitalize(),
+                        "Similarity Score": "%.0f%%" % (100 * float(m.get("score") or 0)),
+                        "Matched Scan": m.get("scan_id", "-"),
+                        "Matched Feature Families": ", ".join(sorted((m.get("matched_families") or {}).keys())) or "-",
+                        "Seen": m.get("created_at", "-"),
+                    } for m in _dna_matches]))
+
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 
         # --- BUILD RICH MARKDOWN STRING WITH TABLES ---
@@ -15171,10 +15222,14 @@ if active_panel == "Forensic Report":
 """
 
         # Phase 1: the scanner evidence register is part of the machine report, and therefore of the combined report too.
-        # (The AI narrative above is free text and does not cite evidence IDs; that limitation is documented in REVIEW.md.)
+        # It is now also appended to the AI report itself (single-email AND combined downloads): the AI narrative's own
+        # prose is still free text and cites no IDs inline, but the genuine, non-invented evidence (S# ids) the scanner
+        # produced for THIS email is attached to it, so the AI assessment is traceable to real supporting evidence.
         _evidence_tail = scan_evidence_md(sel_res)
         if _evidence_tail:
             machine_md = machine_md + "\n" + "\n".join(_evidence_tail)
+            if ai_markdown_body:
+                ai_md = ai_md + "\n## Evidence References (scanner register for this email)\n\n" + "\n".join(_evidence_tail)
 
         combined_md = machine_md + "\n\n---\n\n" + ai_md
 

@@ -578,6 +578,40 @@ class ReportEvidence(ScanBase):
         md2 = ia.render_report(dict(inv, narrative_findings=ai), r, include_base=False)
         self.assertRegex(md2, r"unverified AI claim, uncertain.*`\[E1\]` \(AF1")
 
+    def test_batch_combined_report_keeps_each_emails_evidence_separate(self):
+        import ast
+        import os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
+        src = open(path, encoding="utf-8").read()
+        tree, lines = ast.parse(src), src.splitlines()
+
+        def smallest(needle, kinds):
+            nodes = [n for n in ast.walk(tree) if isinstance(n, kinds) and needle in "\n".join(lines[n.lineno - 1:n.end_lineno])]
+            return min(nodes, key=lambda n: n.end_lineno - n.lineno)
+
+        a, b = self.scan(INVOICE), self.scan(SEXT)
+        batch_items = [{"position": 1, "row": 2, "result": a}, {"position": 2, "row": 3, "result": b}]
+        ns = {"scan_evidence_md": report.scan_evidence_md, "_batch_items_for_dl": batch_items,
+              "cleaned_summary": "campaign summary text", "saved_batch": {"count": 2}, "_batch_machine_body": "machine body"}
+        for needle, kinds in (("_ai_evidence_refs = []", (ast.Assign,)), ("_bi_tail = scan_evidence_md(_bi_result)", (ast.For,)),
+                              ("_ai_evidence_refs_md = (", (ast.Assign,)), ("ai_only_batch_md = (", (ast.Assign,)),
+                              ("combined_batch_md = (", (ast.Assign,))):
+            exec(compile(ast.get_source_segment(src, smallest(needle, kinds)), "app.py::batch", "exec"), ns)
+
+        ext_b = next(e for e in b["evidence_register"] if e["type"] == "extortion")["observation"]
+        for md in (ns["ai_only_batch_md"], ns["combined_batch_md"]):
+            self.assertIn("Email #1", md)
+            self.assertIn("Email #2", md)
+            self.assertIn(ext_b, md)
+        # the strict check: email #2's own evidence text must not appear inside email #1's block, and vice versa --
+        # applied to both the AI-only download and the combined download, since each builds its own Email #1/#2 blocks.
+        for md in (ns["ai_only_batch_md"], ns["combined_batch_md"]):
+            block1 = md[md.index("Email #1"):md.index("Email #2")]
+            block2 = md[md.index("Email #2"):]
+            self.assertIn(ext_b, block2)
+            self.assertNotIn(ext_b, block1)
+        self.assertFalse({e["scan_id"] for e in a["evidence_register"]} & {e["scan_id"] for e in b["evidence_register"]})
+
     def test_separate_scans_do_not_leak_evidence_into_each_other(self):
         a, b = self.scan(INVOICE), self.scan(SEXT)
         ra, rb = report.build_report(a, b"a"), report.build_report(b, b"b")
@@ -607,13 +641,17 @@ class ReportEvidence(ScanBase):
             nodes = [n for n in ast.walk(tree) if isinstance(n, kinds) and needle in "\n".join(lines[n.lineno - 1:n.end_lineno])]
             return min(nodes, key=lambda n: n.end_lineno - n.lineno)
         res = self.synthetic()
-        ns = {"scan_evidence_md": report.scan_evidence_md, "sel_res": res, "machine_md": "# MACHINE", "ai_md": "# AI"}
+        ns = {"scan_evidence_md": report.scan_evidence_md, "sel_res": res, "machine_md": "# MACHINE", "ai_md": "# AI",
+              "ai_markdown_body": "stub ai text"}
         for needle, kinds in (("_evidence_tail = scan_evidence_md(sel_res)", (ast.Assign,)), ("machine_md + \"\\n\" + ", (ast.If,)),
                               ("combined_md = machine_md", (ast.Assign,))):
             exec(compile(ast.get_source_segment(src, smallest(needle, kinds)), "app.py::dossier", "exec"), ns)
         self.assertIn("## 9. Evidence register (scanner)", ns["machine_md"])
         self.assertIn("## 9. Evidence register (scanner)", ns["combined_md"])
-        self.assertTrue(ns["combined_md"].endswith("# AI"))                  # AI section untouched; it does not cite evidence IDs
+        # The AI section's own prose is still free text and cites no IDs inline, but the same genuine, non-invented
+        # scanner evidence register is now appended to it too (single-email and combined), so it is no longer bare.
+        self.assertIn("## Evidence References (scanner register for this email)", ns["ai_md"])
+        self.assertTrue(ns["combined_md"].endswith(ns["ai_md"]))
         self.assertIn("scan_evidence_md(result)", src[src.index("def _classification"):][:9000])
 
 

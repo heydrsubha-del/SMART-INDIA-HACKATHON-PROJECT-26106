@@ -142,7 +142,15 @@ def hunt_cases(indicators, cases, current_name=None, current_hash=None):
         if not isinstance(case, dict) or "error" in case:
             continue
         ck = _case_key(case)
-        if ck in done or case.get("name") == current_name or (current_hash and case.get("_evidence_hash") == current_hash):
+        if ck in done:
+            continue
+        case_hash = case.get("_evidence_hash")
+        # When both this scan's hash and the case's hash are known, hash is the ONLY thing that decides
+        # self-exclusion -- two different emails that happen to share a filename (or a filename that was
+        # reused) are different cases and must not exclude each other. Filename matching is a fallback for
+        # legacy records that were never given a hash.
+        is_self = (case_hash == current_hash) if (current_hash and case_hash) else (case.get("name") == current_name)
+        if is_self:
             continue
         done.add(ck)
         doms, ips = _case_artifacts(case)
