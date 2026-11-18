@@ -62,8 +62,21 @@ def _ts(v):
 _URL_TAGS = frozenset(t for _p, t in attack_dna._URL_FLAG_TAGS)
 _ALIGN_TAGS = frozenset({"freemail_sender", "reply_subdomain", "reply_org_mismatch",
                          "return_subdomain", "return_org_mismatch"})
-_AUTH_RE = re.compile(r"^(high|medium|low|info):[A-Za-z0-9 .,()_\-]{1,60}$")   # "severity:Title"; known severities only; no @ / : //
-_IPISH_RE = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+# Exact "severity:title" tags header_analysis.py can emit that attack_dna keeps (the unknown/absence titles in
+# attack_dna._GENERIC_AUTH_ABSENCE_TITLES are never extracted, so they are not valid here). Strict allowlist.
+_AUTH_TAGS = frozenset(
+    {"high:%s %s" % (m, v) for m in ("SPF", "DKIM", "DMARC") for v in ("fail", "softfail", "permerror", "temperror")}
+    | {"info:Envelope sender on a related subdomain (authenticated)",
+       "low:Envelope sender on a related subdomain (not proven)",
+       "low:Envelope sender on a third-party domain (DKIM-aligned)",
+       "high:Envelope / header sender mismatch",
+       "info:Reply-To on a related subdomain",
+       "low:Reply-To on a related subdomain",
+       "high:Reply-To redirects elsewhere",
+       "high:Display-name brand impersonation",
+       "high:Executive identity on a free mail account",
+       "high:Dangerous attachment type",
+       "high:Business Email Compromise pattern"})
 _STRUCT_RE = re.compile(r"^(len|urls|attach|html):[a-z]{2,8}$")
 
 
@@ -75,7 +88,7 @@ def _valid_tag(family, tag):
     if family == "domain_alignment":
         return tag in _ALIGN_TAGS
     if family == "auth_anomalies":
-        return bool(_AUTH_RE.match(tag)) and not _IPISH_RE.search(tag)
+        return tag in _AUTH_TAGS
     if family == "structural":
         return bool(_STRUCT_RE.match(tag))
     if family == "infra_class":

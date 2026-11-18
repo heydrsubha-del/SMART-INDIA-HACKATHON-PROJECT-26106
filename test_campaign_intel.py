@@ -201,6 +201,52 @@ class TagValidation(unittest.TestCase):
         self.assertNotIn("evil@x", repr(r))
 
 
+class AuthTagAllowlist(unittest.TestCase):
+    """auth_anomalies tags are an exact allowlist of header_analysis titles, never free-form strings."""
+
+    def test_every_attack_dna_generated_tag_is_valid(self):
+        with open("header_analysis.py", encoding="utf-8") as fh:
+            titles = re.findall(r'flag\(\s*(?:"(\w+)"|sev),\s*"([^"{]+)"', fh.read())
+        self.assertGreaterEqual(len(titles), 8)
+        for sev, title in titles:
+            if title in dna._GENERIC_AUTH_ABSENCE_TITLES:
+                continue
+            sevs = ("info", "low") if not sev else (sev,)
+            for sv in sevs:
+                self.assertIn("%s:%s" % (sv, title), ci._AUTH_TAGS)
+        for mech in ("SPF", "DKIM", "DMARC"):
+            for v in ("fail", "softfail", "permerror", "temperror"):
+                self.assertTrue(ci._valid_tag("auth_anomalies", "high:%s %s" % (mech, v)))
+
+    def test_real_extraction_output_survives(self):
+        cur = fp(auth=(("high", "SPF fail"), ("low", "Reply-To on a related subdomain"),
+                       ("high", "Display-name brand impersonation")))
+        tags = ci._tags(cur, "auth_anomalies")
+        self.assertEqual(tags, sorted(cur["families"]["auth_anomalies"]))
+        self.assertEqual(len(tags), 3)
+
+    def test_arbitrary_and_dynamic_strings_rejected(self):
+        for bad in ("high:Anything I like", "high:SPF pass", "high:SPF FAIL", "critical:SPF fail", "low:SPF fail",
+                    "high:Dangerous attachment type ", "high:Dangerous attachment type.exe", "high:Reply-To redirects elsewhere\n",
+                    "high:Mail from 203.0.113.7", "high:user@evil.example", "high:http://evil.example",
+                    "info:Reply-To on a related subdomain:x", "high:Executive identity on a free mail account (CEO Bob)",
+                    "SPF fail", ":", "", "high:", None, 5, ["high:SPF fail"]):
+            self.assertFalse(ci._valid_tag("auth_anomalies", bad), repr(bad))
+        for absent in dna._GENERIC_AUTH_ABSENCE_TITLES:
+            for sv in ("info", "low", "medium", "high"):
+                self.assertFalse(ci._valid_tag("auth_anomalies", "%s:%s" % (sv, absent)))
+
+    def test_hostile_auth_tags_never_reach_output(self):
+        cur = fp()
+        evil = copy.deepcopy(fp())
+        evil["families"]["auth_anomalies"] = ["high:SPF fail", "high:Brand Acme impersonation", "low:jane@corp.example", "high:Reply to 198.51.100.9"]
+        d = ci.tactic_changes(cur, evil)["auth_anomalies"]
+        out = repr(d)
+        for leak in ("Acme", "jane", "corp", "198.51"):
+            self.assertNotIn(leak, out)
+        self.assertEqual(ci._tags(evil, "auth_anomalies"), ["high:SPF fail"])
+
+
 class TacticSummary(unittest.TestCase):
     def test_changed_shows_added_removed_only_with_both_sides(self):
         rel = {"tactic_changes": {"auth_anomalies": {"status": "unavailable"},
