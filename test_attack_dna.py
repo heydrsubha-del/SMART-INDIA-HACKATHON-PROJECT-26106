@@ -393,6 +393,32 @@ class GenericTagSpecificity(unittest.TestCase):
         self.assertNotIn("infra_class", cmp_["matched_families"])
 
 
+class GenericTagVetoRegression(unittest.TestCase):
+    """Separate from GenericTagSpecificity (which must stay as is): end-to-end regression, through the real
+    extract_features() -> compare_fingerprints() path, that purely generic overlap can never classify."""
+
+    def test_generic_shortener_reply_mismatch_infra_structural_is_none_not_weak(self):
+        """Two otherwise unrelated emails (different sender/reply domains, countries, no auth anomalies) that share
+        only a URL shortener, a reply-to org mismatch, generic 'hosting' infra and the same coarse structural buckets.
+        The weighted score alone clears STRONG_THRESHOLD, but none of the overlap is specific evidence, so the result
+        must be 'none' (not 'weak', not 'strong') with no qualifying family."""
+        def generic_only(tag, sender, reply, country):
+            return dna.extract_features(mk_result(
+                "VETO-" + tag, from_domain=sender, reply_domain=reply, return_domain=sender, anomalies=(),
+                url_flags=(("URL shortener hides the real destination",),), infra="hosting", country=country, body_len=300))
+        a = generic_only("a", "alpha-one.example", "other-one.example", "DE")
+        b = generic_only("b", "beta-two.example", "other-two.example", "NL")
+        self.assertEqual(a["families"]["url_tactics"], ["shortener"])
+        self.assertEqual(a["families"]["domain_alignment"], ["reply_org_mismatch"])
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "none")
+        self.assertNotEqual(cmp_["classification"], "weak")
+        self.assertEqual(cmp_["qualifying_families"], [])
+        self.assertGreaterEqual(cmp_["score"], dna.STRONG_THRESHOLD)   # raw score alone would have crossed STRONG
+        for fam in ("url_tactics", "domain_alignment", "infra_class", "structural"):
+            self.assertIn(fam, cmp_["matched_families"])               # the overlap really was present
+
+
 class Persistence(unittest.TestCase):
     def setUp(self):
         _tmp_db(self)
