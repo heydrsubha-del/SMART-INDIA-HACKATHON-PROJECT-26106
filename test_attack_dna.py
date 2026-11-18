@@ -294,6 +294,105 @@ class SimilarityClassification(unittest.TestCase):
         self.assertLess(cmp_["confidence"], 1.0)
 
 
+class GenericTagSpecificity(unittest.TestCase):
+    """Regression tests for the url_tactics/domain_alignment generic-vs-distinctive single-tag
+    fix. A lone tag from a family's known-generic set (_GENERIC_SINGLE_TAGS) must never count as
+    "specific" evidence at EITHER level: not toward the ">= 2 qualifying families" requirement for
+    STRONG, and not toward the "at least one meaningful, non-generic overlap" requirement for WEAK
+    -- a tag this module itself classifies as generic cannot simultaneously be treated as
+    meaningful/non-generic for WEAK purposes. A lone genuinely distinctive single tag, or two or
+    more co-occurring tags in the same family (generic or not), must still be able to qualify."""
+
+    def test_reproduced_false_positive_scenario_no_longer_reaches_strong_or_weak(self):
+        """Exact scenario from the review: two otherwise-unrelated emails sharing only a URL
+        shortener, a reply-to org mismatch, generic 'hosting' infra and the same coarse structural
+        buckets used to be classified STRONG purely from two generic single-tag overlaps plus
+        generic supporting weight. Neither the generic overlaps nor the generic infra/structural
+        weight on top of them are specific evidence, so this must now resolve to NONE even though
+        the raw weighted score alone would still clear STRONG_THRESHOLD."""
+        common_struct = ["len:short", "urls:few", "attach:none", "html:no"]
+        fam = {"auth_anomalies": [], "url_tactics": ["shortener"], "domain_alignment": ["reply_org_mismatch"],
+               "infra_class": ["hosting"], "structural": common_struct}
+        a, b = {"families": fam}, {"families": dict(fam)}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "none")
+        self.assertEqual(cmp_["qualifying_families"], [])
+        self.assertGreaterEqual(cmp_["score"], dna.STRONG_THRESHOLD)   # score alone would have crossed STRONG
+
+    def test_generic_url_tactic_overlap_alone_does_not_qualify_weak_or_strong(self):
+        """A single shared 'shortener' (or any other _GENERIC_SINGLE_TAGS url_tactics entry), with
+        nothing else to compare, must not reach WEAK (not just not STRONG)."""
+        a = {"families": {"url_tactics": ["shortener"]}}
+        b = {"families": {"url_tactics": ["shortener"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertNotIn("url_tactics", cmp_["qualifying_families"])
+        self.assertEqual(cmp_["classification"], "none")
+
+    def test_generic_domain_alignment_overlap_alone_does_not_qualify_weak_or_strong(self):
+        """A single shared 'reply_org_mismatch' (or any other _GENERIC_SINGLE_TAGS domain_alignment
+        entry), with nothing else to compare, must not reach WEAK (not just not STRONG)."""
+        a = {"families": {"domain_alignment": ["reply_org_mismatch"]}}
+        b = {"families": {"domain_alignment": ["reply_org_mismatch"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertNotIn("domain_alignment", cmp_["qualifying_families"])
+        self.assertEqual(cmp_["classification"], "none")
+
+    def test_two_generic_domain_alignment_tags_together_still_qualify(self):
+        """Two co-occurring domain_alignment tags are a materially more specific coincidence than
+        either alone, even if each individual tag is in _GENERIC_SINGLE_TAGS -- the veto in
+        _lacks_specific_evidence() only applies to a *single*-tag overlap, so this still qualifies
+        for (at least) WEAK."""
+        a = {"families": {"domain_alignment": ["reply_org_mismatch", "return_org_mismatch"]}}
+        b = {"families": {"domain_alignment": ["reply_org_mismatch", "return_org_mismatch"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertIn("domain_alignment", cmp_["qualifying_families"])
+        self.assertNotEqual(cmp_["classification"], "none")
+
+    def test_distinctive_single_url_tactic_still_qualifies_alone(self):
+        """A genuinely distinctive single tag (e.g. 'punycode', not in _GENERIC_SINGLE_TAGS) must
+        still be able to qualify on its own, combined with one other qualifying family, producing a
+        STRONG classification exactly as before this fix -- distinctive single-tag behaviour is
+        unaffected by tightening the generic-tag veto to also cover WEAK."""
+        a = {"families": {"auth_anomalies": ["high:SPF fail", "high:DKIM fail"], "url_tactics": ["punycode"]}}
+        b = {"families": {"auth_anomalies": ["high:SPF fail", "high:DKIM fail"], "url_tactics": ["punycode"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "strong")
+        self.assertIn("url_tactics", cmp_["qualifying_families"])
+        self.assertIn("auth_anomalies", cmp_["qualifying_families"])
+
+    def test_distinctive_single_url_tactic_alone_still_flags_weak(self):
+        """A genuinely distinctive single tag alone (no second qualifying family) must still reach
+        WEAK -- only generic single tags lost that ability, not distinctive ones."""
+        a = {"families": {"url_tactics": ["punycode"]}}
+        b = {"families": {"url_tactics": ["punycode"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "weak")
+
+    def test_single_generic_auth_anomaly_still_flags_weak_unaffected_by_this_fix(self):
+        """auth_anomalies has no entry in _GENERIC_SINGLE_TAGS, so its pre-existing behaviour is
+        unaffected: a single shared generic auth anomaly tag still reaches WEAK on its own (as
+        test_weak_similarity_from_only_one_feature_family already covers end-to-end); only
+        url_tactics/domain_alignment gained a generic-tag veto."""
+        a = {"families": {"auth_anomalies": ["high:SPF fail"]}}
+        b = {"families": {"auth_anomalies": ["high:SPF fail"]}}
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "weak")
+
+    def test_infrastructure_rotation_strong_match_is_preserved(self):
+        """This fix must not regress the existing infrastructure-rotation STRONG-match behaviour:
+        two emails with completely different domains/infra/country but repeated, genuinely
+        distinctive tactics (2+ auth anomalies, a distinctive URL tactic, a domain-alignment
+        mismatch) must still classify STRONG. Mirrors
+        SimilarityClassification.test_infrastructure_rotation_with_retained_structural_pattern."""
+        a = dna.extract_features(mk_result("GT-a", from_domain="evil1.example", reply_domain="drop1.example",
+                                            return_domain="drop1.example", infra="tor", country="DE"))
+        b = dna.extract_features(mk_result("GT-b", from_domain="evil2.example", reply_domain="drop2.example",
+                                            return_domain="drop2.example", infra="hosting", country="NL"))
+        cmp_ = dna.compare_fingerprints(a, b)
+        self.assertEqual(cmp_["classification"], "strong")
+        self.assertNotIn("infra_class", cmp_["matched_families"])
+
+
 class Persistence(unittest.TestCase):
     def setUp(self):
         _tmp_db(self)

@@ -82,6 +82,28 @@ SPECIFIC_FAMILIES = {
     "domain_alignment": 1,
 }
 
+# Within url_tactics/domain_alignment, tags that are, on their own, too common across vast numbers
+# of unrelated senders to count as campaign-specific evidence toward a STRONG match -- the same
+# concern that already makes auth_anomalies require >=2 co-occurring tags, applied per-tag instead
+# of per-family so a genuinely distinctive single tag isn't penalised along with the generic ones.
+#   url_tactics: "shortener" (any mass-market shortener service), "unencrypted_http" (plain http://
+#     links are common even in legitimate mail) and "suspicious_tld" (cheap/low-reputation TLDs are
+#     reused across huge numbers of unrelated spam/phishing senders) are commodity tactics. By
+#     contrast "raw_ip_host", "punycode", "brand_lookalike", "credential_path" and "deep_subdomain"
+#     are each a deliberate, specific construction choice and remain fine to qualify alone.
+#   domain_alignment: every tag here (a reply/return domain that is a same-org subdomain, or
+#     belongs to an entirely different org, or freemail use) is an extremely common phishing/BEC
+#     tell on its own; none is distinctive enough alone, so the whole family's tags are listed.
+#     Two or more of them occurring together is a materially more specific coincidence and is not
+#     affected by this veto -- see _qualifies_for_strong().
+_GENERIC_SINGLE_TAGS = {
+    "url_tactics": frozenset({"shortener", "unencrypted_http", "suspicious_tld"}),
+    "domain_alignment": frozenset({
+        "freemail_sender", "reply_subdomain", "reply_org_mismatch",
+        "return_subdomain", "return_org_mismatch",
+    }),
+}
+
 STRONG_THRESHOLD = 0.55
 WEAK_THRESHOLD = 0.15
 
@@ -260,15 +282,56 @@ def extract_features(result):
     }
 
 
+def _lacks_specific_evidence(family, overlap_tags):
+    """True when `overlap_tags`, within `family`, contains no tag that counts as specific/
+    non-generic evidence on its own -- i.e. the overlap is exactly one tag, and that family has a
+    known-generic set (_GENERIC_SINGLE_TAGS) containing it. Shared by both _is_specific_overlap()
+    (the WEAK gate) and _qualifies_for_strong() (the STRONG gate) so a tag this module has already
+    classified as generic is treated consistently at *both* levels: it would be incoherent to call
+    a lone "shortener" or "reply_org_mismatch" too common to prove a shared campaign for STRONG,
+    while still accepting it as "meaningful, non-generic overlap" for WEAK.
+
+    Families with no entry in _GENERIC_SINGLE_TAGS (currently only auth_anomalies) are unaffected
+    here -- a single auth_anomalies tag has always been enough to raise WEAK (see
+    test_weak_similarity_from_only_one_feature_family); SPECIFIC_FAMILIES["auth_anomalies"] = 2
+    separately keeps a single tag from reaching STRONG, via the count check in
+    _qualifies_for_strong(), not via this function.
+
+    Two or more co-occurring tags in the same family are never vetoed here, generic or not -- that
+    combination is a materially more specific coincidence than any one tag alone."""
+    if len(overlap_tags) != 1:
+        return False
+    generic = _GENERIC_SINGLE_TAGS.get(family)
+    return bool(generic) and overlap_tags[0] in generic
+
+
 def _is_specific_overlap(family, overlap_tags):
     """Whether an overlap in this family counts toward the "at least one meaningful, specific
-    overlap" requirement for any match (weak or strong). infra_class and structural never count --
-    shared hosting/ASN/country or shared size/shape alone is supporting context, never proof of a
-    shared campaign. Within domain_alignment, an overlap consisting only of "freemail_sender" is too
-    generic (countless unrelated senders use free mail) to count as specific evidence on its own."""
+    overlap" requirement for a WEAK match. infra_class and structural never count -- shared
+    hosting/ASN/country or shared size/shape alone is supporting context, never proof of a shared
+    campaign. A lone tag from a family's known-generic set (_GENERIC_SINGLE_TAGS) -- which includes
+    domain_alignment's "freemail_sender" -- is too common across unrelated senders to count as
+    specific evidence on its own; see _lacks_specific_evidence()."""
     if family not in SPECIFIC_FAMILIES:
         return False
-    if family == "domain_alignment" and set(overlap_tags) <= {"freemail_sender"}:
+    if _lacks_specific_evidence(family, overlap_tags):
+        return False
+    return True
+
+
+def _qualifies_for_strong(family, overlap_tags):
+    """Whether this family's overlap can count toward the ">= 2 independent families" requirement
+    for a STRONG classification. Uses the same generic-single-tag veto as _is_specific_overlap()
+    (_lacks_specific_evidence()), plus the family's own SPECIFIC_FAMILIES count requirement -- for
+    auth_anomalies that count (2) is what keeps a single tag from reaching STRONG, since
+    auth_anomalies has no generic set of its own. A distinctive single tag (e.g. "punycode",
+    "raw_ip_host") still qualifies alone, and two or more co-occurring tags in the same family
+    qualify regardless of whether each is individually generic."""
+    if family not in SPECIFIC_FAMILIES:
+        return False
+    if len(overlap_tags) < SPECIFIC_FAMILIES[family]:
+        return False
+    if _lacks_specific_evidence(family, overlap_tags):
         return False
     return True
 
@@ -284,8 +347,14 @@ def compare_fingerprints(fp_a, fp_b):
          "qualifying_families": [...], "families_compared": int, "families_total": int}
 
     A "weak" classification requires at least one specific (non-generic) overlap -- see
-    _is_specific_overlap(); infra_class/structural overlap alone, or a domain_alignment overlap of
-    only "freemail_sender", can add to `score` but can never by themselves reach "weak" or "strong".
+    _is_specific_overlap() / _lacks_specific_evidence(). infra_class/structural overlap alone, or a
+    lone tag from a family's known-generic set (_GENERIC_SINGLE_TAGS -- e.g. domain_alignment's
+    "freemail_sender", url_tactics' "shortener"), can add to `score` but can never by themselves
+    reach "weak" or "strong". A "strong" classification additionally requires >= 2 of those
+    families to independently clear _qualifies_for_strong(), which adds a per-family tag-count
+    requirement (SPECIFIC_FAMILIES) on top of the same generic-tag veto -- so generic infra_class/
+    structural weight can never turn two merely-generic single-tag overlaps into a "strong"
+    classification, and generic single tags can no longer turn into a "weak" one either.
     """
     fam_a = (fp_a or {}).get("families") if isinstance(fp_a, dict) else {}
     fam_b = (fp_b or {}).get("families") if isinstance(fp_b, dict) else {}
@@ -317,8 +386,8 @@ def compare_fingerprints(fp_a, fp_b):
         matched[family] = overlap
         if _is_specific_overlap(family, overlap):
             specific_overlap_present = True
-            if len(overlap) >= SPECIFIC_FAMILIES[family]:
-                qualifying.append(family)
+        if _qualifies_for_strong(family, overlap):
+            qualifying.append(family)
 
     families_total = len(FAMILY_WEIGHTS)
     confidence = round(compared / families_total, 4) if families_total else 0.0

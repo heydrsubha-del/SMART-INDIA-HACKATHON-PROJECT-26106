@@ -1769,7 +1769,18 @@ class TruncatedScanDisclosureTests(unittest.TestCase):
         for needle in ("partial_scan_note()", "extortion_block(result)", "**Manual review required.**", 'get("truncated")',
                        "malformed_inputs"):
             self.assertIn(needle, block)
-        self.assertIn("from report import build_report, evidence_hash, extortion_status, extortion_block, partial_scan_note", src)
+        # Semantic check: validate the actual imported names via the AST rather than matching one
+        # exact formatting of the import line (single-line vs. parenthesised multi-line both pass).
+        tree = ast.parse(src, filename="app.py")
+        imported_from_report = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == "report":
+                imported_from_report.update(alias.name for alias in node.names)
+        required_names = {
+            "build_report", "evidence_hash", "extortion_status", "extortion_block", "partial_scan_note",
+        }
+        missing = required_names - imported_from_report
+        self.assertFalse(missing, f"app.py must import {missing} from report")
         self.assertGreaterEqual(src.count("extortion_status(sel_res)"), 2)     # dossier table + dossier markdown export
         self.assertIn('"Extortion Assessment": extortion_status(sel_res)', src)
         self.assertIn("| **Extortion Assessment** |", src)
