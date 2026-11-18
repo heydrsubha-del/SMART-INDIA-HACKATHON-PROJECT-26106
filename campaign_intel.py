@@ -58,14 +58,69 @@ def _ts(v):
     return v if isinstance(v, str) and _TS_RE.match(v) else None
 
 
+# Stored JSON is not trusted: a tag is exposed only if it fits its family's known vocabulary / shape.
+_URL_TAGS = frozenset(t for _p, t in attack_dna._URL_FLAG_TAGS)
+_ALIGN_TAGS = frozenset({"freemail_sender", "reply_subdomain", "reply_org_mismatch",
+                         "return_subdomain", "return_org_mismatch"})
+_AUTH_RE = re.compile(r"^(high|medium|low|info):[A-Za-z0-9 .,()_\-]{1,60}$")   # "severity:Title"; known severities only; no @ / : //
+_IPISH_RE = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+_STRUCT_RE = re.compile(r"^(len|urls|attach|html):[a-z]{2,8}$")
+
+
+def _valid_tag(family, tag):
+    if not isinstance(tag, str):
+        return False
+    if family == "url_tactics":
+        return tag in _URL_TAGS
+    if family == "domain_alignment":
+        return tag in _ALIGN_TAGS
+    if family == "auth_anomalies":
+        return bool(_AUTH_RE.match(tag)) and not _IPISH_RE.search(tag)
+    if family == "structural":
+        return bool(_STRUCT_RE.match(tag))
+    if family == "infra_class":
+        return tag in attack_dna._VALID_INFRA_CLASSES or (
+            bool(_COUNTRY_RE.match(tag)) and tag[8:] in attack_dna._ISO_3166_1_ALPHA2)
+    return False
+
+
 def _tags(fp, family):
-    """Sorted plain-string tags of one family, or None when the family is missing/malformed/empty."""
+    """Sorted VALIDATED tags of one family, or None when the family is missing/malformed/has no valid tag."""
     fam = fp.get("families") if isinstance(fp, dict) else None
     raw = fam.get(family) if isinstance(fam, dict) else None
     if not isinstance(raw, list):
         return None
-    out = sorted({t[:80] for t in raw if isinstance(t, str) and t})
+    out = sorted({t for t in raw if _valid_tag(family, t)})
     return out or None
+
+
+def _unit(v):
+    """A finite number in [0, 1] (Phase 2 score/confidence range) or None."""
+    return round(float(v), 4) if isinstance(v, (int, float)) and not isinstance(v, bool) and 0.0 <= v <= 1.0 else None
+
+
+def _families(v):
+    return sorted(f for f in v if isinstance(f, str) and f in attack_dna.FAMILY_WEIGHTS)
+
+
+def tactic_summary(rel):
+    """One-line analyst text for a relationship's tactic_changes: shows added (+) / removed (-) tags only for families
+    where BOTH observations had data; otherwise says the data was insufficient. Used by the UI and the report."""
+    tc = rel.get("tactic_changes") if isinstance(rel, dict) else None
+    if not isinstance(tc, dict):
+        return "insufficient data"
+    parts, states = [], []
+    for fam in _TACTIC_FAMILIES:
+        e = tc.get(fam) if isinstance(tc.get(fam), dict) else {}
+        states.append(e.get("status"))
+        if e.get("status") == "changed":
+            add = " ".join("+" + t for t in e.get("added") or [])
+            rem = " ".join("-" + t for t in e.get("removed") or [])
+            parts.append("%s: %s" % (fam, " ".join(x for x in (add, rem) if x)))
+    if parts:
+        return "; ".join(parts) + ("" if "unavailable" not in states else " (other families: insufficient data)")
+    return "no change" if "unchanged" in states and "unavailable" not in states else (
+        "no change in comparable families (others: insufficient data)" if "unchanged" in states else "insufficient data")
 
 
 def _infra_parts(fp):
@@ -158,13 +213,13 @@ def _build(features, match_report, history_rows):
         rel = {
             "relationship_type": "%s_structural_similarity" % cls,
             "classification": cls,                                   # Phase 2, unchanged
-            "phase2_score": m.get("score"),                          # Phase 2, unchanged (no new formula)
-            "phase2_confidence": m.get("confidence"),                # Phase 2, unchanged
+            "phase2_score": _unit(m.get("score")),                   # Phase 2 value, range-validated (no new formula)
+            "phase2_confidence": _unit(m.get("confidence")),         # Phase 2 value, range-validated
             "observation_ref": sid,
             "observed_at": _ts(m.get("created_at")) or (_ts(row.get("created_at")) if row else None),
-            "supporting_families": sorted(f for f in fams if isinstance(f, str) and f not in _CONTEXT_FAMILIES),
-            "context_only_families": sorted(f for f in fams if isinstance(f, str) and f in _CONTEXT_FAMILIES),
-            "qualifying_families": sorted(f for f in qual if isinstance(f, str)),
+            "supporting_families": [f for f in _families(fams) if f not in _CONTEXT_FAMILIES],
+            "context_only_families": [f for f in _families(fams) if f in _CONTEXT_FAMILIES],
+            "qualifying_families": _families(qual),
             "limitations": [RELATIONSHIP_LIMITATIONS[cls]],
         }
         if row:

@@ -26,6 +26,7 @@ import community_intel
 import risk
 
 import investigation_agent                       # evidence vocabulary + scanner evidence builder (stdlib-only module)
+import campaign_intel                          # Phase 3: campaign intelligence (pure, derived from Phase 2 data)
 import attack_dna                                # Phase 2: campaign fingerprinting (pure feature extraction + local-only storage)
 from classifier import load_or_train, predict
 from email_parser import parse_eml
@@ -223,9 +224,17 @@ def analyze_email(raw, name="uploaded", pipe=None):
     # ever reads these two precomputed fields. Never alters score/verdict; a storage problem here
     # degrades to "no history available", never an exception that could break the scan.
     try:
-        result["campaign_fingerprint"], result["campaign_matches"] = attack_dna.find_matches(result)
+        _hist = []                           # filled by find_matches() from its own single bounded read
+        result["campaign_fingerprint"], result["campaign_matches"] = attack_dna.find_matches(result, history_sink=_hist)
     except Exception:
+        _hist = []
         result["campaign_fingerprint"], result["campaign_matches"] = None, {"status": "error", "matches": [], "history_checked": 0}
+    # Phase 3: pure derivation from the Phase 2 outputs above (no extra DB query); fail-soft, never touches score/verdict.
+    try:
+        result["campaign_intel"] = campaign_intel.build_campaign_intel(
+            result.get("campaign_fingerprint"), result.get("campaign_matches"), _hist)
+    except Exception:
+        result["campaign_intel"] = None
     try:
         result["evidence_register"], result["scan_findings"] = investigation_agent.build_scan_evidence(result)
     except Exception as exc:

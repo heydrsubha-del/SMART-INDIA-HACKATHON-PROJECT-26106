@@ -1349,10 +1349,49 @@ def build_scan_evidence(result):
         if not matches:
             fi("No campaign-fingerprint similarity was found against prior analysed emails", "uncertain", [i])
 
+    def s_campaign_intel():
+        """Phase 3: reads the precomputed result["campaign_intel"] (pure derivation from Phase 2 data; no database
+        access). Emits nothing when there are no related retained observations (Phase 2's section already reports
+        history status). Every statement is 'uncertain': similarity is shared tactics, never attribution, and
+        nothing here changes the score."""
+        ci = r.get("campaign_intel")
+        if not isinstance(ci, dict) or ci.get("status") != "ok":
+            return
+        rels = [x for x in (ci.get("relationships") or []) if isinstance(x, dict)][:5]
+        if not rels:
+            return
+        times = sorted(x["observed_at"] for x in rels if isinstance(x.get("observed_at"), str))
+        t = ev("campaign intelligence", "campaign_intel", "historical",
+               "%d distinct retained observation(s) relate to this scan; earliest stored %s (storage time, not send date)" % (
+                   len(rels), clean(times[0], 20) if times else "unknown"), "ok", "result.campaign_intel.observations")
+        fi("Related retained observations were found (distinct stored records ordered by storage time, not every scan or attack "
+           "events). Shared tactics, not confirmed common authorship; confirm with indicator-level evidence (Retro-Hunt, correlation).",
+           "uncertain", [t])
+        for n, x in enumerate(rels):
+            infra = x.get("infrastructure") if isinstance(x.get("infrastructure"), dict) else {}
+            st = lambda k: clean((infra.get(k) or {}).get("status") if isinstance(infra.get(k), dict) else "unavailable", 12)
+            j = ev("campaign intelligence", "campaign_intel", "historical",
+                   "Retained observation %s (stored %s) is a %s Attack DNA match; specific families: %s; context-only: %s; "
+                   "infrastructure class %s, country %s" % (
+                       clean(x.get("observation_ref"), 40), clean(x.get("observed_at") or "unknown", 20),
+                       clean(x.get("classification"), 8), ", ".join(map(str, x.get("supporting_families") or [])) or "none",
+                       ", ".join(map(str, x.get("context_only_families") or [])) or "none", st("infra_class"), st("country")),
+                   "ok", "result.campaign_intel.relationships[%d]" % n,
+                   confidence=x.get("phase2_confidence") if isinstance(x.get("phase2_confidence"), float) else None,
+                   meta={"classification": x.get("classification")})
+            changed = [k for k in ("infra_class", "country") if st(k) == "changed"]
+            if changed:
+                fi("The coarse infrastructure %s differ(s) between this scan and retained observation %s. This neither "
+                   "establishes nor rules out campaign continuity; IP/domain/hosting changes are not observable here." % (
+                       " and ".join(changed), clean(x.get("observation_ref"), 40)), "uncertain", [j])
+            else:
+                fi("Retained observation %s resembles this scan structurally; this is shared tactics, not confirmed common "
+                   "authorship." % clean(x.get("observation_ref"), 40), "uncertain", [j])
+
     for name, fn in (("ML", s_ml), ("authentication", s_auth), ("sender identity", s_identity), ("header anomalies", s_anomalies),
                      ("extortion", s_extortion), ("URLs and indicators", s_urls), ("geolocation", s_geo),
                      ("origin intelligence", s_origin_intel), ("community intelligence", s_community), ("risk inputs", s_inputs),
-                     ("campaign fingerprint", s_campaign_dna)):
+                     ("campaign fingerprint", s_campaign_dna), ("campaign intelligence", s_campaign_intel)):
         section(name, fn)
     return reg, fnd
 

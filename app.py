@@ -296,6 +296,7 @@ def _cached_correlation_view(graph_scope, _cases, cases_to_show, seed, use_seman
     )
 
 from analyzer import analyze_all_samples, analyze_email
+import campaign_intel                      # Phase 3: tactic_summary() for the Attack DNA panel (pure)
 from classifier import (
     load_or_train,
     maybe_retrain_from_feedback,
@@ -15069,6 +15070,21 @@ if active_panel == "Forensic Report":
                         "Matched Feature Families": ", ".join(sorted((m.get("matched_families") or {}).keys())) or "-",
                         "Seen": m.get("created_at", "-"),
                     } for m in _dna_matches]))
+                    # Phase 3: precomputed campaign intelligence (no DB call at render time).
+                    _ci = sel_res.get("campaign_intel")
+                    _ci_rels = [x for x in (_ci.get("relationships") or []) if isinstance(x, dict)][:5] if isinstance(_ci, dict) else []
+                    if _ci_rels:
+                        st.caption("Campaign intelligence \u00b7 " + str(_ci.get("timeline_basis", "")))
+                        _render_polished_table(tone="#f472b6", df=pd.DataFrame([{
+                            "Observation": x.get("observation_ref", "-"),
+                            "Stored": x.get("observed_at") or "unknown",
+                            "Class": str(x.get("classification", "-")).capitalize(),
+                            "Specific families": ", ".join(map(str, x.get("supporting_families") or [])) or "-",
+                            "Infra class": (x.get("infrastructure", {}).get("infra_class") or {}).get("status", "unavailable"),
+                            "Country": (x.get("infrastructure", {}).get("country") or {}).get("status", "unavailable"),
+                            "Tactic changes": campaign_intel.tactic_summary(x),
+                        } for x in _ci_rels]))
+                        st.caption(" ".join(map(str, (_ci.get("limitations") or [])[:3])))
 
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 

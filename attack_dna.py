@@ -567,7 +567,7 @@ def query_recent_fingerprints(exclude_scan_id="", limit=MAX_HISTORY, shared=Fals
     return rows if rows is not None else []
 
 
-def find_matches(result, shared=False, limit=MAX_HISTORY, top_n=MAX_RETURNED_MATCHES):
+def find_matches(result, shared=False, limit=MAX_HISTORY, top_n=MAX_RETURNED_MATCHES, history_sink=None):
     """Orchestration only: NOT called from build_scan_evidence() (which must stay pure/DB-free).
     Called once from analyzer.analyze_email(); its two return values are attached to `result`
     before build_scan_evidence() runs, so the evidence builder only ever reads precomputed data.
@@ -596,6 +596,8 @@ def find_matches(result, shared=False, limit=MAX_HISTORY, top_n=MAX_RETURNED_MAT
     if history is None or not saved:
         return features, {"status": "storage_unavailable", "matches": [], "history_checked": 0}
 
+    if isinstance(history_sink, list):    # opt-in: hand the SAME bounded read to a caller (Phase 3) -- no 2nd query
+        history_sink.extend(history)
     matches = []
     for row in history:
         cmp_ = compare_fingerprints(features, row["features"])

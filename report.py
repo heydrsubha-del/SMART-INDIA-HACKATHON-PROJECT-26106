@@ -102,6 +102,32 @@ def extortion_status(result):
     return "No extortion pattern found"
 
 
+def campaign_intel_md(result):
+    """Markdown for the precomputed result["campaign_intel"] ([] when absent / no related observations). NEVER raises.
+    Read-only: no database access. Similarity is shared tactics, never attribution."""
+    try:
+        import campaign_intel as _ci_mod
+        ci = result.get("campaign_intel") if isinstance(result, dict) else None
+        rels = [x for x in (ci.get("relationships") or []) if isinstance(x, dict)] if isinstance(ci, dict) else []
+        if not rels:
+            return []
+        out = ["### Campaign intelligence (Phase 3)", "", "_%s_" % md_cell(ci.get("timeline_basis")), "",
+               "| Observation | Stored | Attack DNA class | Specific families | Context only | Infra class | Country | Tactic changes |",
+               "|---|---|---|---|---|---|---|---|"]
+        for x in rels[:5]:
+            inf = x.get("infrastructure") if isinstance(x.get("infrastructure"), dict) else {}
+            g = lambda k: md_cell((inf.get(k) or {}).get("status") if isinstance(inf.get(k), dict) else "unavailable")
+            out.append("| `%s` | %s | %s | %s | %s | %s | %s | %s |" % (
+                md_cell(x.get("observation_ref")), md_cell(x.get("observed_at") or "unknown"), md_cell(x.get("classification")),
+                md_cell(", ".join(map(str, x.get("supporting_families") or [])) or "none"),
+                md_cell(", ".join(map(str, x.get("context_only_families") or [])) or "none"), g("infra_class"), g("country"),
+                md_cell(_ci_mod.tactic_summary(x))))
+        out += ["", "**Limitations:** " + " ".join(md_cell(s) for s in (ci.get("limitations") or [])[:5]), ""]
+        return out
+    except Exception:
+        return []
+
+
 def scan_evidence_md(result):
     """Markdown lines for the scanner evidence register and machine findings ([] for a result without a register).
     Evidence is defined once here; other sections reference IDs. NEVER raises: a malformed register is reported as such and
@@ -123,7 +149,8 @@ def scan_evidence_md(result):
             out += ["> **Evidence register failed validation:** %s. Treat these references as unverified." % md_cell("; ".join(problems[:5])), ""]
         out += ["### Machine findings", ""] + (ia.findings_table_md(fnd, reg) if fnd else ["_No structured machine findings were recorded._"])
         out += ["", "### Evidence", ""] + (ia.evidence_table_md(reg) if reg else ["_No evidence was recorded for this scan._"])
-        return out + ["", ia.EVIDENCE_LEGEND, ""]
+        out += ["", ia.EVIDENCE_LEGEND, ""]
+        return out + campaign_intel_md(result)
     except Exception as exc:
         return head + ["> **Evidence register could not be rendered** (%s). It is unverified; scores and verdicts are unaffected." % type(exc).__name__, ""]
 

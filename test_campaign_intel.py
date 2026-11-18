@@ -126,11 +126,21 @@ class Relationships(unittest.TestCase):
         self.assertTrue({"infra_class", "structural"} & set(r["context_only_families"]))
         self.assertFalse({"infra_class", "structural"} & set(r["supporting_families"]))
 
-    def test_generic_feature_false_positive_not_promoted(self):
-        generic = dict(auth=(), url=(("URL shortener hides the real destination",),))
-        cur, other = fp(**generic), fp(**generic)
-        out = intel(cur, [row(1, other)])
-        self.assertTrue(all(x["classification"] != "strong" for x in out["relationships"]))
+    def test_generic_only_overlap_creates_no_relationship_at_all(self):
+        """shortener + reply_org_mismatch + infra + structural: Phase 2 classifies 'none', so Phase 3 must report no
+        relationship and no observation -- not merely 'not strong'."""
+        def g():
+            return {"schema_version": dna.CURRENT_SCHEMA_VERSION, "families": {
+                "auth_anomalies": [], "url_tactics": ["shortener"], "domain_alignment": ["reply_org_mismatch"],
+                "infra_class": ["tor", "country:DE"], "structural": ["attach:none", "html:yes", "len:short", "urls:few"]}}
+        self.assertEqual(dna.compare_fingerprints(g(), g())["classification"], "none")
+        out = intel(g(), [row(1, g())])
+        self.assertEqual((out["status"], out["relationships"], out["observations"]), ("no_related_observations", [], []))
+        # even if a (buggy/hostile) caller hands Phase 3 a 'none' match, it is dropped, never displayed
+        rep = {"status": "ok", "history_checked": 1, "matches": [dict(dna.compare_fingerprints(g(), g()), scan_id=sid(1), created_at="2026-01-01 00:00:00")]}
+        out2 = ci.build_campaign_intel(g(), rep, [row(1, g())])
+        self.assertEqual(out2["relationships"], [])
+        self.assertEqual(out2["skipped_malformed"], 1)
 
     def test_evidence_provenance_and_limitations(self):
         cur = fp(**SPECIFIC)
@@ -153,6 +163,62 @@ class Relationships(unittest.TestCase):
         t = ci.tactic_changes(fp(**SPECIFIC), fp(auth=(), url=SPECIFIC["url"]))
         self.assertEqual(t["auth_anomalies"]["status"], "unavailable")
         self.assertEqual(t["url_tactics"]["status"], "unchanged")
+
+
+class TagValidation(unittest.TestCase):
+    HOSTILE = ["user@evil.example", "http://evil.example/x", "198.51.100.7", "high:SPF fail @ evil", "x" * 500, "", 5, None,
+               {"a": 1}, ["n"], "len:<script>", "country:de", "country:ZZ", "shortener "]
+
+    def test_hostile_stored_tags_never_exposed_in_any_family(self):
+        cur = fp(**SPECIFIC)
+        evil = {"families": {f: list(self.HOSTILE) + ["x"] for f in dna.FAMILY_WEIGHTS}}
+        d = ci.tactic_changes(cur, evil)
+        self.assertTrue(all(v["status"] == "unavailable" for v in d.values()))
+        self.assertEqual(ci.compare_infrastructure(cur, evil)["infra_class"]["status"], "unavailable")
+        out = repr(d) + repr(ci.compare_infrastructure(cur, evil))
+        for leak in ("@", "http", "198.51", "script", "xxxx"):
+            self.assertNotIn(leak, out)
+
+    def test_valid_tags_survive_mixed_with_hostile_ones(self):
+        cur = fp(**SPECIFIC)
+        mixed = copy.deepcopy(fp(**SPECIFIC))
+        mixed["families"]["url_tactics"] = ["punycode", "user@evil.example", "evil-tag"]
+        d = ci.tactic_changes(cur, mixed)["url_tactics"]
+        self.assertEqual(d["status"], "changed")
+        self.assertEqual(d["added"], ["shortener"])        # only validated vocabulary appears
+        self.assertEqual(d["removed"], [])
+
+    def test_malformed_phase2_fields_are_range_checked_and_family_names_validated(self):
+        cur = fp(**SPECIFIC)
+        c = dna.compare_fingerprints(cur, fp(**SPECIFIC))
+        bad = dict(c, scan_id=sid(1), created_at="2026-01-01 00:00:00", score=7.5, confidence="hi",
+                   matched_families={"url_tactics": ["x"], "evil@x": ["y"], 5: ["z"]}, qualifying_families=["url_tactics", "http://x", 3])
+        r = ci.build_campaign_intel(cur, {"status": "ok", "history_checked": 1, "matches": [bad]}, [row(1, fp(**SPECIFIC))])["relationships"][0]
+        self.assertIsNone(r["phase2_score"])
+        self.assertIsNone(r["phase2_confidence"])
+        self.assertEqual(r["supporting_families"], ["url_tactics"])
+        self.assertEqual(r["qualifying_families"], ["url_tactics"])
+        self.assertNotIn("evil@x", repr(r))
+
+
+class TacticSummary(unittest.TestCase):
+    def test_changed_shows_added_removed_only_with_both_sides(self):
+        rel = {"tactic_changes": {"auth_anomalies": {"status": "unavailable"},
+                                  "url_tactics": {"status": "changed", "added": ["punycode"], "removed": ["shortener"]},
+                                  "domain_alignment": {"status": "unchanged", "added": [], "removed": []}}}
+        s = ci.tactic_summary(rel)
+        self.assertIn("url_tactics: +punycode -shortener", s)
+        self.assertIn("insufficient data", s)
+
+    def test_all_unavailable_or_malformed(self):
+        self.assertEqual(ci.tactic_summary({}), "insufficient data")
+        self.assertEqual(ci.tactic_summary(None), "insufficient data")
+        self.assertEqual(ci.tactic_summary({"tactic_changes": {f: {"status": "unavailable"} for f in ci._TACTIC_FAMILIES}}),
+                         "insufficient data")
+
+    def test_unchanged(self):
+        rel = {"tactic_changes": {f: {"status": "unchanged", "added": [], "removed": []} for f in ci._TACTIC_FAMILIES}}
+        self.assertEqual(ci.tactic_summary(rel), "no change")
 
 
 class Robustness(unittest.TestCase):
@@ -184,14 +250,17 @@ class Robustness(unittest.TestCase):
         ids = [r["observation_ref"] for r in out["relationships"]]
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_pure_no_mutation_and_no_io_imports(self):
+    def test_pure_no_mutation_and_works_with_all_io_blocked(self):
+        import socket
+        import sqlite3
         cur, rows = fp(**SPECIFIC), [row(1, fp(**SPECIFIC))]
         before = copy.deepcopy((cur, rows))
-        intel(cur, rows)
+        with mock.patch.object(tracker, "get_connection", side_effect=AssertionError("DB touched")), \
+             mock.patch.object(sqlite3, "connect", side_effect=AssertionError("DB touched")), \
+             mock.patch.object(socket, "socket", side_effect=AssertionError("network touched")):
+            out = intel(cur, rows)
+        self.assertEqual(out["status"], "ok")
         self.assertEqual((cur, rows), before)
-        src = inspect.getsource(ci)
-        for banned in ("tracker", "sqlite3", "requests", "streamlit", "import socket"):
-            self.assertNotIn(banned, src.replace("never touches", ""))
 
     def test_privacy_output_contains_only_ids_timestamps_and_tags(self):
         cur = fp(from_domain="secret-bank.example", reply_domain="drop.example", **SPECIFIC)
@@ -271,6 +340,21 @@ class Integration(unittest.TestCase):
         self.res["evidence_register"], self.res["scan_findings"] = reg, fnd
         self.assertEqual(ia.validate_scan_register(self.res), [])
 
+    def test_evidence_confidence_is_phase2_confidence_not_score(self):
+        reg, _ = ia.build_scan_evidence(self.res)
+        rel = self.res["campaign_intel"]["relationships"][0]
+        e = [x for x in reg if x["source"] == "campaign_intel" and "relationships[0]" in x["source_reference"]][0]
+        self.assertEqual(e["confidence"], rel["phase2_confidence"])
+        self.assertNotEqual(rel["phase2_confidence"], rel["phase2_score"])
+
+    def test_tactic_changes_reach_report_and_ui_source(self):
+        self.res["evidence_register"], self.res["scan_findings"] = ia.build_scan_evidence(self.res)
+        self.res["campaign_intel"]["relationships"][0]["tactic_changes"]["url_tactics"] = {
+            "status": "changed", "added": ["punycode"], "removed": ["shortener"]}
+        md = "\n".join(report.scan_evidence_md(self.res))
+        self.assertIn("Tactic changes", md)
+        self.assertIn("url_tactics: +punycode -shortener", md)
+
     def test_infra_change_finding_does_not_claim_continuity(self):
         _, fnd = ia.build_scan_evidence(self.res)
         s = " ".join(f["statement"] for f in fnd if "infrastructure" in f["statement"])
@@ -287,16 +371,114 @@ class Integration(unittest.TestCase):
         self.assertEqual(report.campaign_intel_md({"campaign_intel": "junk"}), [])
         self.assertEqual(report.campaign_intel_md(None), [])
 
-    def test_risk_untouched_by_phase3(self):
-        import risk
-        src = inspect.getsource(risk)
-        self.assertNotIn("campaign_intel", src)
-        self.assertNotIn("campaign_matches", src)
 
-    def test_analyzer_wiring_failsoft(self):
-        src = inspect.getsource(analyzer)
-        self.assertIn("campaign_intel.build_campaign_intel", src)
-        self.assertIn("history_sink=_hist", src)
+
+import os
+import tor_check
+
+_SAMPLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "samples")
+
+
+def _raw(name, tail=b""):
+    with open(os.path.join(_SAMPLES, name), "rb") as fh:
+        return fh.read() + tail
+
+
+def _analyze(raw, name="t.eml"):
+    with mock.patch.object(tor_check, "maybe_update_tor_list", return_value=False):
+        return analyzer.analyze_email(raw, name)
+
+
+def _stored_rows():
+    conn = tracker.get_connection(shared=False)
+    try:
+        return conn.execute("SELECT scan_id, schema_version, features_json, created_at FROM campaign_fingerprints ORDER BY scan_id").fetchall()
+    finally:
+        conn.close()
+
+
+class RealPipeline(unittest.TestCase):
+    """Real analyze_email() -> evidence register -> report, on bundled sample emails (offline, isolated temp DB)."""
+
+    def setUp(self):
+        _tmp_db(self)
+        self.raw1 = _raw("phishing_credential.eml")
+        self.raw2 = _raw("phishing_credential.eml", b"\r\nExtra trailing line so the bytes (and scan_id) differ.\r\n")
+
+    def test_end_to_end_related_observation_flows_to_evidence_and_report(self):
+        first = _analyze(self.raw1)
+        rows_before = _stored_rows()
+        second = _analyze(self.raw2)
+        self.assertNotEqual(first["scan_id"], second["scan_id"])
+        intel_ = second["campaign_intel"]
+        self.assertIsInstance(intel_, dict)
+        self.assertEqual(intel_["status"], "ok")
+        self.assertEqual([r["observation_ref"] for r in intel_["relationships"]], [first["scan_id"]])
+        # evidence: appended, source campaign_intel, validated, every finding cites real evidence
+        reg, fnd = second["evidence_register"], second["scan_findings"]
+        mine = [e for e in reg if e["source"] == "campaign_intel"]
+        self.assertTrue(mine)
+        self.assertEqual(ia.validate_scan_register(second), [])
+        self.assertTrue(all(e["origin"] == "historical" and e["scan_id"] == second["scan_id"] for e in mine))
+        self.assertTrue(all(f["kind"] == "uncertain" for f in fnd if set(f["evidence_ids"]) & {e["id"] for e in mine}))
+        # report
+        md = "\n".join(report.scan_evidence_md(second))
+        self.assertIn("Campaign intelligence (Phase 3)", md)
+        self.assertIn(first["scan_id"], md)
+        full = report.build_report(second, self.raw2)
+        self.assertIn("Campaign intelligence (Phase 3)", full)
+        # Phase 3 never mutated the earlier Attack DNA record (only the new scan's row was added)
+        after = _stored_rows()
+        self.assertEqual([r for r in after if r[0] == first["scan_id"]], [r for r in rows_before if r[0] == first["scan_id"]])
+        self.assertEqual(len(after), len(rows_before) + 1)
+
+    def test_no_sensitive_data_leaks_into_intel_or_report_section(self):
+        _analyze(self.raw1)
+        second = _analyze(self.raw2)
+        blob = repr(second["campaign_intel"]) + "\n".join(report.campaign_intel_md(second))
+        from email_parser import parse_eml
+        parsed = parse_eml(self.raw2)
+        for leak in (parsed.get("from_domain"), parsed.get("reply_to_domain"), parsed.get("subject"), "http://", "https://"):
+            if leak:
+                self.assertNotIn(str(leak), blob)
+        self.assertNotRegex(blob, r"[\w.+-]+@[\w-]+\.[\w.]+")
+
+    def test_scores_and_verdicts_identical_with_and_without_phase3(self):
+        a = _analyze(self.raw1)
+        with mock.patch.object(analyzer.campaign_intel, "build_campaign_intel", side_effect=RuntimeError("boom")):
+            b = _analyze(self.raw1)
+        self.assertIsNone(b["campaign_intel"])                       # fail-soft: analysis still completes
+        for k in ("score", "level"):
+            self.assertEqual(a[k], b[k])
+        self.assertEqual(ia.validate_scan_register(b), [])
+        self.assertFalse([e for e in b["evidence_register"] if e["source"] == "campaign_intel"])
+
+    def test_backward_compat_report_and_agent_without_phase3_data(self):
+        res = _analyze(self.raw1)
+        res.pop("campaign_intel", None)
+        reg, fnd = ia.build_scan_evidence(res)
+        self.assertFalse([e for e in reg if e["source"] == "campaign_intel"])
+        self.assertNotIn("Campaign intelligence (Phase 3)", report.build_report(res, self.raw1))
+        res["campaign_intel"] = {"status": "ok", "relationships": "junk"}
+        reg2, _ = ia.build_scan_evidence(res)                        # malformed Phase 3 data must not break evidence/report
+        self.assertEqual(reg2, reg)
+        self.assertEqual(report.campaign_intel_md(res), [])
+
+    def test_database_failure_during_pipeline_is_fail_soft(self):
+        with mock.patch.object(tracker, "get_connection", side_effect=RuntimeError("db down")):
+            res = _analyze(self.raw1)
+        self.assertEqual(res["campaign_matches"]["status"], "storage_unavailable")
+        self.assertEqual(res["campaign_intel"]["status"], "unavailable")
+        self.assertIn("score", res)
+
+    def test_pipeline_makes_a_single_history_read(self):
+        _analyze(self.raw1)
+        orig = dna._query_recent_fingerprints
+        calls = []
+        with mock.patch.object(dna, "_query_recent_fingerprints", side_effect=lambda **k: calls.append(k) or orig(**k)):
+            _analyze(self.raw2)
+        self.assertEqual(len(calls), 1)
+        self.assertLessEqual(calls[0]["limit"], dna.MAX_HISTORY)
 
 
 if __name__ == "__main__":
