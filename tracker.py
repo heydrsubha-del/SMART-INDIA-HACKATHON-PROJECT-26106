@@ -206,15 +206,19 @@ def get_connection(shared=False):
     conn = sqlite3.connect(path, timeout=30)
 
     if path == ":memory:" or not existed or path not in _SCHEMA_DONE:
-        with _SCHEMA_LOCK:
-            _create_schema(conn, wal=(MULTIUSER and shared))
-            if path != ":memory:":
-                _SCHEMA_DONE.add(path)
-                if not existed:
-                    try:
-                        os.chmod(path, 0o600)
-                    except OSError:
-                        pass
+        try:
+            with _SCHEMA_LOCK:
+                _create_schema(conn, wal=(MULTIUSER and shared))
+                if path != ":memory:":
+                    _SCHEMA_DONE.add(path)
+                    if not existed:
+                        try:
+                            os.chmod(path, 0o600)
+                        except OSError:
+                            pass
+        except BaseException:
+            conn.close()      # never leak the handle if schema setup fails
+            raise
     elif MULTIUSER and not shared:
         # Mark the session database as recently used.
         try:

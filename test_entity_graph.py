@@ -48,6 +48,15 @@ def full(n, ip="8.8.4.4", url="http://evil.example/private/path?token=abc123", h
     return r
 
 
+def query_rows(path, sql, params=()):
+    """One-shot query that always closes its connection (an open handle blocks temp-dir removal on Windows)."""
+    conn = sqlite3.connect(path)
+    try:
+        return conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+
+
 def entity_rows(path):
     conn = sqlite3.connect(path)
     try:
@@ -299,7 +308,7 @@ class SessionIsolationAndPrivacy(unittest.TestCase):
         db = {e["dst"]["id"] for e in b["edges"] if e["dst"]["label"] == "evil.example"}
         self.assertTrue(da and db and da.isdisjoint(db))              # per-session keys: same domain, different ids
         for session, n in (("A", 1), ("B", 2)):
-            rows = self._as(session, lambda: sqlite3.connect(tracker._db_path(False)).execute("SELECT DISTINCT scan_id FROM entity_edges").fetchall())
+            rows = self._as(session, lambda: query_rows(tracker._db_path(False), "SELECT DISTINCT scan_id FROM entity_edges"))
             self.assertEqual(rows, [(sid(n),)])
 
     def test_same_session_still_correlates(self):
@@ -355,7 +364,11 @@ class PrivacyAndFailSoft(Base):
         eg.build_entity_graph(full(1))
         before = entity_rows(self.db)[0]
         r = full(1)
-        key = eg._e_session_key(tracker.get_connection(shared=False))
+        kconn = tracker.get_connection(shared=False)
+        try:
+            key = eg._e_session_key(kconn)
+        finally:
+            kconn.close()
         edges, _ = eg.derive_entity_edges(r, key)
         edges[-1] = dict(edges[-1], basis="bogus")                    # violates the CHECK constraint mid-batch
         conn = tracker.get_connection(shared=False)
@@ -1008,7 +1021,7 @@ class UrlEvidenceIntegrity(Base):
         return repr(entity_rows(self.db))
 
     def assert_nothing_unsupported_persisted(self, g, *gone):
-        rows = sqlite3.connect(self.db).execute("SELECT src_type, dst_type, src_label, dst_label FROM entity_edges").fetchall()
+        rows = query_rows(self.db, "SELECT src_type, dst_type, src_label, dst_label FROM entity_edges")
         for text in gone:
             self.assertNotIn(text, self.dump())
             self.assertNotIn(text, repr(g))
@@ -1099,13 +1112,13 @@ class UrlEvidenceIntegrity(Base):
 
     def test_losing_per_item_evidence_removes_the_stored_url_edges_and_says_so(self):
         eg.build_entity_graph(with_urls(1, [url_item("real.example")]))
-        self.assertTrue(sqlite3.connect(self.db).execute("SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'").fetchone()[0])
+        self.assertTrue(query_rows(self.db, "SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'")[0][0])
         r = with_urls(1, [url_item("real.example")])
         r["evidence_register"] = [e for e in r["evidence_register"] if not str(e.get("source_reference")).startswith("result.iocs.urls[")]
         g = eg.build_entity_graph(r)
         self.assertEqual(g["status"], "ok")
         self.assertGreaterEqual(g["skipped"]["no_evidence"], 2)
-        self.assertEqual(sqlite3.connect(self.db).execute("SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'").fetchone()[0], 0)
+        self.assertEqual(query_rows(self.db, "SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'")[0][0], 0)
 
     def test_a_scan_whose_only_links_are_unsupported_is_not_reported_as_clean(self):
         r = valid_but_empty(1)
@@ -1606,7 +1619,7 @@ class UrlNormalizationHostTypes(Base):
                 g = eg.build_entity_graph(with_urls(1, [ext_item(url)]))
                 self.assertFalse([e for e in g["edges"] if e["rel"] in ("links to", "at host")])
                 self.assertGreater(g["skipped"]["invalid_entity"], 0)
-                self.assertFalse(sqlite3.connect(self.db).execute("SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'").fetchone()[0])
+                self.assertFalse(query_rows(self.db, "SELECT COUNT(*) FROM entity_edges WHERE src_type='url' OR dst_type='url'")[0][0])
                 shown = readable_text(self.db)
                 for text in ("10.0.0.1", "127.0.0.1", "192.168.1.1", "169.254", "fd00", "0x7f", "2130706433", "017700000001", "::1"):
                     self.assertNotIn(text, shown)

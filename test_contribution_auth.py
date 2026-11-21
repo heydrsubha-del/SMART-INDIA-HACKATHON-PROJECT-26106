@@ -429,7 +429,7 @@ class GoogleAtHash(unittest.TestCase):
 import re
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-MIG = os.path.join("supabase", "migrations", "20261014000001_harden_submit_indicators.sql")
+MIG = os.path.join("supabase", "migrations", "20261014000001_protect_indicator_submission.sql")
 
 
 def _read(*parts):

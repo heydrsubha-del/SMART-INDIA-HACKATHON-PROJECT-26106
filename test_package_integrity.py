@@ -5,7 +5,7 @@ import sql_model as M
 
 D = M.audit_dir(); HERE = os.path.dirname(os.path.abspath(__file__))
 rd = lambda p: open(os.path.join(HERE, p), encoding="utf-8").read()
-MIG, RB = rd("supabase/proposals/20261012_protect_indicator_submission.sql"), rd("supabase/proposals/20261012_protect_indicator_submission_ROLLBACK.sql")
+MIG, RB = rd("supabase/migrations/20261014000001_protect_indicator_submission.sql"), rd("supabase/proposals/20261012_protect_indicator_submission_ROLLBACK.sql")
 
 def export_defs():
     out = {}
@@ -57,8 +57,8 @@ class Migration(unittest.TestCase):
         self.assertIn("duplicates", MIG); self.assertIn("rejected as invalid", MIG)
     def test_no_permission_rls_index_or_ipv6_changes(self):
         code = re.sub(r"--[^\n]*", "", MIG).lower()
-        self.assertEqual(re.findall(r"\bgrant\b", code), [])
-        self.assertEqual(re.findall(r"revoke all on function (\S+)", code), ["private.valid_host_labels(text)"])
+        self.assertEqual(re.findall(r"\bgrant\b[^;]*;", code), ["grant execute on function public.submit_indicators(jsonb) to authenticated;"])   # only the re-asserted authenticated grant; never anon/public\r
+        self.assertEqual(re.findall(r"revoke all on function (\S+)", code), ["private.valid_host_labels(text)", "public.submit_indicators(jsonb)"])
         for bad in ("create index", "create policy", "alter table", "enable row level", "owner to", "default privileges", "create extension", "cron"):
             self.assertNotIn(bad, code)
         self.assertNotIn(r"\[", MIG.replace("[^aeiouy]", "").replace("[a-z]", ""))    # no bracketed-IPv6 regex left
