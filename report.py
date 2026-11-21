@@ -128,6 +128,45 @@ def campaign_intel_md(result):
         return []
 
 
+def entity_graph_md(result):
+    """Markdown for the precomputed result["entity_graph"]. NEVER raises. Read-only: no database access. A result with no
+    "entity_graph" key at all (older scans) yields nothing; a present-but-failed/incomplete graph states WHY, so it can never
+    be read as "no relationships detected". Every relationship cites evidence ids of this scan; similarity is never ownership."""
+    try:
+        import entity_graph as _eg_mod
+        if not isinstance(result, dict) or "entity_graph" not in result:
+            return []
+        eg = result.get("entity_graph")
+        level, text = _eg_mod.status_message(eg)
+        out = ["### Entity graph (Phase 4)", ""]
+        if text:
+            out += ["> **%s:** %s" % ({"error": "Entity graph unavailable", "warning": "Entity graph incomplete"}.get(level, "Entity graph note"), md_cell(text)), ""]
+        edges = [x for x in (eg.get("edges") or []) if isinstance(x, dict)] if isinstance(eg, dict) else []
+        if not edges:
+            return out
+        out += ["_Evidence-linked relationships from this session only. Observed = reported by a scanner about this message "
+                "(header values stay untrusted claims); inferred = derived from an inference or a historical comparison._", "",
+                "| Relationship | Basis | Evidence | Confidence | Why |", "|---|---|---|---|---|"]
+        for x in edges[:30]:
+            c = x.get("confidence")
+            out.append("| %s | %s | %s | %s | %s |" % (
+                md_cell(_eg_mod.edge_title(x)), md_cell(x.get("basis")), md_cell(", ".join(map(str, x.get("evidence") or []))),
+                md_cell("%.2f" % c if isinstance(c, float) else "n/a"), md_cell(x.get("explanation") or "")))
+        shared = [s for s in (eg.get("shared_entities") or []) if isinstance(s, dict) and isinstance(s.get("entity"), dict)]
+        if shared:
+            # Counts only: another scan's id/evidence is never copied into this scan's report (the app panel shows the references).
+            out += ["", "**Entities also seen in other retained scans of this session**", "", "| Entity | Other retained scans | Relationships | Last seen |", "|---|---|---|---|"]
+            for s in shared[:10]:
+                scs = [y for y in (s.get("scans") or []) if isinstance(y, dict)]
+                out.append("| %s | %d | %s | %s |" % (
+                    md_cell("%s %s" % (s["entity"].get("type"), _eg_mod._e_disp(s["entity"]))), len(scs),
+                    md_cell(", ".join(sorted({str(y.get("rel")) for y in scs}))), md_cell(max([str(y.get("observed_at")) for y in scs] or ["-"]))))
+        out += ["", "**Limitations:** " + " ".join(md_cell(s) for s in (eg.get("limitations") or [])[:4]), ""]
+        return out
+    except Exception:
+        return ["### Entity graph (Phase 4)", "", "> **Entity graph unavailable:** it could not be rendered. This is not a finding that no relationships exist.", ""]
+
+
 def scan_evidence_md(result):
     """Markdown lines for the scanner evidence register and machine findings ([] for a result without a register).
     Evidence is defined once here; other sections reference IDs. NEVER raises: a malformed register is reported as such and
@@ -150,7 +189,7 @@ def scan_evidence_md(result):
         out += ["### Machine findings", ""] + (ia.findings_table_md(fnd, reg) if fnd else ["_No structured machine findings were recorded._"])
         out += ["", "### Evidence", ""] + (ia.evidence_table_md(reg) if reg else ["_No evidence was recorded for this scan._"])
         out += ["", ia.EVIDENCE_LEGEND, ""]
-        return out + campaign_intel_md(result)
+        return out + campaign_intel_md(result) + entity_graph_md(result)
     except Exception as exc:
         return head + ["> **Evidence register could not be rendered** (%s). It is unverified; scores and verdicts are unaffected." % type(exc).__name__, ""]
 

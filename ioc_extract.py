@@ -10,12 +10,17 @@ or WHOIS lookup - deliberate, because network calls are what break live demos.
 
 Standalone:  python ioc_extract.py samples/phishing_credential.eml
 """
+import ipaddress
 import re
 from urllib.parse import urlparse
 
 import config as C
 
-URL_RE = re.compile(r"\b(?:https?://|www\.)[^\s<>\"'\)\]]+", re.I)
+# A bracketed IPv6 literal straight after the scheme (https://[2606:4700:4700::1111]:8443/p) is taken whole, so its closing
+# ']' is not mistaken for the end of the URL. Anywhere else a ']' still ends the URL, exactly as before.
+URL_RE = re.compile(r"\b(?:https?://|www\.)"
+                    r"(?:\[[0-9A-Fa-f:.]+(?:%[0-9A-Za-z._~%-]*)?\]|[^\s<>\"'\)\]])"
+                    r"[^\s<>\"'\)\]]*", re.I)
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 BTC_RE = re.compile(r"\b(?:bc1[a-z0-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
@@ -24,7 +29,11 @@ SUSPICIOUS_TLDS = {"tk", "ml", "ga", "cf", "gq", "top", "xyz", "online",
                    "support", "rest", "buzz"}
 # Version of the offline URL heuristics in _judge_url(). Stored next to every locally derived URL score in
 # threat memory; BUMP IT whenever those heuristics change so older cached scores are recomputed, not reused.
-URL_SCORE_VERSION = 2
+# 3: (superseded) the raw-IP heuristic (0.85) was applied to EVERY IPv6-literal host, including loopback and link-local ones.
+# 4: the raw-IP heuristic (0.85) applies to PUBLICLY ROUTABLE IPv6-literal hosts only; loopback, unique-local, link-local,
+#    multicast, documentation and other reserved/non-public IPv6 addresses are no longer scored as raw IPs. Rows stamped 3 can hold
+#    the broader score, and a reused number would make the two behaviours indistinguishable, so they must be recomputed.
+URL_SCORE_VERSION = 4
 LINK_WORDS_RE = re.compile(
     r"\b(?:unsubscribe|opt[- ]out|manage (?:your )?(?:email )?(?:preferences|subscriptions?)|click here|"
     r"view (?:this )?(?:email |message )?in (?:your |a )?browser|update (?:your )?(?:email )?preferences)\b", re.I)
@@ -144,6 +153,68 @@ def _credential_path(path):
     return False
 
 
+_HTTP_AUTHORITY_RE = re.compile(r"https?://([^/?#]*)", re.I)
+
+
+def _authority_has_backslash(normalised):
+    """True when a raw backslash sits in the authority of an http(s) URL, i.e. between '://' and the first '/', '?' or '#'.
+
+    Browsers (the WHATWG URL parser) read a backslash there as a slash and so end the host early, but urlparse() does
+    not: for http://evil.example<backslash>@good.example/login the browser goes to evil.example while urlparse() reports
+    good.example. The two disagree, so the URL is attributed to neither host. A percent-encoded %5C is ordinary text that
+    both parsers read the same way and is not flagged; a backslash after the authority (in the path) does not move the host.
+    """
+    m = _HTTP_AUTHORITY_RE.match(normalised)
+    return bool(m and "\\" in m.group(1))
+
+
+def _ipv6_literal(host):
+    """The canonical (compressed, lower-case, bracket-free) form of an UNSCOPED IPv6 literal, else None.
+
+    A zone/scope id (%eth0, or %25eth0 as written inside a URL) ties a link-local address to one interface of one machine;
+    it is not an ordinary public address, so any '%' is rejected, as is anything that does not parse as IPv6."""
+    if ":" not in host or "%" in host:
+        return None
+    try:
+        return ipaddress.IPv6Address(host).compressed
+    except ValueError:
+        return None
+
+
+def _is_public_ipv6(ip6):
+    """True only for a publicly routable IPv6 address (canonical text). Loopback, unspecified, unique-local (fc00::/7),
+    link-local (fe80::/10), documentation, 6to4 and IETF-reserved blocks are not public. Three cases are excluded explicitly
+    because the other properties do not (reliably) cover them: multicast (ipaddress calls it 'global'), IPv4-mapped addresses
+    (::ffff:a.b.c.d -- policy: never public; newer Pythons let is_global/is_reserved inherit the embedded IPv4's answer, so
+    ::ffff:8.8.8.8 would pass) and deprecated site-local fec0::/10 (neither 'private' nor 'reserved' in ipaddress)."""
+    try:
+        ip = ipaddress.IPv6Address(ip6)
+    except ValueError:
+        return False
+    return bool(ip.is_global and not ip.is_multicast and not ip.is_reserved
+                and ip.ipv4_mapped is None and not ip.is_site_local)
+
+
+def _is_ipv4_literal(host):
+    try:
+        ipaddress.IPv4Address(host)
+        return True
+    except ValueError:
+        return False
+
+
+def _url_host_ips(urls):
+    """Canonical IP literals (IPv4 or IPv6, no brackets) that are the host of an extracted URL. A URL whose host was withheld
+    (ambiguous authority, scoped or malformed IPv6) contributes nothing."""
+    found = set()
+    for u in urls:
+        try:
+            found.add(ipaddress.ip_address(u["host"]).compressed)
+        except ValueError:
+            pass
+    return found
+
+
 def _judge_url(url):
     """Classify one URL. Returns a dict with flags and a 0..1 risk."""
     normalised = url if "://" in url else "http://" + url
@@ -152,6 +223,15 @@ def _judge_url(url):
         host = (parsed.hostname or "").lower()
     except Exception:
         host, parsed = "", None
+    ip6 = None
+    if ":" in host:                      # only a bracketed IPv6 literal can hold ':'
+        # A valid, unscoped IPv6 literal becomes its canonical form. An invalid one, or one with a zone/scope id, is never
+        # reported as a host: it is not an ordinary public IP, so no domain, IP or URL-host relationship may come from it.
+        ip6 = _ipv6_literal(host)
+        host = ip6 or ""
+    # urlparse() and browsers disagree about the host when the authority holds a raw backslash: the URL is attributed to
+    # neither (host and registrable are reported empty below) but is still SCORED exactly as before, so its risk is not lowered.
+    ambiguous = _authority_has_backslash(normalised)
 
     path = (parsed.path or "") if parsed else ""
     scheme = (parsed.scheme or "") if parsed else ""
@@ -161,7 +241,7 @@ def _judge_url(url):
         flags.append("URL shortener hides the real destination")
         risk = max(risk, 0.75)
 
-    if IPV4_RE.fullmatch(host):
+    if IPV4_RE.fullmatch(host) or (ip6 and _is_public_ipv6(ip6)):
         flags.append("Link points at a raw IP address, not a domain name")
         risk = max(risk, 0.85)
 
@@ -191,10 +271,13 @@ def _judge_url(url):
         flags.append("Unencrypted HTTP link")
         risk = max(risk, 0.3)
 
+    if ambiguous:
+        flags.append("Ambiguous address: a backslash in the host part makes browsers and parsers disagree about the real destination")
+
     return {
         "url": url,
-        "host": host,
-        "registrable": _registrable(host) if host else "",
+        "host": "" if ambiguous else host,
+        "registrable": _registrable(host) if host and not ambiguous and not ip6 and not _is_ipv4_literal(host) else "",
         "flags": flags,
         "risk": risk,
         "suspicious": risk >= 0.5,
@@ -276,7 +359,7 @@ def extract(parsed):
         link_status, link_note = "none", "No URLs found in the body or HTML links."
 
     emails = sorted({e.lower() for e in EMAIL_RE.findall(text)})
-    ips = sorted({i for i in IPV4_RE.findall(text)})
+    ips = sorted({i for i in IPV4_RE.findall(text)} | _url_host_ips(urls))
     wallets = sorted(set(BTC_RE.findall(text)))
     domains = sorted({u["registrable"] for u in urls if u["registrable"]})
 

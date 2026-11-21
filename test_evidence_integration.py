@@ -29,7 +29,7 @@ MARK = "ZEBRA-SECRET-7731"
 INVOICE = "Hello, attached is invoice 4411 for $3,000. Please pay within 7 days. Thanks."
 SEXT = ("I have your private photos. Pay $3,000 in bitcoin to the wallet below within 48 hours or I will send them to all "
         "your contacts. Wallet: bc1qexampleexampleexampleexample (not a real address). " + MARK)
-NEW_KEYS = {"scan_id", "evidence_register", "scan_findings", "evidence_error", "origin_intel_status"}
+NEW_KEYS = {"scan_id", "evidence_register", "scan_findings", "evidence_error", "origin_intel_status", "entity_graph"}
 SID = ia.scan_id_for(b"fixture-scan")          # a valid scan id
 FOREIGN = ia.scan_id_for(b"another-scan")       # a valid id belonging to a different scan
 

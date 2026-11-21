@@ -297,6 +297,7 @@ def _cached_correlation_view(graph_scope, _cases, cases_to_show, seed, use_seman
 
 from analyzer import analyze_all_samples, analyze_email
 import campaign_intel                      # Phase 3: tactic_summary() for the Attack DNA panel (pure)
+import entity_graph                        # Phase 4: edge_title() for the entity-graph panel (pure)
 from classifier import (
     load_or_train,
     maybe_retrain_from_feedback,
@@ -15085,6 +15086,42 @@ if active_panel == "Forensic Report":
                             "Tactic changes": campaign_intel.tactic_summary(x),
                         } for x in _ci_rels]))
                         st.caption(" ".join(map(str, (_ci.get("limitations") or [])[:3])))
+
+            # Phase 4: session-scoped entity graph, precomputed by analyzer.py (no database call at render time).
+            # A failed, unavailable or incomplete graph is always stated; it is never shown as "no relationships".
+            if isinstance(sel_res, dict) and "entity_graph" in sel_res:
+                _eg = sel_res.get("entity_graph")
+                _eg_level, _eg_text = entity_graph.status_message(_eg)
+                if _eg_text:
+                    (st.error if _eg_level == "error" else st.warning if _eg_level == "warning" else st.info)(_eg_text)
+                _eg_edges = [x for x in (_eg.get("edges") or []) if isinstance(x, dict)][:30] if isinstance(_eg, dict) else []
+                if _eg_edges:
+                    st.caption("Entity graph \u00b7 evidence-linked relationships from this session only. Observed = reported by a scanner "
+                               "about this message; inferred = derived from an inference or a historical comparison. Neither proves common ownership.")
+                    _render_polished_table(tone="#34d399", df=pd.DataFrame([{
+                        "Relationship": entity_graph.edge_title(x),
+                        "Basis": str(x.get("basis", "-")).capitalize(),
+                        "Evidence": ", ".join(map(str, x.get("evidence") or [])) or "-",
+                        "Confidence": ("%.2f" % x["confidence"]) if isinstance(x.get("confidence"), float) else "n/a",
+                        "Why": x.get("explanation", ""),
+                    } for x in _eg_edges]))
+                    _eg_shared = [s for s in (_eg.get("shared_entities") or []) if isinstance(s, dict) and isinstance(s.get("entity"), dict)]
+                    if _eg_shared:
+                        st.caption("Also seen in other retained scans of this session")
+                        _render_polished_table(tone="#34d399", df=pd.DataFrame([{
+                            "Entity": "%s %s" % (s["entity"].get("type"), entity_graph._e_disp(s["entity"])),
+                            "Other scan": sc.get("scan_id", "-"),
+                            "Relationship": sc.get("rel", "-"),
+                            "Evidence": ", ".join(map(str, sc.get("evidence") or [])) or "-",
+                        } for s in _eg_shared[:10] for sc in [y for y in (s.get("scans") or []) if isinstance(y, dict)][:5]]))
+                    with st.expander("Connected graph (visual)", expanded=False):
+                        try:
+                            _eg_fig = _render_correlation_figure(entity_graph.to_correlation_graph(_eg), height=420)
+                            st.plotly_chart(_eg_fig, width="stretch", key="entity_graph_fig_" + str(sel_hash)[:16])
+                            st.caption("Same drawing engine as the Correlation Graph. Edge labels say observed or (inferred); the table above is the complete record.")
+                        except Exception:
+                            st.caption("The connected graph could not be drawn here; the table above is the complete record.")
+                    st.caption(" ".join(map(str, (_eg.get("limitations") or [])[:2])))
 
             st.caption(f"SHA-256 Cryptographic Evidence Hash: `{sel_hash}`")
 

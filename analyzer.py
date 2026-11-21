@@ -27,6 +27,7 @@ import risk
 
 import investigation_agent                       # evidence vocabulary + scanner evidence builder (stdlib-only module)
 import campaign_intel                          # Phase 3: campaign intelligence (pure, derived from Phase 2 data)
+import entity_graph                            # Phase 4: session-scoped, evidence-linked entity graph (derived from this result)
 import attack_dna                                # Phase 2: campaign fingerprinting (pure feature extraction + local-only storage)
 from classifier import load_or_train, predict
 from email_parser import parse_eml
@@ -240,6 +241,12 @@ def analyze_email(raw, name="uploaded", pipe=None):
     except Exception as exc:
         result["evidence_register"], result["scan_findings"] = [], []
         result["evidence_error"] = type(exc).__name__
+    # Phase 4: entity graph. Consumes the evidence register built just above (edges cite its ids) and persists to
+    # the visitor's own database only; fail-soft, never touches score/verdict, never changes the register.
+    try:
+        result["entity_graph"] = entity_graph.build_entity_graph(result)
+    except Exception:
+        result["entity_graph"] = None
     return result
 
 

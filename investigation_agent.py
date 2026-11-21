@@ -1195,7 +1195,8 @@ def build_scan_evidence(result):
         i = ev("GeoIP", "geolocate", "inference", "Origin IP %s: country=%s, ASN=%s, infra=%s (source: %s; approximate)" % (
             clean(o["ip"], 45), clean(o.get("country", "Unknown"), 40), clean(o.get("asn") or "n/a", 40), clean(o.get("infra", "unknown"), 30),
             clean(o.get("source", "?"), 30)), "partial" if unresolved else "ok", "result.geo.origin",
-            meta={"approximate": True, "country": clean(o.get("country", "Unknown"), 40), "source": clean(o.get("source", "?"), 30)})
+            meta={"approximate": True, "country": clean(o.get("country", "Unknown"), 40), "source": clean(o.get("source", "?"), 30),
+                  "ip": clean(o["ip"], 45)})     # structured, so a consumer can match it mechanically instead of reading the text
         if unresolved:
             fi("Geolocation of the origin IP is unresolved", "uncertain", [i])
         if g.get("anonymised"):
@@ -1388,10 +1389,31 @@ def build_scan_evidence(result):
                 fi("Retained observation %s resembles this scan structurally; this is shared tactics, not confirmed common "
                    "authorship." % clean(x.get("observation_ref"), 40), "uncertain", [j])
 
+    def s_identity_claims():
+        """Phase 4: ONE evidence entry per sender/domain claim (From address, From domain, Reply-To domain, Return-Path
+        domain), so an entity-graph relationship can cite exactly the claim it rests on and never a neighbouring one. Same
+        provenance as the combined 'sender identity' entry above (untrusted_claim). The address's local part is withheld;
+        only its domain is recorded. Placed after the Phase 2 fingerprint section and BEFORE Phase 3 campaign intelligence (that
+        section must stay last: the register without it has to be an exact prefix of the register with it), so every Phase 0-2
+        evidence id is unchanged; only campaign-intelligence ids move, by the number of claims recorded. Only claims that are
+        actually present are recorded (a missing From domain is already an explicit 'missing' entry in s_identity)."""
+        def dom(v):
+            return clean(v.strip().lower().rstrip("."), 80) if isinstance(v, str) and v.strip() else None
+        fa = p.get("from_addr")
+        addr_dom = dom(fa.rsplit("@", 1)[1]) if isinstance(fa, str) and fa.count("@") == 1 and fa.rsplit("@", 1)[1].strip() else None
+        for claim, ref, d, text in (
+                ("from_address", "result.parsed.from_addr", addr_dom, "From address claim present (local part withheld); address domain %s"),
+                ("from_domain", "result.parsed.from_domain", dom(p.get("from_domain")), "From header claims domain %s"),
+                ("reply_to_domain", "result.parsed.reply_to_domain", dom(p.get("reply_to_domain")), "Reply-To header claims domain %s"),
+                ("return_path_domain", "result.parsed.return_path_domain", dom(p.get("return_path_domain")), "Return-Path header claims domain %s")):
+            if d:
+                ev("header", "email_parser", "untrusted_claim", text % d, "ok", ref, meta={"claim": claim, "domain": d})
+
     for name, fn in (("ML", s_ml), ("authentication", s_auth), ("sender identity", s_identity), ("header anomalies", s_anomalies),
                      ("extortion", s_extortion), ("URLs and indicators", s_urls), ("geolocation", s_geo),
                      ("origin intelligence", s_origin_intel), ("community intelligence", s_community), ("risk inputs", s_inputs),
-                     ("campaign fingerprint", s_campaign_dna), ("campaign intelligence", s_campaign_intel)):
+                     ("campaign fingerprint", s_campaign_dna), ("identity claims", s_identity_claims),
+                     ("campaign intelligence", s_campaign_intel)):
         section(name, fn)
     return reg, fnd
 
