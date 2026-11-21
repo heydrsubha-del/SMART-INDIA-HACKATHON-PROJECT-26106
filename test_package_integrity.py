@@ -1,6 +1,6 @@
 """Offline structural checks of the SQL package against the exported definitions (text/ACL level only - no SQL is executed).
 Needs AUDIT_DIR (or ./security_audit_inputs) with the five CSV exports."""
-import csv, difflib, glob, os, re, unittest
+import collections, csv, difflib, glob, os, re, unittest
 import sql_model as M
 
 D = M.audit_dir(); HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +17,15 @@ def export_defs():
                     out.setdefault(m.group(1), v.replace("\r", "").strip())
     return out
 EX = export_defs()
+BASE = rd("supabase/migrations/20261013000001_contributions.sql")   # the pre-hardening functions: what the rollback must restore and what the migration changes
+def body(sql, name):
+    m = re.search(r"create or replace function %s\(.*?(\$function\$|\$\$)(.*?)\1;" % re.escape(name), sql, re.S | re.I)
+    return m.group(2) if m else None
+def norm(b):                                              # comments and whitespace are not behaviour
+    return [re.sub(r"\s+", " ", l).strip() for l in re.sub(r"--[^\n]*", "", b).splitlines() if l.strip()]
+def line_changes(name):
+    old, new = collections.Counter(norm(body(BASE, name))), collections.Counter(norm(body(MIG, name)))
+    return sorted((old - new).elements()), sorted((new - old).elements())
 def fn(sql, name):
     m = re.search(r"create or replace function %s\(.*?\$function\$;" % re.escape(name), sql, re.S | re.I)
     return m.group(0)[:-1] if m else None
@@ -24,8 +33,13 @@ split = lambda t: (t[:t.index("$function$")], t[t.index("$function$"):])
 
 class Rollback(unittest.TestCase):
     def test_original_functions_restored_verbatim(self):
+        hdr = {"private.valid_indicator": ("immutable",), "public.submit_indicators": ("security definer",)}
         for name in ("private.valid_indicator", "public.submit_indicators"):
-            self.assertIn(EX[name], RB, name)                                 # body AND header (language, security definer, search_path, volatility)
+            self.assertEqual(norm(body(RB, name)), norm(body(BASE, name)), name)   # body identical to the pre-hardening definition
+            head = split(fn(RB, name))[0].lower()
+            for tok in ("language plpgsql", "set search_path to ''") + hdr[name]:   # header: language, security definer, search_path, volatility
+                self.assertIn(tok, head, name)
+            self.assertNotIn("valid_host_labels", body(RB, name)); self.assertNotIn("is_anonymous", body(RB, name)); self.assertNotIn("7301", body(RB, name))
     def test_rollback_changes_no_permissions_or_ownership(self):
         low = RB.lower()
         for bad in ("grant ", "revoke ", "owner to", "alter function", "create index", "alter table", "policy"):
@@ -42,12 +56,27 @@ class Migration(unittest.TestCase):
         for name in ("private.valid_indicator", "public.submit_indicators"):
             self.assertEqual(split(EX[name])[0].lower(), split(fn(MIG, name))[0].lower(), name)
     def test_valid_indicator_only_two_lines_changed(self):
-        rem, add = self.changed("private.valid_indicator", fn(MIG, "private.valid_indicator"))
-        self.assertEqual(len(rem), 2, rem); self.assertTrue(all("valid_host_labels" in x or x.strip().startswith("or (m[1]") or True for x in add))
-        self.assertEqual(sum("valid_host_labels" in x for x in add), 2)
+        rem, add = line_changes("private.valid_indicator")                 # vs the pre-hardening definition: host-label validation for domain and URL hosts, nothing else
+        self.assertEqual(rem, sorted(["if p_type = 'domain' then return private.valid_domain(p_value); end if;",
+                                      "if not (private.valid_domain(m[1]) or (m[1] ~ '^[0-9.]+$' and private.is_public_ip(m[1]))) then return false; end if;"]))
+        self.assertEqual(add, sorted(["if p_type = 'domain' then return private.valid_domain(p_value) and private.valid_host_labels(p_value); end if;",
+                                      "if not ((private.valid_domain(m[1]) and private.valid_host_labels(m[1]))",
+                                      "or (m[1] ~ '^[0-9.]+$' and private.is_public_ip(m[1]))) then return false; end if;"]))
+        self.assertIn("looks_like_token(seg)", body(MIG, "private.valid_indicator"))   # URL path-segment token check kept
     def test_submit_indicators_only_intended_changes(self):
-        rem, add = self.changed("public.submit_indicators", fn(MIG, "public.submit_indicators"))
-        self.assertEqual([x.strip() for x in rem], ["if v_uid is null then raise exception 'auth_required' using errcode = '42501'; end if;"])
+        rem, add = line_changes("public.submit_indicators")                # vs the pre-hardening definition
+        self.assertEqual(rem, ["if v_uid is null then raise exception 'auth_required' using errcode = '42501'; end if;"])
+        self.assertEqual(add, sorted([
+            "c_pending_user constant int := 100; c_pending_global constant int := 1000;",
+            "if v_uid is null or private.is_anonymous() then raise exception 'auth_required' using errcode = '42501'; end if;",
+            "perform pg_advisory_xact_lock(7301, 1);",
+            "if (select count(*) from public.indicator_submissions where contributor_id = v_uid and status = 'pending') + v_n > c_pending_user",
+            "or (select count(*) from public.indicator_submissions where status = 'pending') + v_n > c_pending_global then",
+            "raise exception 'queue_full' using errcode = 'P0001';",
+            "end if;"]))
+        for kept in ("c_per_request constant int := 20", "c_per_hour constant int := 50", "c_per_day constant int := 200", "c_global_hour constant int := 2000",
+                     "c_reject_block constant int := 10", "'rate_limited'", "'blocked'", "'too_many_items'", "'invalid_payload'"):   # existing limits untouched
+            self.assertIn(kept, body(MIG, "public.submit_indicators"))
         blob = "\n".join(add)
         for need in ("private.is_anonymous()", "pg_advisory_xact_lock(7301, 1)", "c_pending_user constant int := 100", "c_pending_global constant int := 1000", "queue_full"):
             self.assertIn(need, blob)
