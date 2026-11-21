@@ -1907,6 +1907,52 @@ class Ipv6ClassificationConsistency(Base):
         self.assertIsNone(n_url("http://evil.example/p\ud800q"))
 
 
+class Ipv4MappedIpv6Rejection(Base):
+    """Phase 4 fix: an IPv4-mapped IPv6 address (::ffff:a.b.c.d) must be rejected regardless of whether its embedded
+    IPv4 address is public, for consistency with ioc_extract.py's _is_public_ipv6()."""
+
+    def test_direct_ipv4_mapped_ips_are_rejected(self):
+        for bad in ("::ffff:8.8.8.8", "::ffff:1.1.1.1", "0000:0000:0000:0000:0000:ffff:808:808"):  # last is expanded ::ffff:8.8.8.8
+            with self.subTest(bad=bad):
+                self.assertIsNone(eg._e_norm("ip", bad))
+
+    def test_ipv4_mapped_ipv6_urls_are_rejected(self):
+        for bad in ("http://[::ffff:8.8.8.8]/", "https://[::ffff:1.1.1.1]/",
+                    "http://[0000:0000:0000:0000:0000:ffff:808:808]/"):                        # expanded ::ffff:8.8.8.8
+            with self.subTest(bad=bad):
+                self.assertIsNone(n_url(bad))
+
+    def test_ordinary_public_ipv4_and_ipv6_still_work(self):
+        self.assertEqual(eg._e_norm("ip", "8.8.4.4"), "8.8.4.4")
+        self.assertEqual(eg._e_norm("ip", "2606:4700:4700::1111"), "2606:4700:4700::1111")
+        self.assertEqual(n_url("http://8.8.4.4/p"), "http://8.8.4.4/p")
+        self.assertEqual(n_url("https://[2606:4700:4700::1111]/p"), "https://[2606:4700:4700::1111]/p")
+
+    def test_existing_private_reserved_and_multicast_rejection_is_unchanged(self):
+        for bad in ("10.0.0.1", "192.168.1.1", "127.0.0.1", "169.254.169.254", "224.0.0.1", "::1", "fe80::1", "ff02::1", "fd00::1"):
+            with self.subTest(bad=bad):
+                self.assertIsNone(eg._e_norm("ip", bad))
+
+    def test_ipv4_mapped_origin_creates_no_originated_at_relationship(self):
+        g = eg.build_entity_graph(full(1, ip="::ffff:8.8.8.8"))
+        self.assertFalse([e for e in g["edges"] if e["rel"] == "originated at"])
+
+    def test_ipv4_mapped_url_creates_no_url_or_host_relationship(self):
+        r = with_urls(1, [ext_item("http://[::ffff:8.8.8.8]/x")])
+        edges, skipped = eg.derive_entity_edges(r, KEY)
+        self.assertFalse([e for e in edges if e["rel"] in ("links to", "at host")])
+        self.assertGreater(skipped["invalid_entity"], 0)
+
+    def test_rejection_does_not_disturb_other_relationships_in_the_same_scan(self):
+        r = full(1, ip="::ffff:8.8.8.8")
+        r["iocs"]["urls"] = [url_item("good.example")]
+        r["evidence_register"], r["scan_findings"] = ia.build_scan_evidence(r)
+        g = eg.build_entity_graph(r)
+        self.assertFalse([e for e in g["edges"] if e["rel"] == "originated at"])
+        self.assertIn("good.example", {e["dst"]["label"] for e in g["edges"]} | {e["src"]["label"] for e in g["edges"]})
+        self.assertIn("from domain", {e["rel"] for e in g["edges"]})                            # unrelated phase-2/3 edges unaffected
+
+
 class ProtectedAndCompatibility(unittest.TestCase):
     def test_correlate_and_retro_hunt_do_not_reference_the_new_module(self):
         base = os.path.dirname(os.path.abspath(__file__))

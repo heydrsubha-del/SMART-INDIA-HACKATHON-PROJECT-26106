@@ -83,7 +83,11 @@ def _e_unit(v):
 
 def _e_routable(ip):
     """True only for an ordinary, publicly routable unicast address. ipaddress reports multicast (ff02::1, 224.0.0.1) as
-    'global', which is not a host anyone can be 'at', so it is excluded together with private/reserved/loopback/link-local."""
+    'global', which is not a host anyone can be 'at', so it is excluded together with private/reserved/loopback/link-local.
+    IPv4-mapped IPv6 addresses (::ffff:a.b.c.d) are also excluded regardless of the embedded IPv4 address's routability,
+    for consistency with ioc_extract.py's _is_public_ipv6()."""
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        return False
     return bool(ip.is_global and not ip.is_multicast)
 
 
