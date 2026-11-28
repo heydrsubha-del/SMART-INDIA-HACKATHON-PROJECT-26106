@@ -204,7 +204,7 @@ def _recommendations(inv, evs):
     for e in _latest(evs):
         if e.get("status") != "ok":
             miss = "; ".join(_c(m, 120) for m in (e.get("missing") or [])[:2]) or "No detail recorded."
-            add("gap", 3, "%s|%s" % (e.get("tool"), _raw_ind(e).strip().lower().rstrip(".") or e["id"]), "Resolve incomplete check: %s%s" % (_c(e.get("tool"), 40), (" (%s)" % _ind(e)) if _ind(e) else ""),
+            add("gap", 3, "%s|%s" % (e.get("tool"), _ident(e) or e["id"]), "Resolve incomplete check: %s%s" % (_c(e.get("tool"), 40), (" (%s)" % _ind(e)) if _ind(e) else ""),
                 "This check ended '%s'; its conclusions are unavailable." % _c(e.get("status"), 20), [e["id"]], _c(e.get("source"), 60),
                 "Unresolved (gap)", "Medium", miss)
     ran_dns = any(e.get("tool") == "lookup_domain_dns_rdap" for e in evs)
