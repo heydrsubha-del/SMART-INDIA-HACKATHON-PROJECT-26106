@@ -659,7 +659,7 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     st.markdown(_overview(inv), unsafe_allow_html=True)
 
     _nev = sum(1 for e in inv["evidence"] if e.get("records"))
-    t1, t2, t3 = st.tabs([f"Findings ({len(inv['findings'])})", f"Action log ({len(inv['steps'])})", f"Evidence ({_nev})"])
+    t1, t2, t3, t4 = st.tabs([f"Findings ({len(inv['findings'])})", f"Action log ({len(inv['steps'])})", f"Evidence ({_nev})", "Operator"])
     with t1:
         _findings(inv)
     with t2:
@@ -667,6 +667,14 @@ def render_investigation_panel(result, raw, cases, conns_factory, key, download_
     with t3:
         _register(inv)
         _evidence(inv)
+    with t4:
+        try:                                    # Phase 5 is fail-soft: it can never break the investigation panel
+            import operator_intel
+            operator_intel.render_streamlit(inv, result, key)
+        except Exception:
+            st.caption("Operator Intelligence is unavailable; the investigation results in the other tabs are unaffected.")
 
     # Download lives in the app's "Download AI Threat Report" section; hand the report over via session state.
-    st.session_state.setdefault("agent_reports", {})[key] = ia.render_report(inv, result, raw)
+    # session-scoped decisions for THIS key; operator_intel ignores them unless their scan ID matches the investigation's
+    _st = (st.session_state.get("operator_intel_state") or {}).get(key)
+    st.session_state.setdefault("agent_reports", {})[key] = ia.render_report(inv, result, raw, decisions=_st)

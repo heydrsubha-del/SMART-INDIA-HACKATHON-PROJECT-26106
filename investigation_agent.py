@@ -1807,7 +1807,7 @@ def _recommendation_section(inv):
     return out
 
 
-def render_report(inv, result=None, raw=None, include_base=True):
+def render_report(inv, result=None, raw=None, include_base=True, decisions=None):
     lines = []
     if include_base and result is not None:
         from report import build_report
@@ -1844,6 +1844,12 @@ def render_report(inv, result=None, raw=None, include_base=True):
         items = [f for f in inv.get("findings", []) if f["kind"] == kind]
         lines += ["- %s  `[%s]`%s" % (_c(f["statement"]), ",".join(f["evidence_ids"]), _ref_suffix(f, org)) for f in items] or ["- None recorded."]
     lines += _records_section(inv) + _recommendation_section(inv)
+    try:                                        # Phase 5: operator-generated section, fail-soft and read-only
+        import operator_intel
+        lines += operator_intel.render_section(operator_intel.build_operator_intel(inv, result), decisions,
+                                               bool(inv.get("narrative") and inv.get("narrative_findings")))
+    except Exception:
+        lines += ["", "## Operator Intelligence", "", "> Operator Intelligence was unavailable for this report; the sections above are unaffected."]
     if inv.get("narrative"):
         lines += ["", "### Summary (generated from the deterministic tool findings above)", "", _c(inv["narrative"])]
         if inv.get("narrative_findings"):

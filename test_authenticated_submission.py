@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""One-shot authenticated submit_indicators() test. PROJECT algorithmistic-test ONLY (qozfyuiloitutpfthuwn).
+"""One-shot authenticated submit_indicators() test. TEST PROJECT ONLY: the target comes solely from the environment
+(see manual_target_guard.py); there is no default project, and a production ref on the denylist is refused.
 
 Uses the publishable/anon key + a normal user's password-grant token. No service-role key. No credentials,
 JWTs, headers or request/response bodies are printed, logged or written. Sends exactly one synthetic indicator,
@@ -10,14 +11,12 @@ import getpass
 import json
 import os
 import sys
-from urllib.parse import urlsplit
 
 import requests
 
-PROJECT_REF = "qozfyuiloitutpfthuwn"
-HOST = PROJECT_REF + ".supabase.co"
-BASE = "https://" + HOST
-KEY_ENV = "ALGORITHMISTIC_TEST_ANON_KEY"      # optional; otherwise prompted without echo
+import manual_target_guard as guard
+
+KEY_ENV = guard.KEY_ENV                        # optional; otherwise prompted without echo
 INDICATOR, INDICATOR_TYPE, VERDICT = "security-review.example.com", "domain", "suspicious"
 TIMEOUT = (5, 15)                              # connect, read (DB statement_timeout is 8s)
 KNOWN_RPC = {"auth_required", "invalid_payload", "too_many_items", "blocked", "rate_limited", "queue_full"}
@@ -29,28 +28,12 @@ def abort(msg, code=2):
 
 
 def claims(jwt):
+    return guard.claims(jwt)
+
+
+def sign_in(base, key, email, password):
     try:
-        p = jwt.split(".")[1]
-        return json.loads(base64.urlsafe_b64decode(p + "=" * (-len(p) % 4)))
-    except Exception:
-        return None
-
-
-def check_key(key):
-    if not key or key.startswith("sb_secret_"):
-        abort("key missing or is a secret/service key")
-    if key.startswith("sb_publishable_"):
-        return
-    c = claims(key)
-    if not isinstance(c, dict) or c.get("role") != "anon":
-        abort("key is not a publishable/anon key")
-    if c.get("ref") not in (None, PROJECT_REF):
-        abort("key belongs to a different project")
-
-
-def sign_in(key, email, password):
-    try:
-        r = requests.post(BASE + "/auth/v1/token", params={"grant_type": "password"}, timeout=TIMEOUT,
+        r = requests.post(base + "/auth/v1/token", params={"grant_type": "password"}, timeout=TIMEOUT,
                           allow_redirects=False, headers={"apikey": key, "Content-Type": "application/json"},
                           json={"email": email, "password": password})
     except requests.RequestException as e:
@@ -82,16 +65,23 @@ def check_token(tok):
 
 
 def main():
-    if urlsplit(BASE).hostname != HOST or HOST != PROJECT_REF + ".supabase.co":
-        abort("host mismatch")                                   # before any request
+    try:
+        target = guard.load_target()                             # config only, no network; fails closed
+    except guard.Abort as e:
+        abort(str(e))
+    BASE, HOST = target.base, target.host
     key = os.environ.get(KEY_ENV, "").strip() or getpass.getpass("Publishable/anon key (hidden): ").strip()
-    check_key(key)
+    try:
+        guard.check_key(key, target)
+        guard.verify_test_project(target, key)                   # is_test_project() must be true before sign-in or any write
+    except guard.Abort as e:
+        abort(str(e))
     email = input("Disposable test user email: ").strip()
     password = getpass.getpass("Password (hidden): ")
     if not email or not password:
         abort("email and password required")
     print("Authenticating against %s ..." % HOST)
-    token = sign_in(key, email, password)
+    token = sign_in(BASE, key, email, password)
     del password
     check_token(token)
     print("Authenticated as a normal authenticated user.")

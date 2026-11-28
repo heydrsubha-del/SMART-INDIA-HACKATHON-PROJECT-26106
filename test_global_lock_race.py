@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""One-shot two-user concurrency smoke test for algorithmistic-test only.
+"""One-shot two-user concurrency smoke test. TEST PROJECT ONLY: the target comes solely from the environment
+(see manual_target_guard.py); there is no default project, and a production ref on the denylist is refused.
 
 Requires race_seed.sql to have completed within the last 10 minutes and shown
  global_hour_total=1999. The script sends exactly one RPC per user, never retries,
@@ -13,14 +14,12 @@ import sys
 import threading
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import urlsplit
 
 import requests
 
-PROJECT_REF = "qozfyuiloitutpfthuwn"
-HOST = PROJECT_REF + ".supabase.co"
-BASE = "https://" + HOST
-KEY_ENV = "ALGORITHMISTIC_TEST_ANON_KEY"
+import manual_target_guard as guard
+
+KEY_ENV = guard.KEY_ENV
 VALUES = {"A": "tango.example.com", "B": "uniform.example.com"}
 TIMEOUT = (5, 25)
 KNOWN = {"auth_required", "invalid_payload", "too_many_items", "blocked", "rate_limited", "queue_full"}
@@ -32,22 +31,7 @@ def abort(message, code=2):
 
 
 def jwt_claims(token):
-    try:
-        part = token.split(".")[1]
-        return json.loads(base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)))
-    except Exception:
-        return None
-
-
-def check_key(key):
-    if not key or key.startswith("sb_secret_"):
-        abort("key missing or is a secret/service key")
-    if key.startswith("sb_publishable_"):
-        return
-    claims = jwt_claims(key)
-    if (not isinstance(claims, dict) or claims.get("role") != "anon"
-            or claims.get("ref") not in (None, PROJECT_REF)):
-        abort("key is not a publishable/anon key for the test project")
+    return guard.claims(token)
 
 
 def parse_uuid(prompt):
@@ -74,14 +58,20 @@ def parse_seed_time():
     return parsed
 
 
-def sign_in(key, label, expected_uid):
+def confirm_global_hour_total():
+    raw = input("Enter global_hour_total exactly as printed by race_seed.sql (must be 1999): ").strip()
+    if raw != "1999":
+        abort("global_hour_total must be exactly 1999 as reported by race_seed.sql; do not run the race")
+
+
+def sign_in(base, key, label, expected_uid):
     email = input("User %s email: " % label).strip()
     password = getpass.getpass("User %s password (hidden): " % label)
     if not email or not password:
         abort("credentials required")
     try:
         response = requests.post(
-            BASE + "/auth/v1/token",
+            base + "/auth/v1/token",
             params={"grant_type": "password"},
             timeout=TIMEOUT,
             allow_redirects=False,
@@ -111,7 +101,7 @@ def sign_in(key, label, expected_uid):
     return token
 
 
-def worker(label, key, token, barrier, results):
+def worker(base, label, key, token, barrier, results):
     body = {"p_items": [{
         "indicator_type": "domain",
         "value_norm": VALUES[label],
@@ -120,7 +110,7 @@ def worker(label, key, token, barrier, results):
     try:
         barrier.wait(timeout=30)
         response = requests.post(
-            BASE + "/rest/v1/rpc/submit_indicators",
+            base + "/rest/v1/rpc/submit_indicators",
             json=body,
             timeout=TIMEOUT,
             allow_redirects=False,
@@ -162,19 +152,26 @@ def worker(label, key, token, barrier, results):
 
 
 def main():
-    if urlsplit(BASE).hostname != HOST or HOST != PROJECT_REF + ".supabase.co":
-        abort("host mismatch")
+    try:
+        target = guard.load_target()                  # config only, no network; fails closed
+    except guard.Abort as exc:
+        abort(str(exc))
 
     uid_a = parse_uuid("Paste User A UUID (must match race_seed.sql and race_cleanup.sql): ")
     uid_b = parse_uuid("Paste User B UUID (must match race_seed.sql and race_cleanup.sql): ")
     if uid_a == uid_b:
         abort("A and B must be different users")
     parse_seed_time()  # Validate freshness and marker before asking for credentials.
+    confirm_global_hour_total()  # Seed output must have shown global_hour_total=1999; checked before credentials.
 
     key = os.environ.get(KEY_ENV, "").strip() or getpass.getpass("Test-project publishable/anon key (hidden): ").strip()
-    check_key(key)
-    token_a = sign_in(key, "A", uid_a)
-    token_b = sign_in(key, "B", uid_b)
+    try:
+        guard.check_key(key, target)
+        guard.verify_test_project(target, key)        # is_test_project() must be true before sign-in or any write
+    except guard.Abort as exc:
+        abort(str(exc))
+    token_a = sign_in(target.base, key, "A", uid_a)
+    token_b = sign_in(target.base, key, "B", uid_b)
     print("Both users authenticated as the expected normal, non-admin test users.")
 
     if input("Type RACE to send exactly ONE request per user simultaneously to the test project: ").strip() != "RACE":
@@ -183,8 +180,8 @@ def main():
     barrier = threading.Barrier(2)
     results = {}
     threads = [
-        threading.Thread(target=worker, args=("A", key, token_a, barrier, results)),
-        threading.Thread(target=worker, args=("B", key, token_b, barrier, results)),
+        threading.Thread(target=worker, args=(target.base, "A", key, token_a, barrier, results)),
+        threading.Thread(target=worker, args=(target.base, "B", key, token_b, barrier, results)),
     ]
     for thread in threads:
         thread.start()
