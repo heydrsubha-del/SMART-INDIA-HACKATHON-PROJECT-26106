@@ -599,13 +599,13 @@ class ReportEvidence(ScanBase):
             exec(compile(ast.get_source_segment(src, smallest(needle, kinds)), "app.py::batch", "exec"), ns)
 
         ext_b = next(e for e in b["evidence_register"] if e["type"] == "extortion")["observation"]
-        for md in (ns["ai_only_batch_md"], ns["combined_batch_md"]):
+        for md in (ns["ai_only_batch_md"],):      # the combined download no longer repeats the per-email register: each email's machine report already carries it once
             self.assertIn("Email #1", md)
             self.assertIn("Email #2", md)
             self.assertIn(ext_b, md)
         # the strict check: email #2's own evidence text must not appear inside email #1's block, and vice versa --
         # applied to both the AI-only download and the combined download, since each builds its own Email #1/#2 blocks.
-        for md in (ns["ai_only_batch_md"], ns["combined_batch_md"]):
+        for md in (ns["ai_only_batch_md"],):      # the combined download no longer repeats the per-email register: each email's machine report already carries it once
             block1 = md[md.index("Email #1"):md.index("Email #2")]
             block2 = md[md.index("Email #2"):]
             self.assertIn(ext_b, block2)
@@ -643,7 +643,7 @@ class ReportEvidence(ScanBase):
         res = self.synthetic()
         ns = {"scan_evidence_md": report.scan_evidence_md, "sel_res": res, "machine_md": "# MACHINE", "ai_md": "# AI",
               "ai_markdown_body": "stub ai text"}
-        for needle, kinds in (("_evidence_tail = scan_evidence_md(sel_res)", (ast.Assign,)), ("machine_md + \"\\n\" + ", (ast.If,)),
+        for needle, kinds in (("ai_md_core = ai_md", (ast.Assign,)), ("_evidence_tail = scan_evidence_md(sel_res)", (ast.Assign,)), ("machine_md + \"\\n\" + ", (ast.If,)),
                               ("combined_md = machine_md", (ast.Assign,))):
             exec(compile(ast.get_source_segment(src, smallest(needle, kinds)), "app.py::dossier", "exec"), ns)
         self.assertIn("## 9. Evidence register (scanner)", ns["machine_md"])
@@ -651,7 +651,8 @@ class ReportEvidence(ScanBase):
         # The AI section's own prose is still free text and cites no IDs inline, but the same genuine, non-invented
         # scanner evidence register is now appended to it too (single-email and combined), so it is no longer bare.
         self.assertIn("## Evidence References (scanner register for this email)", ns["ai_md"])
-        self.assertTrue(ns["combined_md"].endswith(ns["ai_md"]))
+        self.assertTrue(ns["combined_md"].endswith(ns["ai_md_core"]))
+        self.assertEqual(ns["combined_md"].count("## 9. Evidence register (scanner)"), 1)   # register appears once in the combined report
         self.assertIn("scan_evidence_md(result)", src[src.index("def _classification"):][:9000])
 
 

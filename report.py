@@ -10,6 +10,7 @@ need a subpoena or a live lookup to confirm.
 Standalone:  python report.py > report.md
 """
 import hashlib
+import re
 from datetime import datetime, timezone
 
 from md_export import md_cell, group_urls
@@ -147,11 +148,19 @@ def entity_graph_md(result):
         out += ["_Evidence-linked relationships from this session only. Observed = reported by a scanner about this message "
                 "(header values stay untrusted claims); inferred = derived from an inference or a historical comparison._", "",
                 "| Relationship | Basis | Evidence | Confidence | Why |", "|---|---|---|---|---|"]
-        for x in edges[:30]:
-            c = x.get("confidence")
-            out.append("| %s | %s | %s | %s | %s |" % (
-                md_cell(_eg_mod.edge_title(x)), md_cell(x.get("basis")), md_cell(", ".join(map(str, x.get("evidence") or []))),
-                md_cell("%.2f" % c if isinstance(c, float) else "n/a"), md_cell(x.get("explanation") or "")))
+        # Identical relationships (same title, basis and explanation) are shown once: evidence IDs are merged (sorted, none dropped)
+        # and confidences are kept as a range; distinct observations stay separate rows. Order is deterministic.
+        grp = {}
+        for x in edges:
+            k = (_eg_mod.edge_title(x), str(x.get("basis")), str(x.get("explanation") or ""))
+            g = grp.setdefault(k, {"ev": set(), "conf": []})
+            g["ev"].update(map(str, x.get("evidence") or []))
+            if isinstance(x.get("confidence"), float):
+                g["conf"].append(x["confidence"])
+        for (title, basis, why), g in sorted(grp.items())[:30]:
+            cs = sorted(set(g["conf"]))
+            conf = "n/a" if not cs else "%.2f" % cs[0] if len(cs) == 1 else "%.2f-%.2f" % (cs[0], cs[-1])
+            out.append("| %s | %s | %s | %s | %s |" % (md_cell(title), md_cell(basis), md_cell(", ".join(sorted(g["ev"]))), md_cell(conf), md_cell(why)))
         shared = [s for s in (eg.get("shared_entities") or []) if isinstance(s, dict) and isinstance(s.get("entity"), dict)]
         if shared:
             # Counts only: another scan's id/evidence is never copied into this scan's report (the app panel shows the references).
@@ -165,6 +174,109 @@ def entity_graph_md(result):
         return out
     except Exception:
         return ["### Entity graph (Phase 4)", "", "> **Entity graph unavailable:** it could not be rendered. This is not a finding that no relationships exist.", ""]
+
+
+# ---- presentation-only helpers (never change scores, verdicts or stored evidence) -----------------------------------
+_TRACK_SUFFIX = ("awstrack.me", "sendgrid.net", "list-manage.com", "mailchi.mp", "mandrillapp.com", "sparkpostmail.com", "mailgun.org",
+                 "hubspotlinks.com", "rs6.net", "safelinks.protection.outlook.com", "urldefense.com")
+_TRACK_PREFIX = ("click.", "clicks.", "track.", "trk.", "links.", "link.")
+
+
+def tracking_infra(host):
+    """'' | label. Name-based only: shared tracking/redirect infrastructure is NOT evidence of malice by itself."""
+    h = str(host or "").lower().strip(".")
+    if any(h == t or h.endswith("." + t) for t in _TRACK_SUFFIX):
+        return "known email tracking/redirect service"
+    if h.startswith(_TRACK_PREFIX):
+        return "host name suggests tracking/redirect (name pattern only)"
+    return ""
+
+
+def redact_url(u):
+    """Presentation copy of a URL: query values and long opaque path tokens are hidden. The original stays in the evidence."""
+    t = re.sub(r"([?&][^=&#\s]*)=[^&#\s]*", r"\1=[redacted]", str(u or ""))
+    return re.sub(r"(?<=/)[A-Za-z0-9_\-]{24,}(?=[/?#]|$)", "[token]", t)
+
+
+def mask_recipient(addr):
+    a = str(addr or "")
+    return a[:1] + "***@" + a.split("@", 1)[1] if "@" in a and a.split("@", 1)[0] else a
+
+
+_RECIP_ROLE = re.compile(r"\b(to|cc|bcc|recipient|delivered-to|envelope[- ]to)\b", re.I)
+
+
+def url_host_groups_md(urls):
+    """One row per host. Individual URLs stay in the table above; this groups repeated host-level findings."""
+    g = {}
+    for u in urls or []:
+        if isinstance(u, dict):
+            e = g.setdefault(str(u.get("host") or "-"), {"n": 0, "occ": 0, "flags": set()})
+            e["n"] += 1
+            e["occ"] += int(u.get("count") or 1)
+            e["flags"].update(str(f) for f in (u.get("flags") or []))
+    if not g:
+        return []
+    out = ["**URL hosts (grouped)**", "", "| Host | Distinct URLs | Occurrences | Infrastructure | Indicators raised on this host |", "| --- | --- | --- | --- | --- |"]
+    for h in sorted(g):
+        e = g[h]
+        out.append("| `%s` | %d | %d | %s | %s |" % (md_cell(h), e["n"], e["occ"], md_cell(tracking_infra(h) or "-"), md_cell("; ".join(sorted(e["flags"])) or "none")))
+    return out + ["", "_Tracking or redirect infrastructure shared by many senders is not malicious by itself; judge the final destination and the message context. "
+                  "URL query values and long tokens are redacted here; the unredacted indicators remain in the protected evidence._", ""]
+
+
+def ses_note(parsed, headers):
+    rp = str((parsed or {}).get("return_path_domain") or "").lower()
+    if not (rp == "amazonses.com" or rp.endswith(".amazonses.com")):
+        return []
+    ev = (headers or {}).get("auth_evidence") or {}
+    verified = any((ev.get(m) or {}).get("provenance") == "verified" for m in ("spf", "dkim", "dmarc"))
+    return ["> **Amazon SES:** the Return-Path domain (`%s`) is the sending service's bounce domain; that is normal for SES customers and not suspicious by itself. "
+            "An SPF pass there authenticates the SES bounce domain, not the From domain. Judge DMARC alignment (an aligned DKIM signature or aligned SPF) against the From domain. "
+            "%s" % (md_cell(rp), "These results were stamped by a trusted receiving server." if verified else
+                    "No result was verified as stamped by a trusted receiving server, so the values above are header claims."), ""]
+
+
+def attribution_md(result):
+    """Three separate questions with separate confidence; none of them is proof of who or where the sender is."""
+    try:
+        geo, headers = result.get("geo") or {}, result.get("headers") or {}
+        origin = geo.get("origin") or {}
+        ev = headers.get("auth_evidence") or {}
+        ver = any((ev.get(m) or {}).get("provenance") == "verified" for m in ("spf", "dkim", "dmarc"))
+        if not geo.get("hops"):
+            infra = ("Not established", "No public relay hop was found in the headers.")
+        elif geo.get("anonymised") or origin.get("tor_exit_confirmed"):
+            infra = ("Low", "The earliest hop is anonymising/relay infrastructure; it identifies the relay, not the operator.")
+        else:
+            infra = ("Moderate", "Observed in Received headers. Hops added before the first trusted server are sender-controlled and can be forged.")
+        ident = (("Moderate", "Authentication results were stamped by a trusted receiving server; a pass still does not prove who controls the account.") if ver and
+                 str(headers.get("dmarc", "")).lower() == "pass" else
+                 ("Not established", "Authentication results are header claims, not verified by a trusted receiving server; the From address can be forged."))
+        return ["**Attribution confidence (three separate questions)**", "", "| Question | Confidence | Basis |", "| --- | --- | --- |",
+                "| Which mail-server infrastructure handled the message? | %s | %s |" % infra,
+                "| How confident is the sender identity? | %s | %s |" % ident,
+                "| Where is the sender physically? | Not established | GeoIP is approximate: it places an IP address's network registration, not a person or device. "
+                "VPNs, relays and cloud hosting make it unreliable; do not treat it as proof of physical location. |", ""]
+    except Exception:
+        return []
+
+
+def availability_md(reg):
+    """Which scanner intelligence was available, which failed/was unavailable, and which findings are confirmed vs inferred."""
+    rows = [e for e in (reg or []) if isinstance(e, dict)]
+    if not rows:
+        return []
+    bad = [e for e in rows if e.get("status") != "ok"]
+    cnt = {"confirmed (machine/trusted external)": 0, "unverified claims": 0, "inferred/historical": 0}
+    for e in rows:
+        o = e.get("origin")
+        cnt["confirmed (machine/trusted external)" if o in ("direct_machine", "trusted_external") else "unverified claims" if o == "untrusted_claim" else "inferred/historical"] += 1
+    out = ["", "### Intelligence availability", "", "- %d of %d evidence items completed normally. By origin: %s." % (
+        len(rows) - len(bad), len(rows), "; ".join("%s %d" % kv for kv in cnt.items()))]
+    out += ["- **Not completed (%s):** %s. These are gaps in the investigation, **not** negative findings." % (
+        md_cell(e.get("status")), md_cell("%s %s/%s" % (e.get("id"), e.get("type"), e.get("source")))) for e in bad[:20]] or ["- No failed or unavailable checks were recorded."]
+    return out + [""]
 
 
 def scan_evidence_md(result):
@@ -188,7 +300,7 @@ def scan_evidence_md(result):
             out += ["> **Evidence register failed validation:** %s. Treat these references as unverified." % md_cell("; ".join(problems[:5])), ""]
         out += ["### Machine findings", ""] + (ia.findings_table_md(fnd, reg) if fnd else ["_No structured machine findings were recorded._"])
         out += ["", "### Evidence", ""] + (ia.evidence_table_md(reg) if reg else ["_No evidence was recorded for this scan._"])
-        out += ["", ia.EVIDENCE_LEGEND, ""]
+        out += ["", ia.EVIDENCE_LEGEND, ""] + availability_md(reg)
         return out + campaign_intel_md(result) + entity_graph_md(result)
     except Exception as exc:
         return head + ["> **Evidence register could not be rendered** (%s). It is unverified; scores and verdicts are unaffected." % type(exc).__name__, ""]
@@ -287,6 +399,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
             "receiving server. Any values above are claims found in the message "
             "headers, which a sender can forge; they neither clear nor condemn the message.")
     add("")
+    for _ln in ses_note(parsed, headers):
+        add(_ln)
 
     add("### Anomalies detected")
     add("")
@@ -388,6 +502,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
     add("")
     add(geo.get("summary", "No routing information available."))
     add("")
+    for _ln in attribution_md(result):
+        add(_ln)
     if geo.get("hops"):
         add("| # | IP | Location | Network | Infrastructure | Tor Exit |")
         add("| --- | --- | --- | --- | --- | --- |")
@@ -438,8 +554,10 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
             if u["count"] > 1:
                 note += " (appears {} times)".format(u["count"])
             add("| `{}` | `{}` | {} |".format(
-                md_cell(u["url"][:70]), md_cell(u["host"] or "-"), md_cell(note)))
+                md_cell(redact_url(u["url"])[:90]), md_cell(u["host"] or "-"), md_cell(note)))
         add("")
+        for _ln in url_host_groups_md(group_urls(iocs["urls"])):
+            add(_ln)
     else:
         _le = iocs.get("link_extraction") or {}
         add(_le["note"] if _le.get("status") == "not_extracted" else "No URLs present in the message body.")
@@ -461,7 +579,8 @@ def build_report(result, raw=None, analyst="SIH26106 automated triage"):
         add("| Address | Role(s) |")
         add("| --- | --- |")
         for d in details:
-            add("| `{}` | {} |".format(md_cell(d["address"]), md_cell(", ".join(d["roles"]))))
+            _rl = ", ".join(d["roles"])
+            add("| `{}` | {} |".format(md_cell(mask_recipient(d["address"]) if _RECIP_ROLE.search(_rl) else d["address"]), md_cell(_rl)))
         add("")
     elif iocs.get("emails"):
         add("**Email addresses (role not recorded):** {}".format(

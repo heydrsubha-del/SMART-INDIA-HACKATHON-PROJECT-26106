@@ -13082,7 +13082,7 @@ if active_panel == "AI Threat Analysis":
                     combined_batch_md = (
                         f"# ALGORITHMISTIC - MULTI-EMAIL COMBINED FORENSIC + AI REPORT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
-                        f"## AI Campaign Summary\n\n{cleaned_summary}{_ai_evidence_refs_md}\n\n---\n\n"
+                        f"## AI Campaign Summary\n\n{cleaned_summary}\n\n---\n\n"
                         f"## Per-Email Machine Forensic Reports\n\n{_batch_machine_body}"
                     )
 
@@ -15278,13 +15278,14 @@ if active_panel == "Forensic Report":
         # It is now also appended to the AI report itself (single-email AND combined downloads): the AI narrative's own
         # prose is still free text and cites no IDs inline, but the genuine, non-invented evidence (S# ids) the scanner
         # produced for THIS email is attached to it, so the AI assessment is traceable to real supporting evidence.
+        ai_md_core = ai_md  # AI text WITHOUT the evidence tail: the combined report already carries the register once, inside machine_md
         _evidence_tail = scan_evidence_md(sel_res)
         if _evidence_tail:
             machine_md = machine_md + "\n" + "\n".join(_evidence_tail)
             if ai_markdown_body:
                 ai_md = ai_md + "\n## Evidence References (scanner register for this email)\n\n" + "\n".join(_evidence_tail)
 
-        combined_md = machine_md + "\n\n---\n\n" + ai_md
+        combined_md = machine_md + "\n\n---\n\n" + ai_md_core
 
         # --------------------------------------------------------------------
         # THREE DOWNLOAD OPTIONS: AI only, Machine only, Combined
