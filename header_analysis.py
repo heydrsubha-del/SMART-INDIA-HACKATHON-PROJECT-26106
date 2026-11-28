@@ -352,6 +352,7 @@ def analyze(parsed, trusted=None):
     return {
         "spf": spf, "dkim": dkim, "dmarc": dmarc,
         "auth_evidence": evid,
+        "alignment": ev,
         "auth_trust": {
             "trusted_authservs": sorted(trusted_authservs(trusted)),
             "any_verified": any(e["provenance"] == "verified" for e in evid.values()),

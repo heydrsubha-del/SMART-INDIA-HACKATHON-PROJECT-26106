@@ -318,7 +318,7 @@ try:
 except ImportError:
     FETCH_VPN_RANGES_AVAILABLE = False
 from report import (build_report, evidence_hash, extortion_status, extortion_block, partial_scan_note,
-                    scan_validation_status, validation_issues, scan_evidence_md)
+                    scan_validation_status, validation_issues, scan_evidence_md, redact_md)
 from live_scanner import PROVIDERS, fetch_mailbox_messages, fetch_message_by_uid, fetch_messages_by_uids
 
 
@@ -9322,7 +9322,7 @@ def _premium_download(label, markdown, file_name, key=None, disabled=False, help
     call sites mirror st.download_button; they don't change the output."""
     base = os.path.splitext(str(file_name))[0]
     title = base.replace("_", " ").strip().title() or "Report"
-    md_text = str(markdown or "")
+    md_text = redact_md(str(markdown or ""))   # last-line display redaction (URLs); recipients are masked at the call sites
     doc = md_to_html_document(md_text, title)
     data = {
         "main": base64.b64encode(doc.encode("utf-8")).decode("ascii"),
@@ -13069,6 +13069,10 @@ if active_panel == "AI Threat Analysis":
                         + "\n\n---\n\n".join(_ai_evidence_refs)
                     ) if _ai_evidence_refs else ""
 
+                    _batch_results = [_b.get("result") for _b in _batch_items_for_dl]
+                    _batch_machine_body = redact_md(_batch_machine_body, _batch_results)
+                    cleaned_summary = redact_md(cleaned_summary, _batch_results)
+                    _ai_evidence_refs_md = redact_md(_ai_evidence_refs_md, _batch_results)
                     ai_only_batch_md = (
                         f"# ALGORITHMISTIC - MULTI-EMAIL CAMPAIGN ASSESSMENT\n\n"
                         f"**Total Emails Assessed:** {saved_batch.get('count')}\n\n"
@@ -15285,6 +15289,7 @@ if active_panel == "Forensic Report":
             if ai_markdown_body:
                 ai_md = ai_md + "\n## Evidence References (scanner register for this email)\n\n" + "\n".join(_evidence_tail)
 
+        machine_md, ai_md, ai_md_core = (redact_md(_x, sel_res) for _x in (machine_md, ai_md, ai_md_core))   # display redaction; raw evidence untouched
         combined_md = machine_md + "\n\n---\n\n" + ai_md_core
 
         # --------------------------------------------------------------------
